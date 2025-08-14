@@ -41,7 +41,7 @@ Environment: Node
 Region: Oregon (US West) 或就近選擇
 Branch: main
 Root Directory: (留空)
-Build Command: cd client && npm install && npm run build
+Build Command: npm install && cd client && npm install && npm run build
 Start Command: node server.js
 ```
 
