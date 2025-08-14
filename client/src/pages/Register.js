@@ -1,0 +1,409 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useForm } from 'react-hook-form';
+import axios from 'axios';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+
+const Register = () => {
+  const { register: registerUser, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [chapters, setChapters] = useState([]);
+  const [loadingChapters, setLoadingChapters] = useState(true);
+  const [inviteInfo, setInviteInfo] = useState(null);
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+    watch
+  } = useForm();
+
+  const password = watch('password');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Check for invite parameters
+  useEffect(() => {
+    const eventId = searchParams.get('event_id');
+    const inviterId = searchParams.get('inviter_id');
+    
+    if (eventId && inviterId) {
+      setInviteInfo({ eventId, inviterId });
+    }
+  }, [searchParams]);
+
+  // Load chapters
+  useEffect(() => {
+    const loadChapters = async () => {
+      try {
+        const response = await axios.get('/api/chapters');
+        setChapters(response.data.chapters || []);
+      } catch (error) {
+        console.error('Failed to load chapters:', error);
+        setChapters([]);
+      } finally {
+        setLoadingChapters(false);
+      }
+    };
+
+    loadChapters();
+  }, []);
+
+  const onSubmit = async (data) => {
+    setIsLoading(true);
+    
+    try {
+      const result = await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        company: data.company,
+        industry: data.industry,
+        title: data.title,
+        contactNumber: data.contactNumber,
+        chapterId: data.chapterId ? parseInt(data.chapterId) : null
+      });
+      
+      if (result.success) {
+        // If there's invite info, store it for after login
+        if (inviteInfo) {
+          localStorage.setItem('pendingEventRegistration', JSON.stringify({
+            eventId: inviteInfo.eventId,
+            inviterId: inviteInfo.inviterId
+          }));
+        }
+        
+        navigate('/login', {
+          state: {
+            message: inviteInfo 
+              ? '註冊成功！請等待管理員審核您的帳號。審核通過後，您將自動報名邀請的活動。'
+              : '註冊成功！請等待管理員審核您的帳號。'
+          }
+        });
+      } else {
+        setError('root', {
+          type: 'manual',
+          message: result.message
+        });
+      }
+    } catch (error) {
+      setError('root', {
+        type: 'manual',
+        message: '註冊過程中發生錯誤，請稍後再試'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl w-full space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <Link to="/" className="inline-flex items-center mb-6">
+            <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">BCI</span>
+            </div>
+            <span className="ml-3 text-2xl font-bold text-primary-900">商務菁英會</span>
+          </Link>
+          
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            加入BCI商務菁英會
+          </h2>
+          <p className="text-gray-600">
+            填寫以下資訊完成註冊，我們將盡快審核您的申請
+          </p>
+        </div>
+
+        {/* Registration Form */}
+        <div className="card">
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Name */}
+              <div>
+                <label htmlFor="name" className="form-label">
+                  姓名 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  className={`form-input ${
+                    errors.name ? 'border-red-300 focus:ring-red-500' : ''
+                  }`}
+                  placeholder="請輸入您的姓名"
+                  {...register('name', {
+                    required: '請輸入姓名',
+                    minLength: {
+                      value: 2,
+                      message: '姓名至少需要2個字符'
+                    }
+                  })}
+                />
+                {errors.name && (
+                  <p className="form-error">{errors.name.message}</p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="form-label">
+                  電子郵件 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  className={`form-input ${
+                    errors.email ? 'border-red-300 focus:ring-red-500' : ''
+                  }`}
+                  placeholder="請輸入您的電子郵件"
+                  {...register('email', {
+                    required: '請輸入電子郵件',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: '請輸入有效的電子郵件格式'
+                    }
+                  })}
+                />
+                {errors.email && (
+                  <p className="form-error">{errors.email.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Password Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="form-label">
+                  密碼 <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className={`form-input pr-10 ${
+                      errors.password ? 'border-red-300 focus:ring-red-500' : ''
+                    }`}
+                    placeholder="請輸入密碼"
+                    {...register('password', {
+                      required: '請輸入密碼',
+                      minLength: {
+                        value: 6,
+                        message: '密碼長度至少需要6個字符'
+                      }
+                    })}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="form-error">{errors.password.message}</p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label htmlFor="confirmPassword" className="form-label">
+                  確認密碼 <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className={`form-input pr-10 ${
+                      errors.confirmPassword ? 'border-red-300 focus:ring-red-500' : ''
+                    }`}
+                    placeholder="請再次輸入密碼"
+                    {...register('confirmPassword', {
+                      required: '請確認密碼',
+                      validate: value => value === password || '密碼不一致'
+                    })}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="form-error">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Professional Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Company */}
+              <div>
+                <label htmlFor="company" className="form-label">
+                  公司名稱
+                </label>
+                <input
+                  id="company"
+                  type="text"
+                  className="form-input"
+                  placeholder="請輸入您的公司名稱"
+                  {...register('company')}
+                />
+              </div>
+
+              {/* Industry */}
+              <div>
+                <label htmlFor="industry" className="form-label">
+                  產業別
+                </label>
+                <input
+                  id="industry"
+                  type="text"
+                  className="form-input"
+                  placeholder="請輸入您的產業別"
+                  {...register('industry')}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Title */}
+              <div>
+                <label htmlFor="title" className="form-label">
+                  職稱
+                </label>
+                <input
+                  id="title"
+                  type="text"
+                  className="form-input"
+                  placeholder="請輸入您的職稱"
+                  {...register('title')}
+                />
+              </div>
+
+              {/* Contact Number */}
+              <div>
+                <label htmlFor="contactNumber" className="form-label">
+                  聯絡電話
+                </label>
+                <input
+                  id="contactNumber"
+                  type="tel"
+                  className="form-input"
+                  placeholder="請輸入您的聯絡電話"
+                  {...register('contactNumber')}
+                />
+              </div>
+            </div>
+
+            {/* Chapter Selection */}
+            <div>
+              <label htmlFor="chapterId" className="form-label">
+                所屬分會
+              </label>
+              {loadingChapters ? (
+                <div className="flex items-center justify-center py-4">
+                  <LoadingSpinner size="small" />
+                  <span className="ml-2 text-gray-500">載入分會列表中...</span>
+                </div>
+              ) : (
+                <select
+                  id="chapterId"
+                  className="form-input"
+                  {...register('chapterId')}
+                >
+                  <option value="">請選擇分會（可選）</option>
+                  {chapters.map((chapter) => (
+                    <option key={chapter.id} value={chapter.id}>
+                      {chapter.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Form Error */}
+            {errors.root && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-600 text-sm">{errors.root.message}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary w-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <LoadingSpinner size="small" className="mr-2" />
+                  註冊中...
+                </>
+              ) : (
+                '註冊'
+              )}
+            </button>
+          </form>
+
+          {/* Links */}
+          <div className="mt-6 text-center space-y-2">
+            <p className="text-sm text-gray-600">
+              已經有帳號？{' '}
+              <Link
+                to="/login"
+                className="font-medium text-primary-600 hover:text-primary-500"
+              >
+                立即登入
+              </Link>
+            </p>
+            
+            <Link
+              to="/"
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              返回首頁
+            </Link>
+          </div>
+        </div>
+
+        {/* Notice */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">註冊須知</h3>
+          <ul className="text-xs text-yellow-700 space-y-1">
+            <li>• 註冊後需等待管理員審核，審核通過後才能正式使用系統</li>
+            <li>• 請確保提供的資訊真實有效，以便審核作業</li>
+            <li>• 審核結果將透過電子郵件通知</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Register;

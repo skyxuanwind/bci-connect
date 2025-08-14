@@ -1,0 +1,301 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+import LoadingSpinner from '../components/LoadingSpinner';
+import {
+  UserIcon,
+  BuildingOfficeIcon,
+  BriefcaseIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  CalendarIcon,
+  ArrowLeftIcon,
+  MapPinIcon,
+  TagIcon
+} from '@heroicons/react/24/outline';
+
+const MemberDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [member, setMember] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadMemberDetail();
+  }, [id]);
+
+  const loadMemberDetail = async () => {
+    try {
+      const response = await axios.get(`/api/users/member/${id}`);
+      setMember(response.data.member);
+    } catch (error) {
+      console.error('Failed to load member detail:', error);
+      if (error.response?.status === 403) {
+        setError('您沒有權限查看此會員的詳細資料');
+      } else if (error.response?.status === 404) {
+        setError('找不到此會員');
+      } else {
+        setError('載入會員資料時發生錯誤');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMembershipLevelText = (level) => {
+    const levels = {
+      1: '一級核心',
+      2: '二級幹部',
+      3: '三級會員'
+    };
+    return levels[level] || '未設定';
+  };
+
+  const getMembershipLevelBadge = (level) => {
+    const badges = {
+      1: 'level-1',
+      2: 'level-2',
+      3: 'level-3'
+    };
+    
+    return (
+      <span className={`badge ${badges[level] || 'bg-gray-500'} text-sm px-3 py-1 rounded-full font-medium text-white`}>
+        {getMembershipLevelText(level)}
+      </span>
+    );
+  };
+
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      active: { text: '正常', class: 'badge-success' },
+      pending_approval: { text: '待審核', class: 'badge-warning' },
+      suspended: { text: '暫停', class: 'badge-danger' },
+      blacklisted: { text: '黑名單', class: 'badge-danger' }
+    };
+    
+    const config = statusConfig[status] || { text: '未知', class: 'badge-info' };
+    
+    return (
+      <span className={`badge ${config.class} text-sm px-3 py-1 rounded-full font-medium`}>
+        {config.text}
+      </span>
+    );
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '未知';
+    return new Date(dateString).toLocaleDateString('zh-TW', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">無法載入會員資料</h3>
+        <p className="mt-1 text-sm text-gray-500">{error}</p>
+        <div className="mt-6">
+          <button
+            onClick={() => navigate('/members')}
+            className="btn-primary"
+          >
+            返回會員列表
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!member) {
+    return (
+      <div className="text-center py-12">
+        <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">找不到會員</h3>
+        <p className="mt-1 text-sm text-gray-500">此會員可能已被刪除或不存在</p>
+        <div className="mt-6">
+          <button
+            onClick={() => navigate('/members')}
+            className="btn-primary"
+          >
+            返回會員列表
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Back Button */}
+      <div className="flex items-center">
+        <button
+          onClick={() => navigate('/members')}
+          className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+        >
+          <ArrowLeftIcon className="h-4 w-4 mr-2" />
+          返回會員列表
+        </button>
+      </div>
+
+      {/* Member Header */}
+      <div className="bg-gradient-primary text-white rounded-lg p-6">
+        <div className="flex items-center">
+          <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+            <UserIcon className="h-10 w-10 text-white" />
+          </div>
+          <div className="ml-6 flex-1">
+            <h1 className="text-3xl font-bold">{member.name}</h1>
+            <p className="text-blue-100 mt-1">{member.email}</p>
+            <div className="flex items-center space-x-4 mt-3">
+              {member.membershipLevel ? getMembershipLevelBadge(member.membershipLevel) : null}
+            {member.status ? getStatusBadge(member.status) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Member Details */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Basic Information */}
+        <div className="card">
+          <div className="card-header">
+            <h2 className="text-lg font-semibold text-gray-900">基本資料</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">姓名</p>
+                <p className="text-sm text-gray-600">{member.name}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">電子郵件</p>
+                <p className="text-sm text-gray-600">{member.email}</p>
+              </div>
+            </div>
+            
+            {member.contactNumber && (
+              <div className="flex items-center">
+                <PhoneIcon className="h-5 w-5 text-gray-400 mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">聯絡電話</p>
+                  <p className="text-sm text-gray-600">{member.contactNumber}</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex items-center">
+              <CalendarIcon className="h-5 w-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">加入時間</p>
+                <p className="text-sm text-gray-600">{formatDate(member.createdAt)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Professional Information */}
+        <div className="card">
+          <div className="card-header">
+            <h2 className="text-lg font-semibold text-gray-900">職業資料</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">公司</p>
+                <p className="text-sm text-gray-600">{member.company || '未提供'}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <BriefcaseIcon className="h-5 w-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">職稱</p>
+                <p className="text-sm text-gray-600">{member.title || '未提供'}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <TagIcon className="h-5 w-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">產業別</p>
+                <p className="text-sm text-gray-600">{member.industry || '未提供'}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <MapPinIcon className="h-5 w-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">所屬分會</p>
+                <p className="text-sm text-gray-600">{member.chapterName || '未設定'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Membership Information */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="text-lg font-semibold text-gray-900">會員資訊</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm font-medium text-gray-900 mb-2">會員等級</p>
+            {member.membershipLevel ? getMembershipLevelBadge(member.membershipLevel) : null}
+          </div>
+          
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm font-medium text-gray-900 mb-2">帳號狀態</p>
+            {member.status ? getStatusBadge(member.status) : null}
+          </div>
+          
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm font-medium text-gray-900 mb-2">加入時間</p>
+            <p className="text-sm text-gray-600">{formatDate(member.createdAt)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* QR Code Section removed as requested */}
+
+      {/* Actions */}
+      <div className="flex justify-center space-x-4">
+        <button
+          onClick={() => navigate('/members')}
+          className="btn-secondary"
+        >
+          返回會員列表
+        </button>
+        
+        {/* Additional actions can be added here based on user permissions */}
+        {user?.id === member.id && (
+          <Link to="/profile" className="btn-primary">
+            編輯個人資料
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MemberDetail;
