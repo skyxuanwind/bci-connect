@@ -185,7 +185,7 @@ const EventDetail = () => {
           {event.poster_image_url && (
             <div className="w-full overflow-hidden bg-gray-50 flex items-center justify-center">
               <img
-                src={`http://localhost:5001${event.poster_image_url}`}
+                src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5001'}${event.poster_image_url}`}
                 alt={event.title}
                 className="w-full max-w-4xl mx-auto"
                 onError={(e) => {

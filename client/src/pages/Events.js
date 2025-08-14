@@ -109,7 +109,7 @@ const Events = () => {
                 {event.poster_image_url && (
                   <div className="w-full h-48 overflow-hidden">
                     <img
-                      src={`http://localhost:5001${event.poster_image_url}`}
+                      src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5001'}${event.poster_image_url}`}
                       alt={event.title}
                       className="w-full h-full object-contain bg-gray-50"
                       onError={(e) => {
