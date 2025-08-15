@@ -270,6 +270,57 @@ router.put('/users/:id/status', async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/users/:id/membership-level
+// @desc    Update user membership level
+// @access  Private (Admin only)
+router.put('/users/:id/membership-level', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { membershipLevel } = req.body;
+
+    // Validate membership level
+    if (!membershipLevel || ![1, 2, 3].includes(parseInt(membershipLevel))) {
+      return res.status(400).json({ message: '請選擇有效的會員等級 (1, 2, 或 3)' });
+    }
+
+    // Check if user exists
+    const userCheck = await pool.query(
+      'SELECT id, name, membership_level FROM users WHERE id = $1',
+      [id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ message: '用戶不存在' });
+    }
+
+    const currentLevel = userCheck.rows[0].membership_level;
+    const newLevel = parseInt(membershipLevel);
+
+    if (currentLevel === newLevel) {
+      return res.status(400).json({ message: '用戶已經是該等級' });
+    }
+
+    // Update membership level
+    const result = await pool.query(
+      'UPDATE users SET membership_level = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, name, membership_level',
+      [newLevel, id]
+    );
+
+    res.json({
+      message: '會員等級更新成功',
+      user: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        membershipLevel: result.rows[0].membership_level
+      }
+    });
+
+  } catch (error) {
+    console.error('Update membership level error:', error);
+    res.status(500).json({ message: '更新會員等級時發生錯誤' });
+  }
+});
+
 // @route   GET /api/admin/dashboard
 // @desc    Get admin dashboard statistics
 // @access  Private (Admin only)
