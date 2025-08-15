@@ -198,7 +198,7 @@ router.get('/users', async (req, res) => {
     const usersQuery = `
       SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
              u.contact_number, u.membership_level, u.status, u.created_at,
-             c.name as chapter_name
+             u.profile_picture_url, c.name as chapter_name
       FROM users u
       LEFT JOIN chapters c ON u.chapter_id = c.id
       ${whereClause}
@@ -220,6 +220,7 @@ router.get('/users', async (req, res) => {
         contactNumber: user.contact_number,
         membershipLevel: user.membership_level,
         status: user.status,
+        profilePictureUrl: user.profile_picture_url,
         chapterName: user.chapter_name,
         createdAt: user.created_at
       })),

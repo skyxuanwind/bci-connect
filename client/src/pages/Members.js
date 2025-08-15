@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Avatar from '../components/Avatar';
 import {
   UserIcon,
   MagnifyingGlassIcon,
@@ -335,9 +336,11 @@ const Members = () => {
                 <div className="p-6">
                   {/* Avatar and Basic Info */}
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                      <UserIcon className="h-6 w-6 text-primary-600" />
-                    </div>
+                    <Avatar 
+                      src={member.profilePictureUrl} 
+                      alt={member.name}
+                      size="large"
+                    />
                     <div className="ml-3 flex-1">
                       <h3 className="text-sm font-medium text-gray-900 truncate">
                         {member.name}

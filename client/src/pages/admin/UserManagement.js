@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import Avatar from '../../components/Avatar';
 import { toast } from 'react-hot-toast';
 import {
   UserIcon,
@@ -491,9 +492,11 @@ const UserManagement = () => {
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                            <UserIcon className="h-5 w-5 text-primary-600" />
-                          </div>
+                          <Avatar 
+                            src={user.profilePictureUrl} 
+                            alt={user.name}
+                            size="medium"
+                          />
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{user.name}</div>
                             <div className="text-sm text-gray-500">{user.email}</div>

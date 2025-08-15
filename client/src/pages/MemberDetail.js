@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Avatar from '../components/Avatar';
 import {
   UserIcon,
   BuildingOfficeIcon,
@@ -154,9 +155,16 @@ const MemberDetail = () => {
       {/* Member Header */}
       <div className="bg-gradient-primary text-white rounded-lg p-6">
         <div className="flex items-center">
-          <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-            <UserIcon className="h-10 w-10 text-white" />
-          </div>
+          <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full overflow-hidden">
+             <Avatar 
+               src={member.profilePictureUrl} 
+               alt={member.name}
+               size="2xl"
+               className="bg-white bg-opacity-20"
+               fallbackIcon={UserIcon}
+               fallbackIconClass="text-white"
+             />
+           </div>
           <div className="ml-6 flex-1">
             <h1 className="text-3xl font-bold">{member.name}</h1>
             <p className="text-blue-100 mt-1">{member.email}</p>

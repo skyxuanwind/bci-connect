@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Avatar from './Avatar';
 import axios from 'axios';
 import {
   HomeIcon,
@@ -153,9 +154,11 @@ const Layout = ({ children }) => {
       {/* User Info */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-            <UserIcon className="w-6 h-6 text-primary-600" />
-          </div>
+          <Avatar 
+            src={user?.profilePictureUrl} 
+            alt={user?.name}
+            size="medium"
+          />
           <div className="ml-3 flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
               {user?.name}
