@@ -116,7 +116,8 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
         profilePictureUrl = uploadResult.secure_url;
       } catch (uploadError) {
         console.error('Avatar upload error:', uploadError);
-        return res.status(500).json({ message: '大頭貼上傳失敗' });
+        // Continue without updating avatar if upload fails
+        console.log('Continuing profile update without avatar change due to upload error');
       }
     }
 
