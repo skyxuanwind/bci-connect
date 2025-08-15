@@ -1,10 +1,27 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
+const multer = require('multer');
 const { pool } = require('../config/database');
 const { authenticateToken, requireMembershipLevel } = require('../middleware/auth');
+const { cloudinary } = require('../config/cloudinary');
 
 const router = express.Router();
+
+// Configure multer for avatar upload
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('只允許上傳圖片文件'), false);
+    }
+  }
+});
 
 // Apply authentication to all routes
 router.use(authenticateToken);
@@ -59,7 +76,7 @@ router.get('/profile', async (req, res) => {
 // @route   PUT /api/users/profile
 // @desc    Update user profile
 // @access  Private
-router.put('/profile', async (req, res) => {
+router.put('/profile', upload.single('avatar'), async (req, res) => {
   try {
     const {
       name,
@@ -74,21 +91,68 @@ router.put('/profile', async (req, res) => {
       return res.status(400).json({ message: '姓名為必填項目' });
     }
 
-    const result = await pool.query(
-      `UPDATE users 
-       SET name = $1, company = $2, industry = $3, title = $4, 
-           contact_number = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6
-       RETURNING id, name, company, industry, title, contact_number`,
-      [
-        name.trim(),
-        company?.trim() || null,
-        industry?.trim() || null,
-        title?.trim() || null,
-        contactNumber?.trim() || null,
-        req.user.id
-      ]
-    );
+    // Handle avatar upload
+    let profilePictureUrl = null;
+    if (req.file) {
+      try {
+        // Upload to Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'bci-connect/avatars',
+              transformation: [
+                { width: 300, height: 300, crop: 'fill', gravity: 'face' },
+                { quality: 'auto' }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(req.file.buffer);
+        });
+        
+        profilePictureUrl = uploadResult.secure_url;
+      } catch (uploadError) {
+        console.error('Avatar upload error:', uploadError);
+        return res.status(500).json({ message: '大頭貼上傳失敗' });
+      }
+    }
+
+    // Update user profile
+    const updateQuery = profilePictureUrl 
+      ? `UPDATE users 
+         SET name = $1, company = $2, industry = $3, title = $4, 
+             contact_number = $5, profile_picture_url = $6, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $7
+         RETURNING id, name, company, industry, title, contact_number, profile_picture_url`
+      : `UPDATE users 
+         SET name = $1, company = $2, industry = $3, title = $4, 
+             contact_number = $5, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $6
+         RETURNING id, name, company, industry, title, contact_number, profile_picture_url`;
+    
+    const updateParams = profilePictureUrl 
+      ? [
+          name.trim(),
+          company?.trim() || null,
+          industry?.trim() || null,
+          title?.trim() || null,
+          contactNumber?.trim() || null,
+          profilePictureUrl,
+          req.user.id
+        ]
+      : [
+          name.trim(),
+          company?.trim() || null,
+          industry?.trim() || null,
+          title?.trim() || null,
+          contactNumber?.trim() || null,
+          req.user.id
+        ];
+
+    const result = await pool.query(updateQuery, updateParams);
 
     res.json({
       message: '個人資料更新成功',

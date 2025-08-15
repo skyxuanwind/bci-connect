@@ -161,7 +161,14 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await axios.post('/api/auth/register', userData);
+      // Check if userData is FormData (for avatar upload)
+      const config = userData instanceof FormData ? {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      } : {};
+      
+      const response = await axios.post('/api/auth/register', userData, config);
       toast.success('註冊成功！請等待管理員審核');
       return { success: true, data: response.data };
     } catch (error) {
@@ -186,7 +193,14 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
-      const response = await axios.put('/api/users/profile', profileData);
+      // Check if profileData is FormData (for avatar upload)
+      const config = profileData instanceof FormData ? {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      } : {};
+      
+      const response = await axios.put('/api/users/profile', profileData, config);
       
       // Update user state with new profile data
       setUser(prevUser => ({

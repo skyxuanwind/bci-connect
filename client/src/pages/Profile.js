@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import AvatarUpload from '../components/AvatarUpload';
 import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
 import {
@@ -23,6 +24,7 @@ const Profile = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
 
   const {
     register: registerProfile,
@@ -52,8 +54,27 @@ const Profile = () => {
   const onSubmitProfile = async (data) => {
     setIsUpdating(true);
     try {
-      await updateProfile(data);
+      // 如果有新的大頭貼，使用 FormData
+      if (avatarFile) {
+        const formData = new FormData();
+        Object.keys(data).forEach(key => {
+          if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
+            formData.append(key, data[key]);
+          }
+        });
+        formData.append('avatar', avatarFile);
+        
+        await axios.put('/api/users/profile', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        await updateProfile(data);
+      }
+      
       toast.success('個人資料更新成功！');
+      setAvatarFile(null); // 清除已上傳的文件
     } catch (error) {
       toast.error(error.response?.data?.message || '更新失敗，請稍後再試');
     } finally {
@@ -169,8 +190,22 @@ const Profile = () => {
             <p className="text-sm text-gray-600 mt-1">更新您的個人資料和聯絡資訊</p>
           </div>
           
-          <form onSubmit={handleSubmitProfile(onSubmitProfile)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmitProfile(onSubmitProfile)} className="space-y-8">
+            {/* Avatar Upload Section */}
+            <div className="flex justify-center pb-6 border-b border-gray-200">
+              <div>
+                <label className="form-label text-center block mb-4">
+                  大頭貼
+                </label>
+                <AvatarUpload
+                  currentAvatar={user?.profilePictureUrl}
+                  onAvatarChange={setAvatarFile}
+                  size="large"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Name */}
               <div>
                 <label className="label">
@@ -283,31 +318,31 @@ const Profile = () => {
             </div>
 
             {/* Additional Info (Read-only) */}
-            <div className="border-t pt-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">帳號資訊</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+            <div className="border-t pt-8">
+              <h3 className="text-md font-medium text-gray-900 mb-6">帳號資訊</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
                   <label className="label">會員等級</label>
-                  <div className="mt-1">
+                  <div className="mt-2">
                     {user?.membershipLevel ? getMembershipLevelBadge(user.membershipLevel) : null}
                   </div>
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <label className="label">所屬分會</label>
-                  <p className="mt-1 text-sm text-gray-900">{user?.chapterName || '未設定'}</p>
+                  <p className="mt-2 text-sm text-gray-900">{user?.chapterName || '未設定'}</p>
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <label className="label">帳號狀態</label>
-                  <div className="mt-1">
+                  <div className="mt-2">
                     {user?.status ? getStatusBadge(user.status) : null}
                   </div>
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <label className="label">註冊時間</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <p className="mt-2 text-sm text-gray-900">
                     {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-TW') : '未知'}
                   </p>
                 </div>
@@ -315,9 +350,9 @@ const Profile = () => {
             </div>
 
             {/* Personal QR Code Section */}
-            <div className="border-t pt-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">個人 QR Code</h3>
-              <div className="text-center p-6 bg-gray-50 rounded-lg">
+            <div className="border-t pt-8">
+              <h3 className="text-md font-medium text-gray-900 mb-6">個人 QR Code</h3>
+              <div className="text-center p-8 bg-gray-50 rounded-lg">
                 <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
                   <img
                     src={`${axios.defaults.baseURL}/api/qrcode/member/${user?.id}`}
@@ -332,7 +367,7 @@ const Profile = () => {
                     QR Code 載入失敗
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-3">
+                <p className="text-sm text-gray-600 mt-4">
                   掃描此 QR Code 可快速獲取您的聯絡資訊
                 </p>
               </div>

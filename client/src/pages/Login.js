@@ -166,15 +166,20 @@ const Login = () => {
 
           {/* Links */}
           <div className="mt-6 text-center space-y-2">
-            <p className="text-sm text-gray-600">
-              還沒有帳號？{' '}
+            <div className="flex items-center justify-between">
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-primary-600 hover:text-primary-500"
+              >
+                忘記密碼？
+              </Link>
               <Link
                 to="/register"
-                className="font-medium text-primary-600 hover:text-primary-500"
+                className="text-sm font-medium text-primary-600 hover:text-primary-500"
               >
-                立即註冊
+                還沒有帳號？立即註冊
               </Link>
-            </p>
+            </div>
             
             <Link
               to="/"
@@ -185,12 +190,10 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Demo Account Info */}
+        {/* Registration Notice */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-800 mb-2">測試帳號</h3>
-          <div className="text-xs text-blue-700 space-y-1">
-            <p><strong>管理員：</strong> admin@bci-club.com / admin123456</p>
-            <p className="text-blue-600">註冊後需等待管理員審核才能登入</p>
+          <div className="text-sm text-blue-700 text-center">
+            <p>註冊後需等待管理員審核才能登入</p>
           </div>
         </div>
       </div>

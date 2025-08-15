@@ -72,9 +72,22 @@ const initializeDatabase = async () => {
         status VARCHAR(20) DEFAULT 'pending_approval' CHECK (status IN ('active', 'pending_approval', 'suspended', 'blacklisted')),
         nfc_card_id VARCHAR(50) UNIQUE,
         qr_code_url VARCHAR(500),
+        reset_token VARCHAR(255),
+        reset_token_expiry TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add reset_token columns if they don't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)
+    `);
+    
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP
     `);
 
     // Create referrals table

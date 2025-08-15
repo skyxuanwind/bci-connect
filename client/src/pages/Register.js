@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
+import AvatarUpload from '../components/AvatarUpload';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 const Register = () => {
@@ -16,6 +17,7 @@ const Register = () => {
   const [chapters, setChapters] = useState([]);
   const [loadingChapters, setLoadingChapters] = useState(true);
   const [inviteInfo, setInviteInfo] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
   
   const {
     register,
@@ -65,16 +67,30 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      const result = await registerUser({
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        company: data.company,
-        industry: data.industry,
-        title: data.title,
-        contactNumber: data.contactNumber,
-        chapterId: data.chapterId ? parseInt(data.chapterId) : null
-      });
+      // 創建 FormData 以支持文件上傳
+      const formData = new FormData();
+      
+      // 添加所有表單數據
+      formData.append('name', data.name);
+      formData.append('email', data.email);
+      formData.append('password', data.password);
+      if (data.company) formData.append('company', data.company);
+      if (data.industry) formData.append('industry', data.industry);
+      if (data.title) formData.append('title', data.title);
+      if (data.contactNumber) formData.append('contactNumber', data.contactNumber);
+      if (data.chapterId) formData.append('chapterId', data.chapterId);
+      
+      // 添加大頭貼文件
+      if (avatarFile) {
+        formData.append('avatar', avatarFile);
+      }
+      
+      // 添加邀請信息
+      if (inviteInfo) {
+        formData.append('inviteInfo', JSON.stringify(inviteInfo));
+      }
+      
+      const result = await registerUser(formData);
       
       if (result.success) {
         // If there's invite info, store it for after login
@@ -131,6 +147,19 @@ const Register = () => {
         {/* Registration Form */}
         <div className="card">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            {/* Avatar Upload */}
+            <div className="flex justify-center mb-8">
+              <div>
+                <label className="form-label text-center block mb-4">
+                  大頭貼
+                </label>
+                <AvatarUpload
+                  onAvatarChange={setAvatarFile}
+                  size="large"
+                />
+              </div>
+            </div>
+
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Name */}

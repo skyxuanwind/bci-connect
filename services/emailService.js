@@ -202,7 +202,133 @@ const sendMeetingNotification = async (type, meetingData) => {
   }
 };
 
+// 發送密碼重置郵件
+// 發送註冊成功郵件
+const sendWelcomeEmail = async ({ email, name }) => {
+  try {
+    const transporter = createTransporter();
+    
+    if (!transporter) {
+      console.log('郵件服務未配置，無法發送歡迎郵件');
+      return;
+    }
+
+    const mailOptions = {
+      from: process.env.SMTP_USER,
+      to: email,
+      subject: 'BCI Connect - 歡迎加入！',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2c3e50; margin: 0;">BCI Connect</h1>
+              <p style="color: #7f8c8d; margin: 5px 0 0 0;">歡迎加入商務菁英會</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">親愛的 ${name}，</p>
+              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">歡迎加入 BCI 商務菁英會！您的註冊申請已成功提交。</p>
+            </div>
+            
+            <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #2563eb; margin: 0 0 10px 0;">📋 接下來的步驟：</h3>
+              <ul style="color: #2c3e50; margin: 0; padding-left: 20px;">
+                <li>您的帳號正在等待管理員審核</li>
+                <li>審核通過後，您將收到確認郵件</li>
+                <li>屆時您就可以使用帳號登入系統</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #0369a1; margin: 0 0 10px 0;">🌟 BCI Connect 功能亮點：</h3>
+              <ul style="color: #2c3e50; margin: 0; padding-left: 20px;">
+                <li>參與分會活動和會議</li>
+                <li>建立商務人脈網絡</li>
+                <li>分享和接收商務引薦</li>
+                <li>查看會員資訊和聯絡方式</li>
+              </ul>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
+              <p style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">如果您有任何問題，請隨時聯繫我們的客服團隊。</p>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+              <p style="color: #7f8c8d; font-size: 12px;">此郵件由 BCI Connect 系統自動發送，請勿回覆。</p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`歡迎郵件已發送至: ${email}`);
+  } catch (error) {
+    console.error('發送歡迎郵件失敗:', error);
+    throw error;
+  }
+};
+
+const sendPasswordResetEmail = async ({ email, name, resetToken }) => {
+  const transporter = createTransporter();
+  
+  if (!transporter) {
+    console.log('郵件服務未配置，無法發送密碼重置郵件');
+    return;
+  }
+
+  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: 'BCI Connect - 密碼重置請求',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; margin: 0;">BCI Connect</h1>
+            <p style="color: #7f8c8d; margin: 5px 0 0 0;">密碼重置請求</p>
+          </div>
+          
+          <div style="margin-bottom: 30px;">
+            <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">親愛的 ${name}，</p>
+            <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">我們收到了您的密碼重置請求。請點擊下方按鈕來重置您的密碼：</p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="display: inline-block; background-color: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">重置密碼</a>
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
+            <p style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">如果您無法點擊按鈕，請複製以下連結到瀏覽器中：</p>
+            <p style="color: #3498db; font-size: 14px; word-break: break-all;">${resetUrl}</p>
+          </div>
+          
+          <div style="margin-top: 20px;">
+            <p style="color: #e74c3c; font-size: 14px; line-height: 1.6;">⚠️ 此連結將在1小時後失效。如果您沒有請求重置密碼，請忽略此郵件。</p>
+          </div>
+          
+          <div style="margin-top: 30px; text-align: center;">
+            <p style="color: #7f8c8d; font-size: 12px;">此郵件由 BCI Connect 系統自動發送，請勿回覆。</p>
+          </div>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`密碼重置郵件已發送至: ${email}`);
+  } catch (error) {
+    console.error('發送密碼重置郵件失敗:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   sendReferralNotification,
-  sendMeetingNotification
+  sendMeetingNotification,
+  sendPasswordResetEmail,
+  sendWelcomeEmail
 };

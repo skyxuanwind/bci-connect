@@ -67,6 +67,8 @@ const corsOptions = {
     if (process.env.NODE_ENV !== 'production') {
       allowedOrigins.push(
         'http://localhost:3001',
+        'http://localhost:3002',
+        'http://localhost:3003',
         'http://192.168.0.14:3000',
         'http://192.168.0.14:3001'
       );

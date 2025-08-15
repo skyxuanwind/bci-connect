@@ -1,15 +1,34 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
+const crypto = require('crypto');
+const multer = require('multer');
 const { pool } = require('../config/database');
 const { generateToken, authenticateToken } = require('../middleware/auth');
+const { sendPasswordResetEmail, sendWelcomeEmail } = require('../services/emailService');
+const { cloudinary } = require('../config/cloudinary');
 
 const router = express.Router();
+
+// Configure multer for avatar upload
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('只允許上傳圖片文件'), false);
+    }
+  }
+});
 
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
-router.post('/register', async (req, res) => {
+router.post('/register', upload.single('avatar'), async (req, res) => {
   try {
     const {
       name,
@@ -64,12 +83,41 @@ router.post('/register', async (req, res) => {
     // Generate unique NFC card ID
     const nfcCardId = `NFC_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Handle avatar upload
+    let profilePictureUrl = null;
+    if (req.file) {
+      try {
+        // Upload to Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'bci-connect/avatars',
+              transformation: [
+                { width: 300, height: 300, crop: 'fill', gravity: 'face' },
+                { quality: 'auto' }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(req.file.buffer);
+        });
+        
+        profilePictureUrl = uploadResult.secure_url;
+      } catch (uploadError) {
+        console.error('Avatar upload error:', uploadError);
+        // Continue without avatar if upload fails
+      }
+    }
+
     // Insert new user
     const result = await pool.query(
       `INSERT INTO users 
-       (name, email, password, company, industry, title, contact_number, chapter_id, nfc_card_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending_approval')
-       RETURNING id, name, email, company, industry, title, contact_number, chapter_id, status, created_at`,
+       (name, email, password, company, industry, title, contact_number, chapter_id, nfc_card_id, profile_picture_url, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending_approval')
+       RETURNING id, name, email, company, industry, title, contact_number, chapter_id, profile_picture_url, status, created_at`,
       [
         name.trim(),
         email.toLowerCase().trim(),
@@ -79,11 +127,24 @@ router.post('/register', async (req, res) => {
         title?.trim() || null,
         contactNumber?.trim() || null,
         chapterId || null,
-        nfcCardId
+        nfcCardId,
+        profilePictureUrl
       ]
     );
 
     const newUser = result.rows[0];
+
+    // Send welcome email
+    try {
+      await sendWelcomeEmail({
+        email: newUser.email,
+        name: newUser.name
+      });
+      console.log(`Welcome email sent to: ${newUser.email}`);
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+      // Continue execution - don't fail the registration if email fails
+    }
 
     res.status(201).json({
       message: '註冊成功！您的帳號正在等待管理員審核',
@@ -251,6 +312,113 @@ router.get('/me', authenticateToken, async (req, res) => {
 // @access  Private
 router.post('/logout', authenticateToken, (req, res) => {
   res.json({ message: '登出成功' });
+});
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send password reset email
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validation
+    if (!email) {
+      return res.status(400).json({ message: '請輸入電子郵件地址' });
+    }
+
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ message: '請輸入有效的電子郵件地址' });
+    }
+
+    // Check if user exists
+    const userResult = await pool.query(
+      'SELECT id, name, email FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    if (userResult.rows.length === 0) {
+      // Don't reveal if email exists or not for security
+      return res.json({ message: '如果該電子郵件地址存在於我們的系統中，您將收到密碼重置郵件' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+    // Save reset token to database
+    await pool.query(
+      'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
+      [resetToken, resetTokenExpiry, user.id]
+    );
+
+    // Send password reset email
+    try {
+      await sendPasswordResetEmail({
+        email: user.email,
+        name: user.name,
+        resetToken: resetToken
+      });
+      console.log(`Password reset email sent to: ${user.email}`);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Continue execution - don't fail the request if email fails
+      // The reset token is still saved in database
+    }
+
+    res.json({ message: '如果該電子郵件地址存在於我們的系統中，您將收到密碼重置郵件' });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: '處理請求時發生錯誤，請稍後再試' });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    // Validation
+    if (!token || !password) {
+      return res.status(400).json({ message: '重置令牌和新密碼為必填項目' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: '密碼長度至少需要6個字符' });
+    }
+
+    // Find user with valid reset token
+    const userResult = await pool.query(
+      'SELECT id, email, name FROM users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
+      [token]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ message: '重置令牌無效或已過期' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Update password and clear reset token
+    await pool.query(
+      'UPDATE users SET password = $1, reset_token = NULL, reset_token_expiry = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [hashedPassword, user.id]
+    );
+
+    res.json({ message: '密碼重置成功，請使用新密碼登入' });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: '重置密碼時發生錯誤，請稍後再試' });
+  }
 });
 
 module.exports = router;
