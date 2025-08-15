@@ -80,8 +80,7 @@ const ComplaintBox = () => {
         alert('申訴已成功提交');
         setShowSubmitModal(false);
         setFormData({
-          content: '',
-          is_anonymous: false
+          content: ''
         });
         // 如果是一級核心，重新載入申訴列表
         if (canViewComplaints) {
@@ -151,8 +150,7 @@ const ComplaintBox = () => {
   const resetModal = () => {
     setShowSubmitModal(false);
     setFormData({
-      content: '',
-      is_anonymous: false
+      content: ''
     });
   };
 
@@ -198,20 +196,7 @@ const ComplaintBox = () => {
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_anonymous}
-                    onChange={(e) => setFormData({...formData, is_anonymous: e.target.checked})}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">匿名提交</span>
-                </label>
-                <p className="mt-1 text-xs text-gray-500">
-                  勾選此選項將不會顯示您的身份資訊
-                </p>
-              </div>
+
 
               <div className="flex justify-end">
                 <button
@@ -230,7 +215,7 @@ const ComplaintBox = () => {
             <ul className="text-sm text-blue-800 space-y-2">
               <li>• 請確實填寫申訴內容，以便我們更好地了解和處理您的問題</li>
               <li>• 申訴內容將由一級核心成員審閱和處理</li>
-              <li>• 如選擇匿名提交，我們將無法直接回覆您，但會針對問題進行改善</li>
+
               <li>• 請避免提交重複或無意義的申訴內容</li>
               <li>• 我們會盡快處理您的申訴，感謝您的耐心等待</li>
             </ul>
@@ -273,7 +258,7 @@ const ComplaintBox = () => {
         </div>
 
         {/* 統計卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -316,19 +301,7 @@ const ComplaintBox = () => {
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">匿名申訴</p>
-                <p className="text-2xl font-bold text-purple-600">{statistics.anonymousCount}</p>
-              </div>
-            </div>
-          </div>
+
         </div>
 
         {/* 申訴列表 */}
@@ -361,15 +334,9 @@ const ComplaintBox = () => {
                           {complaint.status === 'unread' ? '未讀' : '已讀'}
                         </span>
                         
-                        {complaint.is_anonymous ? (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                            匿名
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-600">
-                            提交者: {complaint.submitter_name || '未知用戶'}
-                          </span>
-                        )}
+                        <span className="text-sm text-gray-600">
+                          提交者: {complaint.submitter_name || '未知用戶'}
+                        </span>
                         
                         <span className="text-sm text-gray-500">
                           {new Date(complaint.created_at).toLocaleString('zh-TW')}
@@ -428,17 +395,7 @@ const ComplaintBox = () => {
                   />
                 </div>
                 
-                <div className="mb-6">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_anonymous}
-                      onChange={(e) => setFormData({...formData, is_anonymous: e.target.checked})}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">匿名提交</span>
-                  </label>
-                </div>
+
                 
                 <div className="flex justify-end space-x-3">
                   <button

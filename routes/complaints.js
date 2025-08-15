@@ -12,7 +12,7 @@ router.get('/', authenticateToken, requireMembershipLevel(1), async (req, res) =
       SELECT c.*, u.name as submitter_name, u.email as submitter_email
       FROM complaints c
       LEFT JOIN users u ON c.submitter_id = u.id
-      WHERE 1=1
+      WHERE c.is_anonymous = false
     `;
     const params = [];
     
@@ -25,12 +25,7 @@ router.get('/', authenticateToken, requireMembershipLevel(1), async (req, res) =
     
     const result = await pool.query(query, params);
     
-    // 處理匿名申訴的顯示
-    const complaints = result.rows.map(complaint => ({
-      ...complaint,
-      submitter_name: complaint.is_anonymous ? '匿名用戶' : complaint.submitter_name,
-      submitter_email: complaint.is_anonymous ? null : complaint.submitter_email
-    }));
+    const complaints = result.rows;
     
     res.json({
       success: true,
@@ -53,6 +48,7 @@ router.get('/statistics', authenticateToken, requireMembershipLevel(1), async (r
         status,
         COUNT(*) as count
       FROM complaints
+      WHERE is_anonymous = false
       GROUP BY status
     `);
     
@@ -83,8 +79,8 @@ router.get('/statistics', authenticateToken, requireMembershipLevel(1), async (r
 // 提交申訴 - 所有會員可用
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { content, is_anonymous } = req.body;
-    const submitter_id = is_anonymous ? null : req.user.id;
+    const { content } = req.body;
+    const submitter_id = req.user.id;
     
     // 驗證內容
     if (!content || content.trim().length === 0) {
@@ -105,7 +101,7 @@ router.post('/', authenticateToken, async (req, res) => {
       `INSERT INTO complaints (submitter_id, content, is_anonymous, status)
        VALUES ($1, $2, $3, 'unread')
        RETURNING *`,
-      [submitter_id, content.trim(), Boolean(is_anonymous)]
+      [submitter_id, content.trim(), false]
     );
     
     res.status(201).json({
