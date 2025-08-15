@@ -188,7 +188,7 @@ const EventManagement = () => {
     });
     // Set preview image if event has poster
      if (event.poster_image_url) {
-       setPreviewImage(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5001'}${event.poster_image_url}`);
+       setPreviewImage(event.poster_image_url);
      } else {
        setPreviewImage(null);
      }
@@ -341,7 +341,7 @@ const EventManagement = () => {
                       <div className="flex items-center">
                         {event.poster_image_url && (
                            <img
-                             src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5001'}${event.poster_image_url}`}
+                             src={event.poster_image_url}
                              alt={event.title}
                              className="h-12 w-12 rounded-md object-cover mr-3"
                              onError={(e) => {

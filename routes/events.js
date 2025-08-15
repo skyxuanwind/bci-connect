@@ -2,32 +2,17 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { storage } = require('../config/cloudinary');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = 'uploads/events';
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'event-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure file filter for multer
 const fileFilter = (req, file, cb) => {
-  // Accept only image files
+  // Check if the file is an image
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error('只允許上傳圖片文件'), false);
+    cb(new Error('Only image files are allowed!'), false);
   }
 };
 
@@ -287,7 +272,7 @@ router.post('/', authenticateToken, requireAdmin, upload.single('poster'), async
     }
     
     // Get poster image URL if uploaded
-    const posterImageUrl = req.file ? `/uploads/events/${req.file.filename}` : null;
+    const posterImageUrl = req.file ? req.file.path : null;
     
     console.log('Inserting event into database...');
     const result = await pool.query(`
@@ -304,12 +289,6 @@ router.post('/', authenticateToken, requireAdmin, upload.single('poster'), async
     });
   } catch (error) {
     console.error('Error creating event:', error);
-    // Clean up uploaded file if database operation fails
-    if (req.file) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error('Error deleting uploaded file:', err);
-      });
-    }
     res.status(500).json({
       success: false,
       message: '創建活動失敗'
@@ -334,16 +313,9 @@ router.put('/:id', authenticateToken, requireAdmin, upload.single('poster'), asy
     
     let posterImageUrl = currentEvent.rows[0].poster_image_url;
     
-    // If new poster is uploaded, update the URL and delete old file
+    // If new poster is uploaded, update the URL
     if (req.file) {
-      // Delete old poster file if exists
-      if (posterImageUrl) {
-        const oldFilePath = path.join(__dirname, '..', posterImageUrl);
-        fs.unlink(oldFilePath, (err) => {
-          if (err) console.error('Error deleting old poster file:', err);
-        });
-      }
-      posterImageUrl = `/uploads/events/${req.file.filename}`;
+      posterImageUrl = req.file.path;
     }
     
     const result = await pool.query(`
@@ -368,12 +340,6 @@ router.put('/:id', authenticateToken, requireAdmin, upload.single('poster'), asy
     });
   } catch (error) {
     console.error('Error updating event:', error);
-    // Clean up uploaded file if database operation fails
-    if (req.file) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error('Error deleting uploaded file:', err);
-      });
-    }
     res.status(500).json({
       success: false,
       message: '更新活動失敗'
