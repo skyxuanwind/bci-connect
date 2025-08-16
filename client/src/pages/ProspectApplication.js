@@ -957,7 +957,7 @@ const ProspectApplication = () => {
                 {aiAnalysisResult.overallRecommendation && (
                   <div className="mb-6">
                     <h4 className="font-semibold text-gray-900 mb-2">整體建議</h4>
-                    <p className="text-gray-700">{aiAnalysisResult.overallRecommendation}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.overallRecommendation}</p>
                   </div>
                 )}
                 
@@ -968,7 +968,7 @@ const ProspectApplication = () => {
                       <h4 className="font-semibold text-gray-900">BCI 契合度評分</h4>
                       {getScoreBadge(aiAnalysisResult.bciFitScore.score)}
                     </div>
-                    <p className="text-gray-700">{aiAnalysisResult.bciFitScore.analysis}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.bciFitScore.analysis}</p>
                   </div>
                 )}
                 
@@ -976,7 +976,7 @@ const ProspectApplication = () => {
                 {aiAnalysisResult.marketSentiment && (
                   <div className="mb-6">
                     <h4 className="font-semibold text-gray-900 mb-2">市場聲譽分析</h4>
-                    <p className="text-gray-700">{aiAnalysisResult.marketSentiment.analysis}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.marketSentiment.analysis}</p>
                   </div>
                 )}
                 
@@ -996,7 +996,7 @@ const ProspectApplication = () => {
                          aiAnalysisResult.industryConflict.conflictLevel === 'medium' ? '中等衝突' : '低衝突'}
                       </span>
                     </div>
-                    <p className="text-gray-700">{aiAnalysisResult.industryConflict.analysis}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.industryConflict.analysis}</p>
                   </div>
                 )}
                 
@@ -1013,7 +1013,7 @@ const ProspectApplication = () => {
                       </div>
                     </div>
                     
-                    <p className="text-gray-700 mb-3">{aiAnalysisResult.legalRiskAssessment.analysis}</p>
+                    <p className="text-gray-700 mb-3 whitespace-pre-wrap">{aiAnalysisResult.legalRiskAssessment.analysis}</p>
                     
                     {aiAnalysisResult.legalRiskAssessment.judicialRecordsCount !== undefined && (
                       <div className="text-sm text-gray-600 mb-2">
@@ -1038,7 +1038,7 @@ const ProspectApplication = () => {
                 {aiAnalysisResult.publicInformationScan && (
                   <div className="mb-6">
                     <h4 className="font-semibold text-gray-900 mb-2">公開資訊掃描</h4>
-                    <p className="text-gray-700">{aiAnalysisResult.publicInformationScan.summary}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.publicInformationScan.summary}</p>
                   </div>
                 )}
               </div>

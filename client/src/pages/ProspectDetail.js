@@ -308,7 +308,7 @@ const ProspectDetail = () => {
             {/* Overall Recommendation */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h3 className="font-semibold text-blue-900 mb-2">整體建議</h3>
-              <p className="text-blue-800">{analysisReport.overallRecommendation}</p>
+              <p className="text-blue-800 whitespace-pre-wrap">{analysisReport.overallRecommendation}</p>
             </div>
 
             {/* BCI Fit Score */}
