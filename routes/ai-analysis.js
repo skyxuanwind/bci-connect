@@ -2,6 +2,7 @@ const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const judicialService = require('../services/judicialService');
+const geminiService = require('../services/geminiService');
 
 const router = express.Router();
 
@@ -51,6 +52,23 @@ router.post('/analyze', async (req, res) => {
         analysisResult.legalRisk = {
           error: '法律風險評估失敗',
           message: error.message
+        };
+      }
+    }
+    
+    // 執行 Gemini AI 綜合分析
+    if (analysisType === 'comprehensive' || analysisType === 'gemini') {
+      try {
+        console.log(`開始執行 ${companyName} 的 Gemini AI 綜合分析...`);
+        const geminiResult = await geminiService.generateComprehensiveAnalysis(companyName, businessType);
+        analysisResult.geminiAnalysis = geminiResult;
+      } catch (error) {
+        console.error('Gemini AI 分析錯誤:', error);
+        analysisResult.geminiAnalysis = {
+          success: false,
+          error: error.message,
+          companyName: companyName,
+          industry: businessType
         };
       }
     }
@@ -299,22 +317,40 @@ async function performFastAnalysis(prospect) {
     
     await new Promise(resolve => setTimeout(resolve, 1000));
      
-    // 4. 快速BCI契合度評分
+    // 4. Gemini AI 綜合分析
     await updateAnalysisProgress(prospect.id, {
-      stage: 'scoring',
-      progress: 85,
-      currentStep: '正在計算BCI契合度評分...',
-      details: '綜合分析市場聲譽、產業衝突和法律風險，計算整體契合度評分...'
+      stage: 'gemini_analysis',
+      progress: 75,
+      currentStep: '正在執行 AI 綜合分析...',
+      details: `正在使用 Gemini AI 進行「${prospect.company}」的公開資訊掃描、市場聲譽分析、產業衝突檢測和 BCI 契合度評分...`
     });
     
-    const score = calculateBCICompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis);
-    const fitScoreText = `BCI契合度評分：${score}分 (滿分100分)`;
+    let geminiResult = null;
+    try {
+      geminiResult = await geminiService.generateComprehensiveAnalysis(prospect.company, prospect.industry);
+    } catch (error) {
+      console.error('Gemini AI 分析失敗:', error);
+      geminiResult = {
+        success: false,
+        error: error.message,
+        summary: {
+          overallScore: 70,
+          sentiment: 'neutral',
+          conflictLevel: 'unknown',
+          recommendation: '無法完成 AI 分析，建議人工評估。'
+        }
+      };
+    }
+    
+    const score = geminiResult?.summary?.overallScore || calculateBCICompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis);
+    const aiSentiment = geminiResult?.summary?.sentiment || sentiment;
+    const aiConflictLevel = geminiResult?.summary?.conflictLevel || conflictLevel;
     
     await updateAnalysisProgress(prospect.id, {
-      stage: 'scoring',
+      stage: 'gemini_analysis',
       progress: 90,
-      currentStep: 'BCI契合度評分完成',
-      details: `評分結果：${score}/100 分。${score >= 80 ? '高度契合BCI標準，建議優先考慮。' : score >= 60 ? '中等契合度，可進一步評估。' : '契合度較低，需謹慎考慮。'}`
+      currentStep: 'AI 綜合分析完成',
+      details: `AI 分析結果：契合度評分 ${score}/100，${geminiResult?.summary?.recommendation || '建議進一步人工評估。'}`
     });
     
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -327,23 +363,25 @@ async function performFastAnalysis(prospect) {
       details: '整合所有分析結果，生成最終建議和詳細報告...'
     });
     
-    const recommendationText = generateFastRecommendation(score, sentiment, conflictLevel, legalRiskAnalysis.riskLevel);
+    const recommendationText = geminiResult?.summary?.recommendation || generateFastRecommendation(score, aiSentiment, aiConflictLevel, legalRiskAnalysis.riskLevel);
     
     // 編譯快速分析報告
     const analysisReport = {
       analysisDate: new Date().toISOString(),
-      analysisType: 'fast_analysis', // 標記為快速分析
-      processingTime: '< 10秒', // 快速分析的處理時間
+      analysisType: 'gemini_enhanced_analysis', // 標記為 Gemini AI 增強分析
+      processingTime: '< 15秒', // AI 增強分析的處理時間
       publicInfoScan: {
-        summary: `基於公司名稱和產業關鍵字進行快速聲譽評估，結果為${sentiment === 'positive' ? '正面' : sentiment === 'negative' ? '負面' : '中性'}評價。`,
-        sentiment: sentiment,
-        method: 'keyword_analysis'
+        summary: geminiResult?.publicInfoScan?.summary || `基於公司名稱和產業關鍵字進行快速聲譽評估，結果為${aiSentiment === 'positive' ? '正面' : aiSentiment === 'negative' ? '負面' : '中性'}評價。`,
+        sentiment: aiSentiment,
+        method: geminiResult?.success ? 'gemini_ai_analysis' : 'keyword_analysis',
+        geminiAnalysis: geminiResult?.publicInfoScan || null
       },
       industryConflictCheck: {
-        analysis: `檢測到同產業現有會員${existingMembersResult.rows.length}位，衝突等級評估為${conflictLevel === 'high' ? '高度' : conflictLevel === 'medium' ? '中度' : '低度'}衝突。`,
+        analysis: geminiResult?.industryConflictCheck?.analysis || `檢測到同產業現有會員${existingMembersResult.rows.length}位，衝突等級評估為${aiConflictLevel === 'high' ? '高度' : aiConflictLevel === 'medium' ? '中度' : '低度'}衝突。`,
         existingMembers: existingMembers || '無同產業現有會員',
-        conflictLevel: conflictLevel,
-        memberCount: existingMembersResult.rows.length
+        conflictLevel: aiConflictLevel,
+        memberCount: existingMembersResult.rows.length,
+        geminiAnalysis: geminiResult?.industryConflictCheck || null
       },
       legalRiskAssessment: {
         judgmentCount: judicialResult.total,
@@ -356,20 +394,23 @@ async function performFastAnalysis(prospect) {
       },
       bciCompatibilityScore: {
         score: score,
-        analysis: `綜合評估公司聲譽、產業衝突、法律風險、資本額及營業年數等因素，BCI契合度評分為${score}分。`,
+        analysis: geminiResult?.bciCompatibilityScore?.analysis || `綜合評估公司聲譽、產業衝突、法律風險、資本額及營業年數等因素，BCI契合度評分為${score}分。`,
         factors: {
-          reputation: sentiment,
-          industryConflict: conflictLevel,
+          reputation: aiSentiment,
+          industryConflict: aiConflictLevel,
           legalRisk: legalRiskAnalysis.riskLevel,
           capitalAmount: prospect.capital_amount || 0,
           businessYears: prospect.business_years || 0
-        }
+        },
+        geminiAnalysis: geminiResult?.bciCompatibilityScore || null
       },
       overallRecommendation: recommendationText,
       analysisMetadata: {
-        version: '2.0_fast',
-        aiModel: 'rule_based_engine',
-        confidence: score >= 70 ? 'high' : score >= 50 ? 'medium' : 'low'
+        version: '3.0_gemini_enhanced',
+        aiModel: geminiResult?.success ? 'gemini_pro_with_fallback' : 'rule_based_engine',
+        confidence: score >= 70 ? 'high' : score >= 50 ? 'medium' : 'low',
+        geminiSuccess: geminiResult?.success || false,
+        geminiError: geminiResult?.error || null
       }
     };
     
