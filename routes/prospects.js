@@ -47,6 +47,8 @@ router.get('/', requireAdminOrLevel1, async (req, res) => {
         company: prospect.company,
         contactInfo: prospect.contact_info,
         notes: prospect.notes,
+        unifiedBusinessNumber: prospect.unified_business_number,
+        aiAnalysisReport: prospect.ai_analysis_report,
         status: prospect.status,
         createdBy: prospect.created_by_name,
         createdAt: prospect.created_at,
@@ -112,18 +114,23 @@ router.get('/pending-votes', requireLevel1, async (req, res) => {
 // @access  Private (All authenticated users can submit applications)
 router.post('/', async (req, res) => {
   try {
-    const { name, industry, company, contactInfo, notes, status = 'pending_vote' } = req.body;
+    const { name, industry, company, contactInfo, notes, unifiedBusinessNumber, status = 'pending_vote' } = req.body;
 
     // 驗證必填欄位
     if (!name || !industry || !company) {
       return res.status(400).json({ message: '姓名、專業別和公司名稱為必填欄位' });
     }
 
+    // 驗證統編格式（如果提供）
+    if (unifiedBusinessNumber && !/^\d{8}$/.test(unifiedBusinessNumber)) {
+      return res.status(400).json({ message: '統一編號格式錯誤，請輸入8位數字' });
+    }
+
     const result = await pool.query(
-      `INSERT INTO prospects (name, industry, company, contact_info, notes, created_by_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO prospects (name, industry, company, contact_info, notes, unified_business_number, created_by_id, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [name, industry, company, contactInfo, notes, req.user.id, status]
+      [name, industry, company, contactInfo, notes, unifiedBusinessNumber, req.user.id, status]
     );
 
     res.status(201).json({
@@ -135,6 +142,7 @@ router.post('/', async (req, res) => {
         company: result.rows[0].company,
         contactInfo: result.rows[0].contact_info,
         notes: result.rows[0].notes,
+        unifiedBusinessNumber: result.rows[0].unified_business_number,
         status: result.rows[0].status,
         createdAt: result.rows[0].created_at
       }
@@ -151,18 +159,23 @@ router.post('/', async (req, res) => {
 router.put('/:id', requireAdminOrLevel1, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, industry, company, contactInfo, notes } = req.body;
+    const { name, industry, company, contactInfo, notes, unifiedBusinessNumber } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: '姓名為必填欄位' });
     }
 
+    // 驗證統編格式（如果提供）
+    if (unifiedBusinessNumber && !/^\d{8}$/.test(unifiedBusinessNumber)) {
+      return res.status(400).json({ message: '統一編號格式錯誤，請輸入8位數字' });
+    }
+
     const result = await pool.query(
       `UPDATE prospects 
-       SET name = $1, industry = $2, company = $3, contact_info = $4, notes = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6
+       SET name = $1, industry = $2, company = $3, contact_info = $4, notes = $5, unified_business_number = $6, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7
        RETURNING *`,
-      [name, industry, company, contactInfo, notes, id]
+      [name, industry, company, contactInfo, notes, unifiedBusinessNumber, id]
     );
 
     if (result.rows.length === 0) {
@@ -178,6 +191,7 @@ router.put('/:id', requireAdminOrLevel1, async (req, res) => {
         company: result.rows[0].company,
         contactInfo: result.rows[0].contact_info,
         notes: result.rows[0].notes,
+        unifiedBusinessNumber: result.rows[0].unified_business_number,
         status: result.rows[0].status,
         updatedAt: result.rows[0].updated_at
       }

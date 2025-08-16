@@ -168,11 +168,24 @@ const initializeDatabase = async () => {
         company VARCHAR(200),
         contact_info TEXT,
         notes TEXT,
+        unified_business_number VARCHAR(8),
+        ai_analysis_report JSONB,
         status VARCHAR(20) DEFAULT 'vetting' CHECK (status IN ('vetting', 'pending_vote', 'approved', 'rejected')),
         created_by_id INTEGER NOT NULL REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add new columns if they don't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE prospects 
+      ADD COLUMN IF NOT EXISTS unified_business_number VARCHAR(8)
+    `);
+    
+    await pool.query(`
+      ALTER TABLE prospects 
+      ADD COLUMN IF NOT EXISTS ai_analysis_report JSONB
     `);
 
     // Create prospect_votes table (投票紀錄表)

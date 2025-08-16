@@ -7,8 +7,8 @@ const getBaseURL = () => {
     return window.location.origin;
   }
   
-  // 開發環境使用本地後端服務器
-  return process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  // 開發環境不設置 baseURL，讓請求通過 setupProxy.js 代理
+  return '';
 };
 
 // 設置axios默認配置
@@ -21,6 +21,18 @@ console.log('API Base URL:', axios.defaults.baseURL);
 // 請求攔截器
 axios.interceptors.request.use(
   (config) => {
+    // Try to get token from cookies
+    const getCookieValue = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const token = getCookieValue('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -34,6 +46,16 @@ axios.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Token expired or invalid - clear authentication data
+      document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      localStorage.removeItem('user');
+      sessionStorage.clear();
+      // Only redirect if not already on login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
     console.error('API Error:', error);
     return Promise.reject(error);
   }

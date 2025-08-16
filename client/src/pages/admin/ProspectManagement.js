@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from '../../config/axios';
 
 const ProspectManagement = () => {
-  const { token, user } = useAuth();
+  const navigate = useNavigate();
+  const { user, token } = useAuth();
   const [prospects, setProspects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,8 +17,12 @@ const ProspectManagement = () => {
     industry: '',
     company: '',
     contactInfo: '',
-    notes: ''
+    notes: '',
+    unifiedBusinessNumber: ''
   });
+  const [companySearchResults, setCompanySearchResults] = useState([]);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const [isSearchingCompany, setIsSearchingCompany] = useState(false);
 
   useEffect(() => {
     fetchProspects();
@@ -46,6 +52,67 @@ const ProspectManagement = () => {
       ...prev,
       [name]: value
     }));
+    
+    // 統編輸入時自動查詢公司資料
+    if (name === 'unifiedBusinessNumber' && value.length === 8 && /^\d{8}$/.test(value)) {
+      searchCompanyByNumber(value);
+    }
+    
+    // 公司名稱輸入時搜尋
+    if (name === 'company' && value.length >= 2) {
+      searchCompanyByName(value);
+    } else if (name === 'company') {
+      setShowCompanyDropdown(false);
+    }
+  };
+  
+  const searchCompanyByNumber = async (number) => {
+    try {
+      setIsSearchingCompany(true);
+      const response = await axios.get(`/api/company-lookup/by-number/${number}`);
+      
+      if (response.data.success) {
+        const companyData = response.data.data;
+        setFormData(prev => ({
+          ...prev,
+          company: companyData.companyName,
+          unifiedBusinessNumber: companyData.unifiedBusinessNumber
+        }));
+        alert('已自動填入公司資料');
+      }
+    } catch (error) {
+      console.error('Company search error:', error);
+    } finally {
+      setIsSearchingCompany(false);
+    }
+  };
+  
+  const searchCompanyByName = async (name) => {
+    try {
+      setIsSearchingCompany(true);
+      const response = await axios.get(`/api/company-lookup/by-name/${encodeURIComponent(name)}`);
+      
+      if (response.data.success && response.data.data.length > 0) {
+        setCompanySearchResults(response.data.data);
+        setShowCompanyDropdown(true);
+      } else {
+        setShowCompanyDropdown(false);
+      }
+    } catch (error) {
+      console.error('Company search error:', error);
+      setShowCompanyDropdown(false);
+    } finally {
+      setIsSearchingCompany(false);
+    }
+  };
+  
+  const selectCompany = (company) => {
+    setFormData(prev => ({
+      ...prev,
+      company: company.companyName,
+      unifiedBusinessNumber: company.unifiedBusinessNumber
+    }));
+    setShowCompanyDropdown(false);
   };
 
   const handleCreateProspect = async (e) => {
@@ -56,7 +123,7 @@ const ProspectManagement = () => {
       const data = response.data;
       if (data.success) {
         setShowCreateModal(false);
-        setFormData({ name: '', industry: '', company: '', contactInfo: '', notes: '' });
+        setFormData({ name: '', industry: '', company: '', contactInfo: '', notes: '', unifiedBusinessNumber: '' });
         fetchProspects();
         alert('商訪準會員資料創建成功');
       } else {
@@ -71,20 +138,13 @@ const ProspectManagement = () => {
   const handleEditProspect = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/api/prospects/${selectedProspect.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
+      const response = await axios.put(`/api/prospects/${selectedProspect.id}`, formData);
 
-      const data = await response.json();
-      if (response.ok) {
+      const data = response.data;
+      if (data.success) {
         setShowEditModal(false);
         setSelectedProspect(null);
-        setFormData({ name: '', industry: '', company: '', contactInfo: '', notes: '' });
+        setFormData({ name: '', industry: '', company: '', contactInfo: '', notes: '', unifiedBusinessNumber: '' });
         fetchProspects();
         alert('商訪準會員資料更新成功');
       } else {
@@ -98,17 +158,10 @@ const ProspectManagement = () => {
 
   const handleStatusChange = async (prospectId, newStatus) => {
     try {
-      const response = await fetch(`/api/prospects/${prospectId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
+      const response = await axios.put(`/api/prospects/${prospectId}/status`, { status: newStatus });
 
-      const data = await response.json();
-      if (response.ok) {
+      const data = response.data;
+      if (data.success) {
         fetchProspects();
         alert(data.message);
       } else {
@@ -126,15 +179,10 @@ const ProspectManagement = () => {
     }
 
     try {
-      const response = await fetch(`/api/prospects/${prospectId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await axios.delete(`/api/prospects/${prospectId}`);
 
-      const data = await response.json();
-      if (response.ok) {
+      const data = response.data;
+      if (data.success) {
         fetchProspects();
         alert('商訪準會員資料刪除成功');
       } else {
@@ -153,7 +201,8 @@ const ProspectManagement = () => {
       industry: prospect.industry || '',
       company: prospect.company || '',
       contactInfo: prospect.contactInfo || '',
-      notes: prospect.notes || ''
+      notes: prospect.notes || '',
+      unifiedBusinessNumber: prospect.unifiedBusinessNumber || ''
     });
     setShowEditModal(true);
   };
@@ -250,6 +299,12 @@ const ProspectManagement = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <button
+                      onClick={() => navigate(`/prospects/${prospect.id}`)}
+                      className="text-green-600 hover:text-green-900"
+                    >
+                      詳情
+                    </button>
+                    <button
                       onClick={() => openEditModal(prospect)}
                       className="text-indigo-600 hover:text-indigo-900"
                     >
@@ -304,15 +359,48 @@ const ProspectManagement = () => {
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
-                    公司
+                    統一編號
+                  </label>
+                  <input
+                    type="text"
+                    name="unifiedBusinessNumber"
+                    value={formData.unifiedBusinessNumber}
+                    onChange={handleInputChange}
+                    placeholder="輸入8位數統編自動查詢公司資料"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    maxLength="8"
+                  />
+                  {isSearchingCompany && (
+                    <div className="text-sm text-blue-600 mt-1">正在查詢公司資料...</div>
+                  )}
+                </div>
+                <div className="mb-4 relative">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    公司名稱
                   </label>
                   <input
                     type="text"
                     name="company"
                     value={formData.company}
                     onChange={handleInputChange}
+                    placeholder="輸入公司名稱搜尋"
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   />
+                  {showCompanyDropdown && companySearchResults.length > 0 && (
+                    <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {companySearchResults.map((company, index) => (
+                        <div
+                          key={index}
+                          onClick={() => selectCompany(company)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200"
+                        >
+                          <div className="font-medium">{company.companyName}</div>
+                          <div className="text-sm text-gray-500">統編: {company.unifiedBusinessNumber}</div>
+                          <div className="text-xs text-gray-400">{company.address}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -355,7 +443,8 @@ const ProspectManagement = () => {
                     type="button"
                     onClick={() => {
                       setShowCreateModal(false);
-                      setFormData({ name: '', industry: '', company: '', contactInfo: '', notes: '' });
+                      setFormData({ name: '', industry: '', company: '', contactInfo: '', notes: '', unifiedBusinessNumber: '' });
+                      setShowCompanyDropdown(false);
                     }}
                     className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                   >
@@ -396,15 +485,48 @@ const ProspectManagement = () => {
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
-                    公司
+                    統一編號
+                  </label>
+                  <input
+                    type="text"
+                    name="unifiedBusinessNumber"
+                    value={formData.unifiedBusinessNumber}
+                    onChange={handleInputChange}
+                    placeholder="輸入8位數統編自動查詢公司資料"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    maxLength="8"
+                  />
+                  {isSearchingCompany && (
+                    <div className="text-sm text-blue-600 mt-1">正在查詢公司資料...</div>
+                  )}
+                </div>
+                <div className="mb-4 relative">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    公司名稱
                   </label>
                   <input
                     type="text"
                     name="company"
                     value={formData.company}
                     onChange={handleInputChange}
+                    placeholder="輸入公司名稱搜尋"
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   />
+                  {showCompanyDropdown && companySearchResults.length > 0 && (
+                    <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {companySearchResults.map((company, index) => (
+                        <div
+                          key={index}
+                          onClick={() => selectCompany(company)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200"
+                        >
+                          <div className="font-medium">{company.companyName}</div>
+                          <div className="text-sm text-gray-500">統編: {company.unifiedBusinessNumber}</div>
+                          <div className="text-xs text-gray-400">{company.address}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -448,7 +570,7 @@ const ProspectManagement = () => {
                     onClick={() => {
                       setShowEditModal(false);
                       setSelectedProspect(null);
-                      setFormData({ name: '', industry: '', company: '', contactInfo: '', notes: '' });
+                      setFormData({ name: '', industry: '', company: '', contactInfo: '', notes: '', unifiedBusinessNumber: '' });
                     }}
                     className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                   >

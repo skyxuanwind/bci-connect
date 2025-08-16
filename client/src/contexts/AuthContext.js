@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../config/axios';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
@@ -23,50 +23,6 @@ const getCookieValue = (name) => {
   if (parts.length === 2) return parts.pop().split(';').shift();
   return null;
 };
-
-axios.interceptors.request.use(
-  (config) => {
-    // Try both methods to get token
-    let token = Cookies.get('token');
-    if (!token) {
-      token = getCookieValue('token');
-    }
-    
-    console.log('Axios interceptor - Token from js-cookie:', Cookies.get('token'));
-    console.log('Axios interceptor - Token from document.cookie:', getCookieValue('token'));
-    console.log('Axios interceptor - All cookies:', document.cookie);
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('Axios interceptor - Authorization header set:', config.headers.Authorization);
-    } else {
-      console.log('Axios interceptor - No token found in cookies');
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor to handle token expiration
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // Token expired or invalid - force clear all authentication data
-      Cookies.remove('token');
-      localStorage.removeItem('user');
-      sessionStorage.clear();
-      // Only redirect if not already on login page
-      if (window.location.pathname !== '/login') {
-        toast.error('登入已過期，請重新登入');
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

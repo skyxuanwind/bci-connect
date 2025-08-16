@@ -29,6 +29,7 @@ import EventManagement from './pages/admin/EventManagement';
 import ProspectManagement from './pages/admin/ProspectManagement';
 import ProspectVoting from './pages/ProspectVoting';
 import ProspectApplication from './pages/ProspectApplication';
+import ProspectDetail from './pages/ProspectDetail';
 import BlacklistManagement from './pages/BlacklistManagement';
 import FinancialStatement from './pages/FinancialStatement';
 import ComplaintBox from './pages/ComplaintBox';
@@ -36,6 +37,7 @@ import FoundationInfo from './pages/FoundationInfo';
 import ContentManagement from './pages/admin/ContentManagement';
 import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
+import JudicialTest from './pages/JudicialTest';
 
 
 function App() {
@@ -174,6 +176,14 @@ function App() {
             </Level1Route>
           } />
           
+          <Route path="/prospects/:id" element={
+            <Level1Route>
+              <Layout>
+                <ProspectDetail />
+              </Layout>
+            </Level1Route>
+          } />
+          
           <Route path="/admin/content" element={
             <AdminRoute>
               <Layout>
@@ -234,6 +244,14 @@ function App() {
             <Level1Route>
               <Layout>
                 <AttendanceManagement />
+              </Layout>
+            </Level1Route>
+          } />
+          
+          <Route path="/judicial-test" element={
+            <Level1Route>
+              <Layout>
+                <JudicialTest />
               </Layout>
             </Level1Route>
           } />
