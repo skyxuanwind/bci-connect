@@ -293,8 +293,8 @@ const ProspectApplication = () => {
       // 先保存臨時商訪資料以獲得 ID
       const saveResponse = await axios.post('/api/prospects', prospectData);
       
-      if (saveResponse.data && saveResponse.data.id) {
-        const prospectId = saveResponse.data.id;
+      if (saveResponse.data && saveResponse.data.prospect && saveResponse.data.prospect.id) {
+        const prospectId = saveResponse.data.prospect.id;
         
         // 觸發 AI 分析
         const analysisResponse = await axios.post(`/api/ai-analysis/analyze-prospect/${prospectId}`);
