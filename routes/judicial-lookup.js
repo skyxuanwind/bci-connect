@@ -3,8 +3,21 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const judicialService = require('../services/judicialService');
 
+// Middleware to check if user is admin or level 1 core member
+const requireAdminOrLevel1 = (req, res, next) => {
+  const isLevel1 = req.user.membership_level === 1;
+  
+  if (!isLevel1) {
+    return res.status(403).json({ message: '權限不足：僅限管理員或一級核心成員' });
+  }
+  next();
+};
+
+// Apply authentication to all routes
+router.use(authenticateToken);
+
 // 測試司法院 API 連線
-router.get('/test-connection', authenticateToken, async (req, res) => {
+router.get('/test-connection', requireAdminOrLevel1, async (req, res) => {
   try {
     const categories = await judicialService.getCategories();
     res.json({
@@ -23,7 +36,7 @@ router.get('/test-connection', authenticateToken, async (req, res) => {
 });
 
 // 搜尋公司判決書
-router.post('/search-judgments', authenticateToken, async (req, res) => {
+router.post('/search-judgments', requireAdminOrLevel1, async (req, res) => {
   try {
     const { companyName, options = {} } = req.body;
 
@@ -60,7 +73,7 @@ router.post('/search-judgments', authenticateToken, async (req, res) => {
 });
 
 // 取得司法院資料分類
-router.get('/categories', authenticateToken, async (req, res) => {
+router.get('/categories', requireAdminOrLevel1, async (req, res) => {
   try {
     const categories = await judicialService.getCategories();
     res.json({
@@ -78,7 +91,7 @@ router.get('/categories', authenticateToken, async (req, res) => {
 });
 
 // 取得特定分類的資料源
-router.get('/categories/:categoryNo/resources', authenticateToken, async (req, res) => {
+router.get('/categories/:categoryNo/resources', requireAdminOrLevel1, async (req, res) => {
   try {
     const { categoryNo } = req.params;
     const resources = await judicialService.getResourcesByCategory(categoryNo);
@@ -98,7 +111,7 @@ router.get('/categories/:categoryNo/resources', authenticateToken, async (req, r
 });
 
 // 批量搜尋多家公司的判決書
-router.post('/batch-search', authenticateToken, async (req, res) => {
+router.post('/batch-search', requireAdminOrLevel1, async (req, res) => {
   try {
     const { companyNames, options = {} } = req.body;
 
