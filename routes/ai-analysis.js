@@ -19,6 +19,64 @@ const requireAdminOrLevel1 = (req, res, next) => {
 // Apply authentication to all routes
 router.use(authenticateToken);
 
+// @route   POST /api/ai-analysis/analyze
+// @desc    General analysis endpoint for legal risk assessment
+// @access  Private (Admin and Level 1 only)
+router.post('/analyze', requireAdminOrLevel1, async (req, res) => {
+  try {
+    const { companyName, businessType, analysisType } = req.body;
+    
+    if (!companyName) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '公司名稱為必填項目' 
+      });
+    }
+    
+    let analysisResult = {};
+    
+    if (analysisType === 'legal_risk' || !analysisType) {
+      // 執行法律風險評估
+      try {
+        const judgmentResult = await judicialService.searchJudgments(companyName, { top: 10 });
+        const riskAnalysis = judicialService.analyzeJudgmentRisk(judgmentResult.judgments || []);
+        
+        analysisResult.legalRisk = {
+          judgments: judgmentResult.judgments || [],
+          riskLevel: riskAnalysis.riskLevel,
+          riskScore: riskAnalysis.riskScore,
+          summary: riskAnalysis.summary,
+          details: riskAnalysis.details,
+          note: judgmentResult.note
+        };
+      } catch (error) {
+        console.error('法律風險評估錯誤:', error);
+        analysisResult.legalRisk = {
+          error: '法律風險評估失敗',
+          message: error.message
+        };
+      }
+    }
+    
+    res.json({
+      success: true,
+      companyName,
+      businessType,
+      analysisType: analysisType || 'legal_risk',
+      result: analysisResult,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('分析過程發生錯誤:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '分析過程發生錯誤',
+      error: error.message 
+    });
+  }
+});
+
 // 快速分析系統 - 不需要外部AI服務
 // 所有分析邏輯基於規則和本地計算
 
