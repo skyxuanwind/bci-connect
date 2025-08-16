@@ -83,7 +83,7 @@ router.get('/status/:id', requireAdminOrLevel1, async (req, res) => {
     const { id } = req.params;
     
     const result = await pool.query(
-      'SELECT ai_analysis_report FROM prospects WHERE id = $1',
+      'SELECT ai_analysis_report, analysis_progress FROM prospects WHERE id = $1',
       [id]
     );
     
@@ -95,10 +95,23 @@ router.get('/status/:id', requireAdminOrLevel1, async (req, res) => {
     }
     
     const report = result.rows[0].ai_analysis_report;
+    const progress = result.rows[0].analysis_progress;
+    
+    // 如果有進度信息，表示分析正在進行中
+    if (progress) {
+      const progressData = JSON.parse(progress);
+      return res.json({
+        success: true,
+        hasReport: false,
+        isAnalyzing: true,
+        progress: progressData
+      });
+    }
     
     res.json({
       success: true,
       hasReport: !!report,
+      isAnalyzing: false,
       report: report
     });
     
@@ -142,11 +155,44 @@ async function performFastAnalysis(prospect) {
   try {
     console.log(`Starting fast analysis for prospect: ${prospect.company}`);
     
+    // 初始化分析狀態
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'starting',
+      progress: 10,
+      currentStep: '正在啟動分析引擎...',
+      details: '系統正在初始化分析模組，準備開始全面評估。'
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 模擬處理時間
+    
     // 1. 快速聲譽分析 (基於關鍵字和數據)
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'reputation_analysis',
+      progress: 25,
+      currentStep: '正在分析市場聲譽...',
+      details: `正在分析「${prospect.company}」的市場聲譽和公司形象，檢查公司名稱和產業關鍵字...`
+    });
+    
     const sentiment = analyzeCompanyReputation(prospect);
     const reputationText = `市場聲譽分析：${sentiment === 'positive' ? '正面' : sentiment === 'negative' ? '負面' : '中性'}`;
     
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'reputation_analysis',
+      progress: 35,
+      currentStep: '市場聲譽分析完成',
+      details: `聲譽評估結果：${sentiment === 'positive' ? '該公司展現正面的市場形象，具備良好的品牌聲譽。' : sentiment === 'negative' ? '該公司存在負面市場評價，需要謹慎評估。' : '該公司市場聲譽中性，無明顯正負面評價。'}`
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     // 2. 快速產業衝突檢查
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'conflict_analysis',
+      progress: 45,
+      currentStep: '正在檢查產業衝突...',
+      details: `正在檢查「${prospect.company}」與現有會員的產業重疊情況，分析潛在競爭關係...`
+    });
+    
     const existingMembersResult = await pool.query(
       'SELECT name, company FROM users WHERE industry = $1 AND membership_level IN (1, 2, 3)',
       [prospect.industry]
@@ -155,8 +201,24 @@ async function performFastAnalysis(prospect) {
     const existingMembers = existingMembersResult.rows.map(member => member.company || member.name).join(', ');
     const conflictLevel = analyzeIndustryConflict(prospect, existingMembersResult.rows);
     const conflictText = `產業衝突檢查：${conflictLevel === 'high' ? '高度衝突' : conflictLevel === 'medium' ? '中度衝突' : '低度衝突'}`;
+    
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'conflict_analysis',
+      progress: 55,
+      currentStep: '產業衝突檢查完成',
+      details: `衝突評估結果：${conflictLevel === 'high' ? '發現與現有會員存在高度產業重疊，可能產生競爭衝突。' : conflictLevel === 'medium' ? '與現有會員存在部分產業重疊，需要進一步評估。' : '與現有會員產業重疊度低，衝突風險較小。'}`
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
      
     // 3. 快速法律風險評估
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'legal_analysis',
+      progress: 65,
+      currentStep: '正在評估法律風險...',
+      details: `正在查詢「${prospect.company}」的司法記錄和法律風險，檢查相關訴訟案件...`
+    });
+    
     console.log(`Checking judicial records for: ${prospect.company}`);
     let judicialResult = { total: 0, data: [] };
     let legalRiskAnalysis = { riskLevel: 'low', riskScore: 0, summary: '無重大法律風險', details: [] };
@@ -172,12 +234,44 @@ async function performFastAnalysis(prospect) {
     }
     
     const legalRiskText = `法律風險評估：${legalRiskAnalysis.riskLevel === 'high' ? '高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '中風險' : '低風險'}`;
+    
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'legal_analysis',
+      progress: 75,
+      currentStep: '法律風險評估完成',
+      details: `法律風險結果：${legalRiskAnalysis.riskLevel === 'high' ? '發現多筆司法記錄，存在較高法律風險。' : legalRiskAnalysis.riskLevel === 'medium' ? '發現部分司法記錄，需要進一步關注。' : '未發現重大司法記錄，法律風險較低。'}`
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
      
     // 4. 快速BCI契合度評分
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'scoring',
+      progress: 85,
+      currentStep: '正在計算BCI契合度評分...',
+      details: '綜合分析市場聲譽、產業衝突和法律風險，計算整體契合度評分...'
+    });
+    
     const score = calculateBCICompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis);
     const fitScoreText = `BCI契合度評分：${score}分 (滿分100分)`;
     
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'scoring',
+      progress: 90,
+      currentStep: 'BCI契合度評分完成',
+      details: `評分結果：${score}/100 分。${score >= 80 ? '高度契合BCI標準，建議優先考慮。' : score >= 60 ? '中等契合度，可進一步評估。' : '契合度較低，需謹慎考慮。'}`
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // 5. 快速整體建議
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'finalizing',
+      progress: 95,
+      currentStep: '正在生成分析報告...',
+      details: '整合所有分析結果，生成最終建議和詳細報告...'
+    });
+    
     const recommendationText = generateFastRecommendation(score, sentiment, conflictLevel, legalRiskAnalysis.riskLevel);
     
     // 編譯快速分析報告
@@ -224,16 +318,32 @@ async function performFastAnalysis(prospect) {
       }
     };
     
+    // 最終完成
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'completed',
+      progress: 100,
+      currentStep: '分析完成',
+      details: '所有分析項目已完成，報告已生成並保存。'
+    });
+    
     // Save analysis report to database
     await pool.query(
-      'UPDATE prospects SET ai_analysis_report = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-      [JSON.stringify(analysisReport), prospect.id]
+      'UPDATE prospects SET ai_analysis_report = $1, analysis_progress = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+      [JSON.stringify(analysisReport), null, prospect.id]
     );
     
     console.log(`Fast analysis completed for prospect: ${prospect.company}`);
     
   } catch (error) {
     console.error('Fast analysis error:', error);
+    
+    // 更新錯誤狀態
+    await updateAnalysisProgress(prospect.id, {
+      stage: 'error',
+      progress: 0,
+      currentStep: '分析發生錯誤',
+      details: `分析過程中發生錯誤：${error.message}`
+    });
     
     // Save error report
     const errorReport = {
@@ -250,9 +360,21 @@ async function performFastAnalysis(prospect) {
     };
     
     await pool.query(
-      'UPDATE prospects SET ai_analysis_report = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-      [JSON.stringify(errorReport), prospect.id]
+      'UPDATE prospects SET ai_analysis_report = $1, analysis_progress = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+      [JSON.stringify(errorReport), null, prospect.id]
     );
+  }
+}
+
+// 更新分析進度的輔助函數
+async function updateAnalysisProgress(prospectId, progressData) {
+  try {
+    await pool.query(
+      'UPDATE prospects SET analysis_progress = $1 WHERE id = $2',
+      [JSON.stringify(progressData), prospectId]
+    );
+  } catch (error) {
+    console.error('Error updating analysis progress:', error);
   }
 }
 

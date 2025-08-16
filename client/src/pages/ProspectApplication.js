@@ -70,6 +70,7 @@ const ProspectApplication = () => {
   const [showAiAnalysis, setShowAiAnalysis] = useState(false);
   const [aiAnalysisProgress, setAiAnalysisProgress] = useState(0);
   const [aiAnalysisStage, setAiAnalysisStage] = useState('');
+  const [aiAnalysisDetails, setAiAnalysisDetails] = useState(''); // 新增詳細描述狀態
 
   // 獲取分會和一級核心人員數據
   useEffect(() => {
@@ -315,30 +316,24 @@ const ProspectApplication = () => {
               pollCount++;
               const statusResponse = await axios.get(`/api/ai-analysis/status/${prospectId}`);
               
-              // 更快的進度更新
-              const baseProgress = Math.min(15 + (pollCount * 1.2), 90);
-              setAiAnalysisProgress(baseProgress);
-              
-              // 簡化階段描述
-              if (pollCount <= 5) {
-                setAiAnalysisStage('正在啟動分析引擎...');
-              } else if (pollCount <= 15) {
-                setAiAnalysisStage('正在分析市場聲譽...');
-              } else if (pollCount <= 25) {
-                setAiAnalysisStage('正在檢查法律風險...');
-              } else if (pollCount <= 40) {
-                setAiAnalysisStage('正在計算契合度分數...');
-              } else {
-                setAiAnalysisStage('正在生成最終報告...');
-              }
-              
-              if (statusResponse.data.status === 'completed') {
+              // 檢查是否正在分析中
+              if (statusResponse.data.isAnalyzing && statusResponse.data.progress) {
+                const progressData = statusResponse.data.progress;
+                setAiAnalysisProgress(progressData.progress);
+                setAiAnalysisStage(progressData.currentStep);
+                setAiAnalysisDetails(progressData.details); // 新增詳細描述狀態
+                
+                // 繼續輪詢
+                setTimeout(checkAnalysisStatus, 1500);
+              } else if (statusResponse.data.hasReport) {
+                // 分析完成
                 setAiAnalysisProgress(100);
                 setAiAnalysisStage('分析完成！');
+                setAiAnalysisDetails('所有分析項目已完成，報告已生成。');
                 setAiAnalysisResult(statusResponse.data.report);
                 setShowAiAnalysis(true);
                 setAiAnalysisLoading(false);
-                toast.success('AI 分析完成！');
+                toast.success('快速分析完成！');
                 
                 // 刪除臨時資料
                 try {
@@ -346,12 +341,15 @@ const ProspectApplication = () => {
                 } catch (deleteError) {
                   console.warn('刪除臨時資料失敗:', deleteError);
                 }
-              } else if (statusResponse.data.status === 'failed') {
-                setAiAnalysisError(statusResponse.data.error || 'AI 分析失敗');
+              } else if (statusResponse.data.progress && statusResponse.data.progress.stage === 'error') {
+                // 分析錯誤
+                const errorData = statusResponse.data.progress;
+                setAiAnalysisError(errorData.details || '分析過程中發生錯誤');
                 setAiAnalysisProgress(0);
                 setAiAnalysisStage('');
+                setAiAnalysisDetails('');
                 setAiAnalysisLoading(false);
-                toast.error('AI 分析失敗');
+                toast.error('快速分析失敗');
                 
                 // 刪除臨時資料
                 try {
@@ -361,11 +359,12 @@ const ProspectApplication = () => {
                 }
               } else if (pollCount >= maxPolls) {
                 // 超時處理
-                setAiAnalysisError('AI 分析超時，請稍後再試');
+                setAiAnalysisError('分析超時，請稍後再試');
                 setAiAnalysisProgress(0);
                 setAiAnalysisStage('');
+                setAiAnalysisDetails('');
                 setAiAnalysisLoading(false);
-                toast.error('AI 分析超時');
+                toast.error('分析超時');
                 
                 // 刪除臨時資料
                 try {
@@ -374,14 +373,15 @@ const ProspectApplication = () => {
                   console.warn('刪除臨時資料失敗:', deleteError);
                 }
               } else {
-                // 繼續輪詢，保持固定間隔
-                setTimeout(checkAnalysisStatus, 2000);
+                // 繼續輪詢
+                setTimeout(checkAnalysisStatus, 1500);
               }
             } catch (error) {
               console.error('檢查分析狀態失敗:', error);
               setAiAnalysisError('檢查分析狀態失敗');
               setAiAnalysisProgress(0);
               setAiAnalysisStage('');
+              setAiAnalysisDetails('');
               setAiAnalysisLoading(false);
               toast.error('檢查分析狀態失敗');
             }
@@ -909,21 +909,30 @@ const ProspectApplication = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <div className="flex items-center mb-3">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
-                  <span className="text-blue-800 font-medium">AI 分析進行中</span>
+                  <span className="text-blue-800 font-medium">快速分析進行中</span>
                   <span className="ml-auto text-blue-600 text-sm">{aiAnalysisProgress}%</span>
                 </div>
                 
                 {/* 進度條 */}
-                <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
+                <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
                   <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${aiAnalysisProgress}%` }}
                   ></div>
                 </div>
                 
                 {/* 當前階段 */}
                 {aiAnalysisStage && (
-                  <p className="text-blue-700 text-sm">{aiAnalysisStage}</p>
+                  <div className="mb-2">
+                    <p className="text-blue-800 font-medium text-sm">{aiAnalysisStage}</p>
+                  </div>
+                )}
+                
+                {/* 詳細描述 */}
+                {aiAnalysisDetails && (
+                  <div className="bg-white bg-opacity-60 rounded-md p-3 border border-blue-100">
+                    <p className="text-blue-700 text-sm leading-relaxed">{aiAnalysisDetails}</p>
+                  </div>
                 )}
               </div>
             )}
