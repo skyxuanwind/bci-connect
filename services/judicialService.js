@@ -175,16 +175,7 @@ class JudicialService {
       console.log('正在查詢司法院判決書資料...');
       
       const response = await axios.post(`${JUDICIAL_API_BASE}/JList`, {
-        token: token,
-        p: params.page || 1,
-        n: params.limit || 10,
-        q: params.keyword || '',
-        jt: params.judgmentType || '',
-        jyear: params.year || '',
-        jcase: params.caseType || '',
-        jno: params.caseNumber || '',
-        jdate: params.date || '',
-        kw: params.keyword || ''
+        token: token
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -293,7 +284,7 @@ class JudicialService {
 
       console.log(`正在取得判決書內容: ${jid}`);
       
-      const response = await axios.post(`${JUDICIAL_API_BASE}/JDoc`, {
+      const response = await axios.post(`${JUDICIAL_API_BASE}/JContent`, {
         token: token,
         jid: jid
       }, {
