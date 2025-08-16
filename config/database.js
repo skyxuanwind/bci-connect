@@ -187,6 +187,11 @@ const initializeDatabase = async () => {
       ALTER TABLE prospects 
       ADD COLUMN IF NOT EXISTS ai_analysis_report JSONB
     `);
+    
+    await pool.query(`
+      ALTER TABLE prospects 
+      ADD COLUMN IF NOT EXISTS analysis_progress TEXT
+    `);
 
     // Create prospect_votes table (投票紀錄表)
     await pool.query(`
