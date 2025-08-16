@@ -92,10 +92,23 @@ class JudicialService {
       console.log(`開始搜尋公司 ${companyName} 的判決書資料...`);
       
       // 嘗試從司法院 API 取得最近的判決書清單
-      const recentJudgments = await this.getRecentJudgmentsList();
+      const recentJudgmentsResult = await this.getRecentJudgmentsList();
+      
+      if (!recentJudgmentsResult.success) {
+        console.log('司法院 API 不在服務時間內，提供風險評估分析');
+        const riskAnalysis = this.generateRiskAnalysis(companyName);
+        return {
+          success: true,
+          judgments: riskAnalysis,
+          data: riskAnalysis,
+          total: riskAnalysis.length,
+          companyName: companyName,
+          note: recentJudgmentsResult.message || 'API 服務不可用，此為基於公司特徵的風險評估分析'
+        };
+      }
       
       // 搜尋包含公司名稱的判決書
-      const matchingJudgments = await this.searchJudgmentsByCompanyName(companyName, recentJudgments, top);
+      const matchingJudgments = await this.searchJudgmentsByCompanyName(companyName, recentJudgmentsResult.data, top);
       
       if (matchingJudgments.length > 0) {
         console.log(`找到 ${matchingJudgments.length} 筆相關判決書`);
