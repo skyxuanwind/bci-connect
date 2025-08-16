@@ -1,4 +1,4 @@
-# 🚀 Render 部署指南
+# 🚀 Render 部署指南 (更新版)
 
 ## 為什麼選擇 Render？
 
@@ -8,6 +8,7 @@
 ✅ **內建 PostgreSQL** - 免費 PostgreSQL 資料庫  
 ✅ **零配置** - 自動檢測 Node.js 項目  
 ✅ **良好監控** - 內建日誌和監控  
+✅ **支援實時功能** - 支援 WebSocket 和實時更新  
 
 ---
 
@@ -73,6 +74,22 @@ BCRYPT_ROUNDS=12
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
 
+# AI 分析配置 (必需)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Cloudinary 配置 (圖片上傳)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# 政府開放資料 API
+GOV_COMPANY_API_URL=https://data.gcis.nat.gov.tw/od/data/api/5F64D864-61CB-4D0D-8AD9-492047CC1EA6
+GOV_API_KEY=your_gov_api_key_here
+
+# 司法院開放資料
+JUDICIAL_ACCOUNT=your_account
+JUDICIAL_PASSWORD=your_password
+
 # 郵件配置 (可選)
 # EMAIL_HOST=smtp.gmail.com
 # EMAIL_PORT=587
@@ -100,6 +117,12 @@ Plan: Free
 2. 複製 **External Database URL**
 3. 回到 Web Service 的環境變數設置
 4. 添加：`DATABASE_URL=postgresql://...` (貼上複製的 URL)
+
+#### 4.3 數據庫 Schema 初始化
+應用程式會自動創建所需的表格，包括：
+- 新增的 `analysis_progress` 欄位支援實時分析進度顯示
+- 所有必要的索引和約束條件
+- 初始化數據
 
 ### 5. 部署和驗證
 
