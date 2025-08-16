@@ -26,7 +26,7 @@ import MeetingScheduler from './pages/MeetingScheduler';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import EventManagement from './pages/admin/EventManagement';
-import ProspectManagement from './pages/admin/ProspectManagement';
+
 import ProspectVoting from './pages/ProspectVoting';
 import ProspectApplication from './pages/ProspectApplication';
 import ProspectDetail from './pages/ProspectDetail';
@@ -168,13 +168,7 @@ function App() {
             </AdminRoute>
           } />
           
-          <Route path="/admin/prospects" element={
-            <Level1Route>
-              <Layout>
-                <ProspectManagement />
-              </Layout>
-            </Level1Route>
-          } />
+
           
           <Route path="/prospects/:id" element={
             <Level1Route>

@@ -96,7 +96,6 @@ const Layout = ({ children }) => {
     { name: '待審核會員', href: '/admin/pending', icon: ClockIcon },
     { name: '分會管理', href: '/admin/chapters', icon: BuildingOfficeIcon },
     { name: '活動管理', href: '/admin/events', icon: CalendarIcon },
-    { name: '商訪管理', href: '/admin/prospects', icon: DocumentTextIcon },
     { name: '靜態內容管理', href: '/admin/content', icon: Cog6ToothIcon },
   ];
 
