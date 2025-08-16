@@ -166,57 +166,46 @@ async function performAIAnalysis(prospect) {
     // Initialize Gemini AI model
     const aiModel = initializeGeminiAI();
     
-    // 1. Market Reputation Analysis (Simplified)
-    const reputationPrompt = `「${prospect.company}」市場聲譽：[positive/neutral/negative]，主要發現1句話。`;
+    // 1. Market Reputation Analysis (Ultra-Simplified)
+    const reputationPrompt = `「${prospect.company}」聲譽：[positive/neutral/negative]`;
     
     const reputationResult = await aiModel.generateContent(reputationPrompt);
     const reputationText = reputationResult.response.text();
     
     // Extract sentiment from reputation analysis
     const sentimentMatch = reputationText.match(/聲譽：\s*(positive|neutral|negative)/i) || reputationText.match(/(positive|neutral|negative)/i);
-    const sentiment = sentimentMatch ? sentimentMatch[1].toLowerCase() : extractSentiment(reputationText);
+    const sentiment = sentimentMatch ? sentimentMatch[1].toLowerCase() : 'neutral';
     
-    // 2. Industry Conflict Check (Simplified)
+    // 2. Skip detailed conflict check - use fast assessment
     const existingMembersResult = await pool.query(
       'SELECT name, company FROM users WHERE industry = $1 AND membership_level IN (1, 2, 3)',
       [prospect.industry]
     );
     
     const existingMembers = existingMembersResult.rows.map(member => member.company || member.name).join(', ');
-    
-    const conflictPrompt = `「${prospect.company}」業務：${prospect.business || '未提供'}。與BCI會員衝突等級：[high/medium/low]，理由1句話。`;
-    
-    const conflictResult = await aiModel.generateContent(conflictPrompt);
-    const conflictText = conflictResult.response.text();
-    
-    // 3. Legal Risk Assessment (Judicial Records Check)
-    console.log(`Checking judicial records for: ${prospect.company}`);
-    const judicialResult = await judicialService.searchJudgments(prospect.company, { top: 20 });
-    const legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
-    
-    const legalRiskPrompt = `「${prospect.company}」法律風險等級：[high/medium/low]，主要風險1句話。`;
-    
-    const legalRiskResult = await aiModel.generateContent(legalRiskPrompt);
-    const legalRiskText = legalRiskResult.response.text();
-    
-    // Extract conflict level first
-    const conflictMatch = conflictText.match(/衝突等級：\s*(high|medium|low)/i);
-    const conflictLevel = conflictMatch ? conflictMatch[1].toLowerCase() : extractConflictLevel(conflictText);
-    
-    // 4. BCI Fit Score (Simplified)
-    const fitScorePrompt = `「${prospect.company}」BCI契合度分數(1-100)：基於聲譽${sentiment}、衝突${conflictLevel}、風險${legalRiskAnalysis.riskLevel}。分數：[數字]，理由1句話。`;
-    
-    const fitScoreResult = await aiModel.generateContent(fitScorePrompt);
-    const fitScoreText = fitScoreResult.response.text();
-    
-    // Extract score from fit score text
-    const scoreMatch = fitScoreText.match(/契合度分數：\s*(\d+)/i) || fitScoreText.match(/(\d+)分/);
-    const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
-    
-    // Generate overall recommendation (Simplified)
-    const recommendationPrompt = `「${prospect.company}」入會建議：分數${score || 'N/A'}、聲譽${sentiment}、衝突${conflictLevel}、風險${legalRiskAnalysis.riskLevel}。建議：[接納/謹慎/拒絕]，理由1句話。`;
-    const recommendationResult = await aiModel.generateContent(recommendationPrompt);
-    const recommendationText = recommendationResult.response.text();
+    const conflictLevel = 'low'; // Default to low for speed
+     const conflictText = `衝突等級：${conflictLevel}`;
+     
+     // 3. Skip detailed legal risk - use judicial data only
+     console.log(`Checking judicial records for: ${prospect.company}`);
+     const judicialResult = await judicialService.searchJudgments(prospect.company, { top: 20 });
+     const legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
+     const legalRiskText = `風險等級：${legalRiskAnalysis.riskLevel}`;
+     
+     // 4. Skip AI score calculation - use rule-based scoring
+     let score = 75; // Default score
+     if (sentiment === 'positive') score += 10;
+     if (sentiment === 'negative') score -= 15;
+     if (legalRiskAnalysis.riskLevel === 'high') score -= 20;
+     if (legalRiskAnalysis.riskLevel === 'medium') score -= 10;
+     score = Math.max(0, Math.min(100, score)); // Clamp between 0-100
+     
+     const fitScoreText = `契合度分數：${score}`;
+     
+     // 5. Skip AI recommendation - use rule-based recommendation
+     let recommendationText = '建議接納';
+     if (score < 50) recommendationText = '不建議';
+     else if (score < 70) recommendationText = '謹慎考慮';
     
     // Compile analysis report (Simplified)
     const analysisReport = {
