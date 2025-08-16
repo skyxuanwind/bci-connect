@@ -308,7 +308,7 @@ const ProspectApplication = () => {
           
           // 輪詢檢查分析狀態
           let pollCount = 0;
-          const maxPolls = 60; // 最多輪詢 2 分鐘
+          const maxPolls = 150; // 最多輪詢 5 分鐘（每2秒一次）
           
           const checkAnalysisStatus = async () => {
             try {
@@ -316,18 +316,20 @@ const ProspectApplication = () => {
               const statusResponse = await axios.get(`/api/ai-analysis/status/${prospectId}`);
               
               // 根據輪詢次數更新進度
-              const baseProgress = Math.min(10 + (pollCount * 3), 85);
+              const baseProgress = Math.min(10 + (pollCount * 0.5), 85);
               setAiAnalysisProgress(baseProgress);
               
               // 更新階段描述
-              if (pollCount <= 5) {
+              if (pollCount <= 10) {
                 setAiAnalysisStage('正在分析公司基本資料...');
-              } else if (pollCount <= 15) {
+              } else if (pollCount <= 30) {
                 setAiAnalysisStage('正在搜尋相關資訊...');
-              } else if (pollCount <= 25) {
+              } else if (pollCount <= 60) {
                 setAiAnalysisStage('正在進行風險評估...');
-              } else {
+              } else if (pollCount <= 100) {
                 setAiAnalysisStage('正在生成分析報告...');
+              } else {
+                setAiAnalysisStage('正在完成最終處理...');
               }
               
               if (statusResponse.data.status === 'completed') {
@@ -372,8 +374,9 @@ const ProspectApplication = () => {
                   console.warn('刪除臨時資料失敗:', deleteError);
                 }
               } else {
-                // 繼續輪詢
-                setTimeout(checkAnalysisStatus, 2000);
+                // 繼續輪詢，根據輪詢次數調整間隔
+                const interval = pollCount > 60 ? 3000 : 2000; // 1分鐘後增加間隔
+                setTimeout(checkAnalysisStatus, interval);
               }
             } catch (error) {
               console.error('檢查分析狀態失敗:', error);
