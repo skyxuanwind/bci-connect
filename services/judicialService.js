@@ -1,7 +1,7 @@
 const axios = require('axios');
 
-// 司法院開放資料 API 基礎 URL
-const JUDICIAL_API_BASE = 'https://opendata.judicial.gov.tw';
+// 司法院開放資料 API 基礎 URL（根據官方文件）
+const JUDICIAL_API_BASE = 'https://data.judicial.gov.tw/jdg/api';
 
 class JudicialService {
   constructor() {
@@ -9,7 +9,7 @@ class JudicialService {
     this.tokenExpiry = null;
   }
 
-  // 取得 API Token
+  // 取得 API Token（根據官方 Auth API 規格）
   async getToken() {
     try {
       // 檢查現有 token 是否仍有效
@@ -17,41 +17,47 @@ class JudicialService {
         return this.token;
       }
 
-      const response = await axios.post(`${JUDICIAL_API_BASE}/api/MemberTokens`, {
-        memberAccount: process.env.JUDICIAL_ACCOUNT || 'skyxuanwind',
-        pwd: process.env.JUDICIAL_PASSWORD || 'sh520520'
+      console.log('正在向司法院 Auth API 申請 token...');
+      const response = await axios.post(`${JUDICIAL_API_BASE}/Auth`, {
+        user: process.env.JUDICIAL_ACCOUNT || 'skyxuanwind',
+        password: process.env.JUDICIAL_PASSWORD || 'sh520520'
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
       });
 
-      if (response.data && response.data.token) {
-        this.token = response.data.token;
-        // Token 通常有效期為 24 小時，設定為 23 小時後過期
-        this.tokenExpiry = new Date(Date.now() + 23 * 60 * 60 * 1000);
+      console.log('Auth API 回應狀態:', response.status);
+      console.log('Auth API 回應內容:', JSON.stringify(response.data, null, 2));
+
+      if (response.data && (response.data.token || response.data.Token)) {
+        this.token = response.data.token || response.data.Token;
+        // Token 有效期為 6 小時（根據官方文件）
+        this.tokenExpiry = new Date(Date.now() + 6 * 60 * 60 * 1000);
+        console.log('成功取得司法院 API Token:', this.token);
         return this.token;
       }
 
-      throw new Error('無法取得 API Token');
+      throw new Error(`API 回應中沒有 token，回應內容: ${JSON.stringify(response.data)}`);
     } catch (error) {
-      console.error('取得司法院 API Token 失敗:', error.message);
+      if (error.response) {
+        console.error('司法院 Auth API 錯誤:', error.response.status, error.response.data);
+        if (error.response.data && error.response.data.error) {
+          throw new Error(`認證失敗: ${error.response.data.error}`);
+        }
+      } else {
+        console.error('取得司法院 API Token 失敗:', error.message);
+      }
       throw error;
     }
   }
 
-  // 取得主題分類清單
-  async getCategories() {
-    try {
-      const token = await this.getToken();
-      const response = await axios.get(`${JUDICIAL_API_BASE}/data/api/rest/categories`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error('取得分類清單失敗:', error.message);
-      throw error;
-    }
+  // 檢查司法院 API 是否在服務時間內（凌晨 0-6 時）
+  isJudicialApiAvailable() {
+    const now = new Date();
+    const hour = now.getHours();
+    return hour >= 0 && hour < 6;
   }
 
   // 取得特定分類的資料源
@@ -136,29 +142,44 @@ class JudicialService {
     return hour >= 0 && hour < 6;
   }
 
-  // 取得最近的判決書清單
-  async getRecentJudgmentsList() {
+  // 取得最近判決書清單（使用正確的 JList API）
+  async getRecentJudgmentsList(params = {}) {
     try {
-      console.log('正在嘗試連接司法院開放資料 API...');
-      
-      // 檢查服務時間
+      // 檢查司法院 API 服務時間（凌晨 0-6 時）
       if (!this.isJudicialApiAvailable()) {
         const now = new Date();
         console.log(`司法院 API 僅在每日凌晨 0-6 時提供服務，目前時間：${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
-        return [];
+        return {
+          success: false,
+          message: '司法院 API 目前不在服務時間內（僅凌晨 0-6 時提供服務）',
+          data: []
+        };
       }
+
+      // 先取得認證 token
+      const token = await this.getToken();
       
-      // 司法院 API 只提供 7 日前的異動清單，使用 POST 方法
-       const response = await axios.post('http://data.judicial.gov.tw/jdg/api/JList', {}, {
-         timeout: 15000,
-         headers: {
-           'Content-Type': 'application/json',
-           'User-Agent': 'BCI-Connect-Legal-Analysis/1.0'
-         }
-       });
+      console.log('正在查詢司法院判決書資料...');
       
-      console.log('司法院 API 回應狀態:', response.status);
-      
+      const response = await axios.post(`${JUDICIAL_API_BASE}/JList`, {
+        token: token,
+        p: params.page || 1,
+        n: params.limit || 10,
+        q: params.keyword || '',
+        jt: params.judgmentType || '',
+        jyear: params.year || '',
+        jcase: params.caseType || '',
+        jno: params.caseNumber || '',
+        jdate: params.date || '',
+        kw: params.keyword || ''
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'BCI-Connect-Legal-Analysis/1.0'
+        },
+        timeout: 30000
+      });
+
       if (response.data && Array.isArray(response.data)) {
         console.log('成功取得判決書清單，共', response.data.length, '日的資料');
         // 收集所有 JID
@@ -169,7 +190,11 @@ class JudicialService {
           }
         });
         console.log('總共找到', allJids.length, '筆判決書 ID');
-        return allJids.slice(0, 50); // 限制數量避免過多請求
+        return {
+          success: true,
+          data: allJids.slice(0, 50), // 限制數量避免過多請求
+          total: allJids.length
+        };
       }
       
       // 處理錯誤回應
@@ -182,19 +207,26 @@ class JudicialService {
         console.log('司法院 API 回應格式異常:', response.data);
       }
       
-      return [];
+      return {
+        success: false,
+        message: '無法取得判決書資料',
+        data: []
+      };
     } catch (error) {
-      if (error.code === 'ECONNABORTED') {
-        console.error('司法院 API 連接超時 - 可能服務不可用（僅在每日凌晨 0-6 時提供服務）');
-      } else if (error.response) {
-        console.error('司法院 API 回應錯誤:', error.response.status, error.response.statusText);
-        if (error.response.data) {
-          console.error('錯誤詳情:', error.response.data);
+      console.error('查詢司法院判決書失敗:', error.message);
+      if (error.response) {
+        console.error('JList API 回應錯誤:', error.response.status, error.response.data);
+        if (error.response.status === 401) {
+          // Token 可能過期，清除快取
+          this.token = null;
+          this.tokenExpiry = null;
         }
-      } else {
-        console.error('司法院 API 連接失敗:', error.message);
       }
-      return [];
+      return {
+        success: false,
+        message: `查詢失敗: ${error.message}`,
+        data: []
+      };
     }
   }
 
@@ -230,26 +262,56 @@ class JudicialService {
     return matchingJudgments;
   }
 
-  // 根據 JID 取得判決書內容
+  // 根據 JID 取得判決書內容（使用正確的 JDoc API）
   async getJudgmentByJid(jid) {
     try {
+      if (!jid) {
+        throw new Error('判決書 ID 不能為空');
+      }
+
       // 檢查服務時間
       if (!this.isJudicialApiAvailable()) {
         console.log(`司法院 API 服務時間外，無法取得判決書 ${jid}`);
         return null;
       }
+
+      // 先取得認證 token
+      const token = await this.getToken();
+
+      console.log(`正在取得判決書內容: ${jid}`);
       
-      const response = await axios.get(`http://data.judicial.gov.tw/jdg/api/JDoc/${jid}`, {
-        timeout: 8000,
+      const response = await axios.post(`${JUDICIAL_API_BASE}/JDoc`, {
+        token: token,
+        jid: jid
+      }, {
         headers: {
+          'Content-Type': 'application/json',
           'User-Agent': 'BCI-Connect-Legal-Analysis/1.0'
-        }
+        },
+        timeout: 15000
       });
-      return response.data;
+
+      if (response.data) {
+        console.log(`成功取得判決書 ${jid} 的內容`);
+        return response.data;
+      }
+
+      return null;
     } catch (error) {
-      console.error(`取得判決書 ${jid} 內容失敗:`, error.message);
-      if (error.response && error.response.data) {
-        console.error('錯誤詳情:', error.response.data);
+      if (error.response) {
+        if (error.response.status === 404) {
+          console.log(`判決書 ${jid} 不存在或已被移除`);
+          return null;
+        } else if (error.response.status === 401) {
+          // Token 可能過期，清除快取
+          this.token = null;
+          this.tokenExpiry = null;
+          console.error(`取得判決書 ${jid} 內容失敗: 認證失敗`);
+        } else {
+          console.error(`JDoc API 回應錯誤:`, error.response.status, error.response.data);
+        }
+      } else {
+        console.error(`取得判決書 ${jid} 內容失敗:`, error.message);
       }
       return null;
     }
