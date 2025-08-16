@@ -335,6 +335,7 @@ const ProspectApplication = () => {
                 setAiAnalysisStage('分析完成！');
                 setAiAnalysisResult(statusResponse.data.report);
                 setShowAiAnalysis(true);
+                setAiAnalysisLoading(false);
                 toast.success('AI 分析完成！');
                 
                 // 刪除臨時資料
@@ -347,6 +348,7 @@ const ProspectApplication = () => {
                 setAiAnalysisError(statusResponse.data.error || 'AI 分析失敗');
                 setAiAnalysisProgress(0);
                 setAiAnalysisStage('');
+                setAiAnalysisLoading(false);
                 toast.error('AI 分析失敗');
                 
                 // 刪除臨時資料
@@ -360,6 +362,7 @@ const ProspectApplication = () => {
                 setAiAnalysisError('AI 分析超時，請稍後再試');
                 setAiAnalysisProgress(0);
                 setAiAnalysisStage('');
+                setAiAnalysisLoading(false);
                 toast.error('AI 分析超時');
                 
                 // 刪除臨時資料
@@ -377,6 +380,7 @@ const ProspectApplication = () => {
               setAiAnalysisError('檢查分析狀態失敗');
               setAiAnalysisProgress(0);
               setAiAnalysisStage('');
+              setAiAnalysisLoading(false);
               toast.error('檢查分析狀態失敗');
             }
           };
@@ -386,6 +390,7 @@ const ProspectApplication = () => {
           toast.success('AI 分析已開始，請稍候...');
         } else {
           setAiAnalysisError(analysisResponse.data.message || 'AI 分析啟動失敗');
+          setAiAnalysisLoading(false);
           toast.error('AI 分析啟動失敗');
           
           // 刪除臨時資料
@@ -397,6 +402,7 @@ const ProspectApplication = () => {
         }
       } else {
         setAiAnalysisError('無法創建臨時分析資料');
+        setAiAnalysisLoading(false);
         toast.error('無法創建臨時分析資料');
       }
     } catch (error) {
@@ -405,9 +411,8 @@ const ProspectApplication = () => {
       setAiAnalysisError(errorMessage);
       setAiAnalysisProgress(0);
       setAiAnalysisStage('');
-      toast.error(errorMessage);
-    } finally {
       setAiAnalysisLoading(false);
+      toast.error(errorMessage);
     }
   };
 
