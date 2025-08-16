@@ -68,6 +68,8 @@ const ProspectApplication = () => {
   const [aiAnalysisResult, setAiAnalysisResult] = useState(null);
   const [aiAnalysisError, setAiAnalysisError] = useState('');
   const [showAiAnalysis, setShowAiAnalysis] = useState(false);
+  const [aiAnalysisProgress, setAiAnalysisProgress] = useState(0);
+  const [aiAnalysisStage, setAiAnalysisStage] = useState('');
 
   // 獲取分會和一級核心人員數據
   useEffect(() => {
@@ -300,12 +302,37 @@ const ProspectApplication = () => {
         const analysisResponse = await axios.post(`/api/ai-analysis/analyze-prospect/${prospectId}`);
         
         if (analysisResponse.data.success) {
+          // 初始化進度
+          setAiAnalysisProgress(10);
+          setAiAnalysisStage('正在啟動 AI 分析...');
+          
           // 輪詢檢查分析狀態
+          let pollCount = 0;
+          const maxPolls = 60; // 最多輪詢 2 分鐘
+          
           const checkAnalysisStatus = async () => {
             try {
+              pollCount++;
               const statusResponse = await axios.get(`/api/ai-analysis/status/${prospectId}`);
               
+              // 根據輪詢次數更新進度
+              const baseProgress = Math.min(10 + (pollCount * 3), 85);
+              setAiAnalysisProgress(baseProgress);
+              
+              // 更新階段描述
+              if (pollCount <= 5) {
+                setAiAnalysisStage('正在分析公司基本資料...');
+              } else if (pollCount <= 15) {
+                setAiAnalysisStage('正在搜尋相關資訊...');
+              } else if (pollCount <= 25) {
+                setAiAnalysisStage('正在進行風險評估...');
+              } else {
+                setAiAnalysisStage('正在生成分析報告...');
+              }
+              
               if (statusResponse.data.status === 'completed') {
+                setAiAnalysisProgress(100);
+                setAiAnalysisStage('分析完成！');
                 setAiAnalysisResult(statusResponse.data.report);
                 setShowAiAnalysis(true);
                 toast.success('AI 分析完成！');
@@ -318,7 +345,22 @@ const ProspectApplication = () => {
                 }
               } else if (statusResponse.data.status === 'failed') {
                 setAiAnalysisError(statusResponse.data.error || 'AI 分析失敗');
+                setAiAnalysisProgress(0);
+                setAiAnalysisStage('');
                 toast.error('AI 分析失敗');
+                
+                // 刪除臨時資料
+                try {
+                  await axios.delete(`/api/prospects/${prospectId}`);
+                } catch (deleteError) {
+                  console.warn('刪除臨時資料失敗:', deleteError);
+                }
+              } else if (pollCount >= maxPolls) {
+                // 超時處理
+                setAiAnalysisError('AI 分析超時，請稍後再試');
+                setAiAnalysisProgress(0);
+                setAiAnalysisStage('');
+                toast.error('AI 分析超時');
                 
                 // 刪除臨時資料
                 try {
@@ -328,11 +370,13 @@ const ProspectApplication = () => {
                 }
               } else {
                 // 繼續輪詢
-                setTimeout(checkAnalysisStatus, 3000);
+                setTimeout(checkAnalysisStatus, 2000);
               }
             } catch (error) {
               console.error('檢查分析狀態失敗:', error);
               setAiAnalysisError('檢查分析狀態失敗');
+              setAiAnalysisProgress(0);
+              setAiAnalysisStage('');
               toast.error('檢查分析狀態失敗');
             }
           };
@@ -359,6 +403,8 @@ const ProspectApplication = () => {
       console.error('AI 分析失敗:', error);
       const errorMessage = error.response?.data?.message || 'AI 分析失敗，請稍後再試';
       setAiAnalysisError(errorMessage);
+      setAiAnalysisProgress(0);
+      setAiAnalysisStage('');
       toast.error(errorMessage);
     } finally {
       setAiAnalysisLoading(false);
@@ -850,6 +896,30 @@ const ProspectApplication = () => {
                 系統將自動分析公司的市場聲譽、產業衝突、BCI 契合度，並透過司法院判決書查詢評估法律風險，為入會決策提供參考。
               </p>
             </div>
+            
+            {/* AI 分析進度條 */}
+            {aiAnalysisLoading && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center mb-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+                  <span className="text-blue-800 font-medium">AI 分析進行中</span>
+                  <span className="ml-auto text-blue-600 text-sm">{aiAnalysisProgress}%</span>
+                </div>
+                
+                {/* 進度條 */}
+                <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${aiAnalysisProgress}%` }}
+                  ></div>
+                </div>
+                
+                {/* 當前階段 */}
+                {aiAnalysisStage && (
+                  <p className="text-blue-700 text-sm">{aiAnalysisStage}</p>
+                )}
+              </div>
+            )}
             
             {aiAnalysisError && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
