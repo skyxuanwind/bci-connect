@@ -1,5 +1,4 @@
 const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const judicialService = require('../services/judicialService');
@@ -20,39 +19,18 @@ const requireAdminOrLevel1 = (req, res, next) => {
 // Apply authentication to all routes
 router.use(authenticateToken);
 
-// Initialize Gemini AI (will be initialized when needed)
-let genAI = null;
-let model = null;
-
-// Function to initialize Gemini AI
-function initializeGeminiAI() {
-  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
-    throw new Error('GEMINI_API_KEY 環境變數未設置或使用預設值');
-  }
-  
-  if (!genAI) {
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash-lite' });
-  }
-  
-  return model;
-}
+// 快速分析系統 - 不需要外部AI服務
+// 所有分析邏輯基於規則和本地計算
 
 // @route   POST /api/ai-analysis/analyze-prospect/:id
-// @desc    Trigger AI analysis for a prospect
+// @desc    Trigger fast analysis for a prospect (rule-based, no external AI)
 // @access  Private (Admin and Level 1 only)
 router.post('/analyze-prospect/:id', requireAdminOrLevel1, async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Check if Gemini API key is configured
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
-      return res.status(400).json({
-        success: false,
-        message: 'AI 分析功能未啟用：GEMINI_API_KEY 環境變數未設置',
-        error: 'GEMINI_API_KEY_NOT_CONFIGURED'
-      });
-    }
+    // 快速分析不需要外部API，移除API key檢查
+    // 新的快速分析系統完全基於規則，不依賴外部AI服務
     
     // Get prospect data
     const prospectResult = await pool.query(
@@ -73,31 +51,32 @@ router.post('/analyze-prospect/:id', requireAdminOrLevel1, async (req, res) => {
     if (prospect.ai_analysis_report) {
       return res.status(400).json({
         success: false,
-        message: 'AI 分析報告已存在，如需重新分析請先清除現有報告'
+        message: '分析報告已存在，如需重新分析請先清除現有報告'
       });
     }
     
-    // Start AI analysis process
+    // Start fast analysis process
     res.json({
       success: true,
-      message: 'AI 分析已啟動，請稍候...',
-      analysisId: id
+      message: '快速分析已啟動，預計10秒內完成...',
+      analysisId: id,
+      analysisType: 'fast_analysis'
     });
     
-    // Perform AI analysis in background
-    performAIAnalysis(prospect);
+    // Perform fast analysis in background
+    performFastAnalysis(prospect);
     
   } catch (error) {
-    console.error('AI analysis trigger error:', error);
+    console.error('Fast analysis trigger error:', error);
     res.status(500).json({
       success: false,
-      message: '啟動 AI 分析時發生錯誤'
+      message: '啟動快速分析時發生錯誤'
     });
   }
 });
 
 // @route   GET /api/ai-analysis/status/:id
-// @desc    Check AI analysis status
+// @desc    Check fast analysis status
 // @access  Private (Admin and Level 1 only)
 router.get('/status/:id', requireAdminOrLevel1, async (req, res) => {
   try {
@@ -133,7 +112,7 @@ router.get('/status/:id', requireAdminOrLevel1, async (req, res) => {
 });
 
 // @route   DELETE /api/ai-analysis/clear/:id
-// @desc    Clear AI analysis report
+// @desc    Clear analysis report
 // @access  Private (Admin and Level 1 only)
 router.delete('/clear/:id', requireAdminOrLevel1, async (req, res) => {
   try {
@@ -158,80 +137,91 @@ router.delete('/clear/:id', requireAdminOrLevel1, async (req, res) => {
   }
 });
 
-// Background AI analysis function
-async function performAIAnalysis(prospect) {
+// Background fast analysis function
+async function performFastAnalysis(prospect) {
   try {
-    console.log(`Starting AI analysis for prospect: ${prospect.company}`);
+    console.log(`Starting fast analysis for prospect: ${prospect.company}`);
     
-    // Initialize Gemini AI model
-    const aiModel = initializeGeminiAI();
+    // 1. 快速聲譽分析 (基於關鍵字和數據)
+    const sentiment = analyzeCompanyReputation(prospect);
+    const reputationText = `市場聲譽分析：${sentiment === 'positive' ? '正面' : sentiment === 'negative' ? '負面' : '中性'}`;
     
-    // 1. Market Reputation Analysis (Ultra-Simplified)
-    const reputationPrompt = `「${prospect.company}」聲譽：[positive/neutral/negative]`;
-    
-    const reputationResult = await aiModel.generateContent(reputationPrompt);
-    const reputationText = reputationResult.response.text();
-    
-    // Extract sentiment from reputation analysis
-    const sentimentMatch = reputationText.match(/聲譽：\s*(positive|neutral|negative)/i) || reputationText.match(/(positive|neutral|negative)/i);
-    const sentiment = sentimentMatch ? sentimentMatch[1].toLowerCase() : 'neutral';
-    
-    // 2. Skip detailed conflict check - use fast assessment
+    // 2. 快速產業衝突檢查
     const existingMembersResult = await pool.query(
       'SELECT name, company FROM users WHERE industry = $1 AND membership_level IN (1, 2, 3)',
       [prospect.industry]
     );
     
     const existingMembers = existingMembersResult.rows.map(member => member.company || member.name).join(', ');
-    const conflictLevel = 'low'; // Default to low for speed
-     const conflictText = `衝突等級：${conflictLevel}`;
+    const conflictLevel = analyzeIndustryConflict(prospect, existingMembersResult.rows);
+    const conflictText = `產業衝突檢查：${conflictLevel === 'high' ? '高度衝突' : conflictLevel === 'medium' ? '中度衝突' : '低度衝突'}`;
      
-     // 3. Skip detailed legal risk - use judicial data only
-     console.log(`Checking judicial records for: ${prospect.company}`);
-     const judicialResult = await judicialService.searchJudgments(prospect.company, { top: 20 });
-     const legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
-     const legalRiskText = `風險等級：${legalRiskAnalysis.riskLevel}`;
-     
-     // 4. Skip AI score calculation - use rule-based scoring
-     let score = 75; // Default score
-     if (sentiment === 'positive') score += 10;
-     if (sentiment === 'negative') score -= 15;
-     if (legalRiskAnalysis.riskLevel === 'high') score -= 20;
-     if (legalRiskAnalysis.riskLevel === 'medium') score -= 10;
-     score = Math.max(0, Math.min(100, score)); // Clamp between 0-100
-     
-     const fitScoreText = `契合度分數：${score}`;
-     
-     // 5. Skip AI recommendation - use rule-based recommendation
-     let recommendationText = '建議接納';
-     if (score < 50) recommendationText = '不建議';
-     else if (score < 70) recommendationText = '謹慎考慮';
+    // 3. 快速法律風險評估
+    console.log(`Checking judicial records for: ${prospect.company}`);
+    let judicialResult = { total: 0, data: [] };
+    let legalRiskAnalysis = { riskLevel: 'low', riskScore: 0, summary: '無重大法律風險', details: [] };
     
-    // Compile analysis report (Simplified)
+    try {
+      judicialResult = await Promise.race([
+        judicialService.searchJudgments(prospect.company, { top: 10 }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+      ]);
+      legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
+    } catch (error) {
+      console.log('Judicial service timeout, using default values');
+    }
+    
+    const legalRiskText = `法律風險評估：${legalRiskAnalysis.riskLevel === 'high' ? '高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '中風險' : '低風險'}`;
+     
+    // 4. 快速BCI契合度評分
+    const score = calculateBCICompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis);
+    const fitScoreText = `BCI契合度評分：${score}分 (滿分100分)`;
+    
+    // 5. 快速整體建議
+    const recommendationText = generateFastRecommendation(score, sentiment, conflictLevel, legalRiskAnalysis.riskLevel);
+    
+    // 編譯快速分析報告
     const analysisReport = {
       analysisDate: new Date().toISOString(),
+      analysisType: 'fast_analysis', // 標記為快速分析
+      processingTime: '< 10秒', // 快速分析的處理時間
       publicInfoScan: {
-        summary: reputationText.replace(/聲譽：\s*(positive|neutral|negative)\s*/i, '').trim() || '市場資訊分析完成',
-        sentiment: sentiment
+        summary: `基於公司名稱和產業關鍵字進行快速聲譽評估，結果為${sentiment === 'positive' ? '正面' : sentiment === 'negative' ? '負面' : '中性'}評價。`,
+        sentiment: sentiment,
+        method: 'keyword_analysis'
       },
       industryConflictCheck: {
-        analysis: conflictText.replace(/衝突等級：\s*(high|medium|low)\s*/i, '').trim() || '產業衝突檢測完成',
+        analysis: `檢測到同產業現有會員${existingMembersResult.rows.length}位，衝突等級評估為${conflictLevel === 'high' ? '高度' : conflictLevel === 'medium' ? '中度' : '低度'}衝突。`,
         existingMembers: existingMembers || '無同產業現有會員',
-        conflictLevel: conflictLevel
+        conflictLevel: conflictLevel,
+        memberCount: existingMembersResult.rows.length
       },
       legalRiskAssessment: {
         judgmentCount: judicialResult.total,
         riskLevel: legalRiskAnalysis.riskLevel,
         riskScore: legalRiskAnalysis.riskScore,
         summary: legalRiskAnalysis.summary,
-        details: legalRiskAnalysis.details.slice(0, 3), // 限制最多3個風險細節
-        analysis: legalRiskText.replace(/法律風險等級：\s*(high|medium|low)\s*/i, '').trim() || '法律風險評估完成'
+        details: legalRiskAnalysis.details.slice(0, 3),
+        analysis: `司法院資料庫查詢結果：共${judicialResult.total}筆相關判決，風險等級為${legalRiskAnalysis.riskLevel === 'high' ? '高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '中風險' : '低風險'}。`,
+        searchTimeout: judicialResult.total === 0 ? '查詢超時，使用預設低風險評估' : null
       },
       bciCompatibilityScore: {
         score: score,
-        analysis: fitScoreText.replace(/契合度分數.*?：\s*\d+\s*/i, '').trim() || 'BCI契合度評估完成'
+        analysis: `綜合評估公司聲譽、產業衝突、法律風險、資本額及營業年數等因素，BCI契合度評分為${score}分。`,
+        factors: {
+          reputation: sentiment,
+          industryConflict: conflictLevel,
+          legalRisk: legalRiskAnalysis.riskLevel,
+          capitalAmount: prospect.capital_amount || 0,
+          businessYears: prospect.business_years || 0
+        }
       },
-      overallRecommendation: recommendationText || generateOverallRecommendation(score, sentiment, conflictLevel)
+      overallRecommendation: recommendationText,
+      analysisMetadata: {
+        version: '2.0_fast',
+        aiModel: 'rule_based_engine',
+        confidence: score >= 70 ? 'high' : score >= 50 ? 'medium' : 'low'
+      }
     };
     
     // Save analysis report to database
@@ -240,17 +230,23 @@ async function performAIAnalysis(prospect) {
       [JSON.stringify(analysisReport), prospect.id]
     );
     
-    console.log(`AI analysis completed for prospect: ${prospect.company}`);
+    console.log(`Fast analysis completed for prospect: ${prospect.company}`);
     
   } catch (error) {
-    console.error('AI analysis error:', error);
+    console.error('Fast analysis error:', error);
     
     // Save error report
     const errorReport = {
       analysisDate: new Date().toISOString(),
+      analysisType: 'fast_analysis',
       error: true,
-      errorMessage: error.message || 'AI 分析服務暫時無法使用',
-      status: 'AI 分析過程中發生錯誤，請稍後重試或聯繫系統管理員'
+      errorMessage: error.message || '快速分析服務暫時無法使用',
+      status: '快速分析過程中發生錯誤，請稍後重試或聯繫系統管理員',
+      analysisMetadata: {
+        version: '2.0_fast',
+        aiModel: 'rule_based_engine',
+        errorType: 'system_error'
+      }
     };
     
     await pool.query(
@@ -260,24 +256,209 @@ async function performAIAnalysis(prospect) {
   }
 }
 
-// Helper functions
-function extractSentiment(text) {
-  const lowerText = text.toLowerCase();
-  if (lowerText.includes('正面') || lowerText.includes('積極')) return 'positive';
-  if (lowerText.includes('負面') || lowerText.includes('消極')) return 'negative';
+// 快速分析輔助函數
+function analyzeCompanyReputation(prospect) {
+  // 基於公司資料進行快速聲譽分析
+  let score = 0;
+  
+  // 基於產業類型評分
+  const positiveIndustries = ['科技', '醫療', '教育', '金融', '製造', '服務'];
+  const negativeIndustries = ['博弈', '菸酒', '軍火'];
+  
+  if (positiveIndustries.some(industry => prospect.industry?.includes(industry))) score += 2;
+  if (negativeIndustries.some(industry => prospect.industry?.includes(industry))) score -= 3;
+  
+  // 基於公司規模評分
+  if (prospect.employee_count) {
+    const employees = parseInt(prospect.employee_count);
+    if (employees >= 100) score += 2;
+    else if (employees >= 50) score += 1;
+    else if (employees < 10) score -= 1;
+  }
+  
+  // 基於年營業額評分
+  if (prospect.annual_revenue) {
+    const revenue = parseFloat(prospect.annual_revenue);
+    if (revenue >= 100000000) score += 2; // 1億以上
+    else if (revenue >= 50000000) score += 1; // 5千萬以上
+    else if (revenue < 10000000) score -= 1; // 1千萬以下
+  }
+  
+  // 基於成立年份評分
+  if (prospect.established_year) {
+    const years = new Date().getFullYear() - parseInt(prospect.established_year);
+    if (years >= 10) score += 1;
+    else if (years < 3) score -= 1;
+  }
+  
+  if (score >= 3) return 'positive';
+  if (score <= -2) return 'negative';
   return 'neutral';
 }
 
-function extractConflictLevel(text) {
-  const lowerText = text.toLowerCase();
-  if (lowerText.includes('高度重疊') || lowerText.includes('直接衝突')) return 'high';
-  if (lowerText.includes('部分重疊') || lowerText.includes('輕微衝突')) return 'medium';
+function analyzeIndustryConflict(prospect, existingMembers) {
+  if (!existingMembers || existingMembers.length === 0) return 'low';
+  
+  // 檢查是否有相同公司名稱
+  const sameCompany = existingMembers.some(member => 
+    member.company && member.company.toLowerCase() === prospect.company?.toLowerCase()
+  );
+  if (sameCompany) return 'high';
+  
+  // 檢查相似業務領域
+  const similarBusiness = existingMembers.filter(member => {
+    if (!member.company) return false;
+    const memberCompany = member.company.toLowerCase();
+    const prospectCompany = prospect.company?.toLowerCase() || '';
+    
+    // 簡單的相似度檢查
+    const commonWords = ['科技', '資訊', '電子', '軟體', '系統', '網路', '數位', '智慧'];
+    const memberHasCommon = commonWords.some(word => memberCompany.includes(word));
+    const prospectHasCommon = commonWords.some(word => prospectCompany.includes(word));
+    
+    return memberHasCommon && prospectHasCommon;
+  });
+  
+  if (similarBusiness.length >= 3) return 'high';
+  if (similarBusiness.length >= 1) return 'medium';
   return 'low';
 }
 
-function extractReasoning(text) {
-  const sentences = text.split('。');
-  return sentences.slice(1).join('。').trim(); // Remove first sentence which usually contains the score
+function calculateBCICompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis) {
+  let score = 70; // 基礎分數
+  
+  // 聲譽評分影響
+  if (sentiment === 'positive') score += 15;
+  else if (sentiment === 'negative') score -= 20;
+  
+  // 產業衝突影響
+  if (conflictLevel === 'high') score -= 25;
+  else if (conflictLevel === 'medium') score -= 10;
+  else score += 5;
+  
+  // 法律風險影響
+  if (legalRiskAnalysis.riskLevel === 'high') score -= 30;
+  else if (legalRiskAnalysis.riskLevel === 'medium') score -= 15;
+  else score += 5;
+  
+  // 公司基本資料完整度
+  let completeness = 0;
+  if (prospect.company) completeness++;
+  if (prospect.industry) completeness++;
+  if (prospect.employee_count) completeness++;
+  if (prospect.annual_revenue) completeness++;
+  if (prospect.established_year) completeness++;
+  if (prospect.business_description) completeness++;
+  
+  score += (completeness / 6) * 10; // 最多加10分
+  
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function generateFastRecommendation(score, sentiment, conflictLevel, legalRiskLevel) {
+  if (score >= 85) {
+    return '強烈推薦：該公司各項指標優秀，建議優先考慮接納。';
+  } else if (score >= 70) {
+    return '推薦：該公司條件良好，建議接納為會員。';
+  } else if (score >= 55) {
+    return '謹慎考慮：該公司條件尚可，建議進一步評估後決定。';
+  } else if (score >= 40) {
+    return '不建議：該公司存在較多疑慮，建議暫緩考慮。';
+  } else {
+    return '強烈不建議：該公司風險過高，不適合加入BCI。';
+  }
+}
+
+// 快速聲譽分析函數
+function analyzeCompanyReputation(prospect) {
+  const company = prospect.company.toLowerCase();
+  const industry = prospect.industry.toLowerCase();
+  
+  // 基於公司名稱和產業的簡單聲譽評估
+  const positiveKeywords = ['科技', '創新', '國際', '集團', '控股', '投資', '金融', '銀行'];
+  const negativeKeywords = ['當舖', '地下', '非法', '詐騙'];
+  
+  const hasPositive = positiveKeywords.some(keyword => company.includes(keyword) || industry.includes(keyword));
+  const hasNegative = negativeKeywords.some(keyword => company.includes(keyword) || industry.includes(keyword));
+  
+  if (hasNegative) return 'negative';
+  if (hasPositive) return 'positive';
+  return 'neutral';
+}
+
+// 快速產業衝突分析函數
+function analyzeIndustryConflict(prospect, existingMembers) {
+  if (existingMembers.length === 0) return 'low';
+  
+  const prospectCompany = prospect.company.toLowerCase();
+  const prospectIndustry = prospect.industry.toLowerCase();
+  
+  // 檢查是否有相同公司名稱
+  const sameCompany = existingMembers.some(member => 
+    (member.company && member.company.toLowerCase().includes(prospectCompany)) ||
+    prospectCompany.includes(member.company?.toLowerCase() || '')
+  );
+  
+  if (sameCompany) return 'high';
+  
+  // 檢查同產業成員數量
+  const sameIndustryCount = existingMembers.length;
+  if (sameIndustryCount >= 3) return 'medium';
+  if (sameIndustryCount >= 1) return 'low';
+  
+  return 'low';
+}
+
+// 快速BCI契合度評分函數
+function calculateBCICompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis) {
+  let score = 70; // 基礎分數
+  
+  // 聲譽加分/扣分
+  if (sentiment === 'positive') score += 15;
+  else if (sentiment === 'negative') score -= 20;
+  
+  // 產業衝突扣分
+  if (conflictLevel === 'high') score -= 25;
+  else if (conflictLevel === 'medium') score -= 10;
+  
+  // 法律風險扣分
+  if (legalRiskAnalysis.riskLevel === 'high') score -= 30;
+  else if (legalRiskAnalysis.riskLevel === 'medium') score -= 15;
+  
+  // 公司規模加分（基於資本額）
+  const capital = prospect.capital_amount || 0;
+  if (capital >= 10000000) score += 10; // 1000萬以上
+  else if (capital >= 5000000) score += 5; // 500萬以上
+  
+  // 營業年數加分
+  const businessYears = prospect.business_years || 0;
+  if (businessYears >= 10) score += 10;
+  else if (businessYears >= 5) score += 5;
+  
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+// 快速整體建議函數
+function generateFastRecommendation(score, sentiment, conflictLevel, legalRiskLevel) {
+  if (legalRiskLevel === 'high') {
+    return '不建議：存在重大法律風險，建議暫緩考慮。';
+  }
+  
+  if (conflictLevel === 'high') {
+    return '不建議：與現有會員存在高度產業衝突。';
+  }
+  
+  if (score >= 85) {
+    return '強烈推薦：該公司各項條件優秀，與BCI核心價值高度契合，建議優先考慮。';
+  } else if (score >= 70) {
+    return '推薦：該公司具備良好條件，建議進一步面談後考慮接納。';
+  } else if (score >= 55) {
+    return '謹慎考慮：該公司條件尚可，建議詳細評估後再做決定。';
+  } else if (score >= 40) {
+    return '暫緩考慮：該公司存在多項疑慮，建議暫時觀望。';
+  } else {
+    return '不建議：該公司條件不符合BCI標準，建議拒絕申請。';
+  }
 }
 
 function generateOverallRecommendation(score, sentiment, conflict) {
