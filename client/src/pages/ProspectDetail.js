@@ -299,56 +299,90 @@ const ProspectDetail = () => {
         )}
 
         {analysisReport && !analysisReport.error && (
-          <div className="space-y-6">
-            {/* Analysis Date */}
-            <div className="text-sm text-gray-500">
-              分析時間: {new Date(analysisReport.analysisDate).toLocaleString('zh-TW')}
+          <div className="space-y-8">
+            {/* Analysis Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-blue-900 mb-1">🤖 AI 智能分析報告</h2>
+                  <p className="text-sm text-blue-600">分析時間: {new Date(analysisReport.analysisDate).toLocaleString('zh-TW')}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-blue-500 mb-1">處理時間</div>
+                  <div className="text-sm font-medium text-blue-700">{analysisReport.processingTime || '< 15秒'}</div>
+                </div>
+              </div>
             </div>
 
             {/* Overall Recommendation */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">整體建議</h3>
-              <p className="text-blue-800 whitespace-pre-wrap">{analysisReport.overallRecommendation}</p>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-400 rounded-lg p-6 shadow-sm">
+              <div className="flex items-center mb-3">
+                <span className="text-2xl mr-3">💡</span>
+                <h3 className="text-lg font-bold text-green-900">整體建議</h3>
+              </div>
+              <div className="bg-white rounded-lg p-4 border border-green-200">
+                <p className="text-green-800 leading-relaxed">{analysisReport.overallRecommendation}</p>
+              </div>
             </div>
 
+            <hr className="border-gray-300" />
+
             {/* BCI Fit Score */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">BCI 契合度評分</h3>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-3">🎯</span>
+                  <h3 className="text-lg font-bold text-gray-900">BCI 契合度評分</h3>
+                </div>
                 {getScoreBadge(analysisReport.bciFitScore?.score)}
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap">{analysisReport.bciFitScore?.analysis}</p>
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <p className="text-gray-700 leading-relaxed text-sm">{analysisReport.bciFitScore?.analysis}</p>
+              </div>
             </div>
 
             {/* Market Sentiment */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">市場聲譽分析</h3>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-3">📊</span>
+                  <h3 className="text-lg font-bold text-gray-900">市場聲譽分析</h3>
+                </div>
                 {getSentimentBadge(analysisReport.marketSentiment?.sentiment)}
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap">{analysisReport.marketSentiment?.analysis}</p>
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <p className="text-gray-700 leading-relaxed text-sm">{analysisReport.marketSentiment?.analysis}</p>
+              </div>
             </div>
 
             {/* Industry Conflict */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">產業衝突檢測</h3>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-3">⚖️</span>
+                  <h3 className="text-lg font-bold text-gray-900">產業衝突檢測</h3>
+                </div>
                 {getConflictBadge(analysisReport.industryConflict?.conflictLevel)}
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap mb-3">{analysisReport.industryConflict?.analysis}</p>
-              {analysisReport.industryConflict?.existingMembers && (
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">同產業現有會員:</p>
-                  <p className="text-sm text-gray-500">{analysisReport.industryConflict.existingMembers}</p>
-                </div>
-              )}
-            </div>
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <p className="text-gray-700 leading-relaxed text-sm mb-3">{analysisReport.industryConflict?.analysis}</p>
+                {analysisReport.industryConflict?.existingMembers && (
+                   <div className="mt-3 pt-3 border-t border-gray-200">
+                     <p className="text-sm font-medium text-gray-600 mb-1">同產業現有會員:</p>
+                     <p className="text-sm text-gray-500">{analysisReport.industryConflict.existingMembers}</p>
+                   </div>
+                 )}
+               </div>
+              </div>
 
             {/* Legal Risk Assessment */}
             {analysisReport.legalRiskAssessment && (
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900">法律風險評估</h3>
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <span className="text-2xl mr-3">⚖️</span>
+                    <h3 className="text-lg font-bold text-gray-900">法律風險評估</h3>
+                  </div>
                   <div className="flex items-center space-x-2">
                     {getLegalRiskBadge(analysisReport.legalRiskAssessment.riskLevel)}
                     <span className="text-sm text-gray-500">
@@ -356,7 +390,9 @@ const ProspectDetail = () => {
                     </span>
                   </div>
                 </div>
-                <p className="text-gray-700 whitespace-pre-wrap mb-3">{analysisReport.legalRiskAssessment.analysis}</p>
+                <div className="bg-gray-50 rounded-lg p-4 border">
+                  <p className="text-gray-700 leading-relaxed text-sm mb-3">{analysisReport.legalRiskAssessment.analysis}</p>
+                </div>
                 
                 <div className="bg-gray-50 rounded-lg p-3 mb-3">
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -396,11 +432,20 @@ const ProspectDetail = () => {
             )}
 
             {/* Public Information Scan */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-3">公開資訊掃描</h3>
-              <p className="text-gray-700 whitespace-pre-wrap mb-3">{analysisReport.publicInformationScan?.summary}</p>
-              <p className="text-xs text-gray-500">資料來源: {analysisReport.publicInformationScan?.sources}</p>
-            </div>
+            {analysisReport.publicInformationScan && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-3">🔍</span>
+                  <h3 className="text-lg font-bold text-gray-900">公開資訊掃描</h3>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 border">
+                  <p className="text-gray-700 leading-relaxed text-sm mb-3">{analysisReport.publicInformationScan?.summary}</p>
+                </div>
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500">資料來源: {analysisReport.publicInformationScan?.sources}</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

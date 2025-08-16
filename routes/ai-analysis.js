@@ -371,18 +371,18 @@ async function performFastAnalysis(prospect) {
       analysisType: 'gemini_enhanced_analysis', // 標記為 Gemini AI 增強分析
       processingTime: '< 15秒', // AI 增強分析的處理時間
       publicInformationScan: {
-        summary: geminiResult?.analysis?.publicInfo?.data || `基於公司名稱和產業關鍵字進行快速聲譽評估，結果為${aiSentiment === 'positive' ? '正面' : aiSentiment === 'negative' ? '負面' : '中性'}評價。`,
+        summary: geminiResult?.analysis?.publicInfo?.data || `${aiSentiment === 'positive' ? '✅ 正面評價' : aiSentiment === 'negative' ? '⚠️ 負面評價' : '➖ 中性評價'}\n\n基於公司名稱和產業關鍵字分析，該公司展現${aiSentiment === 'positive' ? '良好的市場形象' : aiSentiment === 'negative' ? '需要關注的負面資訊' : '一般的市場表現'}。`,
         sources: geminiResult?.success ? 'Gemini AI 網路搜尋' : '關鍵字分析',
         method: geminiResult?.success ? 'gemini_ai_analysis' : 'keyword_analysis',
         geminiAnalysis: geminiResult?.analysis?.publicInfo || null
       },
       marketSentiment: {
         sentiment: aiSentiment,
-        analysis: geminiResult?.analysis?.sentiment?.analysis || `基於公司名稱和產業關鍵字進行快速聲譽評估，結果為${aiSentiment === 'positive' ? '正面' : aiSentiment === 'negative' ? '負面' : '中性'}評價。該公司${aiSentiment === 'positive' ? '展現良好的市場形象和品牌聲譽' : aiSentiment === 'negative' ? '存在負面市場評價，需要謹慎評估' : '市場聲譽中性，無明顯正負面評價'}。`,
+        analysis: geminiResult?.analysis?.sentiment?.analysis || `${aiSentiment === 'positive' ? '📈 市場聲譽良好' : aiSentiment === 'negative' ? '📉 市場聲譽待改善' : '📊 市場聲譽中性'}\n\n${aiSentiment === 'positive' ? '該公司在市場上享有良好聲譽，品牌形象正面。' : aiSentiment === 'negative' ? '該公司存在負面市場評價，建議進一步了解。' : '該公司市場聲譽中性，無明顯正負面評價。'}`,
         geminiAnalysis: geminiResult?.analysis?.sentiment || null
       },
       industryConflict: {
-        analysis: geminiResult?.analysis?.industryConflict?.analysis || `檢測到同產業現有會員${existingMembersResult.rows.length}位，衝突等級評估為${aiConflictLevel === 'high' ? '高度' : aiConflictLevel === 'medium' ? '中度' : '低度'}衝突。\n\n${aiConflictLevel === 'high' ? '發現與現有會員存在高度產業重疊，可能產生競爭衝突，建議詳細評估業務範圍差異。' : aiConflictLevel === 'medium' ? '與現有會員存在部分產業重疊，需要進一步評估具體業務內容。' : '與現有會員產業重疊度低，衝突風險較小，適合加入組織。'}`,
+        analysis: geminiResult?.analysis?.industryConflict?.analysis || `${aiConflictLevel === 'high' ? '🔴 高度衝突' : aiConflictLevel === 'medium' ? '🟡 中度衝突' : '🟢 低度衝突'}\n\n同產業現有會員：${existingMembersResult.rows.length}位\n${aiConflictLevel === 'high' ? '存在高度產業重疊，需詳細評估業務差異。' : aiConflictLevel === 'medium' ? '存在部分產業重疊，建議進一步了解。' : '產業重疊度低，衝突風險小。'}`,
         existingMembers: existingMembers || '無同產業現有會員',
         conflictLevel: aiConflictLevel,
         memberCount: existingMembersResult.rows.length,
@@ -394,14 +394,14 @@ async function performFastAnalysis(prospect) {
         riskScore: legalRiskAnalysis.riskScore,
         riskSummary: legalRiskAnalysis.summary,
         riskDetails: legalRiskAnalysis.details.slice(0, 3),
-        analysis: `司法院資料庫查詢結果：共${judicialResult.total}筆相關判決，風險等級為${legalRiskAnalysis.riskLevel === 'high' ? '高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '中風險' : '低風險'}。\n\n${legalRiskAnalysis.riskLevel === 'high' ? '發現多筆司法記錄，存在較高法律風險，建議詳細審查相關案件內容。' : legalRiskAnalysis.riskLevel === 'medium' ? '發現部分司法記錄，需要進一步關注案件性質和影響。' : '未發現重大司法記錄，法律風險較低，符合入會標準。'}`,
+        analysis: `${legalRiskAnalysis.riskLevel === 'high' ? '🔴 高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '🟡 中風險' : '🟢 低風險'}\n\n司法院查詢結果：${judicialResult.total}筆判決記錄\n${legalRiskAnalysis.riskLevel === 'high' ? '發現多筆司法記錄，建議詳細審查。' : legalRiskAnalysis.riskLevel === 'medium' ? '發現部分司法記錄，需進一步關注。' : '未發現重大司法記錄，風險較低。'}`,
         dataSource: '司法院法學資料檢索系統',
         searchSuccess: judicialResult.total > 0 || judicialResult.searchSuccess !== false,
         searchTimeout: judicialResult.total === 0 ? '查詢超時，使用預設低風險評估' : null
       },
       bciFitScore: {
         score: score,
-        analysis: geminiResult?.analysis?.bciFitScore?.analysis || `綜合評估公司聲譽、產業衝突、法律風險、資本額及營業年數等因素，BCI契合度評分為${score}分。\n\n評分依據：\n• 市場聲譽：${aiSentiment === 'positive' ? '正面 (+20分)' : aiSentiment === 'negative' ? '負面 (-10分)' : '中性 (0分)'}\n• 產業衝突：${aiConflictLevel === 'low' ? '低衝突 (+15分)' : aiConflictLevel === 'medium' ? '中衝突 (-5分)' : '高衝突 (-15分)'}\n• 法律風險：${legalRiskAnalysis.riskLevel === 'low' ? '低風險 (+15分)' : legalRiskAnalysis.riskLevel === 'medium' ? '中風險 (-5分)' : '高風險 (-20分)'}\n• 基礎分數：50分\n\n${score >= 80 ? '強烈推薦：該公司具備優秀的市場聲譽，與商會價值觀高度契合。' : score >= 60 ? '建議通過：該公司整體表現良好，適合加入商會。' : '謹慎考慮：該公司存在一些需要關注的問題，建議詳細評估後決定。'}`,
+        analysis: geminiResult?.analysis?.bciFitScore?.analysis || `🎯 BCI 契合度：${score}分\n\n📊 評分構成：\n• 市場聲譽：${aiSentiment === 'positive' ? '✅ 正面' : aiSentiment === 'negative' ? '❌ 負面' : '➖ 中性'}\n• 產業衝突：${aiConflictLevel === 'low' ? '✅ 低衝突' : aiConflictLevel === 'medium' ? '⚠️ 中衝突' : '❌ 高衝突'}\n• 法律風險：${legalRiskAnalysis.riskLevel === 'low' ? '✅ 低風險' : legalRiskAnalysis.riskLevel === 'medium' ? '⚠️ 中風險' : '❌ 高風險'}\n\n💡 ${score >= 80 ? '強烈推薦加入' : score >= 60 ? '建議通過申請' : '建議謹慎評估'}`,
         factors: {
           reputation: aiSentiment,
           industryConflict: aiConflictLevel,
