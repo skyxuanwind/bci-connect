@@ -166,19 +166,17 @@ async function performAIAnalysis(prospect) {
     // Initialize Gemini AI model
     const aiModel = initializeGeminiAI();
     
-    // 1. Public Information Scan
-    const publicInfoPrompt = `請你擔任商業分析師。請在網路上搜尋關於公司「${prospect.company}」的最新新聞、商業評論和客戶評價。請總結你的發現。`;
+    // 1. Public Information Scan (Simplified)
+    const publicInfoPrompt = `分析公司「${prospect.company}」的市場聲譽。請簡要回答：\n聲譽評價：[positive/neutral/negative]\n主要發現：[1-2句話總結]`;
     
     const publicInfoResult = await aiModel.generateContent(publicInfoPrompt);
     const publicInfoText = publicInfoResult.response.text();
     
-    // 2. Market Sentiment Analysis
-    const sentimentPrompt = `基於以上搜尋結果，請分析「${prospect.company}」的整體市場聲譽是偏向正面、中立還是負面？請列出 1-3 個關鍵的正面或負面評價作為佐證。請用以下格式回答：\n聲譽評價：[positive/neutral/negative]\n分析內容：[詳細分析]\n\n搜尋結果：${publicInfoText}`;
+    // Extract sentiment directly from first response
+    const sentimentMatch = publicInfoText.match(/聲譽評價：\s*(positive|neutral|negative)/i);
+    const sentiment = sentimentMatch ? sentimentMatch[1].toLowerCase() : 'neutral';
     
-    const sentimentResult = await aiModel.generateContent(sentimentPrompt);
-    const sentimentText = sentimentResult.response.text();
-    
-    // 3. Industry Conflict Check
+    // 2. Industry Conflict Check (Simplified)
     const existingMembersResult = await pool.query(
       'SELECT name, company FROM users WHERE industry = $1 AND membership_level IN (1, 2, 3)',
       [prospect.industry]
@@ -186,23 +184,23 @@ async function performAIAnalysis(prospect) {
     
     const existingMembers = existingMembersResult.rows.map(member => member.company || member.name).join(', ');
     
-    const conflictPrompt = `在我們的商會中，產業為「${prospect.industry}」的現有會員有：${existingMembers || '無'}。請評估新成員「${prospect.company}」的加入，是否可能與現有會員產生業務上的直接衝突或高度重疊？請用以下格式回答：\n衝突等級：[high/medium/low]\n分析內容：[詳細分析]`;
+    const conflictPrompt = `現有「${prospect.industry}」會員：${existingMembers || '無'}。評估「${prospect.company}」加入的業務衝突：\n衝突等級：[high/medium/low]\n原因：[1句話說明]`;
     
     const conflictResult = await aiModel.generateContent(conflictPrompt);
     const conflictText = conflictResult.response.text();
     
-    // 4. Legal Risk Assessment (Judicial Records Check)
+    // 3. Legal Risk Assessment (Judicial Records Check)
     console.log(`Checking judicial records for: ${prospect.company}`);
     const judicialResult = await judicialService.searchJudgments(prospect.company, { top: 20 });
     const legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
     
-    const legalRiskPrompt = `基於司法院判決書查詢結果，請分析「${prospect.company}」的法律風險狀況：\n\n查詢結果：\n- 判決書數量：${judicialResult.total}\n- 風險等級：${legalRiskAnalysis.riskLevel}\n- 風險分數：${legalRiskAnalysis.riskScore}/100\n- 風險摘要：${legalRiskAnalysis.summary}\n- 風險細節：${legalRiskAnalysis.details.join(', ') || '無特殊風險'}\n\n請評估這些法律記錄對於該公司加入商會的影響，並提供建議。請用以下格式回答：\n法律風險評估：[詳細分析]\n建議：[具體建議]`;
+    const legalRiskPrompt = `司法院查詢結果：判決書${judicialResult.total}件，風險等級${legalRiskAnalysis.riskLevel}。\n法律風險評估：[1-2句話評估]\n建議：[簡要建議]`;
     
     const legalRiskResult = await aiModel.generateContent(legalRiskPrompt);
     const legalRiskText = legalRiskResult.response.text();
     
-    // 5. BCI Fit Score (Updated to include legal risk)
-    const fitScorePrompt = `我們 BCI 商務菁英會的核心價值是「專業」、「誠信」與「合作」。請根據你所分析的資訊，為「${prospect.company}」評估一個與我們商會的契合度分數（1-100分），並簡述給分的理由。請用以下格式回答：\n契合度分數：[數字]\n評分理由：[詳細說明]\n\n公司資訊：\n- 公司名稱：${prospect.company}\n- 產業別：${prospect.industry}\n- 聯絡人：${prospect.name}\n- 備註：${prospect.notes || '無'}\n\n市場聲譽分析：${sentimentText}\n\n產業衝突分析：${conflictText}\n\n法律風險評估：${legalRiskText}`;
+    // 4. BCI Fit Score (Simplified)
+    const fitScorePrompt = `基於以下資訊評估「${prospect.company}」的BCI契合度分數(1-100)：\n- 市場聲譽：${sentiment}\n- 產業衝突：${conflictLevel}\n- 法律風險：${legalRiskAnalysis.riskLevel}\n\n契合度分數：[數字]\n評分理由：[1-2句話說明]`;
     
     const fitScoreResult = await aiModel.generateContent(fitScorePrompt);
     const fitScoreText = fitScoreResult.response.text();
@@ -211,51 +209,40 @@ async function performAIAnalysis(prospect) {
     const scoreMatch = fitScoreText.match(/契合度分數：\s*(\d+)/i) || fitScoreText.match(/(\d+)分/);
     const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
     
-    // Extract sentiment
-    const sentimentMatch = sentimentText.match(/聲譽評價：\s*(positive|neutral|negative)/i);
-    const sentiment = sentimentMatch ? sentimentMatch[1].toLowerCase() : extractSentiment(sentimentText);
-    
     // Extract conflict level
     const conflictMatch = conflictText.match(/衝突等級：\s*(high|medium|low)/i);
     const conflictLevel = conflictMatch ? conflictMatch[1].toLowerCase() : extractConflictLevel(conflictText);
     
-    // Generate overall recommendation (Updated to include legal risk)
-    const recommendationPrompt = `基於以上所有分析結果，包括市場聲譽、產業衝突、法律風險評估和契合度分析，請為「${prospect.name}」(${prospect.company}) 提供一個整體的入會建議，說明是否建議接納為 BCI 商務菁英會準會員，並簡述主要理由。特別注意法律風險對商會聲譽的潛在影響。`;
+    // Generate overall recommendation (Simplified)
+    const recommendationPrompt = `基於分析結果為「${prospect.company}」提供入會建議：\n- 契合度分數：${score || 'N/A'}\n- 市場聲譽：${sentiment}\n- 產業衝突：${conflictLevel}\n- 法律風險：${legalRiskAnalysis.riskLevel}\n\n建議：[建議接納/謹慎考慮/不建議]，理由：[1句話說明]`;
     const recommendationResult = await aiModel.generateContent(recommendationPrompt);
     const recommendationText = recommendationResult.response.text();
     
-    // Compile analysis report (Updated to include legal risk)
+    // Compile analysis report (Simplified)
     const analysisReport = {
       analysisDate: new Date().toISOString(),
-      publicInformationScan: {
-        summary: publicInfoText,
-        sources: '基於 Gemini AI 模型的網路資訊搜尋'
-      },
-      marketSentiment: {
-        analysis: sentimentText.replace(/聲譽評價：\s*(positive|neutral|negative)\s*/i, '').trim(),
+      publicInfoScan: {
+        summary: publicInfoText.replace(/聲譽評價：\s*(positive|neutral|negative)\s*/i, '').trim() || '市場資訊分析完成',
         sentiment: sentiment
       },
-      industryConflict: {
-        analysis: conflictText.replace(/衝突等級：\s*(high|medium|low)\s*/i, '').trim(),
+      industryConflictCheck: {
+        analysis: conflictText.replace(/衝突等級：\s*(high|medium|low)\s*/i, '').trim() || '產業衝突檢測完成',
         existingMembers: existingMembers || '無同產業現有會員',
         conflictLevel: conflictLevel
       },
       legalRiskAssessment: {
-        judicialRecordsCount: judicialResult.total,
+        judgmentCount: judicialResult.total,
         riskLevel: legalRiskAnalysis.riskLevel,
         riskScore: legalRiskAnalysis.riskScore,
-        riskSummary: legalRiskAnalysis.summary,
-        riskDetails: legalRiskAnalysis.details,
-        analysis: legalRiskText,
-        dataSource: '司法院開放資料平台',
-        searchSuccess: judicialResult.success
+        summary: legalRiskAnalysis.summary,
+        details: legalRiskAnalysis.details.slice(0, 3), // 限制最多3個風險細節
+        analysis: legalRiskText.replace(/法律風險評估：\s*/i, '').trim() || '法律風險評估完成'
       },
-      bciFitScore: {
+      bciCompatibilityScore: {
         score: score,
-        analysis: fitScoreText.replace(/契合度分數：\s*\d+\s*/i, '').trim(),
-        reasoning: extractReasoning(fitScoreText)
+        analysis: fitScoreText.replace(/契合度分數：\s*\d+\s*/i, '').trim() || 'BCI契合度評估完成'
       },
-      overallRecommendation: recommendationText || generateOverallRecommendation(score, sentimentText, conflictText)
+      overallRecommendation: recommendationText || generateOverallRecommendation(score, sentiment, conflictLevel)
     };
     
     // Save analysis report to database

@@ -951,38 +951,41 @@ const ProspectApplication = () => {
                 )}
                 
                 {/* BCI 契合度評分 */}
-                {aiAnalysisResult.bciCompatibilityScore && (
+                {aiAnalysisResult.bciFitScore && (
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold text-gray-900">BCI 契合度評分</h4>
-                      {getScoreBadge(aiAnalysisResult.bciCompatibilityScore.score)}
+                      {getScoreBadge(aiAnalysisResult.bciFitScore.score)}
                     </div>
-                    <p className="text-gray-700">{aiAnalysisResult.bciCompatibilityScore.analysis}</p>
+                    <p className="text-gray-700">{aiAnalysisResult.bciFitScore.analysis}</p>
                   </div>
                 )}
                 
                 {/* 市場聲譽分析 */}
-                {aiAnalysisResult.marketReputationAnalysis && (
+                {aiAnalysisResult.marketSentiment && (
                   <div className="mb-6">
                     <h4 className="font-semibold text-gray-900 mb-2">市場聲譽分析</h4>
-                    <p className="text-gray-700">{aiAnalysisResult.marketReputationAnalysis.summary}</p>
+                    <p className="text-gray-700">{aiAnalysisResult.marketSentiment.analysis}</p>
                   </div>
                 )}
                 
                 {/* 產業衝突檢測 */}
-                {aiAnalysisResult.industryConflictCheck && (
+                {aiAnalysisResult.industryConflict && (
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold text-gray-900">產業衝突檢測</h4>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        aiAnalysisResult.industryConflictCheck.hasConflict 
+                        aiAnalysisResult.industryConflict.conflictLevel === 'high' 
                           ? 'bg-red-100 text-red-800' 
+                          : aiAnalysisResult.industryConflict.conflictLevel === 'medium'
+                          ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {aiAnalysisResult.industryConflictCheck.hasConflict ? '有衝突' : '無衝突'}
+                        {aiAnalysisResult.industryConflict.conflictLevel === 'high' ? '高衝突' : 
+                         aiAnalysisResult.industryConflict.conflictLevel === 'medium' ? '中等衝突' : '低衝突'}
                       </span>
                     </div>
-                    <p className="text-gray-700">{aiAnalysisResult.industryConflictCheck.analysis}</p>
+                    <p className="text-gray-700">{aiAnalysisResult.industryConflict.analysis}</p>
                   </div>
                 )}
                 
@@ -999,19 +1002,19 @@ const ProspectApplication = () => {
                       </div>
                     </div>
                     
-                    <p className="text-gray-700 mb-3">{aiAnalysisResult.legalRiskAssessment.summary}</p>
+                    <p className="text-gray-700 mb-3">{aiAnalysisResult.legalRiskAssessment.analysis}</p>
                     
-                    {aiAnalysisResult.legalRiskAssessment.judgmentCount !== undefined && (
+                    {aiAnalysisResult.legalRiskAssessment.judicialRecordsCount !== undefined && (
                       <div className="text-sm text-gray-600 mb-2">
-                        <strong>司法院判決書數量：</strong>{aiAnalysisResult.legalRiskAssessment.judgmentCount} 件
+                        <strong>司法院判決書數量：</strong>{aiAnalysisResult.legalRiskAssessment.judicialRecordsCount} 件
                       </div>
                     )}
                     
-                    {aiAnalysisResult.legalRiskAssessment.details && aiAnalysisResult.legalRiskAssessment.details.length > 0 && (
+                    {aiAnalysisResult.legalRiskAssessment.riskDetails && aiAnalysisResult.legalRiskAssessment.riskDetails.length > 0 && (
                       <div>
                         <p className="font-medium text-gray-600 text-sm mb-2">風險細節：</p>
                         <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
-                          {aiAnalysisResult.legalRiskAssessment.details.map((detail, index) => (
+                          {aiAnalysisResult.legalRiskAssessment.riskDetails.map((detail, index) => (
                             <li key={index}>{detail}</li>
                           ))}
                         </ul>
@@ -1021,10 +1024,10 @@ const ProspectApplication = () => {
                 )}
                 
                 {/* 公開資訊掃描 */}
-                {aiAnalysisResult.publicInfoScan && (
+                {aiAnalysisResult.publicInformationScan && (
                   <div className="mb-6">
                     <h4 className="font-semibold text-gray-900 mb-2">公開資訊掃描</h4>
-                    <p className="text-gray-700">{aiAnalysisResult.publicInfoScan.summary}</p>
+                    <p className="text-gray-700">{aiAnalysisResult.publicInformationScan.summary}</p>
                   </div>
                 )}
               </div>
