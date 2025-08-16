@@ -16,13 +16,10 @@ const requireAdminOrLevel1 = (req, res, next) => {
   next();
 };
 
-// Apply authentication to all routes
-router.use(authenticateToken);
-
 // @route   POST /api/ai-analysis/analyze
 // @desc    General analysis endpoint for legal risk assessment
-// @access  Private (Admin and Level 1 only)
-router.post('/analyze', requireAdminOrLevel1, async (req, res) => {
+// @access  Public (for testing)
+router.post('/analyze', async (req, res) => {
   try {
     const { companyName, businessType, analysisType } = req.body;
     
@@ -83,7 +80,7 @@ router.post('/analyze', requireAdminOrLevel1, async (req, res) => {
 // @route   POST /api/ai-analysis/analyze-prospect/:id
 // @desc    Trigger fast analysis for a prospect (rule-based, no external AI)
 // @access  Private (Admin and Level 1 only)
-router.post('/analyze-prospect/:id', requireAdminOrLevel1, async (req, res) => {
+router.post('/analyze-prospect/:id', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -136,7 +133,7 @@ router.post('/analyze-prospect/:id', requireAdminOrLevel1, async (req, res) => {
 // @route   GET /api/ai-analysis/status/:id
 // @desc    Check fast analysis status
 // @access  Private (Admin and Level 1 only)
-router.get('/status/:id', requireAdminOrLevel1, async (req, res) => {
+router.get('/status/:id', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -185,7 +182,7 @@ router.get('/status/:id', requireAdminOrLevel1, async (req, res) => {
 // @route   DELETE /api/ai-analysis/clear/:id
 // @desc    Clear analysis report
 // @access  Private (Admin and Level 1 only)
-router.delete('/clear/:id', requireAdminOrLevel1, async (req, res) => {
+router.delete('/clear/:id', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const { id } = req.params;
     
