@@ -441,37 +441,32 @@ const ProspectDetail = () => {
                   />
                 </div>
                 
-                {/* 詳細的資訊顯示 - 包含 LawsQ 結果 */}
+                {/* 司法院 API 搜尋結果詳情 */}
                 <div className="bg-gray-50 rounded-lg p-3 mb-3">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <div className="flex items-center space-x-4">
-                      <span className="text-gray-600">司法院: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.judicialRecordsCount} 筆</span></span>
-                      <span className="text-gray-600">LawsQ: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.lawsqRecordsCount || 0} 筆</span></span>
+                      <span className="text-gray-600">司法院記錄: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.judicialRecordsCount} 筆</span></span>
                       <span className="text-gray-600">風險分數: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.riskScore}/100</span></span>
                     </div>
-                    {analysisReport.legalRiskAssessment.lawsqUrl && (
-                      <a 
-                        href={analysisReport.legalRiskAssessment.lawsqUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-full text-xs font-medium transition-colors"
-                      >
-                        🔗 LawsQ 查詢
-                      </a>
-                    )}
                   </div>
                   
-                  {/* LawsQ 搜尋狀態指示 */}
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">LawsQ 搜尋狀態:</span>
-                    <span className={`px-2 py-1 rounded ${
-                      analysisReport.legalRiskAssessment.lawsqSuccess 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {analysisReport.legalRiskAssessment.lawsqSuccess ? '✅ 搜尋成功' : '⚠️ 搜尋超時'}
-                    </span>
-                  </div>
+                  {/* 判決書詳情展示 */}
+                  {analysisReport.legalRiskAssessment.judgmentDetails && analysisReport.legalRiskAssessment.judgmentDetails.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-600 mb-2">相關判決書摘要:</p>
+                      <div className="space-y-2">
+                        {analysisReport.legalRiskAssessment.judgmentDetails.map((judgment, index) => (
+                          <div key={index} className="bg-white rounded p-2 text-xs">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium text-gray-700">{judgment.案號 || `判決書 ${index + 1}`}</span>
+                              <span className="text-gray-500">{judgment.判決日期}</span>
+                            </div>
+                            <p className="text-gray-600 text-xs">{judgment.判決內容 || judgment.案件類型}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex items-center justify-between text-xs text-gray-500">
