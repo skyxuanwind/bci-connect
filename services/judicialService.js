@@ -185,28 +185,45 @@ class JudicialService {
 
   // 取得最近判決書清單（使用正確的 JList API）
   async getRecentJudgmentsList(params = {}) {
+    const startTime = Date.now();
+    console.log('=== 開始查詢司法院判決書異動清單 ===');
+    console.log('查詢參數:', JSON.stringify(params, null, 2));
+    console.log('查詢時間:', new Date().toISOString());
+    
     try {
-      console.log('正在查詢司法院判決書異動清單...');
-      
       // 根據用戶建議，嚴格按照司法院裁判書開放 API 規格
       // API 服務路徑：/data_open/GetJList.ashx
       // 呼叫方法：POST
       // Request Body 必須是 JSON 格式，但 JList API 可能不需要參數
       const jlistUrl = 'https://opendata.judicial.gov.tw/data_open/GetJList.ashx';
       console.log('JList API URL:', jlistUrl);
+      console.log('請求方法: POST');
+      console.log('請求標頭: Content-Type: application/json');
+      console.log('請求內容: {}');
       
-      const response = await axios.post(jlistUrl, {}, {
+      const requestConfig = {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'User-Agent': 'BCI-Connect-App/1.0'
         },
         timeout: 30000,
         validateStatus: function (status) {
           return true; // 接受所有狀態碼
         }
-      });
-
+      };
+      
+      console.log('完整請求配置:', JSON.stringify(requestConfig, null, 2));
+      console.log('發送請求時間:', new Date().toISOString());
+      
+      const response = await axios.post(jlistUrl, {}, requestConfig);
+      
+      const responseTime = Date.now() - startTime;
+      console.log(`請求完成，耗時: ${responseTime}ms`);
       console.log('JList API 回應狀態:', response.status);
-      console.log('JList API 回應內容:', JSON.stringify(response.data, null, 2));
+      console.log('JList API 回應標頭:', JSON.stringify(response.headers, null, 2));
+      console.log('JList API 回應內容類型:', typeof response.data);
+      console.log('JList API 回應內容長度:', JSON.stringify(response.data).length);
+      console.log('JList API 完整回應內容:', JSON.stringify(response.data, null, 2));
 
       if (response.status !== 200) {
         throw new Error(`JList API 回應狀態碼: ${response.status}, 內容: ${JSON.stringify(response.data)}`);
@@ -288,21 +305,74 @@ class JudicialService {
         rawResponse: response.data
       };
     } catch (error) {
-      console.error('查詢司法院判決書失敗:');
+      const errorTime = Date.now() - startTime;
+      console.error('=== JList API 查詢失敗 ===');
+      console.error('錯誤發生時間:', new Date().toISOString());
+      console.error('請求耗時:', errorTime + 'ms');
+      console.error('錯誤類型:', error.constructor.name);
+      console.error('錯誤訊息:', error.message);
+      
+      // 詳細的錯誤資訊
       if (error.response) {
+        console.error('=== HTTP 回應錯誤 ===');
         console.error('- 狀態碼:', error.response.status);
-        console.error('- 回應內容:', error.response.data);
+        console.error('- 狀態文字:', error.response.statusText);
+        console.error('- 回應標頭:', JSON.stringify(error.response.headers, null, 2));
+        console.error('- 回應內容類型:', typeof error.response.data);
+        console.error('- 回應內容:', JSON.stringify(error.response.data, null, 2));
+        
         if (error.response.status === 401) {
-          // Token 可能過期，清除快取
+          console.error('- 認證失敗，清除 token 快取');
           this.token = null;
           this.tokenExpiry = null;
         }
+        
+        if (error.response.status === 405) {
+          console.error('- HTTP 方法不被允許');
+          console.error('- 允許的方法:', error.response.headers.allow || '未指定');
+        }
+        
+        if (error.response.status >= 500) {
+          console.error('- 伺服器內部錯誤');
+        }
+      } else if (error.request) {
+        console.error('=== 網路請求錯誤 ===');
+        console.error('- 請求已發送但無回應');
+        console.error('- 錯誤代碼:', error.code);
+        console.error('- 請求配置:', JSON.stringify({
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          timeout: error.config?.timeout
+        }, null, 2));
+        
+        if (error.code === 'ECONNABORTED') {
+          console.error('- 請求逾時');
+        } else if (error.code === 'ENOTFOUND') {
+          console.error('- DNS 解析失敗');
+        } else if (error.code === 'ECONNREFUSED') {
+          console.error('- 連線被拒絕');
+        }
       } else {
+        console.error('=== 其他錯誤 ===');
         console.error('- 錯誤訊息:', error.message);
       }
+      
+      // 堆疊追蹤
+      if (error.stack) {
+        console.error('=== 堆疊追蹤 ===');
+        console.error(error.stack);
+      }
+      
+      console.error('=== 錯誤處理完成 ===');
+      
       return {
         success: false,
         message: `查詢失敗: ${error.message}`,
+        errorCode: error.response?.status || error.code || 'UNKNOWN',
+        errorType: error.constructor.name,
+        timestamp: new Date().toISOString(),
+        duration: errorTime,
         data: []
       };
     }
@@ -342,43 +412,64 @@ class JudicialService {
 
   // 根據 JID 取得判決書內容（使用正確的 JDoc API）
   async getJudgmentByJid(jid) {
+    const startTime = Date.now();
+    console.log('=== 開始取得判決書內容 ===');
+    console.log('查詢時間:', new Date().toISOString());
+    
     try {
       if (!jid) {
         throw new Error('判決書 ID 不能為空');
       }
 
-      console.log(`正在取得判決書內容: ${jid}`);
+      console.log(`目標 JID: ${jid}`);
       
       // 根據司法院裁判書開放API規格說明，使用正確的API路徑
       // 參考: http://data.judicial.gov.tw/jdg/api/JDoc/{jid}
       const apiUrl = `${JUDICIAL_API_BASE}/JDoc/${jid}`;
       
-      console.log('發送請求到:', apiUrl);
-      console.log('使用 JID:', jid);
+      console.log('JDoc API URL:', apiUrl);
+      console.log('請求方法: GET');
       
       // JID 格式檢查
       console.log('JID 格式檢查:', {
         jid: jid,
         length: jid.length,
         type: typeof jid,
-        isEmpty: !jid || jid.trim() === ''
+        isEmpty: !jid || jid.trim() === '',
+        isString: typeof jid === 'string',
+        trimmed: jid.trim()
       });
       
-      // 直接使用 GET 請求，不需要認證
-      console.log('使用 GET 請求呼叫 JDoc API（無需認證）');
-      const response = await axios.get(apiUrl, {
+      // 根據測試結果，JDoc API 不支援 GET 方法，需要使用 POST 方法
+      console.log('使用 POST 請求呼叫 JDoc API（根據 405 錯誤回應修正）');
+      
+      const requestConfig = {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'User-Agent': 'BCI-Connect-App/1.0'
         },
         timeout: 15000,
         validateStatus: function (status) {
           return true; // 接受所有狀態碼以便詳細分析
         }
-      });
-
-      console.log(`GetJDoc API 回應狀態: ${response.status}`);
-      console.log(`GetJDoc API 完整回應:`, JSON.stringify(response.data, null, 2));
-      console.log(`GetJDoc API 回應標頭:`, JSON.stringify(response.headers, null, 2));
+      };
+      
+      // JDoc API 可能需要在 POST body 中傳遞 JID
+      const requestBody = { jid: jid };
+      
+      console.log('完整請求配置:', JSON.stringify(requestConfig, null, 2));
+      console.log('請求內容:', JSON.stringify(requestBody, null, 2));
+      console.log('發送請求時間:', new Date().toISOString());
+      
+      const response = await axios.post(apiUrl, requestBody, requestConfig);
+      
+      const responseTime = Date.now() - startTime;
+      console.log(`請求完成，耗時: ${responseTime}ms`);
+      console.log(`JDoc API 回應狀態: ${response.status}`);
+      console.log(`JDoc API 回應標頭:`, JSON.stringify(response.headers, null, 2));
+      console.log(`JDoc API 回應內容類型:`, typeof response.data);
+      console.log(`JDoc API 回應內容長度:`, JSON.stringify(response.data).length);
+      console.log(`JDoc API 完整回應:`, JSON.stringify(response.data, null, 2));
 
       if (response.status === 200 && response.data) {
         // 檢查是否為錯誤回應
@@ -397,17 +488,62 @@ class JudicialService {
 
       return null;
     } catch (error) {
-      console.error(`取得判決書 ${jid} 內容失敗:`);
+      const errorTime = Date.now() - startTime;
+      console.error('=== JDoc API 查詢失敗 ===');
+      console.error('目標 JID:', jid);
+      console.error('錯誤發生時間:', new Date().toISOString());
+      console.error('請求耗時:', errorTime + 'ms');
+      console.error('錯誤類型:', error.constructor.name);
+      console.error('錯誤訊息:', error.message);
+      
+      // 詳細的錯誤資訊
       if (error.response) {
-        console.error('- HTTP 狀態碼:', error.response.status);
-        console.error('- 完整回應內容:', JSON.stringify(error.response.data, null, 2));
+        console.error('=== HTTP 回應錯誤 ===');
+        console.error('- 狀態碼:', error.response.status);
+        console.error('- 狀態文字:', error.response.statusText);
         console.error('- 回應標頭:', JSON.stringify(error.response.headers, null, 2));
+        console.error('- 回應內容類型:', typeof error.response.data);
+        console.error('- 回應內容:', JSON.stringify(error.response.data, null, 2));
+        
+        if (error.response.status === 404) {
+          console.error('- 判決書不存在或已被移除');
+        } else if (error.response.status === 405) {
+          console.error('- HTTP 方法不被允許');
+          console.error('- 允許的方法:', error.response.headers.allow || '未指定');
+        } else if (error.response.status >= 500) {
+          console.error('- 伺服器內部錯誤');
+        }
       } else if (error.request) {
-        console.error('- 請求失敗，無回應:', error.message);
-        console.error('- 請求配置:', JSON.stringify(error.config, null, 2));
+        console.error('=== 網路請求錯誤 ===');
+        console.error('- 請求已發送但無回應');
+        console.error('- 錯誤代碼:', error.code);
+        console.error('- 請求配置:', JSON.stringify({
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          timeout: error.config?.timeout
+        }, null, 2));
+        
+        if (error.code === 'ECONNABORTED') {
+          console.error('- 請求逾時');
+        } else if (error.code === 'ENOTFOUND') {
+          console.error('- DNS 解析失敗');
+        } else if (error.code === 'ECONNREFUSED') {
+          console.error('- 連線被拒絕');
+        }
       } else {
+        console.error('=== 其他錯誤 ===');
         console.error('- 錯誤訊息:', error.message);
       }
+      
+      // 堆疊追蹤
+      if (error.stack) {
+        console.error('=== 堆疊追蹤 ===');
+        console.error(error.stack);
+      }
+      
+      console.error('=== 錯誤處理完成 ===');
+      
       return null;
     }
   }
