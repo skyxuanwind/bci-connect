@@ -18,38 +18,60 @@ class JudicialService {
       }
 
       console.log('正在向司法院 Auth API 申請 token...');
-      const response = await axios.post(`${JUDICIAL_API_BASE}/Auth`, {
+      
+      // 根據用戶提供的正確 API 規格
+      const authData = {
         user: process.env.JUDICIAL_ACCOUNT || 'skyxuanwind',
         password: process.env.JUDICIAL_PASSWORD || 'sh520520'
-      }, {
+      };
+      
+      console.log('發送認證請求到:', `${JUDICIAL_API_BASE}/Auth`);
+      console.log('認證資料:', { user: authData.user, password: '***' });
+      
+      const response = await axios.post(`${JUDICIAL_API_BASE}/Auth`, authData, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        timeout: 10000
+        timeout: 15000,
+        validateStatus: function (status) {
+          // 接受所有狀態碼，讓我們自己處理
+          return true;
+        }
       });
 
       console.log('Auth API 回應狀態:', response.status);
+      console.log('Auth API 回應標頭:', response.headers);
       console.log('Auth API 回應內容:', JSON.stringify(response.data, null, 2));
 
+      // 檢查回應狀態
+      if (response.status !== 200) {
+        throw new Error(`API 回應狀態碼: ${response.status}, 內容: ${JSON.stringify(response.data)}`);
+      }
+
+      // 檢查回應中的 token
       if (response.data && (response.data.token || response.data.Token)) {
         this.token = response.data.token || response.data.Token;
         // Token 有效期為 6 小時（根據官方文件）
         this.tokenExpiry = new Date(Date.now() + 6 * 60 * 60 * 1000);
-        console.log('成功取得司法院 API Token:', this.token);
+        console.log('成功取得司法院 API Token:', this.token.substring(0, 20) + '...');
         return this.token;
       }
 
       throw new Error(`API 回應中沒有 token，回應內容: ${JSON.stringify(response.data)}`);
     } catch (error) {
+      console.error('取得司法院 API Token 失敗:');
       if (error.response) {
-        console.error('司法院 Auth API 錯誤:', error.response.status, error.response.data);
-        if (error.response.data && error.response.data.error) {
-          throw new Error(`認證失敗: ${error.response.data.error}`);
-        }
+        console.error('- 狀態碼:', error.response.status);
+        console.error('- 回應內容:', error.response.data);
+        console.error('- 回應標頭:', error.response.headers);
+      } else if (error.request) {
+        console.error('- 請求失敗:', error.message);
+        console.error('- 請求配置:', error.config);
       } else {
-        console.error('取得司法院 API Token 失敗:', error.message);
+        console.error('- 錯誤訊息:', error.message);
       }
-      throw error;
+      throw new Error(`司法院 API 認證失敗: ${error.message}`);
     }
   }
 
@@ -57,7 +79,13 @@ class JudicialService {
   isJudicialApiAvailable() {
     const now = new Date();
     const hour = now.getHours();
-    return hour >= 0 && hour < 6;
+    const isAvailable = hour >= 0 && hour < 6;
+    
+    if (!isAvailable) {
+      console.log(`司法院 API 服務時間檢查: 目前時間 ${hour}:${now.getMinutes().toString().padStart(2, '0')}，服務時間為每日 00:00-06:00`);
+    }
+    
+    return isAvailable;
   }
 
   // 取得特定分類的資料源
@@ -172,59 +200,117 @@ class JudicialService {
       // 先取得認證 token
       const token = await this.getToken();
       
-      console.log('正在查詢司法院判決書資料...');
+      console.log('正在查詢司法院判決書異動清單...');
+      console.log('使用 token:', token.substring(0, 20) + '...');
       
-      const response = await axios.post(`${JUDICIAL_API_BASE}/JList`, {
-        token: token
-      }, {
+      // 根據用戶提供的正確 API 規格
+      const requestData = { token: token };
+      
+      const response = await axios.post(`${JUDICIAL_API_BASE}/JList`, requestData, {
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'BCI-Connect-Legal-Analysis/1.0'
+          'Accept': 'application/json'
         },
-        timeout: 30000
+        timeout: 30000,
+        validateStatus: function (status) {
+          return true; // 接受所有狀態碼
+        }
       });
 
+      console.log('JList API 回應狀態:', response.status);
+      console.log('JList API 回應內容:', JSON.stringify(response.data, null, 2));
+
+      if (response.status !== 200) {
+        throw new Error(`JList API 回應狀態碼: ${response.status}, 內容: ${JSON.stringify(response.data)}`);
+      }
+
+      // 檢查回應格式
       if (response.data && Array.isArray(response.data)) {
         console.log('成功取得判決書清單，共', response.data.length, '日的資料');
+        
         // 收集所有 JID
         const allJids = [];
-        response.data.forEach(dayData => {
+        response.data.forEach((dayData, index) => {
+          console.log(`處理第 ${index + 1} 個資料項目:`, typeof dayData, dayData.DATE || '未知日期');
+          
+          // 檢查是否有 LIST 欄位（標準格式）
           if (dayData.LIST && Array.isArray(dayData.LIST)) {
+            console.log('該日期有', dayData.LIST.length, '筆判決書');
             allJids.push(...dayData.LIST);
           }
+          // 檢查是否有巢狀的陣列結構
+          else if (dayData && typeof dayData === 'object') {
+            // 遍歷物件的所有屬性，尋找陣列
+            Object.keys(dayData).forEach(key => {
+              if (Array.isArray(dayData[key])) {
+                console.log(`在 ${key} 欄位發現 JID 陣列，共 ${dayData[key].length} 筆`);
+                allJids.push(...dayData[key]);
+              }
+            });
+          }
+          // 檢查是否直接是 JID 陣列（實際回應格式）
+          else if (Array.isArray(dayData)) {
+            console.log('發現 JID 陣列，共', dayData.length, '筆判決書');
+            allJids.push(...dayData);
+          }
+          // 檢查是否整個 dayData 就是一個 JID 字串
+          else if (typeof dayData === 'string') {
+            console.log('發現單一 JID:', dayData);
+            allJids.push(dayData);
+          }
         });
+        
         console.log('總共找到', allJids.length, '筆判決書 ID');
+        if (allJids.length > 0) {
+          console.log('前 5 個 JID 範例:', allJids.slice(0, 5));
+        }
         return {
           success: true,
           data: allJids.slice(0, 50), // 限制數量避免過多請求
-          total: allJids.length
+          total: allJids.length,
+          rawData: response.data
+        };
+      }
+      
+      // 檢查是否整個回應就是一個 JID 陣列
+      if (response.data && typeof response.data === 'object' && response.data.LIST && Array.isArray(response.data.LIST)) {
+        console.log('發現單一日期的 JID 清單，共', response.data.LIST.length, '筆判決書');
+        return {
+          success: true,
+          data: response.data.LIST.slice(0, 50),
+          total: response.data.LIST.length,
+          rawData: response.data
         };
       }
       
       // 處理錯誤回應
       if (response.data && response.data.error) {
-        console.log('司法院 API 錯誤:', response.data.error);
-        if (response.data.error.includes('驗證') || response.data.error.includes('未提供')) {
-          console.log('API 可能需要在正確的服務時間內調用');
-        }
-      } else {
-        console.log('司法院 API 回應格式異常:', response.data);
+        console.log('司法院 JList API 錯誤:', response.data.error);
+        return {
+          success: false,
+          message: `API 錯誤: ${response.data.error}`,
+          data: []
+        };
       }
       
       return {
         success: false,
-        message: '無法取得判決書資料',
-        data: []
+        message: '無法取得判決書資料，回應格式異常',
+        data: [],
+        rawResponse: response.data
       };
     } catch (error) {
-      console.error('查詢司法院判決書失敗:', error.message);
+      console.error('查詢司法院判決書失敗:');
       if (error.response) {
-        console.error('JList API 回應錯誤:', error.response.status, error.response.data);
+        console.error('- 狀態碼:', error.response.status);
+        console.error('- 回應內容:', error.response.data);
         if (error.response.status === 401) {
           // Token 可能過期，清除快取
           this.token = null;
           this.tokenExpiry = null;
         }
+      } else {
+        console.error('- 錯誤訊息:', error.message);
       }
       return {
         success: false,
@@ -284,38 +370,71 @@ class JudicialService {
 
       console.log(`正在取得判決書內容: ${jid}`);
       
-      const response = await axios.post(`${JUDICIAL_API_BASE}/JContent`, {
+      // JDoc API 需要使用 POST 方法，但參數格式需要調整
+      const apiUrl = `${JUDICIAL_API_BASE}/JDoc`;
+      
+      console.log('發送請求到:', apiUrl);
+      console.log('使用 JID:', jid);
+      console.log('使用 token:', token.substring(0, 20) + '...');
+      
+      // 根據 C# 代碼結構，使用正確的 JSON 格式
+      const requestData = {
         token: token,
-        jid: jid
-      }, {
+        input: jid  // API 期望的參數名稱確實是 input
+      };
+      
+      // 先測試 JID 格式是否正確
+      console.log('JID 格式檢查:', {
+        jid: jid,
+        length: jid.length,
+        type: typeof jid,
+        isEmpty: !jid || jid.trim() === ''
+      });
+      
+      const response = await axios.post(apiUrl, JSON.stringify(requestData), {
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'BCI-Connect-Legal-Analysis/1.0'
+          'Accept': 'application/json'
         },
-        timeout: 15000
+        timeout: 15000,
+        validateStatus: function (status) {
+          return true; // 接受所有狀態碼
+        }
       });
 
-      if (response.data) {
+      console.log(`JDoc API 回應狀態: ${response.status}`);
+      console.log(`JDoc API 回應內容:`, JSON.stringify(response.data, null, 2));
+
+      if (response.status === 200 && response.data) {
+        // 檢查是否為錯誤回應
+        if (response.data.error && response.data.error.includes('查無資料')) {
+          console.log(`判決書 ${jid} 已被移除或不存在`);
+          return null;
+        }
+        
         console.log(`成功取得判決書 ${jid} 的內容`);
         return response.data;
       }
 
+      if (response.status !== 200) {
+        throw new Error(`JDoc API 回應狀態碼: ${response.status}, 內容: ${JSON.stringify(response.data)}`);
+      }
+
       return null;
     } catch (error) {
+      console.error(`取得判決書 ${jid} 內容失敗:`);
       if (error.response) {
-        if (error.response.status === 404) {
-          console.log(`判決書 ${jid} 不存在或已被移除`);
-          return null;
-        } else if (error.response.status === 401) {
+        console.error('- 狀態碼:', error.response.status);
+        console.error('- 回應內容:', error.response.data);
+        
+        if (error.response.status === 401) {
           // Token 可能過期，清除快取
           this.token = null;
           this.tokenExpiry = null;
-          console.error(`取得判決書 ${jid} 內容失敗: 認證失敗`);
-        } else {
-          console.error(`JDoc API 回應錯誤:`, error.response.status, error.response.data);
+          console.error('認證失敗，已清除 token 快取');
         }
       } else {
-        console.error(`取得判決書 ${jid} 內容失敗:`, error.message);
+        console.error('- 錯誤訊息:', error.message);
       }
       return null;
     }
