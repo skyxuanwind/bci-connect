@@ -334,10 +334,33 @@ const ProspectDetail = () => {
                   <span className="text-2xl mr-3">🎯</span>
                   <h3 className="text-lg font-bold text-gray-900">BCI 契合度評分</h3>
                 </div>
-                {getScoreBadge(analysisReport.bciFitScore?.score)}
+                <div className="flex items-center space-x-2">
+                  {getScoreBadge(analysisReport.bciFitScore?.score)}
+                  {analysisReport.bciFitScore?.recommendation && (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      analysisReport.bciFitScore.recommendation === 'strongly_recommend' 
+                        ? 'bg-green-100 text-green-700' 
+                        : analysisReport.bciFitScore.recommendation === 'recommend'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {analysisReport.bciFitScore.recommendation === 'strongly_recommend' 
+                        ? '強烈推薦' 
+                        : analysisReport.bciFitScore.recommendation === 'recommend'
+                        ? '建議通過'
+                        : '謹慎評估'}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 border">
-                <p className="text-gray-700 leading-relaxed text-sm">{analysisReport.bciFitScore?.analysis}</p>
+                <div className="text-gray-700 leading-relaxed text-sm"
+                     dangerouslySetInnerHTML={{
+                       __html: analysisReport.bciFitScore.analysis
+                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                         .replace(/\n/g, '<br>')
+                     }}
+                />
               </div>
             </div>
 
@@ -348,10 +371,27 @@ const ProspectDetail = () => {
                   <span className="text-2xl mr-3">📊</span>
                   <h3 className="text-lg font-bold text-gray-900">市場聲譽分析</h3>
                 </div>
-                {getSentimentBadge(analysisReport.marketSentiment?.sentiment)}
+                <div className="flex items-center space-x-2">
+                  {getSentimentBadge(analysisReport.marketSentiment?.sentiment)}
+                  {analysisReport.marketSentiment?.confidence && (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      analysisReport.marketSentiment.confidence === 'high' 
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {analysisReport.marketSentiment.confidence === 'high' ? '高信心度' : '中信心度'}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 border">
-                <p className="text-gray-700 leading-relaxed text-sm">{analysisReport.marketSentiment?.analysis}</p>
+                <div className="text-gray-700 leading-relaxed text-sm"
+                     dangerouslySetInnerHTML={{
+                       __html: analysisReport.marketSentiment.analysis
+                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                         .replace(/\n/g, '<br>')
+                     }}
+                />
               </div>
             </div>
 
@@ -391,31 +431,34 @@ const ProspectDetail = () => {
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 border">
-                  <p className="text-gray-700 leading-relaxed text-sm mb-3">{analysisReport.legalRiskAssessment.analysis}</p>
+                  <div className="text-gray-700 leading-relaxed text-sm mb-3" 
+                       dangerouslySetInnerHTML={{
+                         __html: analysisReport.legalRiskAssessment.analysis
+                           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                           .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">$1</a>')
+                           .replace(/\n/g, '<br>')
+                       }}
+                  />
                 </div>
                 
+                {/* 簡化的資訊顯示 */}
                 <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-gray-600">判決書數量:</p>
-                      <p className="text-gray-900">{analysisReport.legalRiskAssessment.judicialRecordsCount} 件</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-gray-600">判決記錄: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.judicialRecordsCount} 筆</span></span>
+                      <span className="text-gray-600">風險分數: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.riskScore}/100</span></span>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-600">風險摘要:</p>
-                      <p className="text-gray-900">{analysisReport.legalRiskAssessment.riskSummary}</p>
-                    </div>
+                    {analysisReport.legalRiskAssessment.lawsqUrl && (
+                      <a 
+                        href={analysisReport.legalRiskAssessment.lawsqUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-full text-xs font-medium transition-colors"
+                      >
+                        🔗 LawsQ 查詢
+                      </a>
+                    )}
                   </div>
-                  
-                  {analysisReport.legalRiskAssessment.riskDetails && analysisReport.legalRiskAssessment.riskDetails.length > 0 && (
-                    <div className="mt-3">
-                      <p className="font-medium text-gray-600 text-sm mb-1">風險細節:</p>
-                      <ul className="text-sm text-gray-700 list-disc list-inside">
-                        {analysisReport.legalRiskAssessment.riskDetails.map((detail, index) => (
-                          <li key={index}>{detail}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="flex items-center justify-between text-xs text-gray-500">
@@ -434,12 +477,25 @@ const ProspectDetail = () => {
             {/* Public Information Scan */}
             {analysisReport.publicInformationScan && (
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">🔍</span>
-                  <h3 className="text-lg font-bold text-gray-900">公開資訊掃描</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <span className="text-2xl mr-3">🔍</span>
+                    <h3 className="text-lg font-bold text-gray-900">公開資訊掃描</h3>
+                  </div>
+                  {analysisReport.publicInformationScan.realData && (
+                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                      ✅ 真實資料
+                    </span>
+                  )}
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 border">
-                  <p className="text-gray-700 leading-relaxed text-sm mb-3">{analysisReport.publicInformationScan?.summary}</p>
+                  <div className="text-gray-700 leading-relaxed text-sm mb-3"
+                       dangerouslySetInnerHTML={{
+                         __html: analysisReport.publicInformationScan.summary
+                           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                           .replace(/\n/g, '<br>')
+                       }}
+                  />
                 </div>
                 <div className="mt-3">
                   <p className="text-xs text-gray-500">資料來源: {analysisReport.publicInformationScan?.sources}</p>

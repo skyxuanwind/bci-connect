@@ -368,46 +368,55 @@ async function performFastAnalysis(prospect) {
     // 編譯快速分析報告
     const analysisReport = {
       analysisDate: new Date().toISOString(),
-      analysisType: 'gemini_enhanced_analysis', // 標記為 Gemini AI 增強分析
-      processingTime: '< 15秒', // AI 增強分析的處理時間
+      analysisType: 'enhanced_real_data_analysis',
+      processingTime: '< 15秒',
+      
+      // 公開資訊掃描 - 整合真實網路資料
       publicInformationScan: {
-        summary: geminiResult?.analysis?.publicInfo?.data || `${aiSentiment === 'positive' ? '✅ 正面評價' : aiSentiment === 'negative' ? '⚠️ 負面評價' : '➖ 中性評價'}\n\n基於公司名稱和產業關鍵字分析，該公司展現${aiSentiment === 'positive' ? '良好的市場形象' : aiSentiment === 'negative' ? '需要關注的負面資訊' : '一般的市場表現'}。`,
-        sources: geminiResult?.success ? 'Gemini AI 網路搜尋' : '關鍵字分析',
-        method: geminiResult?.success ? 'gemini_ai_analysis' : 'keyword_analysis',
-        geminiAnalysis: geminiResult?.analysis?.publicInfo || null
+        summary: geminiResult?.analysis?.publicInfo?.data ? 
+          `🔍 **網路搜尋發現**\n${geminiResult.analysis.publicInfo.data.substring(0, 200)}...` :
+          `⚠️ **無網路資料** | ${aiSentiment === 'positive' ? '✅ 正面' : aiSentiment === 'negative' ? '❌ 負面' : '➖ 中性'}評價`,
+        sources: geminiResult?.success ? '🌐 Gemini AI 即時搜尋' : '📊 本地關鍵字分析',
+        realData: geminiResult?.success || false
       },
+      
+      // 市場聲譽分析
       marketSentiment: {
         sentiment: aiSentiment,
-        analysis: geminiResult?.analysis?.sentiment?.analysis || `${aiSentiment === 'positive' ? '📈 市場聲譽良好' : aiSentiment === 'negative' ? '📉 市場聲譽待改善' : '📊 市場聲譽中性'}\n\n${aiSentiment === 'positive' ? '該公司在市場上享有良好聲譽，品牌形象正面。' : aiSentiment === 'negative' ? '該公司存在負面市場評價，建議進一步了解。' : '該公司市場聲譽中性，無明顯正負面評價。'}`,
-        geminiAnalysis: geminiResult?.analysis?.sentiment || null
+        analysis: geminiResult?.analysis?.sentiment?.analysis ?
+          `📈 **真實評價**: ${geminiResult.analysis.sentiment.analysis.substring(0, 150)}...` :
+          `${aiSentiment === 'positive' ? '✅ 正面' : aiSentiment === 'negative' ? '❌ 負面' : '➖ 中性'} | ${aiSentiment === 'positive' ? '市場形象佳' : aiSentiment === 'negative' ? '負面評價' : '評價中性'}`,
+        confidence: geminiResult?.success ? 'high' : 'medium'
       },
+      
+      // 產業衝突檢測
       industryConflict: {
-        analysis: geminiResult?.analysis?.industryConflict?.analysis || `${aiConflictLevel === 'high' ? '🔴 高度衝突' : aiConflictLevel === 'medium' ? '🟡 中度衝突' : '🟢 低度衝突'}\n\n同產業現有會員：${existingMembersResult.rows.length}位\n${aiConflictLevel === 'high' ? '存在高度產業重疊，需詳細評估業務差異。' : aiConflictLevel === 'medium' ? '存在部分產業重疊，建議進一步了解。' : '產業重疊度低，衝突風險小。'}`,
-        existingMembers: existingMembers || '無同產業現有會員',
+        analysis: `${aiConflictLevel === 'high' ? '🔴 高衝突' : aiConflictLevel === 'medium' ? '🟡 中衝突' : '🟢 低衝突'} | 同業: ${existingMembersResult.rows.length}位\n${aiConflictLevel === 'high' ? '⚠️ 業務重疊高' : aiConflictLevel === 'medium' ? '⚠️ 部分重疊' : '✅ 衝突風險低'}`,
+        existingMembers: existingMembers || '無',
         conflictLevel: aiConflictLevel,
-        memberCount: existingMembersResult.rows.length,
-        geminiAnalysis: geminiResult?.analysis?.industryConflict || null
+        memberCount: existingMembersResult.rows.length
       },
+      
+      // 法律風險評估 - 整合 LawsQ
       legalRiskAssessment: {
         judicialRecordsCount: judicialResult.total,
         riskLevel: legalRiskAnalysis.riskLevel,
         riskScore: legalRiskAnalysis.riskScore,
-        riskSummary: legalRiskAnalysis.summary,
-        riskDetails: legalRiskAnalysis.details.slice(0, 3),
-        analysis: `${legalRiskAnalysis.riskLevel === 'high' ? '🔴 高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '🟡 中風險' : '🟢 低風險'}\n\n司法院查詢結果：${judicialResult.total}筆判決記錄\n${legalRiskAnalysis.riskLevel === 'high' ? '發現多筆司法記錄，建議詳細審查。' : legalRiskAnalysis.riskLevel === 'medium' ? '發現部分司法記錄，需進一步關注。' : '未發現重大司法記錄，風險較低。'}`,
-        dataSource: '司法院法學資料檢索系統',
-        searchSuccess: judicialResult.total > 0 || judicialResult.searchSuccess !== false,
-        searchTimeout: judicialResult.total === 0 ? '查詢超時，使用預設低風險評估' : null
+        analysis: `${legalRiskAnalysis.riskLevel === 'high' ? '🔴 高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '🟡 中風險' : '🟢 低風險'} | 判決: ${judicialResult.total}筆\n${legalRiskAnalysis.riskLevel === 'high' ? '⚠️ 多筆記錄' : legalRiskAnalysis.riskLevel === 'medium' ? '⚠️ 部分記錄' : '✅ 無重大記錄'}\n\n🔗 [LawsQ詳細查詢](https://www.lawsq.com/search?q=${encodeURIComponent(prospect.company)})`,
+        dataSource: '司法院 + LawsQ',
+        lawsqUrl: `https://www.lawsq.com/search?q=${encodeURIComponent(prospect.company)}`,
+        searchSuccess: judicialResult.total > 0
       },
+      
+      // BCI 契合度評分
       bciFitScore: {
         score: score,
-        analysis: geminiResult?.analysis?.bciFitScore?.analysis || `🎯 BCI 契合度：${score}分\n\n📊 評分構成：\n• 市場聲譽：${aiSentiment === 'positive' ? '✅ 正面' : aiSentiment === 'negative' ? '❌ 負面' : '➖ 中性'}\n• 產業衝突：${aiConflictLevel === 'low' ? '✅ 低衝突' : aiConflictLevel === 'medium' ? '⚠️ 中衝突' : '❌ 高衝突'}\n• 法律風險：${legalRiskAnalysis.riskLevel === 'low' ? '✅ 低風險' : legalRiskAnalysis.riskLevel === 'medium' ? '⚠️ 中風險' : '❌ 高風險'}\n\n💡 ${score >= 80 ? '強烈推薦加入' : score >= 60 ? '建議通過申請' : '建議謹慎評估'}`,
+        analysis: `🎯 **${score}分** ${score >= 80 ? '(優秀)' : score >= 60 ? '(良好)' : '(待改善)'}\n\n📊 **評估**: 聲譽${aiSentiment === 'positive' ? '✅' : aiSentiment === 'negative' ? '❌' : '➖'} | 衝突${aiConflictLevel === 'low' ? '✅' : '⚠️'} | 風險${legalRiskAnalysis.riskLevel === 'low' ? '✅' : '⚠️'}\n\n💡 **建議**: ${score >= 80 ? '強烈推薦' : score >= 60 ? '建議通過' : '謹慎評估'}`,
+        recommendation: score >= 80 ? 'strongly_recommend' : score >= 60 ? 'recommend' : 'caution',
         factors: {
           reputation: aiSentiment,
           industryConflict: aiConflictLevel,
-          legalRisk: legalRiskAnalysis.riskLevel,
-          capitalAmount: prospect.capital_amount || 0,
-          businessYears: prospect.business_years || 0
+          legalRisk: legalRiskAnalysis.riskLevel
         },
         geminiAnalysis: geminiResult?.analysis?.bciFitScore || null
       },
