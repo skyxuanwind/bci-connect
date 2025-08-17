@@ -3,6 +3,7 @@ const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const judicialService = require('../services/judicialService');
 const geminiService = require('../services/geminiService');
+const lawsqService = require('../services/lawsqService');
 
 const router = express.Router();
 
@@ -284,26 +285,64 @@ async function performFastAnalysis(prospect) {
     
     await new Promise(resolve => setTimeout(resolve, 1000));
      
-    // 3. 快速法律風險評估
+    // 3. 快速法律風險評估 (司法院 + LawsQ)
     await updateAnalysisProgress(prospect.id, {
       stage: 'legal_analysis',
       progress: 65,
       currentStep: '正在評估法律風險...',
-      details: `正在查詢「${prospect.company}」的司法記錄和法律風險，檢查相關訴訟案件...`
+      details: `正在查詢「${prospect.company}」的司法記錄和法律風險，檢查相關訴訟案件 (司法院 + LawsQ)...`
     });
     
     console.log(`Checking judicial records for: ${prospect.company}`);
     let judicialResult = { total: 0, data: [] };
+    let lawsqResult = { success: false, results: [], summary: '無' };
     let legalRiskAnalysis = { riskLevel: 'low', riskScore: 0, summary: '無重大法律風險', details: [] };
     
+    // 同時查詢司法院和 LawsQ
     try {
-      judicialResult = await Promise.race([
-        judicialService.searchJudgments(prospect.company, { top: 10 }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+      const [judicialData, lawsqData] = await Promise.allSettled([
+        Promise.race([
+          judicialService.searchJudgments(prospect.company, { top: 10 }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Judicial Timeout')), 8000))
+        ]),
+        Promise.race([
+          lawsqService.searchJudgments(prospect.company),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('LawsQ Timeout')), 8000))
+        ])
       ]);
-      legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
+      
+      // 處理司法院結果
+      if (judicialData.status === 'fulfilled') {
+        judicialResult = judicialData.value;
+        legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
+      } else {
+        console.log('司法院查詢失敗:', judicialData.reason?.message);
+      }
+      
+      // 處理 LawsQ 結果
+      if (lawsqData.status === 'fulfilled') {
+        lawsqResult = lawsqData.value;
+        console.log(`LawsQ 查詢結果: ${lawsqResult.success ? '成功' : '失敗'}, 結果數: ${lawsqResult.results?.length || 0}`);
+      } else {
+        console.log('LawsQ 查詢失敗:', lawsqData.reason?.message);
+      }
+      
+      // 如果 LawsQ 有結果，調整風險評估
+      if (lawsqResult.success && lawsqResult.results.length > 0) {
+        const lawsqRiskAdjustment = Math.min(lawsqResult.results.length * 10, 30);
+        legalRiskAnalysis.riskScore = Math.min(legalRiskAnalysis.riskScore + lawsqRiskAdjustment, 100);
+        
+        if (legalRiskAnalysis.riskScore >= 70) {
+          legalRiskAnalysis.riskLevel = 'high';
+        } else if (legalRiskAnalysis.riskScore >= 40) {
+          legalRiskAnalysis.riskLevel = 'medium';
+        }
+        
+        legalRiskAnalysis.summary = `司法院: ${judicialResult.total}筆, LawsQ: ${lawsqResult.results.length}筆相關記錄`;
+      }
+      
     } catch (error) {
-      console.log('Judicial service timeout, using default values');
+      console.log('法律風險評估查詢錯誤:', error.message);
     }
     
     const legalRiskText = `法律風險評估：${legalRiskAnalysis.riskLevel === 'high' ? '高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '中風險' : '低風險'}`;
@@ -397,15 +436,18 @@ async function performFastAnalysis(prospect) {
         memberCount: existingMembersResult.rows.length
       },
       
-      // 法律風險評估 - 整合 LawsQ
+      // 法律風險評估 - 整合 LawsQ 真實搜尋結果
       legalRiskAssessment: {
         judicialRecordsCount: judicialResult.total,
+        lawsqRecordsCount: lawsqResult.results?.length || 0,
         riskLevel: legalRiskAnalysis.riskLevel,
         riskScore: legalRiskAnalysis.riskScore,
-        analysis: `${legalRiskAnalysis.riskLevel === 'high' ? '🔴 高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '🟡 中風險' : '🟢 低風險'} | 判決: ${judicialResult.total}筆\n${legalRiskAnalysis.riskLevel === 'high' ? '⚠️ 多筆記錄' : legalRiskAnalysis.riskLevel === 'medium' ? '⚠️ 部分記錄' : '✅ 無重大記錄'}\n\n🔗 [LawsQ詳細查詢](https://www.lawsq.com/search?q=${encodeURIComponent(prospect.company)})`,
-        dataSource: '司法院 + LawsQ',
-        lawsqUrl: `https://www.lawsq.com/search?q=${encodeURIComponent(prospect.company)}`,
-        searchSuccess: judicialResult.total > 0
+        analysis: `${legalRiskAnalysis.riskLevel === 'high' ? '🔴 高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '🟡 中風險' : '🟢 低風險'} | 司法院: ${judicialResult.total}筆 | LawsQ: ${lawsqResult.results?.length || 0}筆\n\n**LawsQ 搜尋結果**: ${lawsqResult.summary}\n\n${legalRiskAnalysis.riskLevel === 'high' ? '⚠️ 發現多筆記錄' : legalRiskAnalysis.riskLevel === 'medium' ? '⚠️ 發現部分記錄' : '✅ 無重大記錄'}\n\n🔗 [LawsQ詳細查詢](${lawsqResult.searchUrl || `https://www.lawsq.com/search?q=${encodeURIComponent(prospect.company)}`})`,
+        dataSource: '司法院 + LawsQ 即時搜尋',
+        lawsqUrl: lawsqResult.searchUrl || `https://www.lawsq.com/search?q=${encodeURIComponent(prospect.company)}`,
+        lawsqResults: lawsqResult.results?.slice(0, 3) || [], // 只保留前3筆結果
+        lawsqSuccess: lawsqResult.success,
+        searchSuccess: judicialResult.total > 0 || (lawsqResult.success && lawsqResult.results?.length > 0)
       },
       
       // BCI 契合度評分

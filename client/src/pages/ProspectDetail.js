@@ -441,11 +441,12 @@ const ProspectDetail = () => {
                   />
                 </div>
                 
-                {/* 簡化的資訊顯示 */}
+                {/* 詳細的資訊顯示 - 包含 LawsQ 結果 */}
                 <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-sm mb-2">
                     <div className="flex items-center space-x-4">
-                      <span className="text-gray-600">判決記錄: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.judicialRecordsCount} 筆</span></span>
+                      <span className="text-gray-600">司法院: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.judicialRecordsCount} 筆</span></span>
+                      <span className="text-gray-600">LawsQ: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.lawsqRecordsCount || 0} 筆</span></span>
                       <span className="text-gray-600">風險分數: <span className="font-medium text-gray-900">{analysisReport.legalRiskAssessment.riskScore}/100</span></span>
                     </div>
                     {analysisReport.legalRiskAssessment.lawsqUrl && (
@@ -459,6 +460,18 @@ const ProspectDetail = () => {
                       </a>
                     )}
                   </div>
+                  
+                  {/* LawsQ 搜尋狀態指示 */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">LawsQ 搜尋狀態:</span>
+                    <span className={`px-2 py-1 rounded ${
+                      analysisReport.legalRiskAssessment.lawsqSuccess 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {analysisReport.legalRiskAssessment.lawsqSuccess ? '✅ 搜尋成功' : '⚠️ 搜尋超時'}
+                    </span>
+                  </div>
                 </div>
                 
                 <div className="flex items-center justify-between text-xs text-gray-500">
@@ -468,7 +481,7 @@ const ProspectDetail = () => {
                       ? 'bg-green-100 text-green-700' 
                       : 'bg-red-100 text-red-700'
                   }`}>
-                    {analysisReport.legalRiskAssessment.searchSuccess ? '查詢成功' : '查詢失敗'}
+                    {analysisReport.legalRiskAssessment.searchSuccess ? '整體查詢成功' : '查詢異常'}
                   </span>
                 </div>
               </div>

@@ -24,6 +24,7 @@
     "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
     "chart.js": "^4.5.0",
+    "cheerio": "^1.0.0-rc.12",
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
