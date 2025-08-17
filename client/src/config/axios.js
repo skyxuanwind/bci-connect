@@ -46,6 +46,10 @@ axios.interceptors.response.use(
     return response;
   },
   (error) => {
+    // 提供更詳細的錯誤訊息
+    const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+    const errorStatus = error.response?.status || 'No status';
+    
     if (error.response?.status === 401 || error.response?.status === 403) {
       // Token expired or invalid - clear authentication data
       document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
@@ -56,7 +60,14 @@ axios.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    console.error('API Error:', error);
+    
+    console.error('API Error:', {
+      status: errorStatus,
+      message: errorMessage,
+      url: error.config?.url,
+      method: error.config?.method
+    });
+    
     return Promise.reject(error);
   }
 );

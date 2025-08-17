@@ -46,13 +46,20 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.user);
       setIsAuthenticated(true);
     } catch (error) {
-      console.error('Auth check failed:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown auth error';
+      console.error('Auth check failed:', {
+        status: error.response?.status,
+        message: errorMessage,
+        url: error.config?.url
+      });
+      
       // Force clear all authentication data
       Cookies.remove('token');
       localStorage.removeItem('user');
       sessionStorage.clear();
       setUser(null);
       setIsAuthenticated(false);
+      
       // Show error message for invalid token
       if (error.response?.status === 401 || error.response?.status === 403) {
         toast.error('登入已過期，請重新登入');
