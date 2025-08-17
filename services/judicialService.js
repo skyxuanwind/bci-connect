@@ -186,30 +186,18 @@ class JudicialService {
   // 取得最近判決書清單（使用正確的 JList API）
   async getRecentJudgmentsList(params = {}) {
     try {
-      // 檢查司法院 API 服務時間（凌晨 0-6 時）
-      if (!this.isJudicialApiAvailable()) {
-        const now = new Date();
-        console.log(`司法院 API 僅在每日凌晨 0-6 時提供服務，目前時間：${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
-        return {
-          success: false,
-          message: '司法院 API 目前不在服務時間內（僅凌晨 0-6 時提供服務）',
-          data: []
-        };
-      }
-
-      // 先取得認證 token
-      const token = await this.getToken();
-      
       console.log('正在查詢司法院判決書異動清單...');
-      console.log('使用 token:', token.substring(0, 20) + '...');
       
-      // 根據用戶提供的正確 API 規格
-      const requestData = { token: token };
+      // 根據用戶建議，嚴格按照司法院裁判書開放 API 規格
+      // API 服務路徑：/data_open/GetJList.ashx
+      // 呼叫方法：POST
+      // Request Body 必須是 JSON 格式，但 JList API 可能不需要參數
+      const jlistUrl = 'https://opendata.judicial.gov.tw/data_open/GetJList.ashx';
+      console.log('JList API URL:', jlistUrl);
       
-      const response = await axios.post(`${JUDICIAL_API_BASE}/JList`, requestData, {
+      const response = await axios.post(jlistUrl, {}, {
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         timeout: 30000,
         validateStatus: function (status) {
@@ -359,31 +347,16 @@ class JudicialService {
         throw new Error('判決書 ID 不能為空');
       }
 
-      // 檢查服務時間
-      if (!this.isJudicialApiAvailable()) {
-        console.log(`司法院 API 服務時間外，無法取得判決書 ${jid}`);
-        return null;
-      }
-
-      // 先取得認證 token
-      const token = await this.getToken();
-
       console.log(`正在取得判決書內容: ${jid}`);
       
-      // JDoc API 需要使用 POST 方法，但參數格式需要調整
-      const apiUrl = `${JUDICIAL_API_BASE}/JDoc`;
+      // 根據司法院裁判書開放API規格說明，使用正確的API路徑
+      // 參考: http://data.judicial.gov.tw/jdg/api/JDoc/{jid}
+      const apiUrl = `${JUDICIAL_API_BASE}/JDoc/${jid}`;
       
       console.log('發送請求到:', apiUrl);
       console.log('使用 JID:', jid);
-      console.log('使用 token:', token.substring(0, 20) + '...');
       
-      // 根據 C# 代碼結構，使用正確的 JSON 格式
-      const requestData = {
-        token: token,
-        input: jid  // API 期望的參數名稱確實是 input
-      };
-      
-      // 先測試 JID 格式是否正確
+      // JID 格式檢查
       console.log('JID 格式檢查:', {
         jid: jid,
         length: jid.length,
@@ -391,19 +364,21 @@ class JudicialService {
         isEmpty: !jid || jid.trim() === ''
       });
       
-      const response = await axios.post(apiUrl, JSON.stringify(requestData), {
+      // 直接使用 GET 請求，不需要認證
+      console.log('使用 GET 請求呼叫 JDoc API（無需認證）');
+      const response = await axios.get(apiUrl, {
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         timeout: 15000,
         validateStatus: function (status) {
-          return true; // 接受所有狀態碼
+          return true; // 接受所有狀態碼以便詳細分析
         }
       });
 
-      console.log(`JDoc API 回應狀態: ${response.status}`);
-      console.log(`JDoc API 回應內容:`, JSON.stringify(response.data, null, 2));
+      console.log(`GetJDoc API 回應狀態: ${response.status}`);
+      console.log(`GetJDoc API 完整回應:`, JSON.stringify(response.data, null, 2));
+      console.log(`GetJDoc API 回應標頭:`, JSON.stringify(response.headers, null, 2));
 
       if (response.status === 200 && response.data) {
         // 檢查是否為錯誤回應
@@ -417,22 +392,19 @@ class JudicialService {
       }
 
       if (response.status !== 200) {
-        throw new Error(`JDoc API 回應狀態碼: ${response.status}, 內容: ${JSON.stringify(response.data)}`);
+        throw new Error(`GetJDoc API 回應狀態碼: ${response.status}, 完整錯誤內容: ${JSON.stringify(response.data)}`);
       }
 
       return null;
     } catch (error) {
       console.error(`取得判決書 ${jid} 內容失敗:`);
       if (error.response) {
-        console.error('- 狀態碼:', error.response.status);
-        console.error('- 回應內容:', error.response.data);
-        
-        if (error.response.status === 401) {
-          // Token 可能過期，清除快取
-          this.token = null;
-          this.tokenExpiry = null;
-          console.error('認證失敗，已清除 token 快取');
-        }
+        console.error('- HTTP 狀態碼:', error.response.status);
+        console.error('- 完整回應內容:', JSON.stringify(error.response.data, null, 2));
+        console.error('- 回應標頭:', JSON.stringify(error.response.headers, null, 2));
+      } else if (error.request) {
+        console.error('- 請求失敗，無回應:', error.message);
+        console.error('- 請求配置:', JSON.stringify(error.config, null, 2));
       } else {
         console.error('- 錯誤訊息:', error.message);
       }
