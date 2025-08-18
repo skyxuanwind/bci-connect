@@ -18,7 +18,7 @@ import {
   HandRaisedIcon,
   CalendarDaysIcon,
   CalendarIcon,
-  DocumentTextIcon,
+
   CheckBadgeIcon,
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,

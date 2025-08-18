@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Html5QrcodeScanner, Html5QrcodeScanType, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import axios from 'axios';
+import api from '../services/api';
 
 const CheckInScanner = () => {
   const { user, isAdmin } = useAuth();
@@ -37,7 +38,7 @@ const CheckInScanner = () => {
   }, []);
 
   const checkNFCSupport = () => {
-    if ('NDEFReader' in window) {
+    if (typeof window !== 'undefined' && 'NDEFReader' in window) {
       setNfcSupported(true);
     } else {
       console.log('NFC not supported on this device/browser');
@@ -368,7 +369,7 @@ const CheckInScanner = () => {
       setNfcReading(true);
       setNfcResult(null);
       
-      const ndef = new NDEFReader();
+      const ndef = new window.NDEFReader();
       await ndef.scan();
       
       console.log('NFC 掃描已啟動，請將 NFC 卡片靠近設備...');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,13 +10,6 @@ const NFCTest = () => {
   const [userNfcId, setUserNfcId] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    checkNFCSupport();
-    if (user) {
-      fetchUserNfcId();
-    }
-  }, [user]);
-
   const checkNFCSupport = () => {
     if ('NDEFReader' in window) {
       setNfcSupported(true);
@@ -25,7 +18,7 @@ const NFCTest = () => {
     }
   };
 
-  const fetchUserNfcId = async () => {
+  const fetchUserNfcId = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(`/api/attendance/nfc-info/${user.id}`);
@@ -35,7 +28,14 @@ const NFCTest = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    checkNFCSupport();
+    if (user) {
+      fetchUserNfcId();
+    }
+  }, [user, fetchUserNfcId]);
 
   const startNFCReading = async () => {
     if (!nfcSupported) {
@@ -47,7 +47,7 @@ const NFCTest = () => {
       setNfcReading(true);
       setNfcData(null);
       
-      const ndef = new NDEFReader();
+      const ndef = new window.NDEFReader();
       await ndef.scan();
       
       console.log('NFC 掃描已啟動，請將 NFC 卡片靠近設備...');
