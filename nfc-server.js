@@ -1,4 +1,14 @@
-const { NFC } = require('nfc-pcsc');
+// 嘗試載入 nfc-pcsc 套件，如果不存在則設為 null
+let NFC = null;
+try {
+  const nfcPcsc = require('nfc-pcsc');
+  NFC = nfcPcsc.NFC;
+  console.log('✅ NFC-PCSC 套件載入成功');
+} catch (error) {
+  console.log('⚠️  NFC-PCSC 套件未安裝或不可用 (這在生產環境是正常的)');
+  console.log('   本地 NFC 功能將被停用');
+}
+
 const { Server } = require('socket.io');
 const http = require('http');
 const cors = require('cors');
@@ -65,6 +75,19 @@ io.on('connection', (socket) => {
 
 // 初始化 NFC 讀卡機
 function initializeNFC() {
+  // 檢查 NFC 套件是否可用
+  if (!NFC) {
+    console.log('❌ NFC-PCSC 套件不可用，跳過 NFC 初始化');
+    // 通知所有客戶端 NFC 不可用
+    io.emit('nfc-status', {
+      readerConnected: false,
+      readerName: null,
+      isReading: false,
+      error: 'NFC-PCSC 套件在此環境中不可用'
+    });
+    return;
+  }
+  
   try {
     const nfc = new NFC();
     
@@ -150,6 +173,15 @@ function initializeNFC() {
 
 // 開始 NFC 讀取
 function startNFCReading(socket = null) {
+  if (!NFC) {
+    const errorMsg = 'NFC-PCSC 套件在此環境中不可用';
+    console.log(`❌ ${errorMsg}`);
+    if (socket) {
+      socket.emit('nfc-error', { message: errorMsg });
+    }
+    return;
+  }
+  
   if (!nfcReader) {
     const errorMsg = 'NFC 讀卡機未連接';
     console.log(`❌ ${errorMsg}`);
@@ -185,6 +217,15 @@ function startNFCReading(socket = null) {
 
 // 停止 NFC 讀取
 function stopNFCReading(socket = null) {
+  if (!NFC) {
+    const errorMsg = 'NFC-PCSC 套件在此環境中不可用';
+    console.log(`❌ ${errorMsg}`);
+    if (socket) {
+      socket.emit('nfc-error', { message: errorMsg });
+    }
+    return;
+  }
+  
   if (!isReading) {
     const infoMsg = 'NFC 讀取未在進行中';
     console.log(`ℹ️ ${infoMsg}`);
@@ -213,10 +254,12 @@ function stopNFCReading(socket = null) {
 app.get('/api/nfc/status', (req, res) => {
   res.json({
     success: true,
+    nfcAvailable: NFC !== null,
     readerConnected: nfcReader !== null,
     readerName: nfcReader ? nfcReader.reader.name : null,
     isReading: isReading,
-    connectedClients: connectedClients.size
+    connectedClients: connectedClients.size,
+    message: NFC ? 'NFC 服務可用' : 'NFC-PCSC 套件在此環境中不可用'
   });
 });
 
