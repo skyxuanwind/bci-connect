@@ -24,6 +24,7 @@ const companyLookupRoutes = require('./routes/company-lookup');
 const aiAnalysisRoutes = require('./routes/ai-analysis');
 const judicialLookupRoutes = require('./routes/judicial-lookup');
 const judgmentSyncRoutes = require('./routes/judgment-sync');
+const nfcCheckinRoutes = require('./routes/nfc-checkin');
 const { initializeDatabase } = require('./config/database');
 const judgmentSyncService = require('./services/judgmentSyncService');
 
@@ -36,7 +37,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self", "data:", "http://localhost:3000", "http://localhost:3001", "https:", "https://res.cloudinary.com"],
+      imgSrc: ["'self'", "data:", "http://localhost:3000", "http://localhost:3001", "https:", "https://res.cloudinary.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       scriptSrc: ["'self'"],
       objectSrc: ["'none'"],
@@ -116,6 +117,7 @@ app.use('/api/company-lookup', companyLookupRoutes);
 app.use('/api/ai-analysis', aiAnalysisRoutes);
 app.use('/api/judicial-lookup', judicialLookupRoutes);
 app.use('/api/judgment-sync', judgmentSyncRoutes);
+app.use('/api/nfc-checkin', nfcCheckinRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -131,9 +133,23 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
   });
 } else {
-  // 404 handler for development
+  // Development: Add a root route for basic info
+  app.get('/', (req, res) => {
+    res.json({ 
+      message: 'BCI Business Elite Club API Server', 
+      version: '1.0.0',
+      environment: 'development',
+      endpoints: {
+        health: '/api/health',
+        auth: '/api/auth/*',
+        users: '/api/users/*'
+      }
+    });
+  });
+  
+  // 404 handler for development - only for unmatched routes
   app.use('*', (req, res) => {
-    res.status(404).json({ message: 'Route not found' });
+    res.status(404).json({ message: 'Route not found', path: req.originalUrl });
   });
 }
 

@@ -88,6 +88,7 @@ const Layout = ({ children }) => {
     { name: '財務收支表', href: '/financial', icon: CurrencyDollarIcon, minLevel: 1 },
     { name: '申訴信箱', href: '/complaints', icon: ChatBubbleLeftEllipsisIcon, minLevel: 1 },
     { name: '報到系統', href: '/checkin-scanner', icon: QrCodeIcon, minLevel: 1 },
+    { name: 'NFC 報到系統', href: '/nfc-checkin', icon: WifiIcon, minLevel: 1 },
     { name: '出席管理', href: '/attendance-management', icon: ClipboardDocumentCheckIcon, minLevel: 1 },
     { name: '司法院查詢測試', href: '/judicial-test', icon: DocumentMagnifyingGlassIcon, minLevel: 1 },
     { name: '裁判書同步管理', href: '/judgment-sync', icon: ArrowPathIcon, minLevel: 1 },

@@ -1,0 +1,377 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+
+const NFCCheckin = () => {
+  const { user } = useAuth();
+  const [lastCheckin, setLastCheckin] = useState(null);
+  const [allCheckins, setAllCheckins] = useState([]);
+  const [nfcStatus, setNfcStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [lastCheckinId, setLastCheckinId] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [totalCheckins, setTotalCheckins] = useState(0);
+  const [lastUpdate, setLastUpdate] = useState('');
+
+  // 更新報到狀態
+  const updateCheckinStatus = async () => {
+    try {
+      const response = await fetch('/api/nfc-checkin/last-checkin');
+      const data = await response.json();
+      
+      setLastUpdate(new Date().toLocaleTimeString('zh-TW'));
+      
+      if (data.id && data.id !== lastCheckinId) {
+        // 有新的報到紀錄
+        setLastCheckinId(data.id);
+        setLastCheckin(data);
+        setShowSuccess(true);
+        
+        // 3秒後隱藏成功訊息
+        setTimeout(() => {
+          setShowSuccess(false);
+        }, 3000);
+      } else if (data.id) {
+        // 顯示最後一筆紀錄但不是新的
+        setLastCheckin(data);
+      }
+      
+      // 更新總報到次數
+      if (data.id) {
+        setTotalCheckins(data.id);
+      }
+      
+    } catch (error) {
+      console.error('更新報到狀態錯誤:', error);
+    }
+  };
+
+  // 獲取 NFC 系統狀態
+  const fetchNFCStatus = async () => {
+    try {
+      const response = await fetch('/api/nfc-checkin/status');
+      const data = await response.json();
+      setNfcStatus(data);
+    } catch (error) {
+      console.error('獲取 NFC 狀態錯誤:', error);
+    }
+  };
+
+  // 獲取所有報到紀錄 (需要登入)
+  const fetchAllCheckins = async () => {
+    if (!user) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/nfc-checkin/all-checkins', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAllCheckins(data);
+      }
+    } catch (error) {
+      console.error('獲取所有報到紀錄錯誤:', error);
+    }
+  };
+
+  // 手動新增報到紀錄
+  const handleManualCheckin = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    const formData = new FormData(e.target);
+    const cardUid = formData.get('cardUid');
+    const userName = formData.get('userName');
+    const notes = formData.get('notes');
+    
+    if (!cardUid) {
+      alert('請輸入卡片 UID');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/nfc-checkin/manual-checkin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          cardUid,
+          userName,
+          notes
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('手動新增報到成功！');
+        e.target.reset();
+        fetchAllCheckins();
+        updateCheckinStatus();
+      } else {
+        alert(result.message || '新增報到失敗');
+      }
+    } catch (error) {
+      console.error('手動新增報到錯誤:', error);
+      alert('新增報到失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 啟動 NFC 讀卡機
+  const startNFCReader = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/nfc-checkin/start-reader', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const result = await response.json();
+      alert(result.message);
+      fetchNFCStatus();
+    } catch (error) {
+      console.error('啟動 NFC 讀卡機錯誤:', error);
+      alert('啟動 NFC 讀卡機失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // 初始載入
+    updateCheckinStatus();
+    fetchNFCStatus();
+    if (user) {
+      fetchAllCheckins();
+    }
+    
+    // 每2秒自動更新
+    const interval = setInterval(updateCheckinStatus, 2000);
+    
+    // 每10秒更新 NFC 狀態
+    const statusInterval = setInterval(fetchNFCStatus, 10000);
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(statusInterval);
+    };
+  }, [user, lastCheckinId]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 py-8">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* 標題 */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-white mb-2">📱 NFC 報到系統</h1>
+            <p className="text-blue-100">BCI Connect - NFC 卡片報到功能</p>
+          </div>
+
+          {/* 主要報到區域 */}
+          <div className="bg-white rounded-2xl shadow-2xl p-8 mb-8">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4 animate-pulse">📡</div>
+              
+              {showSuccess ? (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-xl mb-4">
+                  <div className="text-2xl font-bold mb-2">✅ 報到成功！</div>
+                  {lastCheckin && (
+                    <div>
+                      <div className="text-lg">卡號：{lastCheckin.card_uid}</div>
+                      <div className="text-sm text-gray-600">時間：{lastCheckin.checkin_time}</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-gray-100 border-2 border-dashed border-gray-300 text-gray-600 px-6 py-4 rounded-xl mb-4">
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 mr-2"></div>
+                    等待報到中...
+                  </div>
+                  <div className="text-sm">請將 NFC 卡片靠近讀卡機</div>
+                </div>
+              )}
+            </div>
+
+            {/* 統計資訊 */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="text-center p-4 bg-blue-50 rounded-xl">
+                <div className="text-3xl font-bold text-blue-600">{totalCheckins}</div>
+                <div className="text-sm text-gray-600">總報到次數</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-xl">
+                <div className="text-lg font-bold text-green-600">{lastUpdate}</div>
+                <div className="text-sm text-gray-600">最後更新</div>
+              </div>
+            </div>
+
+            {/* NFC 狀態 */}
+            {nfcStatus && (
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <h3 className="font-bold mb-2">NFC 系統狀態</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">系統狀態：</span>
+                    <span className={nfcStatus.status === 'running' ? 'text-green-600' : 'text-red-600'}>
+                      {nfcStatus.status === 'running' ? '運行中' : '停止'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">讀卡機：</span>
+                    <span className={nfcStatus.readerConnected ? 'text-green-600' : 'text-red-600'}>
+                      {nfcStatus.readerConnected ? '已連接' : '未連接'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">NFC 功能：</span>
+                    <span className={nfcStatus.nfcActive ? 'text-green-600' : 'text-orange-600'}>
+                      {nfcStatus.nfcActive ? '啟用' : '停用'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">更新時間：</span>
+                    <span className="text-gray-600">{nfcStatus.timestamp}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 管理功能 (需要登入) */}
+            {user && (
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-bold mb-4">管理功能</h3>
+                
+                {/* 啟動 NFC 讀卡機 */}
+                <div className="mb-4">
+                  <button
+                    onClick={startNFCReader}
+                    disabled={loading}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                  >
+                    {loading ? '處理中...' : '啟動 NFC 讀卡機'}
+                  </button>
+                </div>
+
+                {/* 手動新增報到 */}
+                <form onSubmit={handleManualCheckin} className="bg-gray-50 rounded-xl p-4">
+                  <h4 className="font-bold mb-3">手動新增報到紀錄</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">卡片 UID *</label>
+                      <input
+                        type="text"
+                        name="cardUid"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="例：04:A1:B2:C3"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">使用者姓名</label>
+                      <input
+                        type="text"
+                        name="userName"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="選填"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">備註</label>
+                      <input
+                        type="text"
+                        name="notes"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="選填"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                  >
+                    {loading ? '新增中...' : '新增報到紀錄'}
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+
+          {/* 報到紀錄列表 (需要登入) */}
+          {user && allCheckins.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-2xl p-8">
+              <h2 className="text-2xl font-bold mb-6">📋 報到紀錄</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">ID</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">卡片 UID</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">使用者</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">報到時間</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">備註</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allCheckins.map((record, index) => (
+                      <tr key={record.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-4 py-3 text-sm">{record.id}</td>
+                        <td className="px-4 py-3 text-sm font-mono">{record.card_uid}</td>
+                        <td className="px-4 py-3 text-sm">{record.user_name || '-'}</td>
+                        <td className="px-4 py-3 text-sm">{record.checkin_time}</td>
+                        <td className="px-4 py-3 text-sm">{record.notes || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* 使用說明 */}
+          <div className="bg-white rounded-2xl shadow-2xl p-8 mt-8">
+            <h2 className="text-2xl font-bold mb-6">📖 使用說明</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-bold text-lg mb-3">🎯 報到方式</h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li>• 將 NFC 卡片靠近讀卡機</li>
+                  <li>• 系統自動偵測並記錄報到</li>
+                  <li>• 頁面每 2 秒自動更新狀態</li>
+                  <li>• 報到成功會顯示確認訊息</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-lg mb-3">⚙️ 系統需求</h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li>• ACR122U NFC 讀卡機</li>
+                  <li>• 支援 PC/SC 的作業系統</li>
+                  <li>• 現代瀏覽器 (Chrome, Firefox, Safari)</li>
+                  <li>• 穩定的網路連線</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default NFCCheckin;

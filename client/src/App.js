@@ -41,6 +41,7 @@ import JudicialTest from './pages/JudicialTest';
 import JudgmentSync from './pages/JudgmentSync';
 import NFCTest from './pages/NFCTest';
 import NFCLocalTest from './pages/NFCLocalTest';
+import NFCCheckin from './pages/NFCCheckin';
 
 
 function App() {
@@ -275,6 +276,14 @@ function App() {
               <NFCLocalTest />
             </Layout>
           </ProtectedRoute>
+        } />
+        
+        <Route path="/nfc-checkin" element={
+          <Level1Route>
+            <Layout>
+              <NFCCheckin />
+            </Layout>
+          </Level1Route>
         } />
           
           {/* Catch all route */}
