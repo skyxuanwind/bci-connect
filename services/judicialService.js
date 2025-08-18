@@ -176,13 +176,6 @@ class JudicialService {
     }
   }
 
-  // 檢查司法院 API 服務時間（僅在每日凌晨 0-6 時提供服務）
-  isJudicialApiAvailable() {
-    const now = new Date();
-    const hour = now.getHours();
-    return hour >= 0 && hour < 6;
-  }
-
   // 取得最近判決書清單（使用正確的 JList API）
   async getRecentJudgmentsList(params = {}) {
     const startTime = Date.now();
@@ -191,16 +184,28 @@ class JudicialService {
     console.log('查詢時間:', new Date().toISOString());
     
     try {
-      // 根據用戶建議，嚴格按照司法院裁判書開放 API 規格
-      // API 服務路徑：/data_open/GetJList.ashx
-      // 呼叫方法：POST
-      // Request Body 必須是 JSON 格式，但 JList API 可能不需要參數
-      const jlistUrl = 'https://opendata.judicial.gov.tw/data_open/GetJList.ashx';
+      // 檢查 API 服務時間（僅於每日 00:00-06:00 提供服務）
+      if (!this.isJudicialApiAvailable()) {
+        return {
+          success: false,
+          message: '司法院 API 僅於每日凌晨 0 點至 6 點提供服務，請於服務時間內重試',
+          data: [],
+          serviceHours: '00:00-06:00'
+        };
+      }
+
+      // 步驟 1: 取得 token
+      console.log('步驟 1: 取得司法院 API Token');
+      const token = await this.getToken();
+      
+      // 步驟 2: 使用 token 呼叫 JList API
+      console.log('步驟 2: 呼叫 JList API 取得異動清單');
+      const jlistUrl = `${JUDICIAL_API_BASE}/JList`;
       console.log('JList API URL:', jlistUrl);
       console.log('請求方法: POST');
-      console.log('請求標頭: Content-Type: application/json');
-      console.log('請求內容: {}');
+      console.log('使用 Token:', token.substring(0, 20) + '...');
       
+      const requestBody = { token: token };
       const requestConfig = {
         headers: {
           'Content-Type': 'application/json',
@@ -213,9 +218,10 @@ class JudicialService {
       };
       
       console.log('完整請求配置:', JSON.stringify(requestConfig, null, 2));
+      console.log('請求內容:', JSON.stringify(requestBody, null, 2));
       console.log('發送請求時間:', new Date().toISOString());
       
-      const response = await axios.post(jlistUrl, {}, requestConfig);
+      const response = await axios.post(jlistUrl, requestBody, requestConfig);
       
       const responseTime = Date.now() - startTime;
       console.log(`請求完成，耗時: ${responseTime}ms`);
@@ -423,12 +429,27 @@ class JudicialService {
 
       console.log(`目標 JID: ${jid}`);
       
-      // 根據司法院裁判書開放API規格說明，使用正確的API路徑
-      // 參考: http://data.judicial.gov.tw/jdg/api/JDoc/{jid}
-      const apiUrl = `${JUDICIAL_API_BASE}/JDoc/${jid}`;
+      // 檢查 API 服務時間（僅於每日 00:00-06:00 提供服務）
+      if (!this.isJudicialApiAvailable()) {
+        return {
+          success: false,
+          message: '司法院 API 僅於每日凌晨 0 點至 6 點提供服務，請於服務時間內重試',
+          data: null,
+          serviceHours: '00:00-06:00'
+        };
+      }
+
+      // 步驟 1: 取得 token
+      console.log('步驟 1: 取得司法院 API Token');
+      const token = await this.getToken();
+      
+      // 步驟 2: 使用 token 和 JID 呼叫 JDoc API
+      console.log('步驟 2: 呼叫 JDoc API 取得判決書內容');
+      const apiUrl = `${JUDICIAL_API_BASE}/JDoc`;
       
       console.log('JDoc API URL:', apiUrl);
-      console.log('請求方法: GET');
+      console.log('請求方法: POST');
+      console.log('使用 Token:', token.substring(0, 20) + '...');
       
       // JID 格式檢查
       console.log('JID 格式檢查:', {
@@ -439,9 +460,6 @@ class JudicialService {
         isString: typeof jid === 'string',
         trimmed: jid.trim()
       });
-      
-      // 根據測試結果，JDoc API 不支援 GET 方法，需要使用 POST 方法
-      console.log('使用 POST 請求呼叫 JDoc API（根據 405 錯誤回應修正）');
       
       const requestConfig = {
         headers: {
@@ -454,8 +472,8 @@ class JudicialService {
         }
       };
       
-      // JDoc API 可能需要在 POST body 中傳遞 JID
-      const requestBody = { jid: jid };
+      // 根據官方 API 規格，JDoc API 需要 token 和 jid
+      const requestBody = { token: token, jid: jid };
       
       console.log('完整請求配置:', JSON.stringify(requestConfig, null, 2));
       console.log('請求內容:', JSON.stringify(requestBody, null, 2));
