@@ -12,6 +12,9 @@ const CheckInScanner = () => {
   const [loading, setLoading] = useState(false);
   const [recentCheckIns, setRecentCheckIns] = useState([]);
   const [debugInfo, setDebugInfo] = useState([]);
+  const [nfcSupported, setNfcSupported] = useState(false);
+  const [nfcReading, setNfcReading] = useState(false);
+  const [nfcResult, setNfcResult] = useState(null);
   const html5QrcodeScannerRef = useRef(null);
 
   // 添加調試訊息
@@ -24,6 +27,7 @@ const CheckInScanner = () => {
 
   useEffect(() => {
     fetchEvents();
+    checkNFCSupport();
     return () => {
       // 清理掃描器
       if (html5QrcodeScannerRef.current) {
@@ -31,6 +35,14 @@ const CheckInScanner = () => {
       }
     };
   }, []);
+
+  const checkNFCSupport = () => {
+    if ('NDEFReader' in window) {
+      setNfcSupported(true);
+    } else {
+      console.log('NFC not supported on this device/browser');
+    }
+  };
 
   // 檢查權限 - 僅限一級核心和管理員
   if (!user || (user.membershipLevel !== 1 && !isAdmin())) {
@@ -341,6 +353,85 @@ const CheckInScanner = () => {
     }
   };
 
+  const startNFCReading = async () => {
+    if (!selectedEvent) {
+      alert('請先選擇活動');
+      return;
+    }
+
+    if (!nfcSupported) {
+      alert('您的設備或瀏覽器不支援 NFC 功能');
+      return;
+    }
+
+    try {
+      setNfcReading(true);
+      setNfcResult(null);
+      
+      const ndef = new NDEFReader();
+      await ndef.scan();
+      
+      console.log('NFC 掃描已啟動，請將 NFC 卡片靠近設備...');
+      
+      ndef.addEventListener('reading', ({ message, serialNumber }) => {
+        console.log('NFC 卡片檢測到:', serialNumber);
+        handleNFCReading(serialNumber);
+      });
+      
+    } catch (error) {
+      console.error('NFC 讀取失敗:', error);
+      setNfcResult({
+        success: false,
+        message: 'NFC 讀取失敗: ' + error.message
+      });
+      setNfcReading(false);
+    }
+  };
+
+  const handleNFCReading = async (nfcCardId) => {
+    setLoading(true);
+    
+    try {
+      const response = await api.post('/api/attendance/nfc-checkin', {
+         nfcCardId: nfcCardId,
+         eventId: selectedEvent
+       });
+       
+       setNfcResult({
+         success: true,
+         message: `${response.data.user.name} 報到成功！`
+       });
+       
+       // 更新最近報到記錄
+       const newRecord = {
+         id: Date.now(),
+         user: response.data.user,
+         checkInTime: new Date().toLocaleString('zh-TW')
+       };
+       setRecentCheckIns(prev => [newRecord, ...prev.slice(0, 4)]);
+      
+    } catch (error) {
+      console.error('NFC 報到失敗:', error);
+      setNfcResult({
+        success: false,
+        message: error.response?.data?.message || 'NFC 報到失敗，請稍後再試'
+      });
+    } finally {
+      setLoading(false);
+      setNfcReading(false);
+      
+      // 3秒後清除結果
+      setTimeout(() => {
+        setNfcResult(null);
+      }, 3000);
+    }
+  };
+
+  const stopNFCReading = () => {
+    setNfcReading(false);
+    setNfcResult(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -368,7 +459,7 @@ const CheckInScanner = () => {
           </select>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* QR Code 掃描區域 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">QR Code 掃描</h2>
@@ -437,6 +528,85 @@ const CheckInScanner = () => {
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* NFC 名片報到區域 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">NFC 名片報到</h2>
+            
+            {!nfcSupported && (
+              <div className="text-center py-8">
+                <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <p className="text-gray-500">您的設備不支援 NFC 功能</p>
+              </div>
+            )}
+
+            {nfcSupported && !nfcReading && !nfcResult && (
+              <div className="text-center">
+                <div className="mb-4">
+                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                  </svg>
+                  <p className="text-gray-500 mb-4">點擊開始 NFC 讀取</p>
+                </div>
+                <button
+                  onClick={startNFCReading}
+                  disabled={!selectedEvent}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  開始 NFC 讀取
+                </button>
+              </div>
+            )}
+
+            {nfcReading && !nfcResult && (
+              <div className="text-center py-8">
+                <div className="animate-pulse mb-4">
+                  <svg className="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                  </svg>
+                </div>
+                <p className="text-green-700 font-medium mb-4">請將 NFC 名片靠近設備...</p>
+                <button
+                  onClick={stopNFCReading}
+                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  停止讀取
+                </button>
+              </div>
+            )}
+
+            {nfcResult && (
+              <div className={`text-center p-6 rounded-lg ${
+                nfcResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+              }`}>
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                  nfcResult.success ? 'bg-green-100' : 'bg-red-100'
+                }`}>
+                  {nfcResult.success ? (
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+                <h3 className={`text-lg font-semibold mb-2 ${
+                  nfcResult.success ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {nfcResult.success ? 'NFC 報到成功' : 'NFC 報到失敗'}
+                </h3>
+                <p className={`${
+                  nfcResult.success ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {nfcResult.message}
+                </p>
               </div>
             )}
           </div>
@@ -516,6 +686,10 @@ const CheckInScanner = () => {
             <li className="flex items-start">
               <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">5.</span>
               <span className="ml-2">掃描成功後系統會自動記錄出席並顯示結果</span>
+            </li>
+            <li className="flex items-start">
+              <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">6.</span>
+              <span className="ml-2">或者使用 NFC 名片報到功能（需要支援 NFC 的設備）</span>
             </li>
           </ul>
           
