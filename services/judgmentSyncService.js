@@ -1,10 +1,6 @@
 const { pool } = require('../config/database');
 const judicialService = require('./judicialService');
 const cron = require('node-cron');
-const JudicialService = require('./judicialService');
-
-// 創建 JudicialService 實例
-const judicialServiceInstance = new JudicialService();
 
 class JudgmentSyncService {
   constructor() {
@@ -53,7 +49,7 @@ class JudgmentSyncService {
       console.log(`🚀 開始裁判書同步作業 (ID: ${this.currentSyncId})`);
 
       // 獲取最新的裁判書清單
-      const jidListResult = await judicialServiceInstance.getRecentJudgmentsList();
+      const jidListResult = await judicialService.getRecentJudgmentsList();
       
       if (!jidListResult.success) {
         throw new Error(`獲取裁判書清單失敗: ${jidListResult.message}`);
@@ -145,7 +141,7 @@ class JudgmentSyncService {
       );
 
       // 獲取裁判書內容
-      const judgmentContent = await judicialServiceInstance.getJudgmentByJid(jid);
+      const judgmentContent = await judicialService.getJudgmentByJid(jid);
       
       if (!judgmentContent) {
         throw new Error('無法獲取裁判書內容');
