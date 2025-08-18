@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 const NFCCheckin = () => {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ const NFCCheckin = () => {
   // 更新報到狀態
   const updateCheckinStatus = async () => {
     try {
+      // 使用 fetch 而不是 api，因為這個端點不需要認證
       const response = await fetch('/api/nfc-checkin/last-checkin');
       const data = await response.json();
       
@@ -48,6 +50,7 @@ const NFCCheckin = () => {
   // 獲取 NFC 系統狀態
   const fetchNFCStatus = async () => {
     try {
+      // 使用 fetch 而不是 api，因為這個端點不需要認證
       const response = await fetch('/api/nfc-checkin/status');
       const data = await response.json();
       setNfcStatus(data);
@@ -61,17 +64,8 @@ const NFCCheckin = () => {
     if (!user) return;
     
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/nfc-checkin/all-checkins', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAllCheckins(data);
-      }
+      const response = await api.get('/api/nfc-checkin/all-checkins');
+      setAllCheckins(response.data);
     } catch (error) {
       console.error('獲取所有報到紀錄錯誤:', error);
     }
@@ -95,29 +89,19 @@ const NFCCheckin = () => {
     setLoading(true);
     
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/nfc-checkin/manual-checkin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          cardUid,
-          userName,
-          notes
-        })
+      const response = await api.post('/api/nfc-checkin/manual-checkin', {
+        cardUid,
+        userName,
+        notes
       });
       
-      const result = await response.json();
-      
-      if (result.success) {
+      if (response.data.success) {
         alert('手動新增報到成功！');
         e.target.reset();
         fetchAllCheckins();
         updateCheckinStatus();
       } else {
-        alert(result.message || '新增報到失敗');
+        alert(response.data.message || '新增報到失敗');
       }
     } catch (error) {
       console.error('手動新增報到錯誤:', error);
@@ -134,16 +118,8 @@ const NFCCheckin = () => {
     setLoading(true);
     
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/nfc-checkin/start-reader', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const result = await response.json();
-      alert(result.message);
+      const response = await api.post('/api/nfc-checkin/start-reader');
+      alert(response.data.message);
       fetchNFCStatus();
     } catch (error) {
       console.error('啟動 NFC 讀卡機錯誤:', error);

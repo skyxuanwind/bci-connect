@@ -154,8 +154,8 @@ function getAllNFCCheckins(callback) {
 
 // API 路由
 
-// 取得最後一筆 NFC 報到紀錄
-router.get('/last-checkin', authenticateToken, (req, res) => {
+// 取得最後一筆 NFC 報到紀錄 (公開訪問，用於顯示)
+router.get('/last-checkin', (req, res) => {
   getLastNFCCheckin((err, row) => {
     if (err) {
       res.status(500).json({ error: '查詢資料庫錯誤' });
@@ -206,8 +206,8 @@ router.get('/all-checkins', authenticateToken, (req, res) => {
   });
 });
 
-// 取得 NFC 系統狀態
-router.get('/status', authenticateToken, (req, res) => {
+// 取得 NFC 系統狀態 (公開訪問，用於顯示)
+router.get('/status', (req, res) => {
   res.json({
     status: 'running',
     nfcActive: isNFCActive,
