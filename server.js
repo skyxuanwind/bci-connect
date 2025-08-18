@@ -23,7 +23,9 @@ const attendanceRoutes = require('./routes/attendance');
 const companyLookupRoutes = require('./routes/company-lookup');
 const aiAnalysisRoutes = require('./routes/ai-analysis');
 const judicialLookupRoutes = require('./routes/judicial-lookup');
+const judgmentSyncRoutes = require('./routes/judgment-sync');
 const { initializeDatabase } = require('./config/database');
+const judgmentSyncService = require('./services/judgmentSyncService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -113,6 +115,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/company-lookup', companyLookupRoutes);
 app.use('/api/ai-analysis', aiAnalysisRoutes);
 app.use('/api/judicial-lookup', judicialLookupRoutes);
+app.use('/api/judgment-sync', judgmentSyncRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -151,6 +154,10 @@ app.listen(PORT, '0.0.0.0', async () => {
   try {
     await initializeDatabase();
     console.log('✅ Database initialized successfully');
+    
+    // Start judgment sync scheduler
+    judgmentSyncService.startScheduler();
+    console.log('⏰ 裁判書同步排程已啟動');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
   }

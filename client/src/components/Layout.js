@@ -28,7 +28,8 @@ import {
   PresentationChartLineIcon,
   QrCodeIcon,
   ClipboardDocumentCheckIcon,
-  DocumentMagnifyingGlassIcon
+  DocumentMagnifyingGlassIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
 const Layout = ({ children }) => {
@@ -88,6 +89,7 @@ const Layout = ({ children }) => {
     { name: '報到系統', href: '/checkin-scanner', icon: QrCodeIcon, minLevel: 1 },
     { name: '出席管理', href: '/attendance-management', icon: ClipboardDocumentCheckIcon, minLevel: 1 },
     { name: '司法院查詢測試', href: '/judicial-test', icon: DocumentMagnifyingGlassIcon, minLevel: 1 },
+    { name: '裁判書同步管理', href: '/judgment-sync', icon: ArrowPathIcon, minLevel: 1 },
   ];
 
   const adminNavigation = [

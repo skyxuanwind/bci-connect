@@ -38,6 +38,7 @@ import ContentManagement from './pages/admin/ContentManagement';
 import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
 import JudicialTest from './pages/JudicialTest';
+import JudgmentSync from './pages/JudgmentSync';
 
 
 function App() {
@@ -243,12 +244,20 @@ function App() {
           } />
           
           <Route path="/judicial-test" element={
-            <Level1Route>
-              <Layout>
-                <JudicialTest />
-              </Layout>
-            </Level1Route>
-          } />
+          <Level1Route>
+            <Layout>
+              <JudicialTest />
+            </Layout>
+          </Level1Route>
+        } />
+
+        <Route path="/judgment-sync" element={
+          <Level1Route>
+            <Layout>
+              <JudgmentSync />
+            </Layout>
+          </Level1Route>
+        } />
           
           {/* Catch all route */}
           <Route path="/404" element={<NotFound />} />

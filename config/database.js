@@ -271,6 +271,51 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create judgments table (裁判書資料表)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS judgments (
+        id SERIAL PRIMARY KEY,
+        jid VARCHAR(50) NOT NULL UNIQUE,
+        case_number VARCHAR(100),
+        judgment_date DATE,
+        case_type VARCHAR(100),
+        court_name VARCHAR(100),
+        judgment_content TEXT,
+        parties TEXT,
+        summary TEXT,
+        risk_level VARCHAR(20) CHECK (risk_level IN ('LOW', 'MEDIUM', 'HIGH')),
+        raw_data JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create judgment_sync_logs table (裁判書同步日誌表)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS judgment_sync_logs (
+        id SERIAL PRIMARY KEY,
+        sync_date DATE NOT NULL,
+        total_fetched INTEGER DEFAULT 0,
+        new_records INTEGER DEFAULT 0,
+        updated_records INTEGER DEFAULT 0,
+        errors INTEGER DEFAULT 0,
+        status VARCHAR(20) DEFAULT 'running' CHECK (status IN ('running', 'completed', 'failed')),
+        error_message TEXT,
+        started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP,
+        UNIQUE(sync_date)
+      )
+    `);
+
+    // Create indexes for better performance
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_judgments_jid ON judgments(jid);
+      CREATE INDEX IF NOT EXISTS idx_judgments_date ON judgments(judgment_date);
+      CREATE INDEX IF NOT EXISTS idx_judgments_case_type ON judgments(case_type);
+      CREATE INDEX IF NOT EXISTS idx_judgments_content_search ON judgments USING gin(to_tsvector('english', judgment_content));
+      CREATE INDEX IF NOT EXISTS idx_sync_logs_date ON judgment_sync_logs(sync_date);
+    `);
+
     // Insert default chapters
     await pool.query(`
       INSERT INTO chapters (name) VALUES 
