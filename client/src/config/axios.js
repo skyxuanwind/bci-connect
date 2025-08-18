@@ -2,9 +2,9 @@ import axios from 'axios';
 
 // 根據環境設置 API 基礎 URL
 const getBaseURL = () => {
-  // 在生產環境中，前端和後端在同一個域名下
+  // 在生產環境中，使用相對路徑 /api，讓請求直接到後端 API
   if (process.env.NODE_ENV === 'production') {
-    return window.location.origin;
+    return '/api';
   }
   
   // 開發環境不設置 baseURL，讓請求通過 setupProxy.js 代理
