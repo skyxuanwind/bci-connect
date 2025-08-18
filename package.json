@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "client": "cd client && npm start",
     "server": "nodemon server.js",
+    "nfc-server": "node nfc-server.js",
     "build": "cd client && npm run build",
     "heroku-postbuild": "cd client && npm install && npm run build"
   },
@@ -36,11 +37,13 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
+    "nfc-pcsc": "^0.8.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",
     "pg": "^8.11.3",
     "qrcode": "^1.5.4",
     "react-chartjs-2": "^5.3.0",
+    "socket.io": "^4.8.1",
     "validator": "^13.11.0"
   },
   "devDependencies": {

@@ -40,6 +40,7 @@ import AttendanceManagement from './pages/AttendanceManagement';
 import JudicialTest from './pages/JudicialTest';
 import JudgmentSync from './pages/JudgmentSync';
 import NFCTest from './pages/NFCTest';
+import NFCLocalTest from './pages/NFCLocalTest';
 
 
 function App() {
@@ -264,6 +265,14 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <NFCTest />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/nfc-local-test" element={
+          <ProtectedRoute>
+            <Layout>
+              <NFCLocalTest />
             </Layout>
           </ProtectedRoute>
         } />
