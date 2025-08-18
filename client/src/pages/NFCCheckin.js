@@ -65,9 +65,18 @@ const NFCCheckin = () => {
     
     try {
       const response = await api.get('/api/nfc-checkin/all-checkins');
-      setAllCheckins(response.data);
+      // 確保回應資料是陣列
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setAllCheckins(data);
+      } else {
+        console.warn('API 回應不是陣列格式:', data);
+        setAllCheckins([]);
+      }
     } catch (error) {
       console.error('獲取所有報到紀錄錯誤:', error);
+      // 發生錯誤時設置為空陣列
+      setAllCheckins([]);
     }
   };
 
@@ -305,15 +314,23 @@ const NFCCheckin = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {allCheckins.map((record, index) => (
-                      <tr key={record.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-4 py-3 text-sm">{record.id}</td>
-                        <td className="px-4 py-3 text-sm font-mono">{record.card_uid}</td>
-                        <td className="px-4 py-3 text-sm">{record.user_name || '-'}</td>
-                        <td className="px-4 py-3 text-sm">{record.checkin_time}</td>
-                        <td className="px-4 py-3 text-sm">{record.notes || '-'}</td>
+                    {Array.isArray(allCheckins) && allCheckins.length > 0 ? (
+                      allCheckins.map((record, index) => (
+                        <tr key={record.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-3 text-sm">{record.id}</td>
+                          <td className="px-4 py-3 text-sm font-mono">{record.card_uid}</td>
+                          <td className="px-4 py-3 text-sm">{record.user_name || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{record.checkin_time}</td>
+                          <td className="px-4 py-3 text-sm">{record.notes || '-'}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                          {user ? '暫無報到紀錄' : '請登入以查看報到紀錄'}
+                        </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
