@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 創建 axios 實例
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5001/api',
+  baseURL: '/api', // 在開發環境中使用代理，生產環境中直接使用相對路徑
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -12,8 +12,15 @@ const api = axios.create({
 // 請求攔截器
 api.interceptors.request.use(
   (config) => {
-    // 可以在這裡添加認證 token
-    const token = localStorage.getItem('token');
+    // 從 cookie 中獲取 token
+    const getCookieValue = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const token = getCookieValue('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
