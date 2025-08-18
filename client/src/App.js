@@ -39,6 +39,7 @@ import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
 import JudicialTest from './pages/JudicialTest';
 import JudgmentSync from './pages/JudgmentSync';
+import NFCTest from './pages/NFCTest';
 
 
 function App() {
@@ -257,6 +258,14 @@ function App() {
               <JudgmentSync />
             </Layout>
           </Level1Route>
+        } />
+        
+        <Route path="/nfc-test" element={
+          <ProtectedRoute>
+            <Layout>
+              <NFCTest />
+            </Layout>
+          </ProtectedRoute>
         } />
           
           {/* Catch all route */}

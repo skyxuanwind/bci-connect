@@ -276,4 +276,106 @@ router.delete('/record/:recordId', authenticateToken, async (req, res) => {
   }
 });
 
+// NFC 名片報到
+router.post('/nfc-checkin', authenticateToken, checkAttendancePermission, async (req, res) => {
+  try {
+    const { nfcCardId, eventId } = req.body;
+    
+    if (!nfcCardId || !eventId) {
+      return res.status(400).json({ success: false, message: '缺少必要參數' });
+    }
+    
+    // 根據 NFC 卡片 ID 查找用戶
+    const userResult = await pool.query(
+      'SELECT id, name FROM users WHERE nfc_card_id = $1',
+      [nfcCardId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'NFC 名片未註冊或用戶不存在' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // 檢查活動是否存在
+    const eventResult = await pool.query(
+      'SELECT id, title FROM events WHERE id = $1',
+      [eventId]
+    );
+    
+    if (eventResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: '活動不存在' });
+    }
+    
+    // 檢查是否已經報到過
+    const existingRecord = await pool.query(
+      'SELECT id FROM attendance_records WHERE user_id = $1 AND event_id = $2',
+      [user.id, eventId]
+    );
+    
+    if (existingRecord.rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `${user.name} 已經完成報到` 
+      });
+    }
+    
+    // 新增出席記錄
+    await pool.query(
+      'INSERT INTO attendance_records (user_id, event_id) VALUES ($1, $2)',
+      [user.id, eventId]
+    );
+    
+    // 自動新增300元收入記錄
+    await pool.query(
+      'INSERT INTO transactions (date, item_name, type, amount, notes, created_by_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [
+        new Date().toISOString().split('T')[0], // 今天日期
+        `${user.name} - ${eventResult.rows[0].title} 活動報到 (NFC)`,
+        'income',
+        300,
+        '會員活動 NFC 名片報到自動收入',
+        req.user.id
+      ]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: `${user.name} NFC 名片報到成功，已自動新增300元收入`,
+      user: user,
+      event: eventResult.rows[0],
+      method: 'NFC'
+    });
+    
+  } catch (error) {
+    console.error('Error during NFC check-in:', error);
+    res.status(500).json({ success: false, message: 'NFC 報到失敗' });
+  }
+});
+
+// 獲取用戶的 NFC 卡片 ID (用於測試和管理)
+router.get('/nfc-info/:userId', authenticateToken, checkAttendancePermission, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const userResult = await pool.query(
+      'SELECT id, name, nfc_card_id FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: '用戶不存在' });
+    }
+    
+    res.json({ 
+      success: true, 
+      user: userResult.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('Error fetching NFC info:', error);
+    res.status(500).json({ success: false, message: '獲取 NFC 資訊失敗' });
+  }
+});
+
 module.exports = router;
