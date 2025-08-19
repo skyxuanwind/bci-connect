@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 創建 axios 實例
 const api = axios.create({
-  baseURL: '/api', // 在開發環境中使用代理，生產環境中直接使用相對路徑
+  baseURL: '', // 不設置 baseURL，讓前端代碼中的完整路徑生效
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

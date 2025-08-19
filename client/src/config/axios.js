@@ -2,14 +2,14 @@ import axios from 'axios';
 
 // 根據環境設置 API 基礎 URL
 const getBaseURL = () => {
-  // 在生產環境中，使用相對路徑 /api，讓請求直接到後端 API
+  // 在生產環境中，不設置 baseURL，因為前端代碼中的 API 路徑已經包含 /api
   if (process.env.NODE_ENV === 'production') {
-    return '/api';
+    return '';
   }
   
   // 開發環境不設置 baseURL，讓請求通過 setupProxy.js 代理
   return '';
-};
+}
 
 // 設置axios默認配置
 axios.defaults.baseURL = getBaseURL();
