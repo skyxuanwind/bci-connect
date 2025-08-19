@@ -138,6 +138,29 @@ const NFCCheckin = () => {
     }
   };
 
+  // 模擬 NFC 卡片掃描
+  const simulateNFCScan = async () => {
+    if (!user) return;
+    
+    const cardUid = prompt('請輸入要模擬的卡片 UID (例：04:A1:B2:C3):');
+    if (!cardUid) return;
+    
+    setLoading(true);
+    
+    try {
+      const response = await api.post('/api/nfc-checkin/simulate-scan', { cardUid });
+      alert(`模擬掃描成功！\n卡片 UID: ${response.data.cardUid}\n報到時間: ${response.data.checkinTime}`);
+      updateCheckinStatus();
+      fetchNFCStatus();
+    } catch (error) {
+      console.error('模擬 NFC 掃描錯誤:', error);
+      const errorMessage = error.response?.data?.message || '模擬掃描失敗';
+      alert(`模擬掃描失敗: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     // 初始載入
     updateCheckinStatus();
@@ -242,15 +265,35 @@ const NFCCheckin = () => {
               <div className="border-t pt-6">
                 <h3 className="text-lg font-bold mb-4">管理功能</h3>
                 
-                {/* 啟動 NFC 讀卡機 */}
-                <div className="mb-4">
-                  <button
-                    onClick={startNFCReader}
-                    disabled={loading}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
-                  >
-                    {loading ? '處理中...' : '啟動 NFC 讀卡機'}
-                  </button>
+                {/* NFC 控制按鈕 */}
+                <div className="mb-4 space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={startNFCReader}
+                      disabled={loading}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                    >
+                      {loading ? '處理中...' : '啟動 NFC 讀卡機'}
+                    </button>
+                    
+                    {/* 模擬 NFC 掃描按鈕 (僅在模擬模式下顯示) */}
+                    {nfcStatus?.simulated && (
+                      <button
+                        onClick={simulateNFCScan}
+                        disabled={loading}
+                        className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                      >
+                        {loading ? '處理中...' : '🔮 模擬 NFC 掃描'}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* 模擬模式提示 */}
+                  {nfcStatus?.simulated && (
+                    <div className="bg-purple-100 border border-purple-300 text-purple-700 px-3 py-2 rounded-lg text-sm">
+                      <span className="font-medium">🔮 模擬模式：</span> 由於生產環境無法使用實體 NFC 硬體，系統已啟用模擬模式供測試使用。
+                    </div>
+                  )}
                 </div>
 
                 {/* 手動新增報到 */}

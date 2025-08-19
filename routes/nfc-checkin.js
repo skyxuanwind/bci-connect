@@ -50,8 +50,16 @@ let isNFCActive = false;
 // 初始化 NFC 讀卡機
 function initializeNFCReader() {
   if (!NFC) {
-    console.log('❌ NFC-PCSC 套件不可用，無法啟動 NFC 報到功能');
-    return false;
+    // 在生產環境中，提供模擬 NFC 功能
+    if (process.env.NODE_ENV === 'production') {
+      console.log('⚠️  生產環境：啟用模擬 NFC 模式');
+      isNFCActive = true;
+      nfcReader = { simulated: true };
+      return true;
+    } else {
+      console.log('❌ NFC-PCSC 套件不可用，無法啟動 NFC 報到功能');
+      return false;
+    }
   }
 
   try {
@@ -208,11 +216,13 @@ router.get('/all-checkins', authenticateToken, (req, res) => {
 
 // 取得 NFC 系統狀態 (公開訪問，用於顯示)
 router.get('/status', (req, res) => {
+  const isSimulated = nfcReader && nfcReader.simulated;
   res.json({
     status: 'running',
     nfcActive: isNFCActive,
     readerConnected: nfcReader !== null,
-    message: 'NFC 報到系統運行中',
+    simulated: isSimulated,
+    message: isSimulated ? 'NFC 報到系統運行中 (模擬模式)' : 'NFC 報到系統運行中',
     timestamp: new Date().toLocaleString('zh-TW', {
       timeZone: 'Asia/Taipei'
     })
@@ -262,15 +272,61 @@ router.post('/manual-checkin', authenticateToken, (req, res) => {
 // 啟動 NFC 讀卡機
 router.post('/start-reader', authenticateToken, (req, res) => {
   if (isNFCActive) {
-    res.json({ success: true, message: 'NFC 讀卡機已在運行中' });
+    const isSimulated = nfcReader && nfcReader.simulated;
+    const message = isSimulated ? 'NFC 讀卡機已在運行中 (模擬模式)' : 'NFC 讀卡機已在運行中';
+    res.json({ success: true, message });
   } else {
     const success = initializeNFCReader();
     if (success) {
-      res.json({ success: true, message: 'NFC 讀卡機啟動成功' });
+      const isSimulated = nfcReader && nfcReader.simulated;
+      const message = isSimulated ? 'NFC 讀卡機啟動成功 (模擬模式)' : 'NFC 讀卡機啟動成功';
+      res.json({ success: true, message });
     } else {
       res.status(500).json({ success: false, message: 'NFC 讀卡機啟動失敗' });
     }
   }
+});
+
+// 模擬 NFC 卡片掃描 (僅在生產環境的模擬模式下可用)
+router.post('/simulate-scan', authenticateToken, (req, res) => {
+  const { cardUid } = req.body;
+  
+  if (!cardUid) {
+    return res.status(400).json({ success: false, message: '請提供卡片 UID' });
+  }
+  
+  const isSimulated = nfcReader && nfcReader.simulated;
+  if (!isSimulated) {
+    return res.status(400).json({ success: false, message: '此功能僅在模擬模式下可用' });
+  }
+  
+  // 模擬卡片掃描
+  console.log(`🏷️  模擬 NFC 報到偵測到卡片 UID: ${cardUid}`);
+  
+  addNFCCheckin(cardUid, (err, id) => {
+    if (err) {
+      console.error('❌ 模擬 NFC 報到失敗:', err.message);
+      res.status(500).json({ success: false, message: '報到失敗' });
+    } else {
+      const checkinTime = new Date().toLocaleString('zh-TW', {
+        timeZone: 'Asia/Taipei',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      console.log(`✅ 模擬 NFC 報到成功! 卡號: ${cardUid}, 時間: ${checkinTime}`);
+      res.json({ 
+        success: true, 
+        message: '模擬 NFC 報到成功',
+        cardUid,
+        checkinTime,
+        id
+      });
+    }
+  });
 });
 
 // 初始化 NFC 讀卡機 (如果可用)
