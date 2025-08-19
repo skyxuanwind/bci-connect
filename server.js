@@ -26,6 +26,7 @@ const judicialLookupRoutes = require('./routes/judicial-lookup');
 const judgmentSyncRoutes = require('./routes/judgment-sync');
 const nfcCheckinRoutes = require('./routes/nfc-checkin');
 const { initializeDatabase } = require('./config/database');
+const { connectMongoDB } = require('./config/mongodb');
 const judgmentSyncService = require('./services/judgmentSyncService');
 
 const app = express();
@@ -166,10 +167,15 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 BCI Business Elite Club server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   
-  // Initialize database
+  // Initialize databases
   try {
+    // Initialize PostgreSQL
     await initializeDatabase();
-    console.log('✅ Database initialized successfully');
+    console.log('✅ PostgreSQL database initialized successfully');
+    
+    // Initialize MongoDB for NFC system
+    await connectMongoDB();
+    console.log('✅ MongoDB initialized successfully');
     
     // Start judgment sync scheduler
     judgmentSyncService.startScheduler();

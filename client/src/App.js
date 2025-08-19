@@ -42,6 +42,8 @@ import JudgmentSync from './pages/JudgmentSync';
 import NFCTest from './pages/NFCTest';
 import NFCLocalTest from './pages/NFCLocalTest';
 import NFCCheckin from './pages/NFCCheckin';
+import NFCGatewayCheckin from './pages/NFCGatewayCheckin';
+import NFCReportSystem from './pages/NFCReportSystem';
 
 
 function App() {
@@ -284,6 +286,22 @@ function App() {
               <NFCCheckin />
             </Layout>
           </Level1Route>
+        } />
+        
+        <Route path="/nfc-gateway-checkin" element={
+          <ProtectedRoute>
+            <Layout>
+              <NFCGatewayCheckin />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/nfc-report-system" element={
+          <ProtectedRoute>
+            <Layout>
+              <NFCReportSystem />
+            </Layout>
+          </ProtectedRoute>
         } />
           
           {/* Catch all route */}

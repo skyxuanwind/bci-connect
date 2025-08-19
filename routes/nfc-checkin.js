@@ -3,6 +3,8 @@ const router = express.Router();
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { authenticateToken } = require('../middleware/auth');
+const NFCCheckin = require('../models/NFCCheckin');
+const { connectMongoDB } = require('../config/mongodb');
 
 // NFC 讀卡機相關
 let NFC = null;
@@ -327,6 +329,115 @@ router.post('/simulate-scan', authenticateToken, (req, res) => {
       });
     }
   });
+});
+
+// 接收本地 NFC Gateway Service 上傳的報到資料 (公開訪問)
+router.post('/submit', async (req, res) => {
+  try {
+    const { cardUid, timestamp, source } = req.body;
+    
+    if (!cardUid) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少卡片 UID'
+      });
+    }
+    
+    // 創建新的報到紀錄
+    const checkinData = {
+      cardUid: cardUid.toUpperCase(),
+      checkinTime: timestamp ? new Date(timestamp) : new Date(),
+      source: source || 'nfc-gateway',
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('User-Agent')
+    };
+    
+    const newCheckin = new NFCCheckin(checkinData);
+    const savedCheckin = await newCheckin.save();
+    
+    const formattedTime = savedCheckin.getFormattedTime();
+    
+    console.log(`✅ NFC 報到資料已儲存到 MongoDB! 卡號: ${cardUid}, 時間: ${formattedTime}`);
+    
+    res.json({
+      success: true,
+      message: 'NFC 報到成功',
+      id: savedCheckin._id,
+      cardUid: savedCheckin.cardUid,
+      checkinTime: formattedTime,
+      source: savedCheckin.source
+    });
+    
+  } catch (error) {
+    console.error('❌ 儲存 NFC 報到資料失敗:', error.message);
+    res.status(500).json({
+      success: false,
+      message: '儲存報到資料失敗',
+      error: error.message
+    });
+  }
+});
+
+// 查詢所有報到紀錄 (需要認證)
+router.get('/records', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 50, cardUid, startDate, endDate } = req.query;
+    
+    // 建立查詢條件
+    let filter = {};
+    
+    if (cardUid) {
+      filter.cardUid = cardUid.toUpperCase();
+    }
+    
+    if (startDate || endDate) {
+      filter.checkinTime = {};
+      if (startDate) {
+        filter.checkinTime.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        filter.checkinTime.$lte = new Date(endDate);
+      }
+    }
+    
+    // 執行查詢
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const records = await NFCCheckin.findActive(filter)
+      .sort({ checkinTime: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await NFCCheckin.countCheckins(filter);
+    
+    // 格式化回應資料
+    const formattedRecords = records.map(record => ({
+      id: record._id,
+      cardUid: record.cardUid,
+      checkinTime: record.getFormattedTime(),
+      source: record.source,
+      notes: record.notes,
+      createdAt: record.createdAt
+    }));
+    
+    res.json({
+      success: true,
+      data: formattedRecords,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ 查詢報到紀錄失敗:', error.message);
+    res.status(500).json({
+      success: false,
+      message: '查詢報到紀錄失敗',
+      error: error.message
+    });
+  }
 });
 
 // 初始化 NFC 讀卡機 (如果可用)
