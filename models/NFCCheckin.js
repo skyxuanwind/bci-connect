@@ -61,6 +61,19 @@ nfcCheckinSchema.virtual('formattedCheckinTime').get(function() {
   });
 });
 
+// 實例方法：獲取格式化時間
+nfcCheckinSchema.methods.getFormattedTime = function() {
+  return this.checkinTime.toLocaleString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+};
+
 // 實例方法：軟刪除
 nfcCheckinSchema.methods.softDelete = function() {
   this.isDeleted = true;
