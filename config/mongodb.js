@@ -7,14 +7,12 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/nfc-ch
 // 連接到 MongoDB
 const connectMongoDB = async () => {
   try {
-    await mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(MONGODB_URI);
     console.log('✅ MongoDB 連接成功');
   } catch (error) {
     console.error('❌ MongoDB 連接失敗:', error.message);
-    process.exit(1);
+    // 不要強制退出，讓應用繼續運行
+    console.log('⚠️ 應用將繼續運行，但 MongoDB 功能不可用');
   }
 };
 
