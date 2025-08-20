@@ -23,10 +23,13 @@ const NFCCheckin = () => {
       const response = await fetch(`${apiUrl}/api/nfc-checkin/last-checkin`);
       const data = await response.json();
       
+      console.log('🔄 更新報到狀態:', { currentId: lastCheckinId, newId: data.id, data });
+      
       setLastUpdate(new Date().toLocaleTimeString('zh-TW'));
       
       if (data.id && data.id !== lastCheckinId) {
         // 有新的報到紀錄
+        console.log('✅ 偵測到新報到記錄!', data);
         setLastCheckinId(data.id);
         setLastCheckin(data);
         setShowSuccess(true);
