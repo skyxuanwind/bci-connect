@@ -519,7 +519,8 @@ const CheckInScanner = () => {
 
   const fetchLastNfcCheckin = async () => {
     try {
-      const response = await fetch('/api/nfc-checkin/last-checkin');
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/nfc-checkin/last-checkin`);
       const data = await response.json();
       
       if (data.id) {

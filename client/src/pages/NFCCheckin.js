@@ -17,7 +17,8 @@ const NFCCheckin = () => {
   const updateCheckinStatus = async () => {
     try {
       // 使用 fetch 而不是 api，因為這個端點不需要認證
-      const response = await fetch('/api/nfc-checkin/last-checkin');
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/nfc-checkin/last-checkin`);
       const data = await response.json();
       
       setLastUpdate(new Date().toLocaleTimeString('zh-TW'));
@@ -51,7 +52,8 @@ const NFCCheckin = () => {
   const fetchNFCStatus = async () => {
     try {
       // 使用 fetch 而不是 api，因為這個端點不需要認證
-      const response = await fetch('/api/nfc-checkin/status');
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/nfc-checkin/status`);
       const data = await response.json();
       setNfcStatus(data);
     } catch (error) {

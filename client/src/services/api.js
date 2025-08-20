@@ -1,13 +1,25 @@
 import axios from 'axios';
 
+// 根據環境設置 API 基礎 URL
+const getBaseURL = () => {
+  // 在生產環境中，使用環境變數或當前域名
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.REACT_APP_API_URL || '';
+  }
+  // 開發環境使用 proxy
+  return process.env.REACT_APP_API_URL || '';
+};
+
 // 創建 axios 實例
 const api = axios.create({
-  baseURL: '', // 不設置 baseURL，讓前端代碼中的完整路徑生效
+  baseURL: getBaseURL(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+console.log('API Base URL:', getBaseURL());
 
 // 請求攔截器
 api.interceptors.request.use(
