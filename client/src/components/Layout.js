@@ -88,7 +88,6 @@ const Layout = ({ children }) => {
     { name: '財務收支表', href: '/financial', icon: CurrencyDollarIcon, minLevel: 1 },
     { name: '申訴信箱', href: '/complaints', icon: ChatBubbleLeftEllipsisIcon, minLevel: 1 },
     { name: '報到系統', href: '/checkin-scanner', icon: QrCodeIcon, minLevel: 1 },
-    { name: 'NFC 報到系統', href: '/nfc-checkin', icon: WifiIcon, minLevel: 1 },
     { name: '出席管理', href: '/attendance-management', icon: ClipboardDocumentCheckIcon, minLevel: 1 },
     { name: '司法院查詢測試', href: '/judicial-test', icon: DocumentMagnifyingGlassIcon, minLevel: 1 },
     { name: '裁判書同步管理', href: '/judgment-sync', icon: ArrowPathIcon, minLevel: 1 },
@@ -96,7 +95,7 @@ const Layout = ({ children }) => {
 
   // 開發測試功能（所有登入用戶都可使用）
   const testFeatures = [
-    { name: 'NFC 功能測試', href: '/nfc-test', icon: WifiIcon },
+    // 測試功能已整合到報到系統中
   ];
 
   const adminNavigation = [
@@ -296,32 +295,34 @@ const Layout = ({ children }) => {
           </>
         )}
         
-        {/* Test Features */}
-        <>
-          <div className="pt-4 pb-2">
-            <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              測試功能
-            </h3>
-          </div>
-          {testFeatures.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`${
-                  isCurrentPath(item.href)
-                    ? 'nav-link-active'
-                    : 'nav-link'
-                } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
-                onClick={() => mobile && setSidebarOpen(false)}
-              >
-                <Icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            );
-          })}
-        </>
+        {/* Test Features - 隱藏空的測試功能區塊 */}
+        {testFeatures.length > 0 && testFeatures.some(item => item.name) && (
+          <>
+            <div className="pt-4 pb-2">
+              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                測試功能
+              </h3>
+            </div>
+            {testFeatures.filter(item => item.name).map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`${
+                    isCurrentPath(item.href)
+                      ? 'nav-link-active'
+                      : 'nav-link'
+                  } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
+                  onClick={() => mobile && setSidebarOpen(false)}
+                >
+                  <Icon className="mr-3 h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </>
+        )}
         
         {/* Admin Navigation */}
         {isAdmin() && (

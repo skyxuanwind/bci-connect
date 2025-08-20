@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const NFCCheckin = require('../models/NFCCheckin');
 const { authenticateToken } = require('../middleware/auth');
+const { pool } = require('../config/database');
 
 // 接收來自本地 NFC Gateway Service 的報到資料
 router.post('/submit', async (req, res) => {
@@ -16,28 +17,65 @@ router.post('/submit', async (req, res) => {
       });
     }
     
+    const normalizedCardUid = cardUid.toUpperCase();
+    
+    // 查詢會員資料
+    let memberInfo = null;
+    try {
+      const memberResult = await pool.query(
+        'SELECT id, name, email, company, industry, title, membership_level, status FROM users WHERE nfc_card_id = $1',
+        [normalizedCardUid]
+      );
+      
+      if (memberResult.rows.length > 0) {
+        memberInfo = memberResult.rows[0];
+        console.log(`👤 識別到會員: ${memberInfo.name} (ID: ${memberInfo.id})`);
+      } else {
+        console.log(`❓ 未識別的 NFC 卡片: ${normalizedCardUid}`);
+      }
+    } catch (dbError) {
+      console.error('❌ 查詢會員資料失敗:', dbError.message);
+      // 繼續處理，不因為會員查詢失敗而中斷報到記錄
+    }
+    
     // 創建新的報到記錄
     const checkinData = {
-      cardUid: cardUid.toUpperCase(),
+      cardUid: normalizedCardUid,
       checkinTime: timestamp ? new Date(timestamp) : new Date(),
       readerName: readerName || null,
       source: source,
       ipAddress: req.ip || req.connection.remoteAddress,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
+      notes: memberInfo ? `會員報到: ${memberInfo.name} (${memberInfo.company || '未設定公司'})` : '未識別會員'
     };
     
     const newCheckin = new NFCCheckin(checkinData);
     const savedCheckin = await newCheckin.save();
     
-    console.log(`✅ NFC 報到記錄已儲存: ${cardUid} (ID: ${savedCheckin._id})`);
+    const responseMessage = memberInfo 
+      ? `✅ ${memberInfo.name} 報到成功！`
+      : `✅ NFC 卡片報到成功（未識別會員）`;
+    
+    console.log(`✅ NFC 報到記錄已儲存: ${normalizedCardUid} (ID: ${savedCheckin._id})`);
     
     res.json({
       success: true,
-      message: 'NFC 報到成功',
+      message: responseMessage,
       checkinId: savedCheckin._id,
       cardUid: savedCheckin.cardUid,
       checkinTime: savedCheckin.formattedCheckinTime,
-      timestamp: savedCheckin.checkinTime.toISOString()
+      timestamp: savedCheckin.checkinTime.toISOString(),
+      member: memberInfo ? {
+        id: memberInfo.id,
+        name: memberInfo.name,
+        email: memberInfo.email,
+        company: memberInfo.company,
+        industry: memberInfo.industry,
+        title: memberInfo.title,
+        membershipLevel: memberInfo.membership_level,
+        status: memberInfo.status
+      } : null,
+      isRegisteredMember: !!memberInfo
     });
     
   } catch (error) {

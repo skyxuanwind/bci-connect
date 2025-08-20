@@ -39,11 +39,7 @@ import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
 import JudicialTest from './pages/JudicialTest';
 import JudgmentSync from './pages/JudgmentSync';
-import NFCTest from './pages/NFCTest';
-import NFCLocalTest from './pages/NFCLocalTest';
-import NFCCheckin from './pages/NFCCheckin';
-import NFCGatewayCheckin from './pages/NFCGatewayCheckin';
-import NFCReportSystem from './pages/NFCReportSystem';
+// NFC 功能已整合到 CheckInScanner 中
 
 
 function App() {
@@ -264,45 +260,7 @@ function App() {
           </Level1Route>
         } />
         
-        <Route path="/nfc-test" element={
-          <ProtectedRoute>
-            <Layout>
-              <NFCTest />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/nfc-local-test" element={
-          <ProtectedRoute>
-            <Layout>
-              <NFCLocalTest />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/nfc-checkin" element={
-          <Level1Route>
-            <Layout>
-              <NFCCheckin />
-            </Layout>
-          </Level1Route>
-        } />
-        
-        <Route path="/nfc-gateway-checkin" element={
-          <ProtectedRoute>
-            <Layout>
-              <NFCGatewayCheckin />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/nfc-report-system" element={
-          <ProtectedRoute>
-            <Layout>
-              <NFCReportSystem />
-            </Layout>
-          </ProtectedRoute>
-        } />
+        {/* NFC 功能已整合到 /checkin-scanner 中 */}
           
           {/* Catch all route */}
           <Route path="/404" element={<NotFound />} />
