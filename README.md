@@ -51,22 +51,41 @@
 
 ## 🚀 快速開始
 
-### 1. 克隆項目
+### 🎯 一鍵啟動（推薦）
+```bash
+# 自動啟動完整的 NFC 系統（前端 + 後端 + NFC Gateway）
+./start-nfc-system.sh
+
+# 停止所有服務
+./stop-nfc-system.sh
+```
+
+### 📋 手動啟動
+如果您偏好手動控制每個服務：
+
+#### 1. 克隆項目
 ```bash
 git clone <repository-url>
 cd BCI\ Connect
 ```
 
-### 2. 安裝依賴
+#### 2. 安裝依賴
 
-#### 安裝後端依賴
+##### 安裝後端依賴
 ```bash
 npm install
 ```
 
-#### 安裝前端依賴
+##### 安裝前端依賴
 ```bash
 cd client
+npm install
+cd ..
+```
+
+##### 安裝 NFC Gateway 依賴
+```bash
+cd nfc-gateway-service
 npm install
 cd ..
 ```
@@ -115,7 +134,7 @@ CLIENT_URL=http://localhost:3000
 
 #### 開發模式（推薦）
 
-在項目根目錄開啟兩個終端：
+在項目根目錄開啟三個終端：
 
 **終端 1 - 啟動後端：**
 ```bash
@@ -128,6 +147,12 @@ cd client
 npm start
 ```
 
+**終端 3 - 啟動 NFC Gateway Service：**
+```bash
+cd nfc-gateway-service
+npm start
+```
+
 #### 生產模式
 ```bash
 # 構建前端
@@ -136,6 +161,10 @@ npm run build
 cd ..
 
 # 啟動後端
+npm start
+
+# 啟動 NFC Gateway Service
+cd nfc-gateway-service
 npm start
 ```
 
