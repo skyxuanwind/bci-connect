@@ -5,6 +5,7 @@ const sqlite3 = require('sqlite3').verbose();
 const { authenticateToken } = require('../middleware/auth');
 const NFCCheckin = require('../models/NFCCheckin');
 const { connectMongoDB } = require('../config/mongodb');
+const mongoose = require('mongoose');
 
 // NFC 讀卡機相關
 let NFC = null;
@@ -502,10 +503,13 @@ router.get('/records', authenticateToken, async (req, res) => {
     
   } catch (error) {
     console.error('❌ 查詢報到紀錄失敗:', error.message);
+    console.error('❌ 錯誤詳情:', error.stack);
+    console.error('❌ MongoDB 連接狀態:', mongoose.connection.readyState);
     res.status(500).json({
       success: false,
       message: '查詢報到紀錄失敗',
-      error: error.message
+      error: error.message,
+      mongoStatus: mongoose.connection.readyState
     });
   }
 });
