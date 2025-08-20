@@ -12,6 +12,8 @@ const NFCCheckin = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [totalCheckins, setTotalCheckins] = useState(0);
   const [lastUpdate, setLastUpdate] = useState('');
+  const [systemLoading, setSystemLoading] = useState(false);
+  const [systemMessage, setSystemMessage] = useState('');
 
   // 更新報到狀態
   const updateCheckinStatus = async () => {
@@ -163,6 +165,48 @@ const NFCCheckin = () => {
     }
   };
 
+  // 啟動 NFC 系統
+  const startNFCSystem = async () => {
+    setSystemLoading(true);
+    setSystemMessage('');
+    try {
+      const response = await api.post('/api/nfc-checkin/start-system');
+      if (response.data.success) {
+        setSystemMessage('✅ NFC 系統啟動成功！');
+        console.log('系統啟動輸出:', response.data.output);
+        // 3秒後清除訊息
+        setTimeout(() => setSystemMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('系統啟動錯誤:', error);
+      setSystemMessage('❌ 系統啟動失敗: ' + (error.response?.data?.error || error.message));
+      setTimeout(() => setSystemMessage(''), 5000);
+    } finally {
+      setSystemLoading(false);
+    }
+  };
+
+  // 停止 NFC 系統
+  const stopNFCSystem = async () => {
+    setSystemLoading(true);
+    setSystemMessage('');
+    try {
+      const response = await api.post('/api/nfc-checkin/stop-system');
+      if (response.data.success) {
+        setSystemMessage('✅ NFC 系統停止成功！');
+        console.log('系統停止輸出:', response.data.output);
+        // 3秒後清除訊息
+        setTimeout(() => setSystemMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('系統停止錯誤:', error);
+      setSystemMessage('❌ 系統停止失敗: ' + (error.response?.data?.error || error.message));
+      setTimeout(() => setSystemMessage(''), 5000);
+    } finally {
+      setSystemLoading(false);
+    }
+  };
+
   useEffect(() => {
     // 初始載入
     updateCheckinStatus();
@@ -267,8 +311,60 @@ const NFCCheckin = () => {
               <div className="border-t pt-6">
                 <h3 className="text-lg font-bold mb-4">管理功能</h3>
                 
+                {/* 系統管理按鈕 */}
+                <div className="mb-6">
+                  <h4 className="font-bold mb-3 text-gray-700">🖥️ 系統管理</h4>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <button
+                      onClick={startNFCSystem}
+                      disabled={systemLoading}
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 flex items-center"
+                    >
+                      {systemLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          處理中...
+                        </>
+                      ) : (
+                        <>🚀 啟動 NFC 系統</>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={stopNFCSystem}
+                      disabled={systemLoading}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 flex items-center"
+                    >
+                      {systemLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          處理中...
+                        </>
+                      ) : (
+                        <>🛑 停止 NFC 系統</>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {/* 系統管理狀態訊息 */}
+                  {systemMessage && (
+                    <div className={`px-3 py-2 rounded-lg text-sm ${
+                      systemMessage.includes('✅') 
+                        ? 'bg-green-100 border border-green-300 text-green-700'
+                        : 'bg-red-100 border border-red-300 text-red-700'
+                    }`}>
+                      {systemMessage}
+                    </div>
+                  )}
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 mt-3">
+                    <span className="font-medium">💡 提示：</span> 這些按鈕會執行系統腳本來啟動或停止完整的 NFC 系統（包括前端、後端和 NFC Gateway 服務）。
+                  </div>
+                </div>
+                
                 {/* NFC 控制按鈕 */}
                 <div className="mb-4 space-y-2">
+                  <h4 className="font-bold mb-3 text-gray-700">🏷️ NFC 讀卡機控制</h4>
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={startNFCReader}

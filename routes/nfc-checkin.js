@@ -331,6 +331,76 @@ router.post('/simulate-scan', authenticateToken, (req, res) => {
   });
 });
 
+// 系統管理 - 啟動 NFC 系統
+router.post('/start-system', authenticateToken, (req, res) => {
+  const { exec } = require('child_process');
+  const path = require('path');
+  
+  // 獲取項目根目錄路徑
+  const projectRoot = path.resolve(__dirname, '..');
+  const scriptPath = path.join(projectRoot, 'start-nfc-system.sh');
+  
+  console.log('🚀 執行 NFC 系統啟動腳本:', scriptPath);
+  
+  // 執行啟動腳本
+  exec(`bash "${scriptPath}"`, { cwd: projectRoot }, (error, stdout, stderr) => {
+    if (error) {
+      console.error('啟動腳本執行錯誤:', error);
+      return res.status(500).json({
+        success: false,
+        error: '系統啟動失敗',
+        details: error.message,
+        stderr: stderr
+      });
+    }
+    
+    console.log('✅ NFC 系統啟動腳本執行完成');
+    console.log('輸出:', stdout);
+    
+    res.json({
+      success: true,
+      message: 'NFC 系統啟動成功',
+      output: stdout,
+      timestamp: new Date().toISOString()
+    });
+  });
+});
+
+// 系統管理 - 停止 NFC 系統
+router.post('/stop-system', authenticateToken, (req, res) => {
+  const { exec } = require('child_process');
+  const path = require('path');
+  
+  // 獲取項目根目錄路徑
+  const projectRoot = path.resolve(__dirname, '..');
+  const scriptPath = path.join(projectRoot, 'stop-nfc-system.sh');
+  
+  console.log('🛑 執行 NFC 系統停止腳本:', scriptPath);
+  
+  // 執行停止腳本
+  exec(`bash "${scriptPath}"`, { cwd: projectRoot }, (error, stdout, stderr) => {
+    if (error) {
+      console.error('停止腳本執行錯誤:', error);
+      return res.status(500).json({
+        success: false,
+        error: '系統停止失敗',
+        details: error.message,
+        stderr: stderr
+      });
+    }
+    
+    console.log('✅ NFC 系統停止腳本執行完成');
+    console.log('輸出:', stdout);
+    
+    res.json({
+      success: true,
+      message: 'NFC 系統停止成功',
+      output: stdout,
+      timestamp: new Date().toISOString()
+    });
+  });
+});
+
 // 接收本地 NFC Gateway Service 上傳的報到資料 (公開訪問)
 router.post('/submit', async (req, res) => {
   try {
