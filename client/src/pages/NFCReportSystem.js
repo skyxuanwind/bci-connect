@@ -269,20 +269,93 @@ const NFCReportSystem = () => {
               
               {lastCheckin ? (
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-700">卡片 UID:</span>
-                      <span className="font-mono text-lg font-bold text-blue-600">
-                        {lastCheckin.card_uid}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-700">報到時間:</span>
-                      <span className="text-gray-800">{lastCheckin.checkin_time}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-700">紀錄 ID:</span>
-                      <span className="text-gray-600">#{lastCheckin.id}</span>
+                  <div className="space-y-3">
+                    {/* 會員資訊 */}
+                    {lastCheckin.member ? (
+                      <div className="bg-white rounded-lg p-3 border-l-4 border-green-500">
+                        <div className="flex items-center mb-2">
+                          <span className="text-green-600 font-bold text-lg">👤 會員報到</span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="font-medium text-gray-700">姓名:</span>
+                            <span className="font-bold text-green-700">{lastCheckin.member.name}</span>
+                          </div>
+                          {lastCheckin.member.company && (
+                            <div className="flex justify-between">
+                              <span className="font-medium text-gray-700">公司:</span>
+                              <span className="text-gray-800">{lastCheckin.member.company}</span>
+                            </div>
+                          )}
+                          {lastCheckin.member.industry && (
+                            <div className="flex justify-between">
+                              <span className="font-medium text-gray-700">行業:</span>
+                              <span className="text-gray-800">{lastCheckin.member.industry}</span>
+                            </div>
+                          )}
+                          {lastCheckin.member.title && (
+                            <div className="flex justify-between">
+                              <span className="font-medium text-gray-700">職稱:</span>
+                              <span className="text-gray-800">{lastCheckin.member.title}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="font-medium text-gray-700">會員等級:</span>
+                            <span className="text-blue-600 font-medium">
+                              {lastCheckin.member.membershipLevel === 1 ? '一般會員' : 
+                               lastCheckin.member.membershipLevel === 2 ? '高級會員' : 
+                               lastCheckin.member.membershipLevel === 3 ? '白金會員' : '未設定'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="font-medium text-gray-700">狀態:</span>
+                            <span className={`font-medium ${
+                              lastCheckin.member.status === 'active' ? 'text-green-600' :
+                              lastCheckin.member.status === 'pending_approval' ? 'text-yellow-600' :
+                              lastCheckin.member.status === 'suspended' ? 'text-red-600' :
+                              'text-gray-600'
+                            }`}>
+                              {lastCheckin.member.status === 'active' ? '正常' :
+                               lastCheckin.member.status === 'pending_approval' ? '待審核' :
+                               lastCheckin.member.status === 'suspended' ? '暫停' :
+                               lastCheckin.member.status === 'blacklisted' ? '黑名單' : lastCheckin.member.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-yellow-50 rounded-lg p-3 border-l-4 border-yellow-500">
+                        <div className="flex items-center mb-2">
+                          <span className="text-yellow-600 font-bold text-lg">❓ 未識別會員</span>
+                        </div>
+                        <div className="text-sm text-yellow-700">
+                          此 NFC 卡片尚未註冊或不在會員資料庫中
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 卡片資訊 */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">卡片 UID:</span>
+                        <span className="font-mono text-lg font-bold text-blue-600">
+                          {lastCheckin.cardUid}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">報到時間:</span>
+                        <span className="text-gray-800">{lastCheckin.checkinTime}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">紀錄 ID:</span>
+                        <span className="text-gray-600">#{lastCheckin.id}</span>
+                      </div>
+                      {lastCheckin.notes && (
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-700">備註:</span>
+                          <span className="text-gray-600 text-sm">{lastCheckin.notes}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -305,14 +378,42 @@ const NFCReportSystem = () => {
                 
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {checkinRecords.map((record, index) => (
-                    <div key={record.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="font-mono font-bold text-blue-600">{record.cardUid}</div>
-                        <div className="text-sm text-gray-500">{record.checkinTime}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-600">#{index + 1}</div>
-                        <div className="text-xs text-gray-400">{record.source}</div>
+                    <div key={record.id} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          {/* 會員資訊 */}
+                          {record.member ? (
+                            <div className="mb-2">
+                              <div className="flex items-center">
+                                <span className="text-green-600 font-bold">{record.member.name}</span>
+                                <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                  會員
+                                </span>
+                              </div>
+                              {record.member.company && (
+                                <div className="text-sm text-gray-600">{record.member.company}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="mb-2">
+                              <div className="flex items-center">
+                                <span className="text-yellow-600 font-bold">未識別會員</span>
+                                <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
+                                  未註冊
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* 卡片資訊 */}
+                          <div className="font-mono text-sm text-blue-600">{record.cardUid}</div>
+                          <div className="text-sm text-gray-500">{record.checkinTime}</div>
+                        </div>
+                        
+                        <div className="text-right">
+                          <div className="text-sm text-gray-600">#{index + 1}</div>
+                          <div className="text-xs text-gray-400">{record.source}</div>
+                        </div>
                       </div>
                     </div>
                   ))}
