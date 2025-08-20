@@ -4,10 +4,18 @@ require('dotenv').config();
 // MongoDB 連接配置
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/nfc-checkin';
 
+// MongoDB 連接選項
+const mongoOptions = {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  bufferCommands: false
+};
+
 // 連接到 MongoDB
 const connectMongoDB = async () => {
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, mongoOptions);
     console.log('✅ MongoDB 連接成功');
   } catch (error) {
     console.error('❌ MongoDB 連接失敗:', error.message);
