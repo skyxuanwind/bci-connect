@@ -130,6 +130,10 @@ app.use('/api/judicial-lookup', judicialLookupRoutes);
 app.use('/api/judgment-sync', judgmentSyncRoutes);
 app.use('/api/nfc-checkin', nfcCheckinRoutes);
 
+// 添加MongoDB NFC報到路由
+const nfcMongodbRoutes = require('./routes/nfc-mongodb');
+app.use('/api/nfc-checkin-mongo', nfcMongodbRoutes);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
