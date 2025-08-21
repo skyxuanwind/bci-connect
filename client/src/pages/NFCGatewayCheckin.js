@@ -21,8 +21,14 @@ const NFCGatewayCheckin = () => {
     try {
       const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
       const data = await response.json();
-      setGatewayStatus(data);
-      setIsReading(data.isActive);
+      console.log('Gateway 狀態:', data); // 調試日誌
+      setGatewayStatus({
+        ...data,
+        success: data.status === 'running',
+        nfcAvailable: data.readerConnected !== undefined,
+        isActive: data.nfcActive
+      });
+      setIsReading(data.nfcActive);
     } catch (error) {
       console.error('檢查 Gateway 狀態失敗:', error);
       setGatewayStatus({
