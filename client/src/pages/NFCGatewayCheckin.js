@@ -12,6 +12,7 @@ const NFCGatewayCheckin = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [stats, setStats] = useState(null);
+  const [connecting, setConnecting] = useState(false);
   
   // NFC Gateway Service URL
   const GATEWAY_URL = process.env.REACT_APP_NFC_GATEWAY_URL || 'http://localhost:3002';
@@ -19,6 +20,7 @@ const NFCGatewayCheckin = () => {
   // 檢查 NFC Gateway Service 狀態
   const checkGatewayStatus = async () => {
     try {
+      setConnecting(true);
       const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
       const data = await response.json();
       console.log('Gateway 狀態:', data); // 調試日誌
@@ -29,12 +31,16 @@ const NFCGatewayCheckin = () => {
         isActive: data.nfcActive
       });
       setIsReading(data.nfcActive);
+      setConnecting(false);
+      return true;
     } catch (error) {
       console.error('檢查 Gateway 狀態失敗:', error);
       setGatewayStatus({
         success: false,
         message: '無法連接到本地 NFC Gateway Service'
       });
+      setConnecting(false);
+      return false;
     }
   };
   
@@ -152,10 +158,32 @@ const NFCGatewayCheckin = () => {
       setError('測試雲端連線失敗: ' + error.message);
     }
   };
+
+  // 手動連接 Gateway Service
+  const connectGatewayService = async () => {
+    setConnecting(true);
+    setError(null);
+    
+    try {
+      const connected = await checkGatewayStatus();
+      if (connected) {
+        setSuccess('成功連接到 NFC Gateway Service');
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError('無法連接到本地 NFC Gateway Service，請確保服務已啟動');
+      }
+    } catch (error) {
+      console.error('連接 Gateway Service 失敗:', error);
+      setError('連接 Gateway Service 失敗: ' + error.message);
+    } finally {
+      setConnecting(false);
+    }
+  };
   
-  // 定期更新狀態
+  // 自動連接 Gateway Service
   useEffect(() => {
-    checkGatewayStatus();
+    // 頁面加載時立即連接
+    connectGatewayService();
     fetchLastCheckin();
     fetchCheckinRecords();
     fetchStats();
@@ -242,6 +270,15 @@ const NFCGatewayCheckin = () => {
             
             {/* 控制按鈕 */}
             <div className="space-y-4">
+              {/* 連接 Gateway Service 按鈕 */}
+              <button
+                onClick={connectGatewayService}
+                disabled={connecting}
+                className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                {connecting ? '連接中...' : '🔌 連接 Gateway Service'}
+              </button>
+
               {!isReading ? (
                 <button
                   onClick={startNFCReading}
@@ -272,6 +309,8 @@ const NFCGatewayCheckin = () => {
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <h4 className="font-bold text-blue-800 mb-2">📋 使用說明</h4>
               <ul className="text-sm text-blue-700 space-y-1">
+                <li>• 頁面載入時會自動連接本地 Gateway Service</li>
+                <li>• 如果連接失敗，可點擊「連接 Gateway Service」按鈕重試</li>
                 <li>• 確保本地 NFC Gateway Service 正在運行</li>
                 <li>• 點擊「開始報到」啟動 NFC 讀卡機</li>
                 <li>• 將 NFC 卡片靠近 ACR122U 讀卡機</li>
