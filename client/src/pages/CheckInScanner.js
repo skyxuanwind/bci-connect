@@ -210,12 +210,6 @@ const CheckInScanner = () => {
       return;
     }
 
-    // 檢查相機權限
-    const hasPermission = await checkCameraPermission();
-    if (!hasPermission) {
-      return;
-    }
-
     try {
       // 標記掃描器啟動（用於 UI 切換）
       setScannerActive(true);
@@ -223,9 +217,16 @@ const CheckInScanner = () => {
       
       // 清理之前的掃描器實例
       if (html5QrcodeScannerRef.current) {
-        html5QrcodeScannerRef.current.clear();
+        try {
+          html5QrcodeScannerRef.current.clear();
+        } catch (clearError) {
+          console.warn('清理舊掃描器時發生錯誤:', clearError);
+        }
         html5QrcodeScannerRef.current = null;
       }
+      
+      // 等待一小段時間確保相機資源釋放
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // 創建新的 QR Code 掃描器 - 針對手機優化
       const html5QrcodeScanner = new Html5QrcodeScanner(
@@ -259,16 +260,23 @@ const CheckInScanner = () => {
       
       html5QrcodeScannerRef.current = html5QrcodeScanner;
       
-      // 開始掃描
-      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-      
-      console.log('QR Code 掃描器已啟動');
+      // 開始掃描 - 添加額外的錯誤處理
+      try {
+        await html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        console.log('QR Code 掃描器已成功啟動');
+        addDebugInfo('QR Code 掃描器啟動成功');
+      } catch (renderError) {
+        console.error('掃描器渲染失敗:', renderError);
+        addDebugInfo(`掃描器渲染失敗: ${renderError?.message || renderError}`);
+        throw renderError;
+      }
       
     } catch (error) {
       console.error('QR Code 掃描器啟動失敗:', error);
+      const errorMessage = error?.message || error?.toString() || '未知錯誤';
       setScanResult({
         success: false,
-        message: 'QR Code 掃描器啟動失敗: ' + error.message
+        message: 'QR Code 掃描器啟動失敗: ' + errorMessage
       });
       setScannerActive(false);
     }
