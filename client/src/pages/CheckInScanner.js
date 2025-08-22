@@ -210,35 +210,51 @@ const CheckInScanner = () => {
       return;
     }
 
-    if (!nfcSupported) {
-      alert('您的設備或瀏覽器不支援 NFC 功能');
+    // 檢查相機權限
+    const hasPermission = await checkCameraPermission();
+    if (!hasPermission) {
       return;
     }
 
     try {
       // 標記掃描器啟動（用於 UI 切換）
       setScannerActive(true);
-
-      setNfcReading(true);
-      setNfcResult(null);
+      setScanResult(null);
       
-      const ndef = new window.NDEFReader();
-      await ndef.scan();
+      // 清理之前的掃描器實例
+      if (html5QrcodeScannerRef.current) {
+        html5QrcodeScannerRef.current.clear();
+        html5QrcodeScannerRef.current = null;
+      }
       
-      console.log('NFC 掃描已啟動，請將 NFC 卡片靠近設備...');
+      // 創建新的 QR Code 掃描器
+      const html5QrcodeScanner = new Html5QrcodeScanner(
+        "qr-reader",
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+          showTorchButtonIfSupported: true,
+          showZoomSliderIfSupported: true,
+          defaultZoomValueIfSupported: 2
+        },
+        false
+      );
       
-      ndef.addEventListener('reading', ({ message, serialNumber }) => {
-        console.log('NFC 卡片檢測到:', serialNumber);
-        handleNFCReading(serialNumber);
-      });
+      html5QrcodeScannerRef.current = html5QrcodeScanner;
+      
+      // 開始掃描
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+      
+      console.log('QR Code 掃描器已啟動');
       
     } catch (error) {
-      console.error('NFC 讀取失敗:', error);
-      setNfcResult({
+      console.error('QR Code 掃描器啟動失敗:', error);
+      setScanResult({
         success: false,
-        message: 'NFC 讀取失敗: ' + error.message
+        message: 'QR Code 掃描器啟動失敗: ' + error.message
       });
-      setNfcReading(false);
       setScannerActive(false);
     }
   };
@@ -287,7 +303,81 @@ const CheckInScanner = () => {
     setNfcResult(null);
   };
 
-  // 新增：停止掃描（供按鈕使用）
+  // QR Code 掃描成功處理
+  const onScanSuccess = async (decodedText, decodedResult) => {
+    console.log('QR Code 掃描成功:', decodedText);
+    
+    try {
+      // 停止掃描器
+      if (html5QrcodeScannerRef.current) {
+        html5QrcodeScannerRef.current.clear();
+        html5QrcodeScannerRef.current = null;
+      }
+      setScannerActive(false);
+      setLoading(true);
+      
+      // 解析 QR Code 內容
+      let userId;
+      try {
+        // 嘗試解析 JSON 格式的 QR Code
+        const qrData = JSON.parse(decodedText);
+        userId = qrData.userId || qrData.id;
+      } catch (parseError) {
+        // 如果不是 JSON，嘗試直接作為用戶 ID
+        const numericId = parseInt(decodedText);
+        if (!isNaN(numericId) && numericId > 0) {
+          userId = numericId;
+        } else {
+          throw new Error('無效的 QR Code 格式');
+        }
+      }
+      
+      if (!userId) {
+        throw new Error('QR Code 中未找到有效的用戶 ID');
+      }
+      
+      // 處理 QR Code 報到
+      const response = await api.post('/api/attendance/checkin', {
+        userId: userId,
+        eventId: selectedEvent
+      });
+      
+      setScanResult({
+        success: true,
+        message: `${response.data.user.name} 報到成功！`
+      });
+      
+      // 更新最近報到記錄
+      const newRecord = {
+        id: Date.now(),
+        user: response.data.user,
+        checkInTime: new Date().toLocaleString('zh-TW')
+      };
+      setRecentCheckIns(prev => [newRecord, ...prev.slice(0, 4)]);
+      
+    } catch (error) {
+      console.error('QR Code 報到失敗:', error);
+      setScanResult({
+        success: false,
+        message: error.response?.data?.message || error.message || 'QR Code 報到失敗，請稍後再試'
+      });
+    } finally {
+      setLoading(false);
+      
+      // 3秒後清除結果並允許重新掃描
+      setTimeout(() => {
+        setScanResult(null);
+      }, 3000);
+    }
+  };
+  
+  // QR Code 掃描失敗處理
+  const onScanFailure = (error) => {
+    // 這裡不需要處理，因為掃描失敗是正常的（當沒有檢測到 QR Code 時）
+    // console.warn('QR Code 掃描失敗:', error);
+  };
+
+  // 停止掃描（供按鈕使用）
   const stopScanner = () => {
     try {
       // 若有 QR 掃描器實例，進行清理
@@ -300,8 +390,6 @@ const CheckInScanner = () => {
     } finally {
       setScannerActive(false);
       setScanResult(null);
-      // 也一併停止 NFC 讀取（若有）
-      stopNFCReading();
     }
   };
 
@@ -514,16 +602,16 @@ const CheckInScanner = () => {
               <div className="text-center">
                 <div className="mb-4">
                   <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 01-3 0m3 0h1.5m-1.5 0v1.5m0-1.5V9a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                   </svg>
                   <p className="text-gray-500 mb-4">點擊開始掃描按鈕啟動相機</p>
                 </div>
                 <button
                   onClick={startScanner}
-                  disabled={!selectedEvent}
+                  disabled={!selectedEvent || loading}
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
-                  開始掃描
+                  {loading ? '啟動中...' : '開始掃描'}
                 </button>
               </div>
             )}
@@ -553,6 +641,18 @@ const CheckInScanner = () => {
                     )}
                   </svg>
                   <p className={`ml-3 text-sm ${scanResult.success ? 'text-green-700' : 'text-red-700'}`}>{scanResult.message}</p>
+                </div>
+                <div className="mt-3 text-center">
+                  <button
+                    onClick={() => {
+                      setScanResult(null);
+                      // 可以選擇重新開始掃描
+                      // startScanner();
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    重新掃描
+                  </button>
                 </div>
               </div>
             )}
