@@ -227,17 +227,32 @@ const CheckInScanner = () => {
         html5QrcodeScannerRef.current = null;
       }
       
-      // 創建新的 QR Code 掃描器
+      // 創建新的 QR Code 掃描器 - 針對手機優化
       const html5QrcodeScanner = new Html5QrcodeScanner(
         "qr-reader",
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // 動態計算 QR 掃描框大小，適應不同螢幕尺寸
+            let minEdgePercentage = 0.7; // 70% of the smaller edge
+            let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+            let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+            return {
+              width: qrboxSize,
+              height: qrboxSize
+            };
+          },
           supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
           formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
           showTorchButtonIfSupported: true,
           showZoomSliderIfSupported: true,
-          defaultZoomValueIfSupported: 2
+          defaultZoomValueIfSupported: 2,
+          // 手機優化設定
+          aspectRatio: 1.0,
+          disableFlip: false,
+          videoConstraints: {
+            facingMode: "environment" // 使用後置相機
+          }
         },
         false
       );
@@ -601,10 +616,11 @@ const CheckInScanner = () => {
             {!scannerActive && !scanResult && (
               <div className="text-center">
                 <div className="mb-4">
-                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v6zM8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
-                    <rect x="9" y="9" width="6" height="6" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} fill="none" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 10h1v1h-1zM13 10h1v1h-1zM10 13h1v1h-1zM13 13h1v1h-1z" />
+                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 13h2v2h-2zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM17 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2zM19 19h2v2h-2z"/>
+                    <rect x="4" y="4" width="2" height="2" fill="white"/>
+                    <rect x="4" y="16" width="2" height="2" fill="white"/>
+                    <rect x="16" y="4" width="2" height="2" fill="white"/>
                   </svg>
                   <p className="text-gray-500 mb-4">點擊開始掃描按鈕啟動相機</p>
                 </div>
