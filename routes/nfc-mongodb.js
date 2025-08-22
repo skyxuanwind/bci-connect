@@ -74,6 +74,56 @@ router.post('/submit', async (req, res) => {
     
     console.log(`✅ NFC 報到記錄已儲存: ${normalizedCardUid} (ID: ${savedCheckin._id})`);
 
+    // 自動同步到 PostgreSQL attendance_records 表（如果是已識別會員）
+    if (memberInfo) {
+      try {
+        // 查找最近的活動作為預設活動
+        const recentEventResult = await pool.query(
+          'SELECT id, title FROM events WHERE event_date >= CURRENT_DATE - INTERVAL \'7 days\' ORDER BY event_date DESC LIMIT 1'
+        );
+        
+        if (recentEventResult.rows.length > 0) {
+          const event = recentEventResult.rows[0];
+          
+          // 檢查是否已經報到過
+          const existingRecord = await pool.query(
+            'SELECT id FROM attendance_records WHERE user_id = $1 AND event_id = $2',
+            [memberInfo.id, event.id]
+          );
+          
+          if (existingRecord.rows.length === 0) {
+            // 新增出席記錄
+            await pool.query(
+              'INSERT INTO attendance_records (user_id, event_id, check_in_time) VALUES ($1, $2, $3)',
+              [memberInfo.id, event.id, savedCheckin.checkinTime]
+            );
+            
+            // 自動新增300元收入記錄
+            await pool.query(
+              'INSERT INTO transactions (date, item_name, type, amount, notes, created_by_id) VALUES ($1, $2, $3, $4, $5, $6)',
+              [
+                new Date().toISOString().split('T')[0],
+                `${memberInfo.name} - ${event.title} 活動報到 (NFC)`,
+                'income',
+                300,
+                'NFC 自動報到收入',
+                memberInfo.id
+              ]
+            );
+            
+            console.log(`✅ 已自動同步到出席管理: ${memberInfo.name} -> ${event.title}`);
+          } else {
+            console.log(`ℹ️  ${memberInfo.name} 已經報到過活動 ${event.title}，跳過同步`);
+          }
+        } else {
+          console.log('ℹ️  未找到近期活動，跳過出席記錄同步');
+        }
+      } catch (syncError) {
+        console.error('❌ 同步到出席管理失敗:', syncError.message);
+        // 不影響主要的 NFC 報到流程
+      }
+    }
+
     // 即時推播給前端（SSE）
     try {
       sseBroadcast('nfc-checkin', {

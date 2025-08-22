@@ -87,36 +87,29 @@ const CheckInScanner = () => {
           }
 
           // 自動同步至出席管理（僅當已選擇活動時）
-          if (selectedEvent && payload.cardUid && payload.timestamp) {
-            const key = `${payload.cardUid}-${payload.timestamp}`;
-            if (!processedSseCheckinsRef.current.has(key)) {
-              processedSseCheckinsRef.current.add(key);
-              try {
-                const resp = await api.post('/api/attendance/nfc-checkin', {
-                  nfcCardId: payload.cardUid,
-                  eventId: selectedEvent
-                });
-                setNfcResult({ success: true, message: `${resp.data.user.name} 報到成功！` });
-                
-                // 顯示成功彈窗
-                setSuccessModalData({
-                  userName: resp.data.user.name,
-                  eventTitle: resp.data.event.title,
-                  checkinTime: new Date().toLocaleString('zh-TW')
-                });
-                setShowSuccessModal(true);
-                
-                // 2秒後自動關閉彈窗
-                setTimeout(() => {
-                  setShowSuccessModal(false);
-                  setSuccessModalData(null);
-                }, 2000);
-                
-              } catch (syncErr) {
-                console.warn('自動建立出席記錄失敗：', syncErr?.response?.data || syncErr.message || syncErr);
-              }
-            }
+          if (selectedEvent && payload.member && payload.isRegisteredMember) {
+            // 顯示 NFC 報到成功彈窗
+            setSuccessModalData({
+              user: {
+                name: payload.member.name,
+                company: payload.member.company || '未設定'
+              },
+              event: {
+                title: events.find(e => e.id.toString() === selectedEvent.toString())?.title || '當前活動'
+              },
+              method: 'NFC',
+              checkinTime: payload.checkinTime
+            });
+            setShowSuccessModal(true);
+            
+            // 5秒後自動關閉彈窗
+            setTimeout(() => {
+              setShowSuccessModal(false);
+              setSuccessModalData(null);
+            }, 5000);
           }
+          
+          // 注意：同步邏輯已移至後端 nfc-mongodb.js 的 submit 端點
         } catch (e) {
           console.warn('解析 SSE 資料失敗:', e);
         }
@@ -915,9 +908,10 @@ const CheckInScanner = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">🎉 報到成功！</h3>
               <div className="space-y-2 text-gray-700">
-                <p className="text-lg font-semibold text-green-600">{successModalData.userName}</p>
-                <p className="text-sm">{successModalData.eventTitle}</p>
+                <p className="text-lg font-semibold text-green-600">{successModalData.user?.name || successModalData.userName}</p>
+                <p className="text-sm">{successModalData.event?.title || successModalData.eventTitle}</p>
                 <p className="text-xs text-gray-500">{successModalData.checkinTime}</p>
+                <p className="text-xs text-blue-600 font-medium">{successModalData.method} 報到</p>
               </div>
             </div>
           </div>
