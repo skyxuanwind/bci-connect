@@ -107,8 +107,11 @@ const NFCGatewayCheckin = () => {
   const fetchLastCheckin = async () => {
     try {
       const response = await api.get('/api/nfc-checkin-mongo/last-checkin');
-      if (response.data.success && response.data.data) {
-        setLastCheckin(response.data.data);
+      const payload = response?.data;
+      const raw = (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) ? payload.data : payload;
+      const normalized = normalizeCheckinRecord(raw);
+      if (normalized) {
+        setLastCheckin(normalized);
       }
     } catch (error) {
       console.error('獲取最後報到記錄失敗:', error);
@@ -121,9 +124,14 @@ const NFCGatewayCheckin = () => {
     
     try {
       const response = await api.get('/api/nfc-checkin-mongo/records?limit=20');
-      if (response.data.success) {
-        setCheckinRecords(response.data.data);
+      const payload = response?.data;
+      let list = [];
+      if (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) {
+        list = payload.data || [];
+      } else if (Array.isArray(payload)) {
+        list = payload;
       }
+      setCheckinRecords((list || []).map(normalizeCheckinRecord).filter(Boolean));
     } catch (error) {
       console.error('獲取報到記錄失敗:', error);
     }
@@ -448,3 +456,16 @@ const NFCGatewayCheckin = () => {
 };
 
 export default NFCGatewayCheckin;
+
+// 將 SQLite 與 Mongo 兩種格式統一
+const normalizeCheckinRecord = (raw) => {
+  if (!raw) return null;
+  return {
+    id: raw.id || raw._id || raw.lastID || null,
+    cardUid: raw.cardUid || raw.card_uid || raw.cardUID || null,
+    checkinTime: raw.checkinTime || raw.checkin_time || raw.formattedCheckinTime || raw.createdAt || raw.timestamp || null,
+    readerName: raw.readerName || raw.reader_name || null,
+    source: raw.source || null,
+    timestamp: raw.timestamp || raw.createdAt || null,
+  };
+};

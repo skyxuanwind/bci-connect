@@ -60,15 +60,30 @@ const NFCReportSystem = () => {
     }
   };
   
+  // 統一報到資料格式（支援 SQLite 與 Mongo）
+  const normalizeCheckinRecord = (raw) => {
+    if (!raw) return null;
+    return {
+      id: raw.id || raw._id || raw.lastID || null,
+      cardUid: raw.cardUid || raw.card_uid || raw.cardUID || null,
+      checkinTime: raw.checkinTime || raw.checkin_time || raw.formattedCheckinTime || raw.createdAt || raw.timestamp || null,
+      readerName: raw.readerName || raw.reader_name || null,
+      source: raw.source || null,
+      timestamp: raw.timestamp || raw.createdAt || null,
+    };
+  };
+
   // 獲取最後一筆報到紀錄
   const fetchLastCheckin = async () => {
     try {
       // 使用雲端 API 獲取最後報到紀錄
       const response = await fetch('/api/nfc-checkin/last-checkin');
       const data = await response.json();
-      
-      if (data.id) {
-        setLastCheckin(data);
+      // 兼容 {success, data} 與直接物件兩種格式
+      const raw = (data && Object.prototype.hasOwnProperty.call(data, 'success')) ? data.data : data;
+      const normalized = normalizeCheckinRecord(raw);
+      if (normalized) {
+        setLastCheckin(normalized);
       }
       
       setLastUpdate(new Date().toLocaleTimeString('zh-TW'));
@@ -83,9 +98,14 @@ const NFCReportSystem = () => {
     
     try {
       const response = await api.get('/api/nfc-checkin/records?limit=20');
-      if (response.data.success) {
-        setCheckinRecords(response.data.data || []);
+      const payload = response?.data;
+      let list = [];
+      if (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) {
+        list = payload.data || [];
+      } else if (Array.isArray(payload)) {
+        list = payload;
       }
+      setCheckinRecords((list || []).map(normalizeCheckinRecord).filter(Boolean));
     } catch (error) {
       console.error('獲取報到紀錄失敗:', error);
     }

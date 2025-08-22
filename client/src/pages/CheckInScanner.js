@@ -46,6 +46,9 @@ const CheckInScanner = () => {
     const interval = setInterval(() => {
       checkGatewayStatus();
       fetchLastNfcCheckin();
+      if (user) {
+        fetchNfcCheckinRecords();
+      }
     }, 3000);
     
     return () => {
@@ -144,236 +147,6 @@ const CheckInScanner = () => {
   };
 
   const startScanner = async () => {
-    if (!selectedEvent) {
-      alert('請先選擇活動');
-      return;
-    }
-
-    // 先檢查相機權限
-    const hasPermission = await checkCameraPermission();
-    if (!hasPermission) {
-      return;
-    }
-
-    setScannerActive(true);
-    setScanResult(null);
-
-    // 延遲初始化以確保DOM元素已渲染
-    setTimeout(() => {
-      const qrReaderElement = document.getElementById('qr-reader');
-      if (!qrReaderElement) {
-        console.error('QR reader element not found');
-        setScannerActive(false);
-        return;
-      }
-
-      // 初始化 QR Code 掃描器 - 優化配置以提高識別率
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        // 更寬鬆的掃描設定以提高識別率
-        disableFlip: false,
-        // 使用後置相機（手機）
-        videoConstraints: {
-          facingMode: "environment"
-        },
-        // 只支援相機掃描，直接啟動相機
-        supportedScanTypes: [
-          Html5QrcodeScanType.SCAN_TYPE_CAMERA
-        ],
-        // 添加更多格式支援以提高識別率
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.AZTEC,
-          Html5QrcodeSupportedFormats.CODABAR,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.CODE_93,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.DATA_MATRIX,
-          Html5QrcodeSupportedFormats.MAXICODE,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.PDF_417,
-          Html5QrcodeSupportedFormats.RSS_14,
-          Html5QrcodeSupportedFormats.RSS_EXPANDED,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION
-        ],
-        // 提高掃描靈敏度
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
-        }
-      };
-
-      try {
-        addDebugInfo('正在啟動 QR 碼掃描器...');
-        html5QrcodeScannerRef.current = new Html5QrcodeScanner(
-          "qr-reader",
-          config,
-          /* verbose= */ false
-        );
-
-        html5QrcodeScannerRef.current.render(
-          (decodedText) => {
-            // 掃描成功
-            handleScanSuccess(decodedText);
-          },
-          (error) => {
-            // 掃描錯誤處理 - 更寬鬆的錯誤處理
-            console.warn('QR Code scan error (may be normal):', error);
-            
-            // 將錯誤轉換為字符串以便檢查
-            const errorString = String(error);
-            
-            // 添加調試訊息
-            if (errorString.includes('NotFoundException')) {
-              addDebugInfo('掃描中...未檢測到 QR 碼（正常情況）');
-            } else if (errorString.includes('NotAllowedError') || errorString.includes('Permission denied') || 
-                errorString.includes('NotAllowed') || errorString.includes('permission')) {
-              addDebugInfo('相機權限被拒絕');
-              alert('相機權限被拒絕。請檢查：\n1. 瀏覽器是否允許此網站使用相機\n2. 系統設定是否允許瀏覽器使用相機\n3. 嘗試重新整理頁面並重新授權');
-              setScannerActive(false);
-            } else {
-              addDebugInfo(`掃描錯誤: ${errorString.substring(0, 100)}`);
-            }
-            // 其他所有錯誤都忽略，讓 html5-qrcode 庫自己處理
-            // 這包括 NotFoundError, NotReadableError 等，這些通常是暫時性的或可以由庫自動恢復
-          }
-        );
-        
-        addDebugInfo('QR 碼掃描器啟動成功，請將 QR 碼對準相機');
-      } catch (initError) {
-        console.error('Failed to initialize QR scanner:', initError);
-        addDebugInfo(`掃描器初始化失敗: ${initError.message || initError}`);
-        alert('QR碼掃描器初始化失敗。您的瀏覽器可能不支援此功能，請嘗試：\n1. 更新瀏覽器到最新版本\n2. 使用Chrome、Safari或Firefox瀏覽器\n3. 確認瀏覽器支援相機功能');
-        setScannerActive(false);
-      }
-    }, 100);
-  };
-
-  const stopScanner = () => {
-    if (html5QrcodeScannerRef.current) {
-      html5QrcodeScannerRef.current.clear();
-      html5QrcodeScannerRef.current = null;
-    }
-    setScannerActive(false);
-  };
-
-  const handleScanSuccess = async (qrCodeData) => {
-    try {
-      addDebugInfo(`檢測到 QR 碼: ${qrCodeData.substring(0, 50)}...`);
-      setLoading(true);
-      
-      // 解析 QR Code 數據
-      let userId;
-      try {
-        // 嘗試解析 JSON 格式的 QR Code 數據
-        const qrData = JSON.parse(qrCodeData);
-        console.log('Parsed QR Code data:', qrData); // 調試日誌
-        addDebugInfo(`解析 JSON 成功: type=${qrData.type || 'unknown'}`);
-        
-        // 檢查是否為會員 QR Code
-        if (qrData.type === 'member' && qrData.id) {
-          userId = qrData.id;
-        } else if (qrData.userId) {
-          userId = qrData.userId;
-        } else if (qrData.id) {
-          userId = qrData.id;
-        } else {
-          throw new Error('QR Code 中找不到有效的用戶 ID');
-        }
-        addDebugInfo(`提取用戶 ID: ${userId}`);
-      } catch (e) {
-        console.log('QR Code parsing error:', e.message);
-        // 如果不是 JSON 格式，假設直接是用戶 ID
-        const parsedId = parseInt(qrCodeData);
-        if (!isNaN(parsedId)) {
-          userId = parsedId;
-          addDebugInfo(`使用直接文本作為用戶 ID: ${userId}`);
-        } else {
-          throw new Error('無效的 QR Code 格式：' + qrCodeData.substring(0, 50));
-        }
-      }
-
-      if (!userId || isNaN(userId)) {
-        throw new Error('無效的用戶 ID：' + userId);
-      }
-      
-      console.log('Extracted user ID:', userId); // 調試日誌
-
-      // 發送報到請求
-      const response = await axios.post('/api/attendance/checkin', {
-        userId: userId,
-        eventId: parseInt(selectedEvent)
-      });
-
-      const data = response.data;
-      
-      if (data.success) {
-        setScanResult({
-          success: true,
-          message: data.message,
-          user: data.user,
-          event: data.event
-        });
-        
-        // 更新最近報到記錄
-        setRecentCheckIns(prev => [{
-          id: Date.now(),
-          user: data.user,
-          checkInTime: new Date().toLocaleString('zh-TW')
-        }, ...prev.slice(0, 4)]);
-        
-        // 3秒後清除結果並重新開始掃描
-        setTimeout(() => {
-          setScanResult(null);
-          if (scannerActive) {
-            startScanner();
-          }
-        }, 3000);
-      } else {
-        setScanResult({
-          success: false,
-          message: data.message
-        });
-        
-        // 2秒後清除錯誤訊息並重新開始掃描
-        setTimeout(() => {
-          setScanResult(null);
-          if (scannerActive) {
-            startScanner();
-          }
-        }, 2000);
-      }
-      
-      // 暫停掃描器
-      stopScanner();
-      
-    } catch (error) {
-      console.error('Check-in error:', error);
-      setScanResult({
-        success: false,
-        message: error.message || '報到失敗，請重試'
-      });
-      
-      // 2秒後清除錯誤訊息並重新開始掃描
-      setTimeout(() => {
-        setScanResult(null);
-        if (scannerActive) {
-          startScanner();
-        }
-      }, 2000);
-      
-      stopScanner();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startNFCReading = async () => {
     if (!selectedEvent) {
       alert('請先選擇活動');
       return;
@@ -517,17 +290,34 @@ const CheckInScanner = () => {
     }
   };
 
+  // 將舊 SQLite 與新 Mongo 兩種回傳統一成前端可用格式
+  const normalizeCheckinRecord = (raw) => {
+    if (!raw) return null;
+    return {
+      id: raw.id || raw._id || raw.lastID || null,
+      cardUid: raw.cardUid || raw.card_uid || raw.cardUID || null,
+      checkinTime: raw.checkinTime || raw.checkin_time || raw.formattedCheckinTime || raw.createdAt || raw.timestamp || null,
+      readerName: raw.readerName || raw.reader_name || null,
+      source: raw.source || null,
+      timestamp: raw.timestamp || raw.createdAt || null,
+    };
+  };
+
   const fetchLastNfcCheckin = async () => {
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/nfc-checkin/last-checkin`);
-      const data = await response.json();
-      
-      if (data.id) {
-        setLastNfcCheckin(data);
+      // 使用共用 api 實例確保 baseURL 與認證頭一致
+      const response = await api.get('/api/nfc-checkin-mongo/last-checkin');
+      // 兼容處理：同時支援 {success, data} 與直接物件兩種格式
+      const payload = response?.data;
+      const raw = (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) ? payload.data : payload;
+      const normalized = normalizeCheckinRecord(raw);
+      if (normalized) {
+        setLastNfcCheckin(normalized);
+      } else {
+        console.warn('last-checkin 回應非預期:', response?.data);
       }
     } catch (error) {
-      console.error('獲取最後 NFC 報到紀錄失敗:', error);
+      console.error('獲取最後 NFC 報到紀錄失敗:', error?.response?.data || error.message || error);
     }
   };
 
@@ -535,10 +325,15 @@ const CheckInScanner = () => {
     if (!user) return;
     
     try {
-      const response = await api.get('/api/nfc-checkin/records?limit=10');
-      if (response.data.success) {
-        setNfcCheckinRecords(response.data.data || []);
+      const response = await api.get('/api/nfc-checkin-mongo/records?limit=10');
+      const payload = response?.data;
+      let list = [];
+      if (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) {
+        list = payload.data || [];
+      } else if (Array.isArray(payload)) {
+        list = payload;
       }
+      setNfcCheckinRecords((list || []).map(normalizeCheckinRecord).filter(Boolean));
     } catch (error) {
       console.error('獲取 NFC 報到紀錄失敗:', error);
     }
@@ -794,52 +589,72 @@ const CheckInScanner = () => {
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-blue-700">卡片 UID:</span>
-                      <span className="font-mono text-xs text-blue-600">{lastNfcCheckin.cardUid}</span>
+                      <span className="text-blue-700">卡號:</span>
+                      <span className="font-mono text-blue-900">{lastNfcCheckin.cardUid}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-blue-700">時間:</span>
-                      <span className="text-blue-800">{lastNfcCheckin.checkinTime}</span>
+                      <span className="text-blue-900">{lastNfcCheckin.checkinTime}</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <div className="text-sm text-yellow-700">❓ 未識別會員</div>
+                  <div className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span className="text-blue-700">卡片 UID:</span>
-                      <span className="font-mono text-xs text-blue-600">{lastNfcCheckin.cardUid}</span>
+                      <span className="text-blue-700">卡號:</span>
+                      <span className="font-mono text-blue-900">{lastNfcCheckin.cardUid}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-blue-700">時間:</span>
-                      <span className="text-blue-800">{lastNfcCheckin.checkinTime}</span>
+                      <span className="text-blue-900">{lastNfcCheckin.checkinTime}</span>
                     </div>
-                    <div className="mt-2 pt-2 border-t border-blue-200">
-                      <button
-                        onClick={() => handleSetNfcCardId(lastNfcCheckin.cardUid)}
-                        className="w-full bg-blue-600 text-white text-xs py-1.5 px-3 rounded hover:bg-blue-700 transition-colors"
-                      >
-                        🔗 設定為我的 NFC 卡片
-                      </button>
-                    </div>
+                    {lastNfcCheckin.readerName && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">讀卡機:</span>
+                        <span className="text-blue-900">{lastNfcCheckin.readerName}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
-            
-            {/* QR Code 報到記錄 */}
-            {recentCheckIns.length === 0 && !lastNfcCheckin ? (
-              <div className="text-center py-8">
-                <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <p className="text-gray-500">尚無報到記錄</p>
+
+            {/* 來自雲端（MongoDB）的 NFC 報到紀錄 */}
+            {nfcCheckinRecords.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-green-800 mb-2">🧾 最近 NFC 報到（雲端）</h3>
+                <div className="space-y-2">
+                  {nfcCheckinRecords.slice(0, 5).map((record) => (
+                    <div key={record.id} className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                          <span className="text-sm font-medium text-green-700">
+                            {record.cardUid?.slice(-2)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">{record.cardUid}</p>
+                        <p className="text-xs text-gray-500">{record.checkinTime}</p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          NFC 報到
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <div className="space-y-3">
+            )}
+
+            {/* 本機 QR 報到（本頁面掃描產生） */}
+            {recentCheckIns.length > 0 && (
+              <div className="mt-2">
+                <h3 className="text-sm font-medium text-gray-800 mb-2">📷 最近 QR 報到（本機）</h3>
                 {recentCheckIns.map((record) => (
-                  <div key={record.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-shrink-0 h-10 w-10">
-                      <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <div key={record.id} className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                         <span className="text-sm font-medium text-green-700">
                           {record.user.name.charAt(0)}
                         </span>
@@ -856,6 +671,12 @@ const CheckInScanner = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {nfcCheckinRecords.length === 0 && recentCheckIns.length === 0 && (
+              <div className="text-center text-gray-500">
+                尚無報到記錄
               </div>
             )}
           </div>
