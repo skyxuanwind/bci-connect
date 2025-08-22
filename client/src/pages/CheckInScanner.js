@@ -59,6 +59,46 @@ const CheckInScanner = () => {
     };
   }, [user]);
 
+  // 透過 SSE 即時接收新的 NFC 報到
+  useEffect(() => {
+    let es;
+    try {
+      const base = process.env.REACT_APP_API_URL || '';
+      es = new EventSource(`${base}/api/nfc-checkin-mongo/events`);
+
+      es.addEventListener('nfc-checkin', (event) => {
+        try {
+          const payload = JSON.parse(event.data || '{}');
+          const normalized = normalizeCheckinRecord({
+            id: payload.id,
+            cardUid: payload.cardUid,
+            checkinTime: payload.checkinTime,
+            readerName: payload.readerName,
+            source: payload.source,
+            timestamp: payload.timestamp,
+            member: payload.member,
+          });
+          if (normalized) {
+            setLastNfcCheckin(normalized);
+            setNfcCheckinRecords(prev => [normalized, ...prev].slice(0, 10));
+          }
+        } catch (e) {
+          console.warn('解析 SSE 資料失敗:', e);
+        }
+      });
+
+      es.onerror = (e) => {
+        console.warn('SSE 連線錯誤，使用輪詢備援', e);
+      };
+    } catch (e) {
+      console.warn('建立 SSE 連線失敗:', e);
+    }
+
+    return () => {
+      try { es && es.close(); } catch (_) {}
+    };
+  }, []);
+
   const checkNFCSupport = () => {
     if (typeof window !== 'undefined' && 'NDEFReader' in window) {
       setNfcSupported(true);
@@ -634,6 +674,22 @@ const CheckInScanner = () => {
                         <span className="text-blue-700">讀卡機:</span>
                         <span className="text-blue-900">{lastNfcCheckin.readerName}</span>
                       </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 綁定卡片到我的帳號 */}
+                {user && lastNfcCheckin.cardUid && (
+                  <div className="mt-3 text-right">
+                    {user.nfcCardId === lastNfcCheckin.cardUid ? (
+                      <span className="text-xs text-green-700">這是您已綁定的卡片</span>
+                    ) : (
+                      <button
+                        onClick={() => handleSetNfcCardId(lastNfcCheckin.cardUid)}
+                        className="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        設為我的卡片
+                      </button>
                     )}
                   </div>
                 )}
