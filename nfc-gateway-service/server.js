@@ -3,16 +3,18 @@ const cors = require('cors');
 const axios = require('axios');
 require('dotenv').config();
 
-// NFC 讀卡機相關
+// NFC 讀卡機相關（改為可選依賴，缺失時啟動降級模式而非直接退出）
 let NFC = null;
+let nfcModuleAvailable = false;
 try {
   const nfcPcsc = require('nfc-pcsc');
   NFC = nfcPcsc.NFC;
+  nfcModuleAvailable = true;
   console.log('✅ NFC-PCSC 套件載入成功');
 } catch (error) {
-  console.log('❌ NFC-PCSC 套件未安裝或不可用');
-  console.log('請執行: npm install nfc-pcsc');
-  process.exit(1);
+  nfcModuleAvailable = false;
+  console.log('⚠️  NFC-PCSC 套件未安裝或不可用，將以「降級模式」啟動（不讀取實體卡片）');
+  console.log('   如需啟用實體讀卡，請於本機執行: cd nfc-gateway-service && npm install nfc-pcsc');
 }
 
 const app = express();
@@ -33,8 +35,8 @@ let lastScanTime = null;
 
 // 初始化 NFC 讀卡機
 function initializeNFCReader() {
-  if (!NFC) {
-    console.log('❌ NFC-PCSC 套件不可用');
+  if (!nfcModuleAvailable || !NFC) {
+    console.log('❌ NFC 模組不可用，無法啟動讀卡機（仍可使用 API 與測試上傳端點）');
     return false;
   }
 
@@ -117,6 +119,13 @@ function initializeNFCReader() {
 app.post('/api/nfc-checkin/start-reader', (req, res) => {
   console.log('📡 收到啟動 NFC 讀卡機請求');
   
+  if (!nfcModuleAvailable) {
+    return res.status(503).json({
+      success: false,
+      message: 'NFC 模組不可用，已在降級模式運行（無法使用實體讀卡）'
+    });
+  }
+  
   if (isNFCActive && nfcReader) {
     res.json({
       success: true,
@@ -145,10 +154,13 @@ app.post('/api/nfc-checkin/start-reader', (req, res) => {
 app.get('/api/nfc-checkin/status', (req, res) => {
   res.json({
     status: 'running',
-    nfcActive: isNFCActive,
+    nfcModuleAvailable,
+    nfcActive: isNFCActive && !!nfcReader,
     readerConnected: nfcReader !== null,
     readerName: nfcReader ? nfcReader.reader.name : null,
-    message: isNFCActive ? 'NFC Gateway Service 運行中' : 'NFC 讀卡機未啟動',
+    message: nfcModuleAvailable
+      ? (isNFCActive ? 'NFC Gateway Service 運行中' : 'NFC 讀卡機未啟動')
+      : 'NFC 模組不可用（降級模式）',
     cloudApiUrl: CLOUD_API_URL,
     lastCardUid: lastCardUid,
     lastScanTime: lastScanTime ? new Date(lastScanTime).toLocaleString('zh-TW') : null,
@@ -196,6 +208,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     service: 'NFC Gateway Service',
     timestamp: new Date().toISOString(),
+    nfcModuleAvailable,
     nfcActive: isNFCActive,
     readerConnected: nfcReader !== null
   });
