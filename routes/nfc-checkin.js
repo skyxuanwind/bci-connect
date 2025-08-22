@@ -6,6 +6,8 @@ const { authenticateToken } = require('../middleware/auth');
 const NFCCheckin = require('../models/NFCCheckin');
 const { connectMongoDB } = require('../config/mongodb');
 const mongoose = require('mongoose');
+const { addClient, removeClient, broadcast } = require('../utils/sse');
+const { pool } = require('../config/database');
 
 // NFC 讀卡機相關
 let NFC = null;
@@ -426,17 +428,96 @@ router.post('/submit', async (req, res) => {
     const newCheckin = new NFCCheckin(checkinData);
     const savedCheckin = await newCheckin.save();
     
-    const formattedTime = savedCheckin.getFormattedTime();
+    const formattedTime = typeof savedCheckin.getFormattedTime === 'function'
+      ? savedCheckin.getFormattedTime()
+      : (savedCheckin.formattedCheckinTime || (savedCheckin.checkinTime?.toISOString?.() || new Date().toISOString()));
+    
+    // 嘗試識別會員並同步到出席管理 + 交易
+    const normalizedCardUid = checkinData.cardUid;
+    let memberInfo = null;
+    try {
+      const memberResult = await pool.query(
+        'SELECT id, name, email, company, industry, title, membership_level, status FROM users WHERE nfc_card_id = $1',
+        [normalizedCardUid]
+      );
+      if (memberResult.rows.length > 0) {
+        memberInfo = memberResult.rows[0];
+      }
+    } catch (err) {
+      console.warn('查詢會員資料失敗(legacy submit):', err?.message || err);
+    }
+
+    if (memberInfo) {
+      try {
+        const recentEventResult = await pool.query(
+          "SELECT id, title FROM events WHERE event_date >= CURRENT_DATE - INTERVAL '7 days' ORDER BY event_date DESC LIMIT 1"
+        );
+        if (recentEventResult.rows.length > 0) {
+          const event = recentEventResult.rows[0];
+          const existingRecord = await pool.query(
+            'SELECT id FROM attendance_records WHERE user_id = $1 AND event_id = $2',
+            [memberInfo.id, event.id]
+          );
+          if (existingRecord.rows.length === 0) {
+            await pool.query(
+              'INSERT INTO attendance_records (user_id, event_id, check_in_time) VALUES ($1, $2, $3)',
+              [memberInfo.id, event.id, savedCheckin.checkinTime]
+            );
+            await pool.query(
+              'INSERT INTO transactions (date, item_name, type, amount, notes, created_by_id) VALUES ($1, $2, $3, $4, $5, $6)',
+              [
+                new Date().toISOString().split('T')[0],
+                `${memberInfo.name} - ${event.title} 活動報到 (NFC)`,
+                'income',
+                300,
+                'NFC 自動報到收入',
+                memberInfo.id
+              ]
+            );
+            console.log(`✅ (legacy) 已同步出席與收入: ${memberInfo.name} -> ${event.title}`);
+          }
+        }
+      } catch (syncErr) {
+        console.warn('同步出席/交易失敗(legacy submit):', syncErr?.message || syncErr);
+      }
+    }
+
+    // SSE 廣播，讓前端顯示彈窗
+    try {
+      broadcast('nfc-checkin', {
+        id: savedCheckin._id,
+        cardUid: savedCheckin.cardUid,
+        checkinTime: formattedTime,
+        readerName: savedCheckin.readerName,
+        source: savedCheckin.source,
+        timestamp: savedCheckin.checkinTime?.toISOString?.() || new Date().toISOString(),
+        member: memberInfo ? {
+          id: memberInfo.id,
+          name: memberInfo.name,
+          email: memberInfo.email,
+          company: memberInfo.company,
+          industry: memberInfo.industry,
+          title: memberInfo.title,
+          membershipLevel: memberInfo.membership_level,
+          status: memberInfo.status
+        } : null,
+        isRegisteredMember: !!memberInfo
+      });
+    } catch (e) {
+      console.warn('SSE 廣播失敗 (legacy submit):', e?.message || e);
+    }
     
     console.log(`✅ NFC 報到資料已儲存到 MongoDB! 卡號: ${cardUid}, 時間: ${formattedTime}`);
     
     res.json({
       success: true,
-      message: 'NFC 報到成功',
+      message: memberInfo ? `✅ ${memberInfo.name} 報到成功！` : 'NFC 報到成功',
       id: savedCheckin._id,
       cardUid: savedCheckin.cardUid,
       checkinTime: formattedTime,
-      source: savedCheckin.source
+      source: savedCheckin.source,
+      member: memberInfo || null,
+      isRegisteredMember: !!memberInfo,
     });
     
   } catch (error) {
@@ -545,3 +626,27 @@ process.on('SIGTERM', () => {
 });
 
 module.exports = router;
+// Provide a shared SSE endpoint alias here too, so any clients listening on /api/nfc-checkin/events also receive events
+router.get('/events', (req, res) => {
+res.setHeader('Content-Type', 'text/event-stream');
+res.setHeader('Cache-Control', 'no-cache');
+res.setHeader('Connection', 'keep-alive');
+res.flushHeaders?.();
+
+res.write(`event: ping\n` + `data: ${JSON.stringify({ time: Date.now() })}\n\n`);
+addClient(res);
+
+const keepAlive = setInterval(() => {
+try {
+res.write(`event: ping\n` + `data: ${JSON.stringify({ time: Date.now() })}\n\n`);
+} catch (e) {
+clearInterval(keepAlive);
+removeClient(res);
+}
+}, 25000);
+
+req.on('close', () => {
+clearInterval(keepAlive);
+removeClient(res);
+});
+});

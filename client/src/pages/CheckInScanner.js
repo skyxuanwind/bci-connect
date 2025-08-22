@@ -86,22 +86,22 @@ const CheckInScanner = () => {
             setNfcCheckinRecords(prev => [normalized, ...prev].slice(0, 10));
           }
 
-          // 自動同步至出席管理（僅當已選擇活動時）
-          if (selectedEvent && payload.member && payload.isRegisteredMember) {
-            // 顯示 NFC 報到成功彈窗
+          // 顯示 NFC 報到成功彈窗（只要辨識到會員就顯示，不再依賴是否選擇活動）
+          if (payload?.member && payload?.isRegisteredMember) {
+            const selectedEventTitle = selectedEvent ? (events.find(e => e.id.toString() === selectedEvent.toString())?.title) : null;
             setSuccessModalData({
               user: {
                 name: payload.member.name,
                 company: payload.member.company || '未設定'
               },
               event: {
-                title: events.find(e => e.id.toString() === selectedEvent.toString())?.title || '當前活動'
+                title: payload.event?.title || selectedEventTitle || '未選擇活動'
               },
               method: 'NFC',
               checkinTime: payload.checkinTime
             });
             setShowSuccessModal(true);
-            
+
             // 5秒後自動關閉彈窗
             setTimeout(() => {
               setShowSuccessModal(false);

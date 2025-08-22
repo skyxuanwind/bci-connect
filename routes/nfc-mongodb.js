@@ -3,21 +3,14 @@ const router = express.Router();
 const NFCCheckin = require('../models/NFCCheckin');
 const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../config/database');
+const { addClient, removeClient, broadcast } = require('../utils/sse');
 
 // SSE 客戶端連接列表
-const sseClients = new Set();
+// const sseClients = new Set(); // replaced by shared utils
 
 // 封裝：向所有 SSE 客戶端廣播訊息
 function sseBroadcast(event, dataObj) {
-  const data = `event: ${event}\n` + `data: ${JSON.stringify(dataObj)}\n\n`;
-  for (const res of sseClients) {
-    try {
-      res.write(data);
-    } catch (e) {
-      // 移除失效連線
-      try { sseClients.delete(res); } catch (_) {}
-    }
-  }
+  broadcast(event, dataObj);
 }
 
 // 接收來自本地 NFC Gateway Service 的報到資料
@@ -126,10 +119,13 @@ router.post('/submit', async (req, res) => {
 
     // 即時推播給前端（SSE）
     try {
+      const formattedTime = typeof savedCheckin.getFormattedTime === 'function'
+        ? savedCheckin.getFormattedTime()
+        : (savedCheckin.formattedCheckinTime || (savedCheckin.checkinTime?.toISOString?.() || new Date().toISOString()));
       sseBroadcast('nfc-checkin', {
         id: savedCheckin._id,
         cardUid: savedCheckin.cardUid,
-        checkinTime: savedCheckin.formattedCheckinTime,
+        checkinTime: formattedTime,
         readerName: savedCheckin.readerName,
         source: savedCheckin.source,
         timestamp: savedCheckin.checkinTime.toISOString(),
@@ -154,7 +150,9 @@ router.post('/submit', async (req, res) => {
       message: responseMessage,
       checkinId: savedCheckin._id,
       cardUid: savedCheckin.cardUid,
-      checkinTime: savedCheckin.formattedCheckinTime,
+      checkinTime: (typeof savedCheckin.getFormattedTime === 'function')
+        ? savedCheckin.getFormattedTime()
+        : (savedCheckin.formattedCheckinTime || (savedCheckin.checkinTime?.toISOString?.() || new Date().toISOString())),
       timestamp: savedCheckin.checkinTime.toISOString(),
       member: memberInfo ? {
         id: memberInfo.id,
@@ -531,8 +529,8 @@ router.get('/events', (req, res) => {
   // 先發送一個心跳，避免某些代理關閉連線
   res.write(`event: ping\n` + `data: ${JSON.stringify({ time: Date.now() })}\n\n`);
 
-  // 保存客戶端連線
-  sseClients.add(res);
+  // 保存客戶端連線（使用共用 SSE 客戶端池）
+  addClient(res);
 
   // 心跳保活（每 25 秒）
   const keepAlive = setInterval(() => {
@@ -540,14 +538,14 @@ router.get('/events', (req, res) => {
       res.write(`event: ping\n` + `data: ${JSON.stringify({ time: Date.now() })}\n\n`);
     } catch (e) {
       clearInterval(keepAlive);
-      sseClients.delete(res);
+      removeClient(res);
     }
   }, 25000);
 
   // 客戶端關閉時清理
   req.on('close', () => {
     clearInterval(keepAlive);
-    sseClients.delete(res);
+    removeClient(res);
   });
 });
 
