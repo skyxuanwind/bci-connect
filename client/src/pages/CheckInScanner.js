@@ -16,6 +16,8 @@ const CheckInScanner = () => {
   const [nfcSupported, setNfcSupported] = useState(false);
   const [nfcReading, setNfcReading] = useState(false);
   const [nfcResult, setNfcResult] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalData, setSuccessModalData] = useState(null);
   
   // Gateway Service 相關狀態
   const [gatewayStatus, setGatewayStatus] = useState(null);
@@ -95,6 +97,21 @@ const CheckInScanner = () => {
                   eventId: selectedEvent
                 });
                 setNfcResult({ success: true, message: `${resp.data.user.name} 報到成功！` });
+                
+                // 顯示成功彈窗
+                setSuccessModalData({
+                  userName: resp.data.user.name,
+                  eventTitle: resp.data.event.title,
+                  checkinTime: new Date().toLocaleString('zh-TW')
+                });
+                setShowSuccessModal(true);
+                
+                // 2秒後自動關閉彈窗
+                setTimeout(() => {
+                  setShowSuccessModal(false);
+                  setSuccessModalData(null);
+                }, 2000);
+                
               } catch (syncErr) {
                 console.warn('自動建立出席記錄失敗：', syncErr?.response?.data || syncErr.message || syncErr);
               }
@@ -886,6 +903,27 @@ const CheckInScanner = () => {
         </div>
       </div>
     </div>
+    
+    {/* NFC 報到成功彈窗 */}
+    {showSuccessModal && successModalData && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl transform animate-pulse">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">🎉 報到成功！</h3>
+            <div className="space-y-2 text-gray-700">
+              <p className="text-lg font-semibold text-green-600">{successModalData.userName}</p>
+              <p className="text-sm">{successModalData.eventTitle}</p>
+              <p className="text-xs text-gray-500">{successModalData.checkinTime}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   );
 };
 
