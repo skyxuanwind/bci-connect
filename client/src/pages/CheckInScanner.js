@@ -924,7 +924,7 @@ const CheckInScanner = () => {
         </div>
       </div>
     )}
-  </div>
+    </div>
   );
 };
 
