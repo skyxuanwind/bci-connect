@@ -4,6 +4,22 @@ const NFCCheckin = require('../models/NFCCheckin');
 const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../config/database');
 
+// SSE 客戶端連接列表
+const sseClients = new Set();
+
+// 封裝：向所有 SSE 客戶端廣播訊息
+function sseBroadcast(event, dataObj) {
+  const data = `event: ${event}\n` + `data: ${JSON.stringify(dataObj)}\n\n`;
+  for (const res of sseClients) {
+    try {
+      res.write(data);
+    } catch (e) {
+      // 移除失效連線
+      try { sseClients.delete(res); } catch (_) {}
+    }
+  }
+}
+
 // 接收來自本地 NFC Gateway Service 的報到資料
 router.post('/submit', async (req, res) => {
   try {
@@ -57,6 +73,31 @@ router.post('/submit', async (req, res) => {
       : `✅ NFC 卡片報到成功（未識別會員）`;
     
     console.log(`✅ NFC 報到記錄已儲存: ${normalizedCardUid} (ID: ${savedCheckin._id})`);
+
+    // 即時推播給前端（SSE）
+    try {
+      sseBroadcast('nfc-checkin', {
+        id: savedCheckin._id,
+        cardUid: savedCheckin.cardUid,
+        checkinTime: savedCheckin.formattedCheckinTime,
+        readerName: savedCheckin.readerName,
+        source: savedCheckin.source,
+        timestamp: savedCheckin.checkinTime.toISOString(),
+        member: memberInfo ? {
+          id: memberInfo.id,
+          name: memberInfo.name,
+          email: memberInfo.email,
+          company: memberInfo.company,
+          industry: memberInfo.industry,
+          title: memberInfo.title,
+          membershipLevel: memberInfo.membership_level,
+          status: memberInfo.status
+        } : null,
+        isRegisteredMember: !!memberInfo
+      });
+    } catch (e) {
+      console.warn('SSE 廣播失敗（不影響報到流程）:', e?.message || e);
+    }
     
     res.json({
       success: true,
@@ -370,6 +411,38 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
+});
+
+// 建立 SSE 事件串流端點
+router.get('/events', (req, res) => {
+  // 設定 SSE header
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  // 若部署跨網域，CORS 交由全域中介處理；此處保留基礎允許
+  res.flushHeaders?.();
+
+  // 先發送一個心跳，避免某些代理關閉連線
+  res.write(`event: ping\n` + `data: ${JSON.stringify({ time: Date.now() })}\n\n`);
+
+  // 保存客戶端連線
+  sseClients.add(res);
+
+  // 心跳保活（每 25 秒）
+  const keepAlive = setInterval(() => {
+    try {
+      res.write(`event: ping\n` + `data: ${JSON.stringify({ time: Date.now() })}\n\n`);
+    } catch (e) {
+      clearInterval(keepAlive);
+      sseClients.delete(res);
+    }
+  }, 25000);
+
+  // 客戶端關閉時清理
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    sseClients.delete(res);
+  });
 });
 
 module.exports = router;

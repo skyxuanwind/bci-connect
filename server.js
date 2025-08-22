@@ -72,26 +72,20 @@ app.use(limiter);
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      process.env.CLIENT_URL || 'http://localhost:3000',
-      process.env.FRONTEND_URL || 'http://localhost:3000'
-    ];
-    
-    // Add development origins only in development
+    // In development, allow all origins to simplify local testing
     if (process.env.NODE_ENV !== 'production') {
-      allowedOrigins.push(
-        'http://localhost:3001',
-        'http://localhost:3002',
-        'http://localhost:3003',
-        'http://192.168.0.14:3000',
-        'http://192.168.0.14:3001'
-      );
+      return callback(null, true);
     }
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
+
+    // In production, restrict to explicit allowlist
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      process.env.CLIENT_URL,
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

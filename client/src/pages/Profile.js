@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -42,6 +42,19 @@ const Profile = () => {
       nfcCardId: user?.nfcCardId || ''
     }
   });
+
+  // 當 AuthContext 的 user 更新時，同步表單顯示值（react-hook-form 的 defaultValues 只在初始化時生效）
+  useEffect(() => {
+    if (!user) return;
+    resetProfile({
+      name: user.name || '',
+      company: user.company || '',
+      industry: user.industry || '',
+      title: user.title || '',
+      contactNumber: user.contactNumber || '',
+      nfcCardId: user.nfcCardId || ''
+    });
+  }, [user, resetProfile]);
 
   const {
     register: registerPassword,

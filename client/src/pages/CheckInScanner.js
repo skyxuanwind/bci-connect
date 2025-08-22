@@ -5,7 +5,7 @@ import axios from 'axios';
 import api from '../services/api';
 
 const CheckInScanner = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, updateProfile } = useAuth();
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [scannerActive, setScannerActive] = useState(false);
@@ -412,21 +412,41 @@ const CheckInScanner = () => {
     if (!confirmed) return;
     
     try {
-      const response = await api.put('/api/users/profile', {
+      // 使用 AuthContext 的 updateProfile，確保本地使用者狀態即時更新
+      const payload = {
         name: user.name,
         company: user.company || '',
         industry: user.industry || '',
         title: user.title || '',
         contactNumber: user.contactNumber || '',
         nfcCardId: cardUid
-      });
+      };
+      const { success } = await updateProfile(payload);
       
-      if (response.data) {
-        // 更新本地用戶資料
-        const updatedUser = { ...user, nfcCardId: cardUid };
-        // 這裡可能需要更新 AuthContext 中的用戶資料
-        
+      if (success) {
         alert(`✅ NFC 卡片設定成功！\n\n卡片 UID: ${cardUid}\n現在您可以使用此卡片進行 NFC 報到了。`);
+        
+        // 若已選擇活動，綁定完成後立即為該活動進行一次 NFC 報到
+        if (selectedEvent) {
+          try {
+            const response = await api.post('/api/attendance/nfc-checkin', {
+              nfcCardId: cardUid,
+              eventId: selectedEvent
+            });
+            setNfcResult({
+              success: true,
+              message: `${response.data.user.name} 報到成功！`
+            });
+            const newRecord = {
+              id: Date.now(),
+              user: response.data.user,
+              checkInTime: new Date().toLocaleString('zh-TW')
+            };
+            setRecentCheckIns(prev => [newRecord, ...prev.slice(0, 4)]);
+          } catch (checkinErr) {
+            console.error('綁定後自動報到失敗:', checkinErr);
+          }
+        }
         
         // 重新獲取最後報到記錄以更新顯示
         await fetchLastNfcCheckin();

@@ -145,18 +145,17 @@ router.get('/users', async (req, res) => {
       page = 1, 
       limit = 20, 
       status = 'all', 
-      membershipLevel = 'all',
-      chapterId = 'all',
+      membershipLevel = 'all', 
+      chapterId = 'all', 
       search = ''
     } = req.query;
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    
-    let whereConditions = [];
-    let queryParams = [];
+    const queryParams = [];
     let paramIndex = 1;
 
-    // Build WHERE conditions
+    const whereConditions = [];
+
     if (status !== 'all') {
       whereConditions.push(`u.status = $${paramIndex}`);
       queryParams.push(status);
@@ -198,7 +197,7 @@ router.get('/users', async (req, res) => {
     const usersQuery = `
       SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
              u.contact_number, u.membership_level, u.status, u.created_at,
-             u.profile_picture_url, c.name as chapter_name
+             u.profile_picture_url, u.nfc_card_id, c.name as chapter_name
       FROM users u
       LEFT JOIN chapters c ON u.chapter_id = c.id
       ${whereClause}
@@ -222,7 +221,8 @@ router.get('/users', async (req, res) => {
         status: user.status,
         profilePictureUrl: user.profile_picture_url,
         chapterName: user.chapter_name,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        nfcCardId: user.nfc_card_id || null
       })),
       pagination: {
         currentPage: parseInt(page),
@@ -319,6 +319,63 @@ router.put('/users/:id/membership-level', async (req, res) => {
   } catch (error) {
     console.error('Update membership level error:', error);
     res.status(500).json({ message: '更新會員等級時發生錯誤' });
+  }
+});
+
+// @route   PUT /api/admin/users/:id/nfc-card
+// @desc    Update user's NFC card ID (admin only)
+// @access  Private (Admin only)
+router.put('/users/:id/nfc-card', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { nfcCardId } = req.body;
+
+    // Normalize input
+    if (typeof nfcCardId === 'string') {
+      nfcCardId = nfcCardId.toUpperCase().replace(/[^A-F0-9]/g, '');
+      if (nfcCardId.length === 0) nfcCardId = null;
+    } else if (nfcCardId !== null && nfcCardId !== undefined) {
+      return res.status(400).json({ message: '無效的卡號格式' });
+    }
+
+    // Validate format if provided (accept 6-20 hex chars)
+    if (nfcCardId && !/^[A-F0-9]{6,20}$/.test(nfcCardId)) {
+      return res.status(400).json({ message: '請輸入有效的十六進制卡號（6-20位）' });
+    }
+
+    // Check user exists
+    const userCheck = await pool.query('SELECT id, name FROM users WHERE id = $1', [id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ message: '用戶不存在' });
+    }
+
+    // Duplicate check when setting a new card
+    if (nfcCardId) {
+      const dupCheck = await pool.query(
+        'SELECT id, name FROM users WHERE nfc_card_id = $1 AND id <> $2',
+        [nfcCardId, id]
+      );
+      if (dupCheck.rows.length > 0) {
+        return res.status(409).json({ message: `該卡號已綁定至其他會員：${dupCheck.rows[0].name}` });
+      }
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET nfc_card_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, name, nfc_card_id',
+      [nfcCardId, id]
+    );
+
+    res.json({
+      message: nfcCardId ? 'NFC 卡號更新成功' : '已清除 NFC 卡號',
+      user: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        nfcCardId: result.rows[0].nfc_card_id
+      }
+    });
+  } catch (error) {
+    console.error('Update user NFC card error:', error);
+    res.status(500).json({ message: '更新 NFC 卡號時發生錯誤' });
   }
 });
 
