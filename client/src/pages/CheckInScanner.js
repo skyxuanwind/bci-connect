@@ -362,6 +362,9 @@ const CheckInScanner = () => {
       readerName: raw.readerName || raw.reader_name || null,
       source: raw.source || null,
       timestamp: raw.timestamp || raw.createdAt || null,
+      // 新增：若後端有回傳會員/活動資訊，保留以利顯示
+      member: raw.member || null,
+      event: raw.event || null,
     };
   };
 
@@ -522,37 +525,17 @@ const CheckInScanner = () => {
             )}
 
             {scanResult && (
-              <div className={`text-center p-6 rounded-lg ${
-                scanResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-              }`}>
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                  scanResult.success ? 'bg-green-100' : 'bg-red-100'
-                }`}>
-                  {scanResult.success ? (
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className={`p-4 rounded-lg ${scanResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                <div className="flex items-center">
+                  <svg className={`w-6 h-6 ${scanResult.success ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {scanResult.success ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    ) : (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  )}
+                    )}
+                  </svg>
+                  <p className={`ml-3 text-sm ${scanResult.success ? 'text-green-700' : 'text-red-700'}`}>{scanResult.message}</p>
                 </div>
-                <h3 className={`text-lg font-semibold mb-2 ${
-                  scanResult.success ? 'text-green-800' : 'text-red-800'
-                }`}>
-                  {scanResult.success ? '報到成功' : '報到失敗'}
-                </h3>
-                <p className={`${
-                  scanResult.success ? 'text-green-700' : 'text-red-700'
-                }`}>
-                  {scanResult.message}
-                </p>
-                {loading && (
-                  <div className="mt-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -561,85 +544,54 @@ const CheckInScanner = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">NFC 名片報到</h2>
             
-            {/* Gateway Service 狀態 */}
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Gateway Service 狀態</h3>
-              {gatewayStatus ? (
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>服務狀態:</span>
-                    <span className={`font-medium ${
-                      gatewayStatus.status === 'running' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {gatewayStatus.status === 'running' ? '運行中' : '已停止'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>NFC 讀卡機:</span>
-                    <span className={`font-medium ${
-                      gatewayStatus.nfcActive ? 'text-green-600' : 'text-yellow-600'
-                    }`}>
-                      {gatewayStatus.nfcActive ? '已啟動' : '未啟動'}
-                    </span>
-                  </div>
-                  {gatewayStatus.readerName && (
-                    <div className="flex justify-between text-sm">
-                      <span>讀卡機:</span>
-                      <span className="text-gray-600 text-xs">{gatewayStatus.readerName}</span>
-                    </div>
-                  )}
+            {/* Gateway 狀態 */}
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">Gateway Service 狀態</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">服務狀態：</span>
+                  <span className={`font-medium ${gatewayStatus?.nfcActive ? 'text-green-600' : 'text-red-600'}`}>
+                    {gatewayStatus?.nfcActive ? '運行中' : '未啟動'}
+                  </span>
                 </div>
-              ) : (
-                <div className="text-sm text-red-600">
-                  {gatewayError || '無法連接到 Gateway Service'}
+                <div>
+                  <span className="text-gray-600">NFC 讀卡機：</span>
+                  <span className={`font-medium ${gatewayStatus?.readerConnected ? 'text-green-600' : 'text-red-600'}`}>
+                    {gatewayStatus?.readerConnected ? '已啟動' : '未連接'}
+                  </span>
                 </div>
-              )}
+                <div>
+                  <span className="text-gray-600">讀卡機名稱：</span>
+                  <span className="font-medium">{gatewayStatus?.readerName || '未知'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">卡片 UID：</span>
+                  <span className="font-mono">{gatewayStatus?.lastCardUid || '-'}</span>
+                </div>
+              </div>
             </div>
 
-            {/* NFC 控制區域 */}
-            {gatewayStatus ? (
-              <div className="text-center">
-                <div className="mb-4">
-                  <svg className="w-16 h-16 text-blue-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                  </svg>
-                  <p className="text-gray-500 mb-4">使用 ACR122U NFC 讀卡機進行報到</p>
-                </div>
-                <button
-                  onClick={startGatewayNFCReader}
-                  disabled={!selectedEvent || loading}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? '啟動中...' : '🚀 開始 NFC 報到'}
-                </button>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <p className="text-gray-500 text-sm">請確認本地 NFC Gateway Service 已啟動</p>
-                <p className="text-gray-400 text-xs mt-1">服務地址: http://localhost:3002</p>
-              </div>
-            )}
+            <div className="text-center">
+              <button
+                onClick={startGatewayNFCReader}
+                disabled={loading || !selectedEvent}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? '啟動中...' : '🚀 開始 NFC 報到'}
+              </button>
+            </div>
 
-            {/* NFC 結果顯示 */}
+            {/* 報到結果提示 */}
             {nfcResult && (
-              <div className={`mt-4 text-center p-4 rounded-lg ${
-                nfcResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-              }`}>
-                <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${
-                  nfcResult.success ? 'bg-green-100' : 'bg-red-100'
-                }`}>
-                  {nfcResult.success ? (
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className={`mt-4 p-3 rounded-lg border ${nfcResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                <div className="flex items-center">
+                  <svg className={`w-5 h-5 ${nfcResult.success ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {nfcResult.success ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    ) : (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  )}
+                    )}
+                  </svg>
                 </div>
                 <p className={`text-sm font-medium ${
                   nfcResult.success ? 'text-green-700' : 'text-red-700'
@@ -674,6 +626,12 @@ const CheckInScanner = () => {
                       <span className="text-blue-700">卡號:</span>
                       <span className="font-mono text-blue-900">{lastNfcCheckin.cardUid}</span>
                     </div>
+                    {lastNfcCheckin.event?.title && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">活動:</span>
+                        <span className="text-blue-900">{lastNfcCheckin.event.title}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-blue-700">時間:</span>
                       <span className="text-blue-900">{lastNfcCheckin.checkinTime}</span>
@@ -731,7 +689,10 @@ const CheckInScanner = () => {
                         </div>
                       </div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">{record.cardUid}</p>
+                        <p className="text-sm font-medium text-gray-900">{record.member?.name || record.cardUid}</p>
+                        {record.event?.title && (
+                          <p className="text-xs text-gray-700">活動：{record.event.title}</p>
+                        )}
                         <p className="text-xs text-gray-500">{record.checkinTime}</p>
                       </div>
                       <div className="flex-shrink-0">
@@ -777,91 +738,6 @@ const CheckInScanner = () => {
                 尚無報到記錄
               </div>
             )}
-          </div>
-        </div>
-
-        {/* 調試訊息區域 */}
-        {debugInfo.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">掃描狀態</h3>
-            <div className="bg-gray-100 p-3 rounded-lg max-h-40 overflow-y-auto">
-              {debugInfo.map((info, index) => (
-                <div key={index} className="text-sm text-gray-700 mb-1 font-mono">
-                  {info}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 使用說明 */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">使用說明</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* QR Code 掃描說明 */}
-            <div>
-              <h4 className="font-semibold text-blue-800 mb-3">📱 QR Code 掃描報到</h4>
-              <ul className="text-blue-800 space-y-2">
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">1.</span>
-                  <span className="ml-2">首先選擇要進行報到的活動</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">2.</span>
-                  <span className="ml-2">點擊「開始掃描」按鈕啟動相機</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">3.</span>
-                  <span className="ml-2">允許瀏覽器使用相機權限</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">4.</span>
-                  <span className="ml-2">將會員的 QR Code 對準掃描框</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">5.</span>
-                  <span className="ml-2">掃描成功後系統會自動記錄出席</span>
-                </li>
-              </ul>
-            </div>
-            
-            {/* NFC 報到說明 */}
-            <div>
-              <h4 className="font-semibold text-blue-800 mb-3">🏷️ NFC 名片報到</h4>
-              <ul className="text-blue-800 space-y-2">
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">1.</span>
-                  <span className="ml-2">確保 ACR122U NFC 讀卡機已連接</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">2.</span>
-                  <span className="ml-2">啟動本地 Gateway Service (port 3002)</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">3.</span>
-                  <span className="ml-2">選擇活動後點擊「開始 NFC 報到」</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">4.</span>
-                  <span className="ml-2">將 NFC 卡片靠近讀卡機</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-5 h-5 text-blue-600 mt-0.5">5.</span>
-                  <span className="ml-2">系統自動識別會員並記錄報到</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h4 className="text-sm font-semibold text-yellow-800 mb-2">💡 使用提示</h4>
-            <ul className="text-yellow-700 text-sm space-y-1">
-              <li>• QR Code 掃描：確保光線充足，QR Code 清晰可見</li>
-              <li>• 相機權限：Safari 設定 → 相機 → 允許；Chrome 點擊網址列鎖頭圖示 → 相機 → 允許</li>
-              <li>• NFC 報到：需要本地安裝 Gateway Service，支援會員識別功能</li>
-              <li>• 系統會自動更新最新的報到記錄，包含會員詳細資訊</li>
-            </ul>
           </div>
         </div>
       </div>
