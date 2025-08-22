@@ -158,6 +158,9 @@ const CheckInScanner = () => {
     }
 
     try {
+      // 標記掃描器啟動（用於 UI 切換）
+      setScannerActive(true);
+
       setNfcReading(true);
       setNfcResult(null);
       
@@ -178,6 +181,7 @@ const CheckInScanner = () => {
         message: 'NFC 讀取失敗: ' + error.message
       });
       setNfcReading(false);
+      setScannerActive(false);
     }
   };
 
@@ -223,6 +227,24 @@ const CheckInScanner = () => {
   const stopNFCReading = () => {
     setNfcReading(false);
     setNfcResult(null);
+  };
+
+  // 新增：停止掃描（供按鈕使用）
+  const stopScanner = () => {
+    try {
+      // 若有 QR 掃描器實例，進行清理
+      if (html5QrcodeScannerRef.current) {
+        html5QrcodeScannerRef.current.clear();
+        html5QrcodeScannerRef.current = null;
+      }
+    } catch (e) {
+      console.error('停止掃描器時出錯:', e);
+    } finally {
+      setScannerActive(false);
+      setScanResult(null);
+      // 也一併停止 NFC 讀取（若有）
+      stopNFCReading();
+    }
   };
 
   // Gateway Service 相關函數
