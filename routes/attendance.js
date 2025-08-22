@@ -248,14 +248,14 @@ router.delete('/record/:recordId', authenticateToken, async (req, res) => {
     const { recordId } = req.params;
     const userId = req.user.id;
     
-    // 檢查權限 (僅限管理員)
+    // 檢查權限 (管理員或一級核心)
     const userResult = await pool.query(
-      'SELECT status FROM users WHERE id = $1',
+      'SELECT membership_level, status FROM users WHERE id = $1',
       [userId]
     );
     
-    if (userResult.rows.length === 0 || userResult.rows[0].status !== 'admin') {
-      return res.status(403).json({ success: false, message: '權限不足，僅限管理員使用' });
+    if (userResult.rows.length === 0 || (userResult.rows[0].membership_level !== 1 && userResult.rows[0].status !== 'admin')) {
+      return res.status(403).json({ success: false, message: '權限不足，僅限管理員或核心工作人員使用' });
     }
     
     // 刪除出席記錄

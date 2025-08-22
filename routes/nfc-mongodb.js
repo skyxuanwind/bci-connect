@@ -164,23 +164,54 @@ router.get('/records', authenticateToken, async (req, res) => {
       NFCCheckin.countCheckins(filter)
     ]);
     
+    // 取得對應會員資料
+    const cardUids = [...new Set((records || []).map(r => (r.cardUid || '').toUpperCase()).filter(Boolean))];
+    const memberMap = {};
+    if (cardUids.length > 0) {
+      try {
+        const members = await pool.query(
+          "SELECT id, name, email, company, industry, title, membership_level, status, UPPER(nfc_card_id) AS nfc_card_id FROM users WHERE UPPER(nfc_card_id) = ANY($1)",
+          [cardUids]
+        );
+        for (const m of members.rows) {
+          memberMap[m.nfc_card_id] = {
+            id: m.id,
+            name: m.name,
+            email: m.email,
+            company: m.company,
+            industry: m.industry,
+            title: m.title,
+            membershipLevel: m.membership_level,
+            status: m.status
+          };
+        }
+      } catch (e) {
+        console.warn('查詢會員資料失敗（records）：', e.message);
+      }
+    }
+    
     // 格式化回應資料
-    const formattedRecords = records.map(record => ({
-      id: record._id,
-      cardUid: record.cardUid,
-      checkinTime: record.checkinTime.toLocaleString('zh-TW', {
-        timeZone: 'Asia/Taipei',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }),
-      readerName: record.readerName,
-      source: record.source,
-      timestamp: record.checkinTime.toISOString()
-    }));
+    const formattedRecords = (records || []).map(record => {
+      const key = (record.cardUid || '').toUpperCase();
+      const member = memberMap[key] || null;
+      return {
+        id: record._id,
+        cardUid: record.cardUid,
+        checkinTime: record.checkinTime.toLocaleString('zh-TW', {
+          timeZone: 'Asia/Taipei',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }),
+        readerName: record.readerName,
+        source: record.source,
+        timestamp: record.checkinTime.toISOString(),
+        member
+      };
+    });
     
     res.json({
       success: true,
@@ -215,6 +246,30 @@ router.get('/last-checkin', async (req, res) => {
         data: null
       });
     }
+
+    // 查詢對應會員
+    let member = null;
+    try {
+      const mr = await pool.query(
+        'SELECT id, name, email, company, industry, title, membership_level, status FROM users WHERE UPPER(nfc_card_id) = $1',
+        [String(lastCheckin.cardUid || '').toUpperCase()]
+      );
+      if (mr.rows.length > 0) {
+        const m = mr.rows[0];
+        member = {
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          company: m.company,
+          industry: m.industry,
+          title: m.title,
+          membershipLevel: m.membership_level,
+          status: m.status
+        };
+      }
+    } catch (e) {
+      console.warn('查詢會員資料失敗（last-checkin）：', e.message);
+    }
     
     res.json({
       success: true,
@@ -224,7 +279,8 @@ router.get('/last-checkin', async (req, res) => {
         checkinTime: lastCheckin.formattedCheckinTime,
         readerName: lastCheckin.readerName,
         source: lastCheckin.source,
-        timestamp: lastCheckin.checkinTime.toISOString()
+        timestamp: lastCheckin.checkinTime.toISOString(),
+        member
       }
     });
     

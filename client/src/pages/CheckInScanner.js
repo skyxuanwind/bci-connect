@@ -26,6 +26,7 @@ const CheckInScanner = () => {
   // 本地 Gateway Service URL
   const GATEWAY_URL = 'http://localhost:3002';
   const html5QrcodeScannerRef = useRef(null);
+  const processedSseCheckinsRef = useRef(new Set());
 
   // 添加調試訊息
   const addDebugInfo = (message) => {
@@ -66,7 +67,7 @@ const CheckInScanner = () => {
       const base = process.env.REACT_APP_API_URL || '';
       es = new EventSource(`${base}/api/nfc-checkin-mongo/events`);
 
-      es.addEventListener('nfc-checkin', (event) => {
+      es.addEventListener('nfc-checkin', async (event) => {
         try {
           const payload = JSON.parse(event.data || '{}');
           const normalized = normalizeCheckinRecord({
@@ -81,6 +82,23 @@ const CheckInScanner = () => {
           if (normalized) {
             setLastNfcCheckin(normalized);
             setNfcCheckinRecords(prev => [normalized, ...prev].slice(0, 10));
+          }
+
+          // 自動同步至出席管理（僅當已選擇活動時）
+          if (selectedEvent && payload.cardUid && payload.timestamp) {
+            const key = `${payload.cardUid}-${payload.timestamp}`;
+            if (!processedSseCheckinsRef.current.has(key)) {
+              processedSseCheckinsRef.current.add(key);
+              try {
+                const resp = await api.post('/api/attendance/nfc-checkin', {
+                  nfcCardId: payload.cardUid,
+                  eventId: selectedEvent
+                });
+                setNfcResult({ success: true, message: `${resp.data.user.name} 報到成功！` });
+              } catch (syncErr) {
+                console.warn('自動建立出席記錄失敗：', syncErr?.response?.data || syncErr.message || syncErr);
+              }
+            }
           }
         } catch (e) {
           console.warn('解析 SSE 資料失敗:', e);
@@ -97,7 +115,7 @@ const CheckInScanner = () => {
     return () => {
       try { es && es.close(); } catch (_) {}
     };
-  }, []);
+  }, [selectedEvent]);
 
   const checkNFCSupport = () => {
     if (typeof window !== 'undefined' && 'NDEFReader' in window) {
