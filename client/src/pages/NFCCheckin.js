@@ -82,21 +82,69 @@ const NFCCheckin = () => {
     }
   };
 
-  // 獲取所有報到紀錄 (需要登入)
+  // 獲取所有報到紀錄 (需要登入) - 包含NFC和QR Code報到
   const fetchAllCheckins = async () => {
     if (!user) return;
     
     try {
-      const response = await api.get('/api/nfc-checkin/all-checkins');
-      // 確保回應資料是陣列
-      const payload = response.data;
-      let list = [];
-      if (Array.isArray(payload)) {
-        list = payload;
-      } else if (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) {
-        list = payload.data || [];
+      // 獲取NFC報到記錄
+      const nfcResponse = await api.get('/api/nfc-checkin/all-checkins');
+      const nfcPayload = nfcResponse.data;
+      let nfcList = [];
+      if (Array.isArray(nfcPayload)) {
+        nfcList = nfcPayload;
+      } else if (nfcPayload && Object.prototype.hasOwnProperty.call(nfcPayload, 'success')) {
+        nfcList = nfcPayload.data || [];
       }
-      setAllCheckins((list || []).map(normalizeCheckinRecord).filter(Boolean));
+      
+      // 獲取出席統計（包含QR Code報到）
+      let attendanceList = [];
+      try {
+        const attendanceResponse = await api.get('/api/attendance/statistics');
+        if (attendanceResponse.data.success) {
+          // 為每個活動獲取詳細的出席記錄
+          const eventPromises = attendanceResponse.data.statistics.map(async (event) => {
+            if (event.total_attended > 0) {
+              try {
+                const eventAttendanceResponse = await api.get(`/api/attendance/event/${event.id}`);
+                if (eventAttendanceResponse.data.success) {
+                  return eventAttendanceResponse.data.attendedMembers.map(member => ({
+                    id: `qr-${member.id}`,
+                    cardUid: `QR-${member.user_id}`,
+                    checkinTime: new Date(member.check_in_time).toLocaleString('zh-TW'),
+                    readerName: 'QR Code掃描',
+                    source: 'QR Code',
+                    userName: member.name,
+                    userCompany: member.company,
+                    eventTitle: event.title
+                  }));
+                }
+              } catch (err) {
+                console.warn(`無法獲取活動 ${event.id} 的出席記錄:`, err);
+              }
+            }
+            return [];
+          });
+          
+          const eventResults = await Promise.all(eventPromises);
+          attendanceList = eventResults.flat();
+        }
+      } catch (error) {
+        console.warn('獲取QR Code報到記錄失敗:', error);
+      }
+      
+      // 合併NFC和QR Code報到記錄
+      const normalizedNfcList = (nfcList || []).map(record => ({
+        ...normalizeCheckinRecord(record),
+        source: 'NFC',
+        readerName: record.readerName || record.reader_name || 'NFC讀卡機'
+      }));
+      
+      const allRecords = [...normalizedNfcList, ...attendanceList]
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.checkinTime) - new Date(a.checkinTime)); // 按時間倒序排列
+      
+      setAllCheckins(allRecords);
     } catch (error) {
       console.error('獲取所有報到紀錄錯誤:', error);
       // 發生錯誤時設置為空陣列
@@ -467,27 +515,37 @@ const NFCCheckin = () => {
                 <table className="w-full table-auto">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="px-4 py-3 text-left font-medium text-gray-700">ID</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-700">卡片 UID</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">報到方式</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">識別碼</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-700">使用者</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">公司</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">活動</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-700">報到時間</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-700">備註</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Array.isArray(allCheckins) && allCheckins.length > 0 ? (
                       allCheckins.map((record, index) => (
                         <tr key={record.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-4 py-3 text-sm">{record.id}</td>
-                          <td className="px-4 py-3 text-sm font-mono">{record.card_uid}</td>
-                          <td className="px-4 py-3 text-sm">{record.user_name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{record.checkin_time}</td>
-                          <td className="px-4 py-3 text-sm">{record.notes || '-'}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              record.source === 'QR Code' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {record.source === 'QR Code' ? '📱 QR Code' : '🏷️ NFC'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-mono">{record.cardUid || record.card_uid || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{record.userName || record.user_name || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{record.userCompany || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{record.eventTitle || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{record.checkinTime || record.checkin_time}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                        <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
                           {user ? '暫無報到紀錄' : '請登入以查看報到紀錄'}
                         </td>
                       </tr>
