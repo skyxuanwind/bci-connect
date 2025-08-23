@@ -384,6 +384,9 @@ async function performFastAnalysis(prospect) {
     
     const recommendationText = geminiResult?.summary?.recommendation || generateFastRecommendation(score, aiSentiment, aiConflictLevel, legalRiskAnalysis.riskLevel);
     
+    // 新增：取出公開資訊掃描結果，方便後續使用
+    const publicInfo = geminiResult?.analysis?.publicInfo;
+    
     // 編譯快速分析報告
     const analysisReport = {
       analysisDate: new Date().toISOString(),
@@ -392,11 +395,13 @@ async function performFastAnalysis(prospect) {
       
       // 公開資訊掃描 - 整合真實網路資料
       publicInformationScan: {
-        summary: geminiResult?.analysis?.publicInfo?.data ? 
-          `🔍 **網路搜尋發現**\n${geminiResult.analysis.publicInfo.data.substring(0, 200)}...` :
-          `⚠️ **無網路資料** | ${aiSentiment === 'positive' ? '✅ 正面' : aiSentiment === 'negative' ? '❌ 負面' : '➖ 中性'}評價`,
-        sources: geminiResult?.success ? '🌐 Gemini AI 即時搜尋' : '📊 本地關鍵字分析',
-        realData: geminiResult?.success || false
+        summary: publicInfo?.realData
+          ? `🔍 網路搜尋發現（${publicInfo?.count || (publicInfo?.sources?.length || 0)} 筆來源）\n${(publicInfo?.data || '').toString().substring(0, 400)}${(publicInfo?.data || '').length > 400 ? '...' : ''}`
+          : '⚠️ 網路上沒有找到與該公司相關的新聞或文章',
+        sources: publicInfo?.realData
+          ? (publicInfo?.sources?.slice(0, 5).map((s, i) => `${i + 1}. ${s.title}${s.source ? `（${s.source}）` : ''}`).join(' | ') + ((publicInfo?.sources?.length || 0) > 5 ? ` 等共 ${publicInfo.sources.length} 筆` : ''))
+          : '—',
+        realData: !!publicInfo?.realData
       },
       
       // 市場聲譽分析
@@ -405,7 +410,7 @@ async function performFastAnalysis(prospect) {
         analysis: geminiResult?.analysis?.sentiment?.analysis ?
           `📈 **真實評價**: ${geminiResult.analysis.sentiment.analysis.substring(0, 150)}...` :
           `${aiSentiment === 'positive' ? '✅ 正面' : aiSentiment === 'negative' ? '❌ 負面' : '➖ 中性'} | ${aiSentiment === 'positive' ? '市場形象佳' : aiSentiment === 'negative' ? '負面評價' : '評價中性'}`,
-        confidence: geminiResult?.success ? 'high' : 'medium'
+        confidence: publicInfo?.realData ? 'high' : 'medium'
       },
       
       // 產業衝突檢測

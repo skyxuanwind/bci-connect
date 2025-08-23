@@ -1,29 +1,149 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { pool } = require('../config/database');
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 class GeminiService {
   constructor() {
-    this.apiKey = 'AIzaSyCdPjaNB7_sOB5DNRRV1378d6dTkqxueK8';
-    this.genAI = new GoogleGenerativeAI(this.apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash-lite' });
+    // Use environment variable instead of hardcoded key, and degrade gracefully if missing
+    this.apiKey = process.env.GEMINI_API_KEY;
+    try {
+      if (this.apiKey) {
+        this.genAI = new GoogleGenerativeAI(this.apiKey);
+        this.model = this.genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash-lite' });
+      } else {
+        this.genAI = null;
+        this.model = null;
+      }
+    } catch (err) {
+      console.error('Gemini init error:', err.message);
+      this.genAI = null;
+      this.model = null;
+    }
   }
 
-  // 公開資訊掃描
+  // Helper: Fetch news via Google News RSS (no API key required)
+  async fetchGoogleNewsRSS(companyName, maxResults = 8) {
+    try {
+      const q = `"${companyName}"`;
+      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant`;
+      const { data: xml } = await axios.get(url, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const $ = cheerio.load(xml, { xmlMode: true });
+      const items = [];
+      $('item').each((i, el) => {
+        if (i >= maxResults) return false;
+        const title = $(el).find('title').text().trim();
+        const link = $(el).find('link').text().trim();
+        const pubDate = $(el).find('pubDate').text().trim();
+        const source = $(el).find('source').text().trim() || 'Google News';
+        const description = $(el).find('description').text().trim();
+        if (title && link) {
+          items.push({
+            title,
+            url: link,
+            publishedAt: pubDate ? new Date(pubDate).toISOString() : null,
+            source,
+            snippet: description
+          });
+        }
+      });
+      return items;
+    } catch (err) {
+      console.warn('Google News RSS 抓取失敗:', err.message);
+      return [];
+    }
+  }
+
+  // Helper: Fallback to DuckDuckGo HTML results (general web pages)
+  async fetchDuckDuckGoResults(companyName, maxResults = 5) {
+    try {
+      const url = `https://duckduckgo.com/html/?q=${encodeURIComponent(companyName)}&kl=tw-zh-tw`;
+      const { data: html } = await axios.get(url, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const $ = cheerio.load(html);
+      const items = [];
+      $('.result').each((i, el) => {
+        if (items.length >= maxResults) return false;
+        const a = $(el).find('a.result__a');
+        const title = a.text().trim();
+        const href = a.attr('href');
+        const snippet = $(el).find('.result__snippet').text().trim();
+        if (title && href) {
+          items.push({
+            title,
+            url: href,
+            snippet,
+            source: 'DuckDuckGo'
+          });
+        }
+      });
+      return items;
+    } catch (err) {
+      console.warn('DuckDuckGo 抓取失敗:', err.message);
+      return [];
+    }
+  }
+
+  // Compose summary text from sources when LLM is unavailable
+  buildSourcesSummary(companyName, sources) {
+    if (!sources || sources.length === 0) return '';
+    const lines = sources.slice(0, 5).map((s, idx) => `【${idx + 1}】${s.title}${s.source ? `（${s.source}）` : ''}`);
+    return `針對「${companyName}」的即時網路搜尋，彙整到以下重點來源：\n- ${lines.join('\n- ')}`;
+  }
+
+  // 公開資訊掃描（以真實網路來源為基礎）
   async performPublicInfoScan(companyName) {
     try {
-      console.log(`開始公開資訊掃描: ${companyName}`);
-      const prompt = `請你擔任商業分析師。請在網路上搜尋關於公司「${companyName}」的最新新聞、商業評論和客戶評價。請總結你的發現。`;
-      
-      console.log('正在調用 Gemini API...');
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      console.log('公開資訊掃描完成');
+      console.log(`開始公開資訊掃描(真實來源): ${companyName}`);
+      // 1) 主要來源：Google News RSS
+      const news = await this.fetchGoogleNewsRSS(companyName, 8);
+      // 2) 備援來源：DuckDuckGo 一般搜尋
+      const ddg = news.length < 3 ? await this.fetchDuckDuckGoResults(companyName, 5) : [];
+
+      // 合併與去重 (依 URL/title)
+      const merged = [...news, ...ddg];
+      const seen = new Set();
+      const sources = merged.filter(item => {
+        const key = (item.url || '') + '|' + (item.title || '');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      if (!sources.length) {
+        // 無真實網路資料
+        return {
+          success: true,
+          data: '未於網路上找到與該公司相關的新聞或文章。',
+          timestamp: new Date().toISOString(),
+          realData: false,
+          count: 0,
+          sources: []
+        };
+      }
+
+      // 生成摘要（優先用 Gemini，如無則用規則式摘要）
+      let summaryText = this.buildSourcesSummary(companyName, sources);
+      if (this.model) {
+        try {
+          const prompt = `你是一位審慎的商業分析師。以下是針對公司「${companyName}」從網路上實際取得的新聞/文章來源（含標題與連結）。\n請你：\n1) 以繁體中文整理 3-5 個重點摘要；\n2) 僅基於提供的來源內容，不要自行編造；\n3) 若不同來源間出現矛盾，請明確指出。\n\n來源清單：\n${sources.map((s, i) => `${i + 1}. ${s.title} - ${s.url}${s.snippet ? `\n摘要：${s.snippet}` : ''}`).join('\n')}`;
+          const result = await this.model.generateContent(prompt);
+          const response = await result.response;
+          const text = (response && typeof response.text === 'function') ? response.text() : '';
+          if (text && text.trim()) {
+            summaryText = text.trim();
+          }
+        } catch (e) {
+          console.warn('Gemini 摘要失敗，改用規則式摘要:', e.message);
+        }
+      }
+
       return {
         success: true,
-        data: text,
-        timestamp: new Date().toISOString()
+        data: summaryText,
+        timestamp: new Date().toISOString(),
+        realData: true,
+        count: sources.length,
+        sources
       };
     } catch (error) {
       console.error('公開資訊掃描錯誤:', error);
@@ -31,7 +151,9 @@ class GeminiService {
       return {
         success: false,
         error: error.message,
-        data: '無法取得公開資訊掃描結果'
+        data: '無法取得公開資訊掃描結果',
+        realData: false,
+        sources: []
       };
     }
   }
@@ -41,21 +163,33 @@ class GeminiService {
     try {
       console.log(`開始市場聲譽分析: ${companyName}`);
       const prompt = `基於以下搜尋結果，請分析「${companyName}」的整體市場聲譽是偏向正面、中立還是負面？請列出 1-3 個關鍵的正面或負面評價作為佐證。\n\n搜尋結果：\n${publicInfoResult}`;
-      
+
       console.log('正在調用 Gemini API 進行聲譽分析...');
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      console.log('市場聲譽分析完成');
-      // 簡單的情感分析分類
+      let text = '';
+      if (this.model) {
+        const result = await this.model.generateContent(prompt);
+        const response = await result.response;
+        text = response.text();
+      }
+
+      // 簡單的情感分析分類（無模型時）
+      if (!text) {
+        const content = (publicInfoResult || '').toString();
+        const negatives = ['違法', '詐騙', '糾紛', '裁罰', '違規', '倒閉', '訴訟', '爭議', '負面', '停業', '欠稅', '侵權'];
+        const positives = ['獲獎', '合作', '成長', '佳評', '創新', '募資', '擴張', '投資', '里程碑', '正面', '上市'];
+        const negCount = negatives.reduce((acc, kw) => acc + (content.includes(kw) ? 1 : 0), 0);
+        const posCount = positives.reduce((acc, kw) => acc + (content.includes(kw) ? 1 : 0), 0);
+        text = `基於關鍵字粗略分析：正向詞 ${posCount}、負向詞 ${negCount}。`;
+      }
+
+      // 最終情感標籤
       let sentiment = 'neutral';
       if (text.includes('正面') || text.includes('積極') || text.includes('良好')) {
         sentiment = 'positive';
-      } else if (text.includes('負面') || text.includes('消極') || text.includes('不良')) {
+      } else if (text.includes('負面') || text.includes('消極') || text.includes('不良') || text.includes('風險')) {
         sentiment = 'negative';
       }
-      
+
       return {
         success: true,
         sentiment: sentiment,
