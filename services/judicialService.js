@@ -77,6 +77,10 @@ class JudicialService {
 
   // 檢查司法院 API 是否在服務時間內（凌晨 0-6 時）
   isJudicialApiAvailable() {
+    if (process.env.JUDICIAL_DEV_FORCE === 'true') {
+      console.warn('⚠️ 開發模式覆寫：強制啟用司法院 API 服務時間檢查');
+      return true;
+    }
     const now = new Date();
     const hour = now.getHours();
     const isAvailable = hour >= 0 && hour < 6;

@@ -12,6 +12,10 @@ class JudgmentSyncService {
    * 檢查司法院 API 是否可用（凌晨 0-6 點）
    */
   isApiAvailable() {
+    if (process.env.JUDICIAL_DEV_FORCE === 'true') {
+      console.warn('⚠️ 開發模式覆寫：強制允許同步作業在非服務時段執行');
+      return true;
+    }
     const now = new Date();
     const hour = now.getHours();
     return hour >= 0 && hour < 6;

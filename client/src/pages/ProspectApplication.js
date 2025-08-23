@@ -175,15 +175,26 @@ const ProspectApplication = () => {
       const response = await axios.get(`/api/company-lookup/by-number/${formData.companyTaxId.trim()}`);
       
       if (response.data.success && response.data.data) {
-        const company = response.data.data;
+        const normalizeCompany = (raw) => ({
+          companyName: raw.companyName || raw.Company_Name || raw.name || '',
+          unifiedBusinessNumber: raw.unifiedBusinessNumber || raw.Business_Accounting_NO || raw.taxId || '',
+          status: raw.status || raw.Company_Status_Desc || raw.Company_Status || '',
+          setupDate: raw.setupDate || raw.Company_Setup_Date || '',
+          capital: raw.capital || raw.Paid_In_Capital_Stock_Amount || raw.Capital_Stock_Amount || raw.Capital || '',
+          location: raw.location || raw.Company_Location || '',
+          address: raw.address || raw.Business_Address || raw.Company_Location || '',
+          responsiblePerson: raw.responsiblePerson || raw.Responsible_Name || ''
+        });
+
+        const company = normalizeCompany(response.data.data);
         setCompanyLookupResult(company);
         
         // 自動填入公司名稱
         setFormData(prev => ({
           ...prev,
-          companyName: company.companyName || company.Company_Name || '',
-          companyCapital: company.capital || company.Capital || '',
-          companyEstablished: formatDateForInput(company.setupDate || company.Company_Setup_Date || '')
+          companyName: company.companyName,
+          companyCapital: company.capital,
+          companyEstablished: formatDateForInput(company.setupDate)
         }));
         
         toast.success('找到公司資料！');
@@ -216,18 +227,41 @@ const ProspectApplication = () => {
       const response = await axios.get(`/api/company-lookup/by-name/${encodeURIComponent(formData.companyName.trim())}`);
       
       if (response.data.success && response.data.data) {
-        const company = response.data.data;
-        setCompanyLookupResult(company);
-        
-        // 自動填入統編和其他資料
-        setFormData(prev => ({
-          ...prev,
-          companyTaxId: company.unifiedBusinessNumber || company.Business_Accounting_NO || '',
-          companyCapital: company.capital || company.Capital || '',
-          companyEstablished: formatDateForInput(company.setupDate || company.Company_Setup_Date || '')
-        }));
-        
-        toast.success('找到公司資料！');
+        const normalizeCompany = (raw) => ({
+          companyName: raw.companyName || raw.Company_Name || raw.name || '',
+          unifiedBusinessNumber: raw.unifiedBusinessNumber || raw.Business_Accounting_NO || raw.taxId || '',
+          status: raw.status || raw.Company_Status_Desc || raw.Company_Status || '',
+          setupDate: raw.setupDate || raw.Company_Setup_Date || '',
+          capital: raw.capital || raw.Paid_In_Capital_Stock_Amount || raw.Capital_Stock_Amount || raw.Capital || '',
+          location: raw.location || raw.Company_Location || '',
+          address: raw.address || raw.Business_Address || raw.Company_Location || '',
+          responsiblePerson: raw.responsiblePerson || raw.Responsible_Name || ''
+        });
+
+        const data = response.data.data;
+        const picked = Array.isArray(data) ? (data[0] || null) : (data || null);
+
+        if (picked) {
+          const company = normalizeCompany(picked);
+          setCompanyLookupResult(company);
+          
+          // 自動填入統編和其他資料
+          setFormData(prev => ({
+            ...prev,
+            companyTaxId: company.unifiedBusinessNumber,
+            companyCapital: company.capital,
+            companyEstablished: formatDateForInput(company.setupDate)
+          }));
+          
+          if (Array.isArray(data)) {
+            toast.success(`找到 ${data.length} 筆相關公司，已選擇第一筆`);
+          } else {
+            toast.success('找到公司資料！');
+          }
+        } else {
+          setCompanyLookupError('未找到該公司名稱的資料');
+          toast.error('未找到該公司名稱的資料');
+        }
       } else {
         setCompanyLookupError('未找到該公司名稱的資料');
         toast.error('未找到該公司名稱的資料');
@@ -771,10 +805,10 @@ const ProspectApplication = () => {
                     <span className="text-green-800 font-medium">找到公司資料</span>
                   </div>
                   <div className="text-sm text-green-700">
-                    <p><strong>公司名稱：</strong>{companyLookupResult.Company_Name || companyLookupResult.name}</p>
-                    <p><strong>統一編號：</strong>{companyLookupResult.Business_Accounting_NO || companyLookupResult.taxId}</p>
-                    {companyLookupResult.Company_Status && (
-                      <p><strong>公司狀態：</strong>{companyLookupResult.Company_Status}</p>
+                    <p><strong>公司名稱：</strong>{companyLookupResult.companyName || companyLookupResult.Company_Name || companyLookupResult.name}</p>
+                    <p><strong>統一編號：</strong>{companyLookupResult.unifiedBusinessNumber || companyLookupResult.Business_Accounting_NO || companyLookupResult.taxId}</p>
+                    {(companyLookupResult.status || companyLookupResult.Company_Status) && (
+                      <p><strong>公司狀態：</strong>{companyLookupResult.status || companyLookupResult.Company_Status}</p>
                     )}
                   </div>
                 </div>
