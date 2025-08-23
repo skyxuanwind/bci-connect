@@ -1,7 +1,7 @@
 #!/bin/bash
 # BCI NFC Gateway 啟動器 (macOS)
 # 下載→按兩下執行→自動安裝並啟動本機 Gateway，支援 ACR122U 讀卡機
-# 若被安全性阻擋，請右鍵 → 開啟
+# 若被安全性阻擋，請右鍵 → 開啟（首次可能需要到「系統設定 > 隱私權與安全性 > 仍要打開」）
 
 set -e
 
@@ -16,6 +16,10 @@ green() { echo "\033[32m$1\033[0m"; }
 yellow() { echo "\033[33m$1\033[0m"; }
 red() { echo "\033[31m$1\033[0m"; }
 
+# 嘗試移除自身的隔離屬性，避免之後每次都被阻擋（本次執行仍以已開啟為準）
+xattr -d com.apple.quarantine "$0" 2>/dev/null || true
+chmod +x "$0" 2>/dev/null || true
+
 clear || true
 
 echo "$(bold "🚀 $APP_NAME")"
@@ -29,6 +33,37 @@ echo "=============================================="
 
 mkdir -p "$DEST_DIR"
 cd "$DEST_DIR"
+
+# 0) macOS Command Line Tools 檢查與自動引導安裝（nfc-pcsc 建置常見依賴）
+ensure_clt() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    if ! xcode-select -p >/dev/null 2>&1; then
+      yellow "⚠️ 偵測到未安裝 Xcode Command Line Tools，將自動開啟安裝視窗。"
+      echo "    若安裝視窗未自動出現，可手動執行：xcode-select --install"
+      # 觸發安裝（會跳出 GUI 視窗，需要使用者同意）
+      xcode-select --install >/dev/null 2>&1 || true
+      echo "📥 請在跳出的視窗完成安裝後回到此視窗。"
+      # 輪詢等待安裝完成，最長等待 30 分鐘（可提前按 Enter 跳過檢查）
+      echo "⏳ 正在等待安裝完成（最長 30 分鐘）。安裝完成後可按 Enter 繼續..."
+      for i in {1..180}; do
+        if xcode-select -p >/dev/null 2>&1; then
+          echo "$(green "✅ Xcode Command Line Tools 已安裝")"
+          return 0
+        fi
+        # 允許使用者按 Enter 中斷等待
+        read -t 10 -r _ && break || true
+      done
+      # 再次檢查
+      if ! xcode-select -p >/dev/null 2>&1; then
+        yellow "⚠️ 尚未偵測到 CLT。將繼續安裝流程，若稍後 nfc-pcsc 建置失敗，請完成 CLT 安裝後重試此啟動器。"
+      fi
+    else
+      echo "$(green "✅ 已偵測到 Xcode Command Line Tools")"
+    fi
+  fi
+}
+
+ensure_clt
 
 # 1) 下載並解壓縮專案（僅取 nfc-gateway-service 子專案）
 echo "$(bold "⬇️ 下載 Gateway 程式碼...")"
@@ -50,14 +85,7 @@ if ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
-# 3) macOS 建置工具提示（nfc-pcsc 需要）
-if [[ "$(uname)" == "Darwin" ]]; then
-  if ! xcode-select -p >/dev/null 2>&1; then
-    yellow "⚠️ 建議先安裝 Xcode Command Line Tools：xcode-select --install"
-  fi
-fi
-
-# 4) 安裝依賴
+# 3) 安裝依賴
 cd nfc-gateway-service
 echo "$(bold "📦 安裝套件 (第一次可能需較久)...")"
 npm install
@@ -75,7 +103,7 @@ else
   fi
 fi
 
-# 5) 設定雲端 API URL（預設為 Render 部署）
+# 4) 設定雲端 API URL（預設為 Render 部署）
 CLOUD_API_URL="${CLOUD_API_URL:-$CLOUD_API_URL_DEFAULT}"
 if [ ! -f .env ]; then
   cat > .env <<EOF
@@ -92,7 +120,7 @@ fi
 
 echo "$(green "✅ 設定完成：CLOUD_API_URL=$CLOUD_API_URL")"
 
-# 6) 啟動服務
+# 5) 啟動服務
 open "http://localhost:3002/health" 2>/dev/null || true
 open "$CLOUD_API_URL/nfc-report-system" 2>/dev/null || true
 
@@ -100,7 +128,7 @@ echo "=============================================="
 echo "$(bold "🚀 正在啟動 NFC Gateway Service (3002)...")"
 echo "若看到『NFC 模組不可用（降級模式）』，請："
 echo " • 確認 ACR122U 已插上"
-echo " • 於終端機執行：xcode-select --install 後重試"
+echo " • 完成 Xcode Command Line Tools 安裝後重試"
 echo "=============================================="
 
 npm start
