@@ -30,7 +30,8 @@ import {
   ClipboardDocumentCheckIcon,
   DocumentMagnifyingGlassIcon,
   ArrowPathIcon,
-  WifiIcon
+  WifiIcon,
+  IdentificationIcon
 } from '@heroicons/react/24/outline';
 
 const Layout = ({ children }) => {
@@ -68,6 +69,7 @@ const Layout = ({ children }) => {
     { name: '活動報名', href: '/events', icon: CalendarIcon },
     { name: '商會地基', href: '/foundation', icon: InformationCircleIcon },
     { name: '個人資料', href: '/profile', icon: UserIcon },
+    { name: '電子名片', href: '/member-card-editor', icon: IdentificationIcon },
   ];
 
   // 三級會員以上功能

@@ -29,6 +29,8 @@ import EventManagement from './pages/admin/EventManagement';
 
 import ProspectVoting from './pages/ProspectVoting';
 import ProspectApplication from './pages/ProspectApplication';
+import PublicMemberCard from './components/MemberCard/PublicMemberCard';
+import MemberCardEditor from './components/MemberCard/MemberCardEditor';
 import ProspectDetail from './pages/ProspectDetail';
 import BlacklistManagement from './pages/BlacklistManagement';
 import FinancialStatement from './pages/FinancialStatement';
@@ -86,6 +88,17 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } />
+          
+          <Route path="/member-card-editor" element={
+            <ProtectedRoute>
+              <Layout>
+                <MemberCardEditor />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          {/* Public Member Card Route - No authentication required */}
+          <Route path="/member/:userId" element={<PublicMemberCard />} />
           
 
           

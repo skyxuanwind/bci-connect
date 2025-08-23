@@ -307,6 +307,71 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create member_cards table (NFC電子名片主表)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS member_cards (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        template_id VARCHAR(50) DEFAULT 'professional',
+        is_active BOOLEAN DEFAULT true,
+        view_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id)
+      )
+    `);
+
+    // Create card_content_blocks table (電子名片內容區塊)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS card_content_blocks (
+        id SERIAL PRIMARY KEY,
+        card_id INTEGER NOT NULL REFERENCES member_cards(id) ON DELETE CASCADE,
+        block_type VARCHAR(20) NOT NULL CHECK (block_type IN ('text', 'link', 'video', 'image', 'social')),
+        title VARCHAR(200),
+        content TEXT,
+        url VARCHAR(500),
+        image_url VARCHAR(500),
+        social_platform VARCHAR(50),
+        display_order INTEGER DEFAULT 0,
+        is_visible BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create card_templates table (視覺模板)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS card_templates (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        css_styles JSONB,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create card_visits table (名片瀏覽記錄)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS card_visits (
+        id SERIAL PRIMARY KEY,
+        card_id INTEGER NOT NULL REFERENCES member_cards(id) ON DELETE CASCADE,
+        visitor_ip VARCHAR(45),
+        visitor_user_agent TEXT,
+        referrer VARCHAR(500),
+        visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Insert default card templates
+    await pool.query(`
+      INSERT INTO card_templates (id, name, description, css_styles) VALUES 
+        ('professional', '簡約專業版', '適合商務與企業高層的簡潔設計', '{"primaryColor": "#1f2937", "secondaryColor": "#6b7280", "backgroundColor": "#ffffff", "fontFamily": "Inter, sans-serif"}'),
+        ('dynamic', '活力動感版', '適合創意與新創產業的活潑設計', '{"primaryColor": "#3b82f6", "secondaryColor": "#8b5cf6", "backgroundColor": "#f8fafc", "fontFamily": "Poppins, sans-serif"}'),
+        ('elegant', '經典典雅版', '適合重視質感與美學的優雅設計', '{"primaryColor": "#059669", "secondaryColor": "#d97706", "backgroundColor": "#fefefe", "fontFamily": "Playfair Display, serif"}')
+      ON CONFLICT (id) DO NOTHING
+    `);
+
     // Create indexes for better performance
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_judgments_jid ON judgments(jid);
@@ -314,6 +379,9 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_judgments_case_type ON judgments(case_type);
       CREATE INDEX IF NOT EXISTS idx_judgments_content_search ON judgments USING gin(to_tsvector('english', judgment_content));
       CREATE INDEX IF NOT EXISTS idx_sync_logs_date ON judgment_sync_logs(sync_date);
+      CREATE INDEX IF NOT EXISTS idx_card_content_blocks_card_id ON card_content_blocks(card_id);
+      CREATE INDEX IF NOT EXISTS idx_card_visits_card_id ON card_visits(card_id);
+      CREATE INDEX IF NOT EXISTS idx_member_cards_user_id ON member_cards(user_id);
     `);
 
     // Insert default chapters
