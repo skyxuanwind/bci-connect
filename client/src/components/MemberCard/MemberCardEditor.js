@@ -43,7 +43,17 @@ const MemberCardEditor = () => {
         id: card.id,
         template_id: card.templateId,
         view_count: card.viewCount,
-        content_blocks: card.contentBlocks || []
+        content_blocks: (card.contentBlocks || []).map(block => ({
+          id: block.id,
+          type: block.block_type,
+          title: block.title,
+          content: block.content,
+          url: block.url,
+          image_url: block.image_url,
+          social_platform: block.social_platform,
+          display_order: block.display_order,
+          is_visible: block.is_visible
+        }))
       });
       if (templates) {
         setTemplates(templates.map(t => ({
@@ -109,10 +119,21 @@ const MemberCardEditor = () => {
       };
 
       const response = await axios.post('/api/member-cards/content-block', newBlock);
-      setCardData(prev => ({
-        ...prev,
-        content_blocks: [...(prev.content_blocks || []), response.data.block]
-      }));
+       const addedBlock = {
+         id: response.data.block.id,
+         type: response.data.block.block_type,
+         title: response.data.block.title,
+         content: response.data.block.content,
+         url: response.data.block.url,
+         image_url: response.data.block.image_url,
+         social_platform: response.data.block.social_platform,
+         display_order: response.data.block.display_order,
+         is_visible: response.data.block.is_visible
+       };
+       setCardData(prev => ({
+          ...prev,
+          content_blocks: [...prev.content_blocks, addedBlock]
+        }));
     } catch (error) {
       console.error('Error adding content block:', error);
       alert('新增內容區塊失敗');
@@ -122,10 +143,21 @@ const MemberCardEditor = () => {
   const updateContentBlock = async (blockId, updates) => {
     try {
       const response = await axios.put(`/api/member-cards/content-block/${blockId}`, updates);
+      const updatedBlock = {
+        id: response.data.id,
+        type: response.data.block_type,
+        title: response.data.title,
+        content: response.data.content,
+        url: response.data.url,
+        image_url: response.data.image_url,
+        social_platform: response.data.social_platform,
+        display_order: response.data.display_order,
+        is_visible: response.data.is_visible
+      };
       setCardData(prev => ({
         ...prev,
         content_blocks: prev.content_blocks.map(block =>
-          block.id === blockId ? response.data : block
+          block.id === blockId ? updatedBlock : block
         )
       }));
     } catch (error) {
