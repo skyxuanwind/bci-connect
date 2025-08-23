@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import {
@@ -23,6 +23,8 @@ const MemberCardEditor = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState(null);
+  const [localBlockData, setLocalBlockData] = useState({});
+  const debounceTimers = useRef({});
   const [templates, setTemplates] = useState([
     { id: 'professional', name: '簡約專業版', style: 'professional' },
     { id: 'creative', name: '活力動感版', style: 'creative' },
@@ -32,6 +34,15 @@ const MemberCardEditor = () => {
   useEffect(() => {
     fetchCardData();
     fetchStats();
+  }, []);
+
+  // 清理防抖計時器
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach(timer => {
+        if (timer) clearTimeout(timer);
+      });
+    };
   }, []);
 
   const fetchCardData = async () => {
@@ -140,7 +151,19 @@ const MemberCardEditor = () => {
     }
   };
 
-  const updateContentBlock = async (blockId, updates) => {
+  // 立即更新本地狀態
+  const updateLocalBlockData = (blockId, updates) => {
+    setLocalBlockData(prev => ({
+      ...prev,
+      [blockId]: {
+        ...prev[blockId],
+        ...updates
+      }
+    }));
+  };
+
+  // 防抖的 API 更新函數
+  const debouncedUpdateContentBlock = useCallback(async (blockId, updates) => {
     try {
       // 找到當前區塊的完整數據
       const currentBlock = cardData.content_blocks.find(block => block.id === blockId);
@@ -149,14 +172,17 @@ const MemberCardEditor = () => {
         return;
       }
 
-      // 合併現有數據和更新數據
+      // 合併現有數據、本地數據和更新數據
+      const localData = localBlockData[blockId] || {};
       const updateData = {
         title: currentBlock.title || '',
         content: currentBlock.content || '',
         url: currentBlock.url || '',
+        video_url: currentBlock.video_url || '',
         socialPlatform: currentBlock.social_platform || '',
-        isVisible: currentBlock.is_visible !== false, // 默認為 true
-        ...updates // 覆蓋要更新的字段
+        isVisible: currentBlock.is_visible !== false,
+        ...localData,
+        ...updates
       };
 
       const response = await axios.put(`/api/member-cards/content-block/${blockId}`, updateData);
@@ -166,21 +192,46 @@ const MemberCardEditor = () => {
         title: response.data.block.title,
         content: response.data.block.content,
         url: response.data.block.url,
+        video_url: response.data.block.video_url,
         image_url: response.data.block.image_url,
         social_platform: response.data.block.social_platform,
         display_order: response.data.block.display_order,
         is_visible: response.data.block.is_visible
       };
+      
       setCardData(prev => ({
         ...prev,
         content_blocks: prev.content_blocks.map(block =>
           block.id === blockId ? updatedBlock : block
         )
       }));
+      
+      // 清除本地數據
+      setLocalBlockData(prev => {
+        const newData = { ...prev };
+        delete newData[blockId];
+        return newData;
+      });
     } catch (error) {
       console.error('Error updating content block:', error);
       alert('更新內容區塊失敗');
     }
+  }, [cardData, localBlockData]);
+
+  // 帶防抖的更新函數
+  const updateContentBlock = (blockId, updates) => {
+    // 立即更新本地狀態以提供即時反饋
+    updateLocalBlockData(blockId, updates);
+    
+    // 清除之前的計時器
+    if (debounceTimers.current[blockId]) {
+      clearTimeout(debounceTimers.current[blockId]);
+    }
+    
+    // 設置新的防抖計時器
+    debounceTimers.current[blockId] = setTimeout(() => {
+      debouncedUpdateContentBlock(blockId, updates);
+    }, 500); // 500ms 防抖延遲
   };
 
   const deleteContentBlock = async (blockId) => {
@@ -267,6 +318,10 @@ const MemberCardEditor = () => {
     const blockIndex = cardData.content_blocks.findIndex(b => b.id === block.id);
     const isFirst = blockIndex === 0;
     const isLast = blockIndex === cardData.content_blocks.length - 1;
+    
+    // 合併服務器數據和本地數據
+    const localData = localBlockData[block.id] || {};
+    const mergedBlock = { ...block, ...localData };
 
     return (
       <div key={block.id} className="border border-gray-200 rounded-lg p-4 mb-4">
@@ -306,7 +361,7 @@ const MemberCardEditor = () => {
           </label>
           <input
             type="text"
-            value={block.title || ''}
+            value={mergedBlock.title || ''}
             onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="輸入標題"
@@ -314,7 +369,7 @@ const MemberCardEditor = () => {
         </div>
 
         {/* 根據類型渲染不同的編輯器 */}
-        {renderBlockTypeEditor(block)}
+        {renderBlockTypeEditor(mergedBlock)}
       </div>
     );
   };
