@@ -26,7 +26,6 @@ const ProspectVoting = () => {
     mainAdvantages: '主要優勢',
     representativeClients: '代表客戶',
     cooperationTargets: '合作目標',
-    websiteInfo: '網站資訊',
     bciExpectations: 'BCI期望',
     pastAchievements: '過往成就',
     futureGoals: '未來目標',
@@ -35,7 +34,6 @@ const ProspectVoting = () => {
     companyTaxId: '公司統編',
     referralChapter: '推薦分會',
     referralPartner: '推薦夥伴',
-    companyTaxId: '公司統編',
     interviewer: '面談者',
     interviewDate: '面談日期',
     companyInfo: '公司資料',
@@ -105,6 +103,7 @@ const ProspectVoting = () => {
         memberName: prospect.name,
         companyName: prospect.company,
         primaryProfession: prospect.industry,
+        parsedContactInfo, // 將解析後的聯絡資訊一併回傳，供後續 UI 使用
         ...parsedData
       };
     });

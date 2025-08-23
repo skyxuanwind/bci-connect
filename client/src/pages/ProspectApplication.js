@@ -11,6 +11,82 @@ import {
   InformationCircleIcon
 } from '@heroicons/react/24/outline';
 
+// Helpers: parse long text to concise bullet points for better readability
+const parseToBullets = (text = '', maxItems = 5) => {
+  try {
+    if (!text) return [];
+    const normalized = String(text)
+      .replace(/\r/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/\u200b/g, '')
+      .trim();
+    const parts = normalized
+      .split(/\n|•|\-|—|－|‧|。/)
+      .map(s => s.trim())
+      .filter(s => s && s.length > 1 && !/^\d+\s*[\.|、]/.test(s));
+    const seen = new Set();
+    const unique = parts.filter(p => {
+      const key = p.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return unique.slice(0, maxItems);
+  } catch (e) {
+    console.warn('parseToBullets error:', e);
+    return [];
+  }
+};
+
+// Helpers: compute collaboration suggestions with existing partners
+const computePartnerSuggestions = (result) => {
+  const suggestions = [];
+  if (!result) return suggestions;
+  const score = result?.bciFitScore?.score || 0;
+  const sentiment = result?.marketSentiment?.sentiment || 'neutral';
+  const conflict = result?.industryConflict?.conflictLevel || 'low';
+  const legal = result?.legalRiskAssessment?.riskLevel || 'low';
+  const publicReal = !!result?.publicInformationScan?.realData;
+  const existingMembersText = result?.industryConflict?.analysis || '';
+  const match = existingMembersText.match(/同業\s*:\s*(\d+)位/);
+  const sameIndustryCount = match ? parseInt(match[1], 10) : 0;
+
+  suggestions.push('導入「活動 NFC 簽到 → 名單 → EDM → 回流」閉環，與 CRM/Email 夥伴共同建立 30 天轉化漏斗');
+
+  if (conflict === 'low') {
+    suggestions.push('與行銷/內容/公關夥伴共製 2–3 則案例短影音或新聞稿，建立可擴散的權威背書');
+  } else if (conflict === 'medium') {
+    suggestions.push('安排定位澄清會議，與相關會員對齊目標客群與服務邊界，降低業務重疊');
+  } else {
+    suggestions.push('先限制服務範圍並建立轉介規則，再視情況評估進一步合作');
+  }
+
+  if (publicReal && (sentiment === 'neutral' || sentiment === 'negative')) {
+    suggestions.push('先做「正面內容建置＋媒體曝光」衝刺 30 天，提升市場聲量與搜尋可見度');
+  }
+
+  if (legal === 'medium' || legal === 'high') {
+    suggestions.push('與法律夥伴進行「合約/個資/著作權」健檢，建立標案與委託作業標準');
+  } else {
+    suggestions.push('請法律夥伴快速檢視範本合約與政府標案文件，降低後續合作風險');
+  }
+
+  if (sameIndustryCount > 0 && conflict !== 'high') {
+    suggestions.push(`與同產業或互補產業的現有會員（約 ${sameIndustryCount} 位）發起交叉引薦與方案共打`);
+  }
+
+  if (score >= 80) {
+    suggestions.push('安排深度面談與小型試案，並規劃季度級聯合專案（品牌/活動/整合行銷）');
+  } else if (score >= 60) {
+    suggestions.push('先以 2–4 週 POC 驗證轉化與合作流程，達標後擴大投入');
+  } else {
+    suggestions.push('暫緩大型合作，先補齊案例素材與正面聲量再評估');
+  }
+
+  const seen = new Set();
+  return suggestions.filter(s => (seen.has(s) ? false : (seen.add(s), true))).slice(0, 6);
+};
+
 const ProspectApplication = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -982,242 +1058,409 @@ const ProspectApplication = () => {
             
             {aiAnalysisResult && showAiAnalysis && (
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center mb-4">
+                <div className="flex items-center mb-6">
                   <DocumentTextIcon className="h-6 w-6 text-green-600 mr-2" />
                   <h3 className="text-lg font-semibold text-gray-900">AI 分析報告</h3>
                 </div>
                 
-                {/* 整體建議 */}
+                {/* 整體建議 - 重點摘要 */}
                 {aiAnalysisResult.overallRecommendation && (
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-gray-900 mb-2">整體建議</h4>
-                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.overallRecommendation}</p>
+                  <div className="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                    <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
+                      <CheckCircleIcon className="h-5 w-5 mr-2" />
+                      整體建議
+                    </h4>
+                    <div className="space-y-2">
+                      {parseToBullets(aiAnalysisResult.overallRecommendation, 4).length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1 text-blue-800">
+                          {parseToBullets(aiAnalysisResult.overallRecommendation, 4).map((bullet, idx) => (
+                            <li key={idx} className="leading-relaxed">{bullet}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-blue-800 leading-relaxed">{aiAnalysisResult.overallRecommendation}</p>
+                      )}
+                    </div>
                   </div>
                 )}
                 
-                {/* BCI 契合度評分 */}
+                {/* BCI 契合度評分 - 卡片式 */}
                 {aiAnalysisResult.bciFitScore && (
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-gray-900">BCI 契合度評分</h4>
-                      {getScoreBadge(aiAnalysisResult.bciFitScore.score)}
+                  <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold text-purple-900 text-lg">BCI 契合度評分</h4>
+                      <div className="text-right">
+                        {getScoreBadge(aiAnalysisResult.bciFitScore.score)}
+                        <div className="text-xs text-purple-600 mt-1">綜合評估</div>
+                      </div>
                     </div>
-                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.bciFitScore.analysis}</p>
-                  </div>
-                )}
-                
-                {/* 市場聲譽分析 */}
-                {aiAnalysisResult.marketSentiment && (
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-gray-900 mb-2">市場聲譽分析</h4>
-                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.marketSentiment.analysis}</p>
-                  </div>
-                )}
-                
-                {/* 產業衝突檢測 */}
-                {aiAnalysisResult.industryConflict && (
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-gray-900">產業衝突檢測</h4>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        aiAnalysisResult.industryConflict.conflictLevel === 'high' 
-                          ? 'bg-red-100 text-red-800' 
-                          : aiAnalysisResult.industryConflict.conflictLevel === 'medium'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {aiAnalysisResult.industryConflict.conflictLevel === 'high' ? '高衝突' : 
-                         aiAnalysisResult.industryConflict.conflictLevel === 'medium' ? '中等衝突' : '低衝突'}
-                      </span>
+                    
+                    {/* 快照指標 */}
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="text-center bg-white bg-opacity-60 rounded-lg p-3">
+                        <div className="text-xs text-gray-600 mb-1">市場聲譽</div>
+                        <div className={`font-semibold ${
+                          aiAnalysisResult.marketSentiment?.sentiment === 'positive' ? 'text-green-600' : 
+                          aiAnalysisResult.marketSentiment?.sentiment === 'negative' ? 'text-red-600' : 'text-yellow-600'
+                        }`}>
+                          {aiAnalysisResult.marketSentiment?.sentiment === 'positive' ? '正面' : 
+                           aiAnalysisResult.marketSentiment?.sentiment === 'negative' ? '負面' : '中立'}
+                        </div>
+                      </div>
+                      <div className="text-center bg-white bg-opacity-60 rounded-lg p-3">
+                        <div className="text-xs text-gray-600 mb-1">產業衝突</div>
+                        <div className={`font-semibold ${
+                          aiAnalysisResult.industryConflict?.conflictLevel === 'high' ? 'text-red-600' : 
+                          aiAnalysisResult.industryConflict?.conflictLevel === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                        }`}>
+                          {aiAnalysisResult.industryConflict?.conflictLevel === 'high' ? '高' : 
+                           aiAnalysisResult.industryConflict?.conflictLevel === 'medium' ? '中' : '低'}
+                        </div>
+                      </div>
+                      <div className="text-center bg-white bg-opacity-60 rounded-lg p-3">
+                        <div className="text-xs text-gray-600 mb-1">法律風險</div>
+                        <div className={`font-semibold ${
+                          aiAnalysisResult.legalRiskAssessment?.riskLevel === 'high' ? 'text-red-600' : 
+                          aiAnalysisResult.legalRiskAssessment?.riskLevel === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                        }`}>
+                          {aiAnalysisResult.legalRiskAssessment?.riskLevel === 'high' ? '高' : 
+                           aiAnalysisResult.legalRiskAssessment?.riskLevel === 'medium' ? '中' : '低'}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.industryConflict.analysis}</p>
+                    
+                    {/* 建議結論 */}
+                    {aiAnalysisResult.bciFitScore?.recommendation && (
+                      <div className="bg-white bg-opacity-80 rounded-lg p-3 mb-3">
+                        <div className="text-sm font-medium text-purple-800 mb-1">入會建議：</div>
+                        <div className={`font-semibold ${
+                          aiAnalysisResult.bciFitScore.recommendation === 'strongly_recommend' ? 'text-green-600' : 
+                          aiAnalysisResult.bciFitScore.recommendation === 'recommend' ? 'text-blue-600' : 'text-yellow-600'
+                        }`}>
+                          {aiAnalysisResult.bciFitScore.recommendation === 'strongly_recommend' ? '🌟 強烈推薦' : 
+                           aiAnalysisResult.bciFitScore.recommendation === 'recommend' ? '✅ 建議通過' : '⚠️ 謹慎評估'}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 分析要點 */}
+                    {aiAnalysisResult.bciFitScore.analysis && (
+                      <div>
+                        <div className="text-sm font-medium text-purple-800 mb-2">分析要點：</div>
+                        {parseToBullets(aiAnalysisResult.bciFitScore.analysis, 4).length > 0 ? (
+                          <ul className="list-disc list-inside space-y-1 text-purple-700 text-sm">
+                            {parseToBullets(aiAnalysisResult.bciFitScore.analysis, 4).map((bullet, idx) => (
+                              <li key={idx} className="leading-relaxed">{bullet}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-purple-700 text-sm leading-relaxed">{aiAnalysisResult.bciFitScore.analysis}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
-                
-                {/* 法律風險評估 */}
+
+                {/* 詳細分析區塊 */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  {/* 市場聲譽分析 */}
+                  {aiAnalysisResult.marketSentiment && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-green-900 mb-3 flex items-center">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        市場聲譽分析
+                      </h4>
+                      {parseToBullets(aiAnalysisResult.marketSentiment.analysis, 4).length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1 text-green-800 text-sm">
+                          {parseToBullets(aiAnalysisResult.marketSentiment.analysis, 4).map((bullet, idx) => (
+                            <li key={idx} className="leading-relaxed">{bullet}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-green-800 text-sm leading-relaxed">{aiAnalysisResult.marketSentiment.analysis}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 產業衝突檢測 */}
+                  {aiAnalysisResult.industryConflict && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-yellow-900 flex items-center">
+                          <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                          產業衝突檢測
+                        </h4>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          aiAnalysisResult.industryConflict.conflictLevel === 'high' 
+                            ? 'bg-red-100 text-red-800' 
+                            : aiAnalysisResult.industryConflict.conflictLevel === 'medium'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {aiAnalysisResult.industryConflict.conflictLevel === 'high' ? '高衝突' : 
+                           aiAnalysisResult.industryConflict.conflictLevel === 'medium' ? '中等衝突' : '低衝突'}
+                        </span>
+                      </div>
+                      {parseToBullets(aiAnalysisResult.industryConflict.analysis, 4).length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1 text-yellow-800 text-sm">
+                          {parseToBullets(aiAnalysisResult.industryConflict.analysis, 4).map((bullet, idx) => (
+                            <li key={idx} className="leading-relaxed">{bullet}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-yellow-800 text-sm leading-relaxed">{aiAnalysisResult.industryConflict.analysis}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 法律風險評估 - 全寬 */}
                 {aiAnalysisResult.legalRiskAssessment && (
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-gray-900">法律風險評估</h4>
+                  <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-red-900 flex items-center">
+                        <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                        法律風險評估
+                      </h4>
                       <div className="flex items-center space-x-2">
                         {getRiskBadge(aiAnalysisResult.legalRiskAssessment.riskLevel)}
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-red-600 font-medium">
                           {aiAnalysisResult.legalRiskAssessment.riskScore}/100
                         </span>
                       </div>
                     </div>
                     
-                    <p className="text-gray-700 mb-3 whitespace-pre-wrap">{aiAnalysisResult.legalRiskAssessment.analysis}</p>
-                    
+                    {/* 司法院判決書數量 */}
                     {aiAnalysisResult.legalRiskAssessment.judicialRecordsCount !== undefined && (
-                      <div className="text-sm text-gray-600 mb-2">
-                        <strong>司法院判決書數量：</strong>{aiAnalysisResult.legalRiskAssessment.judicialRecordsCount} 件
+                      <div className="bg-white bg-opacity-60 rounded-lg p-3 mb-3">
+                        <div className="text-sm font-medium text-red-800 mb-1">司法院判決書查詢結果：</div>
+                        <div className="text-red-700 font-semibold">
+                          {aiAnalysisResult.legalRiskAssessment.judicialRecordsCount} 件相關記錄
+                        </div>
                       </div>
                     )}
                     
+                    {/* 風險分析 */}
+                    {aiAnalysisResult.legalRiskAssessment.analysis && (
+                      <div className="mb-3">
+                        <div className="text-sm font-medium text-red-800 mb-2">風險分析：</div>
+                        {parseToBullets(aiAnalysisResult.legalRiskAssessment.analysis, 4).length > 0 ? (
+                          <ul className="list-disc list-inside space-y-1 text-red-700 text-sm">
+                            {parseToBullets(aiAnalysisResult.legalRiskAssessment.analysis, 4).map((bullet, idx) => (
+                              <li key={idx} className="leading-relaxed">{bullet}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-red-700 text-sm leading-relaxed">{aiAnalysisResult.legalRiskAssessment.analysis}</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* 風險細節 */}
                     {aiAnalysisResult.legalRiskAssessment.riskDetails && aiAnalysisResult.legalRiskAssessment.riskDetails.length > 0 && (
-                      <div>
-                        <p className="font-medium text-gray-600 text-sm mb-2">風險細節：</p>
-                        <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
-                          {aiAnalysisResult.legalRiskAssessment.riskDetails.map((detail, index) => (
-                            <li key={index}>{detail}</li>
+                      <div className="bg-white bg-opacity-60 rounded-lg p-3">
+                        <div className="text-sm font-medium text-red-800 mb-2">具體風險項目：</div>
+                        <ul className="list-disc list-inside space-y-1 text-red-700 text-sm">
+                          {aiAnalysisResult.legalRiskAssessment.riskDetails.slice(0, 5).map((detail, index) => (
+                            <li key={index} className="leading-relaxed">{detail}</li>
                           ))}
                         </ul>
                       </div>
                     )}
                   </div>
                 )}
-                
+
                 {/* 公開資訊掃描 */}
                 {aiAnalysisResult.publicInformationScan && (
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-gray-900 mb-2">公開資訊掃描</h4>
-                    <p className="text-gray-700 whitespace-pre-wrap">{aiAnalysisResult.publicInformationScan.summary}</p>
+                  <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                      <InformationCircleIcon className="h-5 w-5 mr-2" />
+                      公開資訊掃描
+                    </h4>
+                    {parseToBullets(aiAnalysisResult.publicInformationScan.summary, 5).length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm mb-3">
+                        {parseToBullets(aiAnalysisResult.publicInformationScan.summary, 5).map((bullet, idx) => (
+                          <li key={idx} className="leading-relaxed">{bullet}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-700 text-sm leading-relaxed mb-3">{aiAnalysisResult.publicInformationScan.summary}</p>
+                    )}
+                    
+                    {/* 資料來源 */}
+                    {aiAnalysisResult.publicInformationScan.sources && (
+                      <div className="bg-white bg-opacity-60 rounded-lg p-3">
+                        <div className="text-sm font-medium text-gray-800 mb-2">主要資料來源：</div>
+                        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                          {String(aiAnalysisResult.publicInformationScan.sources)
+                            .split(' | ')
+                            .slice(0, 4)
+                            .map((source, i) => (
+                              <li key={i} className="leading-relaxed">{source}</li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* 合作建議 - 重點區塊 */}
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-lg p-5">
+                  <h4 className="font-semibold text-indigo-900 mb-4 flex items-center text-lg">
+                    <span className="bg-indigo-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">🤝</span>
+                    現有夥伴合作建議
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {computePartnerSuggestions(aiAnalysisResult).map((suggestion, idx) => (
+                      <div key={idx} className="bg-white bg-opacity-70 rounded-lg p-3 border border-indigo-100">
+                        <div className="flex items-start">
+                          <span className="bg-indigo-100 text-indigo-600 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mr-2 mt-0.5 flex-shrink-0">
+                            {idx + 1}
+                          </span>
+                          <p className="text-indigo-800 text-sm leading-relaxed">{suggestion}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* 行動提醒 */}
+                  <div className="mt-4 bg-indigo-100 bg-opacity-50 rounded-lg p-3 border border-indigo-200">
+                    <div className="text-sm font-medium text-indigo-900 mb-1">💡 下一步行動：</div>
+                    <p className="text-indigo-800 text-sm">
+                      建議優先執行前 2-3 項合作方案，並在 30 天內安排具體的合作會議與試行計畫。
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
-          {/* 三、會談內容 */}
+          {/* 三、會談內容與合作需求 */}
           <div className="border-b border-gray-200 pb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">三、會談內容</h2>
-            
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">1. 請說明您的主要專業跟事業服務、從事事業、服務內容、個人優勢、代表性客戶等：</h3>
-                
-                <div className="grid grid-cols-1 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">主要業務及服務 *</label>
-                    <textarea
-                      name="mainBusiness"
-                      value={formData.mainBusiness}
-                      onChange={handleInputChange}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="請詳細說明您的主要業務及服務內容"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">主要產品</label>
-                    <textarea
-                      name="mainProducts"
-                      value={formData.mainProducts}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="請說明您的主要產品或服務項目"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">主要優勢</label>
-                    <textarea
-                      name="mainAdvantages"
-                      value={formData.mainAdvantages}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="請說明您的競爭優勢或特色"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">代表性客戶</label>
-                    <textarea
-                      name="representativeClients"
-                      value={formData.representativeClients}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="請列舉一些代表性客戶（可不具名）"
-                    />
-                  </div>
-                </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">三、會談內容與合作需求</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">主要業務內容 *</label>
+                <textarea
+                  name="mainBusiness"
+                  value={formData.mainBusiness}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請描述公司的主要業務與服務內容"
+                  required
+                />
               </div>
-              
+
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">2. 其他相關資訊：</h3>
-                
-                <div className="grid grid-cols-1 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">希望合作對象</label>
-                    <textarea
-                      name="cooperationTargets"
-                      value={formData.cooperationTargets}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="請說明您希望在 BCI 中尋找的合作對象類型"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">網站資訊</label>
-                    <input
-                      type="url"
-                      name="websiteInfo"
-                      value={formData.websiteInfo}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://www.example.com"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">對 BCI 的期待 *</label>
-                    <textarea
-                      name="bciExpectations"
-                      value={formData.bciExpectations}
-                      onChange={handleInputChange}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="請說明您對加入 BCI 的期待和目標"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">過去成就 *</label>
-                    <textarea
-                      name="pastAchievements"
-                      value={formData.pastAchievements}
-                      onChange={handleInputChange}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="請分享您過去的重要成就或里程碑"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">未來目標 *</label>
-                    <textarea
-                      name="futureGoals"
-                      value={formData.futureGoals}
-                      onChange={handleInputChange}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="請說明您的未來發展目標和計劃"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">營收目標</label>
-                    <input
-                      type="text"
-                      name="revenueTarget"
-                      value={formData.revenueTarget}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="例：年營收 5,000 萬元"
-                    />
-                  </div>
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">主要產品/服務</label>
+                <textarea
+                  name="mainProducts"
+                  value={formData.mainProducts}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請列出主要產品或服務"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">核心優勢</label>
+                <textarea
+                  name="mainAdvantages"
+                  value={formData.mainAdvantages}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="簡述與同業相比的核心競爭力"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">代表性客戶</label>
+                <textarea
+                  name="representativeClients"
+                  value={formData.representativeClients}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請列出 3-5 個代表性客戶或合作案例"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">合作目標</label>
+                <textarea
+                  name="cooperationTargets"
+                  value={formData.cooperationTargets}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="希望在 BCI 商會內的合作方向/標的"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">網站/社群資訊</label>
+                <input
+                  type="text"
+                  name="websiteInfo"
+                  value={formData.websiteInfo}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例：https://your-site 或社群連結"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">加入 BCI 的期待 *</label>
+                <textarea
+                  name="bciExpectations"
+                  value={formData.bciExpectations}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="希望透過商會獲得的資源與目標"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">過往成就 *</label>
+                <textarea
+                  name="pastAchievements"
+                  value={formData.pastAchievements}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請描述 1-3 項具代表性的成果"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">未來發展目標 *</label>
+                <textarea
+                  name="futureGoals"
+                  value={formData.futureGoals}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請說明您的未來發展目標與計畫"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">營收目標</label>
+                <input
+                  type="text"
+                  name="revenueTarget"
+                  value={formData.revenueTarget}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例：年營收 5,000 萬元"
+                />
               </div>
             </div>
           </div>
