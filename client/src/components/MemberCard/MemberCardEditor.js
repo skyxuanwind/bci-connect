@@ -144,15 +144,15 @@ const MemberCardEditor = () => {
     try {
       const response = await axios.put(`/api/member-cards/content-block/${blockId}`, updates);
       const updatedBlock = {
-        id: response.data.id,
-        type: response.data.block_type,
-        title: response.data.title,
-        content: response.data.content,
-        url: response.data.url,
-        image_url: response.data.image_url,
-        social_platform: response.data.social_platform,
-        display_order: response.data.display_order,
-        is_visible: response.data.is_visible
+        id: response.data.block.id,
+        type: response.data.block.block_type,
+        title: response.data.block.title,
+        content: response.data.block.content,
+        url: response.data.block.url,
+        image_url: response.data.block.image_url,
+        social_platform: response.data.block.social_platform,
+        display_order: response.data.block.display_order,
+        is_visible: response.data.block.is_visible
       };
       setCardData(prev => ({
         ...prev,
