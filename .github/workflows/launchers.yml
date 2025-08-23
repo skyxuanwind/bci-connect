@@ -1,0 +1,36 @@
+name: Build Launchers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build macOS .app
+        run: |
+          chmod +x scripts/macos/build_mac_app.sh
+          scripts/macos/build_mac_app.sh
+      - name: Upload macOS app (zip)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BCI-NFC-Gateway-macOS
+          path: dist/BCI-NFC-Gateway-Launcher-macOS.zip
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Windows EXE
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File "scripts/windows/build_windows_exe.ps1"
+      - name: Upload Windows EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: BCI-NFC-Gateway-Windows
+          path: dist/BCI-NFC-Gateway-Launcher-Windows.exe
