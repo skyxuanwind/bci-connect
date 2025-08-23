@@ -26,10 +26,7 @@ const CheckInScanner = () => {
   const [nfcCheckinRecords, setNfcCheckinRecords] = useState([]);
   
   // 本地 Gateway Service URL
-  const isBrowser = typeof window !== 'undefined';
-  const isLocalhost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const GATEWAY_URL = process.env.REACT_APP_GATEWAY_URL || process.env.REACT_APP_NFC_GATEWAY_URL || (isLocalhost ? 'http://localhost:3002' : '');
-  const GATEWAY_ENABLED = (process.env.REACT_APP_ENABLE_GATEWAY === 'true') || isLocalhost;
+  const GATEWAY_URL = 'http://localhost:3002';
   const html5QrcodeScannerRef = useRef(null);
   const processedSseCheckinsRef = useRef(new Set());
   const modalTimeoutRef = useRef(null);
@@ -45,17 +42,13 @@ const CheckInScanner = () => {
   useEffect(() => {
     fetchEvents();
     checkNFCSupport();
-    if (GATEWAY_ENABLED) {
-      checkGatewayStatus();
-    }
+    checkGatewayStatus();
     fetchLastNfcCheckin();
     fetchNfcCheckinRecords();
     
     // 每 3 秒檢查一次 Gateway 狀態和最後 NFC 報到紀錄
     const interval = setInterval(() => {
-      if (GATEWAY_ENABLED) {
-        checkGatewayStatus();
-      }
+      checkGatewayStatus();
       fetchLastNfcCheckin();
       if (user) {
         fetchNfcCheckinRecords();
@@ -476,21 +469,15 @@ const CheckInScanner = () => {
 
   // Gateway Service 相關函數
   const checkGatewayStatus = async () => {
-    if (!GATEWAY_ENABLED || !GATEWAY_URL) {
-      setGatewayStatus(null);
-      setGatewayError('');
-      return;
-    }
     try {
       const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
       const data = await response.json();
       setGatewayStatus(data);
       setGatewayError('');
     } catch (error) {
-      // 在雲端環境或未啟用 Gateway 時避免反覆報錯噪音
-      addDebugInfo('檢查 Gateway 連線失敗（可能尚未啟動或不在本機）');
+      console.error('檢查 Gateway 狀態失敗:', error);
       setGatewayStatus(null);
-      setGatewayError(isLocalhost ? '無法連接到本地 NFC Gateway Service，請確認服務已啟動' : '');
+      setGatewayError('無法連接到本地 NFC Gateway Service，請確認服務已啟動');
     }
   };
 
@@ -499,14 +486,6 @@ const CheckInScanner = () => {
       setNfcResult({
         success: false,
         message: '請先選擇活動'
-      });
-      return;
-    }
-
-    if (!GATEWAY_ENABLED || !GATEWAY_URL) {
-      setNfcResult({
-        success: false,
-        message: '此環境無法直接連接本地 Gateway。請在本機電腦開啟 Gateway 後，於本機瀏覽此頁，或在 .env 設定 REACT_APP_GATEWAY_URL（或 REACT_APP_NFC_GATEWAY_URL）並將 REACT_APP_ENABLE_GATEWAY 設為 true。'
       });
       return;
     }
@@ -760,54 +739,42 @@ const CheckInScanner = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">NFC 名片報到</h2>
             
-            {GATEWAY_ENABLED ? (
-              <>
-                {/* Gateway 狀態 */}
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-800 mb-2">Gateway Service 狀態</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">服務狀態：</span>
-                      <span className={`font-medium ${gatewayStatus?.nfcActive ? 'text-green-600' : 'text-red-600'}`}>
-                        {gatewayStatus?.nfcActive ? '運行中' : '未啟動'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">NFC 讀卡機：</span>
-                      <span className={`font-medium ${gatewayStatus?.readerConnected ? 'text-green-600' : 'text-red-600'}`}>
-                        {gatewayStatus?.readerConnected ? '已啟動' : '未連接'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">讀卡機名稱：</span>
-                      <span className="font-medium">{gatewayStatus?.readerName || '未知'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">卡片 UID：</span>
-                      <span className="font-mono">{gatewayStatus?.lastCardUid || '-'}</span>
-                    </div>
-                  </div>
+            {/* Gateway 狀態 */}
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">Gateway Service 狀態</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">服務狀態：</span>
+                  <span className={`font-medium ${gatewayStatus?.nfcActive ? 'text-green-600' : 'text-red-600'}`}>
+                    {gatewayStatus?.nfcActive ? '運行中' : '未啟動'}
+                  </span>
                 </div>
+                <div>
+                  <span className="text-gray-600">NFC 讀卡機：</span>
+                  <span className={`font-medium ${gatewayStatus?.readerConnected ? 'text-green-600' : 'text-red-600'}`}>
+                    {gatewayStatus?.readerConnected ? '已啟動' : '未連接'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">讀卡機名稱：</span>
+                  <span className="font-medium">{gatewayStatus?.readerName || '未知'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">卡片 UID：</span>
+                  <span className="font-mono">{gatewayStatus?.lastCardUid || '-'}</span>
+                </div>
+              </div>
+            </div>
 
-                <div className="text-center">
-                  <button
-                    onClick={startGatewayNFCReader}
-                    disabled={loading || !selectedEvent}
-                    className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {loading ? '啟動中...' : '🚀 開始 NFC 報到'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
-                 本頁在雲端環境不會自動連線本地 Gateway。若需使用讀卡機：
-                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                   <li>請在可連到讀卡機的本機電腦開啟此頁</li>
-                   <li>或在建置前設置 REACT_APP_GATEWAY_URL（或 REACT_APP_NFC_GATEWAY_URL）並將 REACT_APP_ENABLE_GATEWAY 設為 true</li>
-                 </ul>
-               </div>
-            )}
+            <div className="text-center">
+              <button
+                onClick={startGatewayNFCReader}
+                disabled={loading || !selectedEvent}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? '啟動中...' : '🚀 開始 NFC 報到'}
+              </button>
+            </div>
 
             {/* 報到結果提示 */}
             {nfcResult && (
