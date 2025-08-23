@@ -425,7 +425,8 @@ const MemberCardEditor = () => {
             <input
               type="url"
               value={block.url || ''}
-              onChange={(e) => updateContentBlock(block.id, { url: normalizeVideoUrl(e.target.value) })}
+              onChange={(e) => updateContentBlock(block.id, { url: e.target.value })}
+              onBlur={(e) => updateContentBlock(block.id, { url: normalizeVideoUrl(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="https://www.youtube.com/watch?v=... 或 https://youtu.be/..."
             />
@@ -460,29 +461,54 @@ const MemberCardEditor = () => {
         );
 
       case 'social':
-        const socialLinks = block.social_links || {};
+        const platforms = [
+          { id: 'facebook', name: 'Facebook', icon: '📘' },
+          { id: 'instagram', name: 'Instagram', icon: '📸' },
+          { id: 'line', name: 'Line', icon: '💬' },
+          { id: 'linkedin', name: 'LinkedIn', icon: '💼' },
+          { id: 'twitter', name: 'Twitter', icon: '🐦' },
+          { id: 'youtube', name: 'YouTube', icon: '▶️' }
+        ];
+        const effectivePlatform = block.social_platform || block.socialPlatform || '';
         return (
-          <div className="space-y-3">
-            {['facebook', 'instagram', 'line', 'linkedin', 'twitter'].map(platform => (
-              <div key={platform}>
-                <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                  {platform}
-                </label>
-                <input
-                  type="url"
-                  value={socialLinks[platform] || ''}
-                  onChange={(e) => {
-                    const newSocialLinks = {
-                      ...socialLinks,
-                      [platform]: e.target.value
-                    };
-                    updateContentBlock(block.id, { social_links: newSocialLinks });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={`${platform} 網址`}
-                />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">平台</label>
+            <div className="flex items-center gap-2 mb-3">
+              <select
+                value={effectivePlatform}
+                onChange={(e) => updateContentBlock(block.id, { socialPlatform: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">選擇平台</option>
+                {platforms.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              {effectivePlatform && (
+                <span className="text-xl" title={platforms.find(p=>p.id===effectivePlatform)?.name || ''}>
+                  {platforms.find(p=>p.id===effectivePlatform)?.icon || '🔗'}
+                </span>
+              )}
+            </div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+            <input
+              type="url"
+              value={block.url || ''}
+              onChange={(e) => updateContentBlock(block.id, { url: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="輸入該平台的個人或公司頁面連結"
+            />
+
+            {/* 即時預覽 */}
+            <div className="mt-3">
+              <span className="text-sm text-gray-500">預覽</span>
+              <div className="mt-1 inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg">
+                <span className="mr-2 text-lg">{platforms.find(p=>p.id===effectivePlatform)?.icon || '🔗'}</span>
+                <span className="capitalize mr-2">{effectivePlatform || '社群'}</span>
+                <span className="truncate max-w-xs text-gray-500">{block.url || '未填寫'}</span>
               </div>
-            ))}
+            </div>
           </div>
         );
 
@@ -713,10 +739,18 @@ const MemberCardEditor = () => {
                 onClick={() => handleTemplateChange(template.id)}
               >
                 <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-md mb-3 flex items-center justify-center">
-                  <span className="text-gray-500 text-sm flex items-center gap-2">
-                    {getTemplateIcon(template.id)}
-                    模板預覽
-                  </span>
+                  <div className={`w-full h-full p-4 ${getTemplatePreviewClasses(template.id)} rounded-md`}
+                       style={{display:'grid', gridTemplateRows:'auto auto 1fr', gap:'8px'}}>
+                    <div className="flex items-center justify-between">
+                      <div className="h-6 w-40 bg-white/60 rounded" />
+                      <div className="h-10 w-10 bg-white rounded-full" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="h-3 bg-white/70 rounded" />
+                      <div className="h-3 bg-white/70 rounded" />
+                    </div>
+                    <div className="bg-white/80 rounded flex items-center justify-center text-xs text-gray-600">內容預覽</div>
+                  </div>
                 </div>
                 <h3 className="font-medium text-center flex items-center justify-center gap-2">
                   {getTemplateIcon(template.id)}

@@ -10,6 +10,19 @@ import {
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 
+const getSocialMeta = (platform) => {
+  const map = {
+    facebook: { label: 'Facebook', icon: '📘', classes: 'bg-blue-600 hover:bg-blue-700 text-white' },
+    instagram: { label: 'Instagram', icon: '📸', classes: 'bg-pink-600 hover:bg-pink-700 text-white' },
+    line: { label: 'LINE', icon: '💬', classes: 'bg-green-500 hover:bg-green-600 text-white' },
+    linkedin: { label: 'LinkedIn', icon: '💼', classes: 'bg-sky-700 hover:bg-sky-800 text-white' },
+    twitter: { label: 'Twitter', icon: '🐦', classes: 'bg-sky-500 hover:bg-sky-600 text-white' },
+    youtube: { label: 'YouTube', icon: '▶️', classes: 'bg-red-600 hover:bg-red-700 text-white' }
+  };
+  const key = (platform || '').toLowerCase();
+  return map[key] || { label: '社群', icon: '🔗', classes: 'bg-gray-100 hover:bg-gray-200 text-gray-700' };
+};
+
 const PublicMemberCard = () => {
   const { userId } = useParams();
   const [cardData, setCardData] = useState(null);
@@ -177,9 +190,10 @@ const PublicMemberCard = () => {
                 href={block.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors capitalize"
+                className={`inline-flex items-center px-3 py-2 rounded-lg transition-colors ${getSocialMeta(block.social_platform || block.socialPlatform).classes}`}
               >
-                {block.title || block.social_platform || '社群連結'}
+                <span className="mr-2 text-lg">{getSocialMeta(block.social_platform || block.socialPlatform).icon}</span>
+                <span className="font-medium">{block.title || getSocialMeta(block.social_platform || block.socialPlatform).label}</span>
               </a>
             ) : (
               <p className="text-gray-500">未提供連結</p>
@@ -253,6 +267,11 @@ const PublicMemberCard = () => {
                 )}
                 {cardData.member?.company && (
                   <p className="opacity-80">{cardData.member.company}</p>
+                )}
+                {cardData.member?.industry && (
+                  <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full bg-white/20 text-white text-xs">
+                    {cardData.member.industry}
+                  </div>
                 )}
               </div>
               {cardData.member?.profilePictureUrl && (
