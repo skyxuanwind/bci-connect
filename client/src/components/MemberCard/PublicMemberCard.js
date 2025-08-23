@@ -25,7 +25,11 @@ const PublicMemberCard = () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/member-cards/public/${userId}`);
-      setCardData(response.data);
+      if (response.data.success) {
+        setCardData(response.data.card);
+      } else {
+        setError('電子名片不存在');
+      }
     } catch (error) {
       console.error('Error fetching card data:', error);
       setError('無法載入電子名片');
@@ -44,7 +48,7 @@ const PublicMemberCard = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${cardData.user.name || 'contact'}.vcf`;
+      link.download = `${cardData.member?.name || 'contact'}.vcf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -247,18 +251,18 @@ const PublicMemberCard = () => {
           <div className={`px-8 py-6 ${currentStyle.header}`}>
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold mb-1">{cardData.user.name}</h1>
-                {cardData.user.title && (
-                  <p className="text-lg opacity-90">{cardData.user.title}</p>
+                <h1 className="text-2xl font-bold mb-1">{cardData.member?.name}</h1>
+                {cardData.member?.title && (
+                  <p className="text-lg opacity-90">{cardData.member.title}</p>
                 )}
-                {cardData.user.company && (
-                  <p className="opacity-80">{cardData.user.company}</p>
+                {cardData.member?.company && (
+                  <p className="opacity-80">{cardData.member.company}</p>
                 )}
               </div>
-              {cardData.user.avatar && (
+              {cardData.member?.profilePictureUrl && (
                 <img
-                  src={cardData.user.avatar}
-                  alt={cardData.user.name}
+                  src={cardData.member.profilePictureUrl}
+                  alt={cardData.member?.name || 'Profile'}
                   className="w-20 h-20 rounded-full border-4 border-white shadow-lg"
                 />
               )}

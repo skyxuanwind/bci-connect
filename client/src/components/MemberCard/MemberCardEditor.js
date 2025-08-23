@@ -267,10 +267,7 @@ const MemberCardEditor = () => {
 
     try {
       await axios.put('/api/member-cards/reorder-blocks', {
-        blocks: reorderedBlocks.map(block => ({
-          id: block.id,
-          sort_order: block.sort_order
-        }))
+        blockIds: reorderedBlocks.map(block => block.id)
       });
 
       setCardData(prev => ({
@@ -624,17 +621,17 @@ const MemberCardEditor = () => {
               <div
                 key={template.id}
                 className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                  cardData?.template?.style === template.style
+                  cardData?.template_id === template.id
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
-                onClick={() => handleTemplateChange(template.style)}
+                onClick={() => handleTemplateChange(template.id)}
               >
                 <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-md mb-3 flex items-center justify-center">
                   <span className="text-gray-500 text-sm">模板預覽</span>
                 </div>
                 <h3 className="font-medium text-center">{template.name}</h3>
-                {cardData?.template?.style === template.style && (
+                {cardData?.template_id === template.id && (
                   <div className="text-center mt-2">
                     <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                       目前使用
