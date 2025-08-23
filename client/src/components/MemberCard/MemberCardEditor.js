@@ -38,9 +38,29 @@ const MemberCardEditor = () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/member-cards/my-card');
-      setCardData(response.data);
+      const { card, templates } = response.data;
+      setCardData({
+        id: card.id,
+        template_id: card.templateId,
+        view_count: card.viewCount,
+        content_blocks: card.contentBlocks || []
+      });
+      if (templates) {
+        setTemplates(templates.map(t => ({
+          id: t.id,
+          name: t.name,
+          style: t.id
+        })));
+      }
     } catch (error) {
       console.error('Error fetching card data:', error);
+      // 設置默認數據結構以防止錯誤
+      setCardData({
+        id: null,
+        templateId: 'professional',
+        viewCount: 0,
+        content_blocks: []
+      });
     } finally {
       setLoading(false);
     }
@@ -55,15 +75,15 @@ const MemberCardEditor = () => {
     }
   };
 
-  const handleTemplateChange = async (templateStyle) => {
+  const handleTemplateChange = async (templateId) => {
     try {
       setSaving(true);
       await axios.put('/api/member-cards/template', {
-        template_style: templateStyle
+        templateId: templateId
       });
       setCardData(prev => ({
         ...prev,
-        template: { ...prev.template, style: templateStyle }
+        template_id: templateId
       }));
     } catch (error) {
       console.error('Error updating template:', error);
@@ -75,17 +95,23 @@ const MemberCardEditor = () => {
 
   const addContentBlock = async (type) => {
     try {
+      if (!cardData) {
+        alert('請等待名片資料載入完成');
+        return;
+      }
+
       const newBlock = {
-        type,
+        blockType: type,
         title: '',
         content: '',
-        sort_order: cardData.content_blocks.length
+        url: '',
+        socialPlatform: ''
       };
 
       const response = await axios.post('/api/member-cards/content-block', newBlock);
       setCardData(prev => ({
         ...prev,
-        content_blocks: [...prev.content_blocks, response.data]
+        content_blocks: [...(prev.content_blocks || []), response.data.block]
       }));
     } catch (error) {
       console.error('Error adding content block:', error);
