@@ -63,6 +63,28 @@ ensure_clt() {
   fi
 }
 
+# 0.5) 自動安裝 nvm 與 Node 20（必要時）
+ensure_nvm_and_node20() {
+  export NVM_DIR="$HOME/.nvm"
+  if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+    yellow "ℹ️ 未偵測到 nvm，正在安裝 nvm..."
+    # 安裝 nvm
+    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+  fi
+  # 載入 nvm（同一個 shell 即時可用）
+  if [ -s "$NVM_DIR/nvm.sh" ]; then
+    # shellcheck disable=SC1090
+    . "$NVM_DIR/nvm.sh"
+  else
+    red "❌ 找不到 nvm.sh，請重新打開此啟動器或手動安裝 nvm 後再試"
+    exit 1
+  fi
+  # 安裝並切換到 Node 20
+  nvm install 20
+  nvm use 20
+  echo "$(green "✅ 使用 Node.js $(node -v)")"
+}
+
 ensure_clt
 
 # 1) 下載並解壓縮專案（僅取 nfc-gateway-service 子專案）
@@ -75,28 +97,21 @@ rm -rf bci-connect-main repo.zip
 
 echo "$(green "✅ 下載完成")"
 
-# 2) 檢查 Node 與 npm
+# 2) 檢查/準備 Node 與 npm
 if ! command -v node >/dev/null 2>&1; then
-  red "❌ 未安裝 Node.js，請先安裝 https://nodejs.org/ 後再執行此檔"
-  exit 1
-fi
-if ! command -v npm >/dev/null 2>&1; then
-  red "❌ 未安裝 npm，請先安裝 Node.js/npm 後再執行此檔"
-  exit 1
-fi
-
-# 2.1) 檢查 Node 版本，必要時自動切換到 LTS (20.x) 以確保 nfc-pcsc 相容性
-NODE_MAJOR=$(node -p "process.versions.node.split('.')[0]")
-if [ "$NODE_MAJOR" -ge 21 ]; then
-  yellow "⚠️ 偵測到 Node.js v$NODE_MAJOR，可能導致原生模組 ABI 不相容。"
-  if [ -s "$HOME/.nvm/nvm.sh" ]; then
-    # shellcheck disable=SC1090
-    . "$HOME/.nvm/nvm.sh"
-    nvm install --lts=Hydrogen >/dev/null 2>&1 || nvm install 20
-    nvm use 20 || true
-    echo "$(green "✅ 已切換到 Node.js $(node -v)")"
+  yellow "⚠️ 此系統未安裝 Node.js，將使用 nvm 安裝 Node 20。"
+  ensure_nvm_and_node20
+elif ! command -v npm >/dev/null 2>&1; then
+  yellow "⚠️ 偵測到沒有 npm，將安裝/切換到 Node 20。"
+  ensure_nvm_and_node20
+else
+  # 2.1) 檢查 Node 版本，必要時自動切換到 LTS (20.x) 以確保 nfc-pcsc 相容性
+  NODE_MAJOR=$(node -p "process.versions.node.split('.')[0]")
+  if [ "$NODE_MAJOR" -ge 21 ]; then
+    yellow "⚠️ 偵測到 Node.js v$NODE_MAJOR，可能導致原生模組 ABI 不相容。將改用 Node 20。"
+    ensure_nvm_and_node20
   else
-    yellow "ℹ️ 未偵測到 nvm，將嘗試以目前版本重新建置 nfc-pcsc。若遇到 NODE_MODULE_VERSION 錯誤，建議安裝 nvm 並使用 Node 20。"
+    echo "$(green "✅ 檢測到 Node.js $(node -v)")"
   fi
 fi
 
@@ -106,7 +121,8 @@ echo "$(bold "📦 安裝套件 (第一次可能需較久)...")"
 npm install
 
 echo "$(bold "🔍 檢查 nfc-pcsc 模組...")"
-test_nfc_pcsc() {
+# 以 function 方式測試是否可載入 nfc-pcsc，並抓取錯誤訊息
+ test_nfc_pcsc() {
   node -e "try{require('nfc-pcsc');console.log('OK')}catch(e){console.error(e.message);process.exit(1)}" >/dev/null 2>nfc_test_err.log
 }
 if test_nfc_pcsc; then
