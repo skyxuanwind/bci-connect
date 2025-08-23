@@ -401,6 +401,7 @@ async function performFastAnalysis(prospect) {
         sources: publicInfo?.realData
           ? (publicInfo?.sources?.slice(0, 5).map((s, i) => `${i + 1}. ${s.title}${s.source ? `（${s.source}）` : ''}`).join(' | ') + ((publicInfo?.sources?.length || 0) > 5 ? ` 等共 ${publicInfo.sources.length} 筆` : ''))
           : '—',
+        rawSources: publicInfo?.realData ? publicInfo.sources : [], // 新增：原始 sources 資料供前端使用
         realData: !!publicInfo?.realData
       },
       

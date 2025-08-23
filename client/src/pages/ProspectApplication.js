@@ -42,6 +42,7 @@ const parseToBullets = (text = '', maxItems = 5) => {
 const computePartnerSuggestions = (result) => {
   const suggestions = [];
   if (!result) return suggestions;
+  
   const score = result?.bciFitScore?.score || 0;
   const sentiment = result?.marketSentiment?.sentiment || 'neutral';
   const conflict = result?.industryConflict?.conflictLevel || 'low';
@@ -51,40 +52,98 @@ const computePartnerSuggestions = (result) => {
   const match = existingMembersText.match(/同業\s*:\s*(\d+)位/);
   const sameIndustryCount = match ? parseInt(match[1], 10) : 0;
 
-  suggestions.push('導入「活動 NFC 簽到 → 名單 → EDM → 回流」閉環，與 CRM/Email 夥伴共同建立 30 天轉化漏斗');
+  // 根據不同情況推薦具體的現有夥伴合作
+  
+  // 1. 數位行銷與客戶管理合作
+  suggestions.push({
+    partner: '數位行銷夥伴（如：網路行銷公司、社群媒體代理商）',
+    reason: '建立完整的數位轉換漏斗，從活動 NFC 簽到到 EDM 再行銷',
+    action: '導入「活動 NFC 簽到 → 名單 → EDM → 回流」閉環，共同建立 30 天轉化追蹤系統'
+  });
 
+  // 2. 根據產業衝突程度推薦不同合作夥伴
   if (conflict === 'low') {
-    suggestions.push('與行銷/內容/公關夥伴共製 2–3 則案例短影音或新聞稿，建立可擴散的權威背書');
+    suggestions.push({
+      partner: '內容創作夥伴（如：影音製作公司、公關顧問、媒體代理商）',
+      reason: '產業衝突低，適合共同製作內容提升品牌權威性',
+      action: '合作製作 2-3 則案例短影音或新聞稿，建立可擴散的權威背書與成功案例'
+    });
   } else if (conflict === 'medium') {
-    suggestions.push('安排定位澄清會議，與相關會員對齊目標客群與服務邊界，降低業務重疊');
+    suggestions.push({
+      partner: '策略顧問夥伴（如：管理顧問公司、商業策略顧問）',
+      reason: '需要專業第三方協助釐清市場定位，避免業務重疊',
+      action: '安排三方定位澄清會議，對齊目標客群與服務邊界，建立合作分工機制'
+    });
   } else {
-    suggestions.push('先限制服務範圍並建立轉介規則，再視情況評估進一步合作');
+    suggestions.push({
+      partner: '法務與合規夥伴（如：律師事務所、合規顧問）',
+      reason: '高衝突需要建立明確的業務邊界與轉介規則',
+      action: '制定服務範圍限制與客戶轉介標準作業程序，降低競爭風險'
+    });
   }
 
+  // 3. 根據市場聲譽推薦公關與媒體夥伴
   if (publicReal && (sentiment === 'neutral' || sentiment === 'negative')) {
-    suggestions.push('先做「正面內容建置＋媒體曝光」衝刺 30 天，提升市場聲量與搜尋可見度');
+    suggestions.push({
+      partner: '公關與媒體夥伴（如：公關公司、媒體代理商、KOL 經紀公司）',
+      reason: '市場聲譽需要改善，需要專業公關操作提升正面形象',
+      action: '執行 30 天「正面內容建置 + 媒體曝光」專案，提升搜尋可見度與品牌聲量'
+    });
   }
 
+  // 4. 根據法律風險推薦法務合作
   if (legal === 'medium' || legal === 'high') {
-    suggestions.push('與法律夥伴進行「合約/個資/著作權」健檢，建立標案與委託作業標準');
+    suggestions.push({
+      partner: '專業法務夥伴（如：商務律師事務所、智財權顧問）',
+      reason: '法律風險較高，需要專業法務支援建立合規機制',
+      action: '進行「合約/個資/著作權」全面健檢，建立標案投標與客戶委託標準作業流程'
+    });
   } else {
-    suggestions.push('請法律夥伴快速檢視範本合約與政府標案文件，降低後續合作風險');
+    suggestions.push({
+      partner: '商務法務夥伴（如：商務律師、合約顧問）',
+      reason: '預防性法務檢視，降低未來合作風險',
+      action: '快速檢視範本合約與政府標案文件，建立基礎法務防護機制'
+    });
   }
 
+  // 5. 同業或互補產業合作
   if (sameIndustryCount > 0 && conflict !== 'high') {
-    suggestions.push(`與同產業或互補產業的現有會員（約 ${sameIndustryCount} 位）發起交叉引薦與方案共打`);
+    suggestions.push({
+      partner: `同產業現有會員（約 ${sameIndustryCount} 位）或互補產業夥伴`,
+      reason: '同業經驗豐富且衝突可控，適合建立策略聯盟',
+      action: '發起交叉引薦與聯合提案機制，擴大服務範圍與客戶基礎'
+    });
   }
 
+  // 6. 根據契合度分數推薦不同層級的合作
   if (score >= 80) {
-    suggestions.push('安排深度面談與小型試案，並規劃季度級聯合專案（品牌/活動/整合行銷）');
+    suggestions.push({
+      partner: '策略級合作夥伴（如：品牌顧問、整合行銷公司、活動策劃公司）',
+      reason: '高契合度適合深度戰略合作，共同開發大型專案',
+      action: '安排深度面談與小型試案，規劃季度級聯合專案（品牌重塑/大型活動/整合行銷）'
+    });
   } else if (score >= 60) {
-    suggestions.push('先以 2–4 週 POC 驗證轉化與合作流程，達標後擴大投入');
+    suggestions.push({
+      partner: '專案型合作夥伴（如：專案管理顧問、技術服務商）',
+      reason: '中等契合度適合階段性合作，先驗證合作模式',
+      action: '以 2-4 週 POC 專案驗證合作流程與轉化效果，達標後再擴大投入規模'
+    });
   } else {
-    suggestions.push('暫緩大型合作，先補齊案例素材與正面聲量再評估');
+    suggestions.push({
+      partner: '基礎服務夥伴（如：行政支援、基礎 IT 服務）',
+      reason: '契合度待提升，先從低風險的基礎合作開始',
+      action: '暫緩大型合作投入，先協助補齊成功案例與市場聲量，再評估深度合作'
+    });
   }
 
+  // 去重並限制數量
   const seen = new Set();
-  return suggestions.filter(s => (seen.has(s) ? false : (seen.add(s), true))).slice(0, 6);
+  return suggestions.filter(s => {
+    const key = s.partner + s.action;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 6);
 };
 
 const ProspectApplication = () => {
@@ -1288,17 +1347,77 @@ const ProspectApplication = () => {
                     )}
                     
                     {/* 資料來源 */}
-                    {aiAnalysisResult.publicInformationScan.sources && (
+                    {aiAnalysisResult.publicInformationScan.sources && aiAnalysisResult.publicInformationScan.realData && (
                       <div className="bg-white bg-opacity-60 rounded-lg p-3">
                         <div className="text-sm font-medium text-gray-800 mb-2">主要資料來源：</div>
-                        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                          {String(aiAnalysisResult.publicInformationScan.sources)
-                            .split(' | ')
-                            .slice(0, 4)
-                            .map((source, i) => (
-                              <li key={i} className="leading-relaxed">{source}</li>
-                            ))}
-                        </ul>
+                        <div className="space-y-2">
+                          {(() => {
+                            // 優先使用 rawSources 資料（包含完整的 URL 資訊）
+                            if (Array.isArray(aiAnalysisResult.publicInformationScan.rawSources) && aiAnalysisResult.publicInformationScan.rawSources.length > 0) {
+                              return aiAnalysisResult.publicInformationScan.rawSources.slice(0, 4).map((source, i) => (
+                                <div key={i} className="flex items-start space-x-2 text-sm">
+                                  <span className="text-gray-500 font-medium min-w-[20px]">{i + 1}.</span>
+                                  <div className="flex-1">
+                                    <div className="text-gray-900 font-medium mb-1">{source.title}</div>
+                                    {source.url && (
+                                      <a 
+                                        href={source.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:text-blue-800 underline text-xs break-all hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+                                      >
+                                        {source.url}
+                                      </a>
+                                    )}
+                                    {source.source && (
+                                      <div className="text-gray-500 text-xs mt-1">來源：{source.source}</div>
+                                    )}
+                                    {source.snippet && (
+                                      <div className="text-gray-600 text-xs mt-1 italic">{source.snippet.substring(0, 100)}...</div>
+                                    )}
+                                  </div>
+                                </div>
+                              ));
+                            }
+                            
+                            // 備用顯示：解析字串格式的 sources
+                            return String(aiAnalysisResult.publicInformationScan.sources)
+                              .split(' | ')
+                              .slice(0, 4)
+                              .map((source, i) => {
+                                // 嘗試從字串中提取 URL
+                                const urlMatch = source.match(/(https?:\/\/[^\s]+)/g);
+                                if (urlMatch && urlMatch.length > 0) {
+                                  const url = urlMatch[0];
+                                  const title = source.replace(url, '').replace(/[()（）]/g, '').trim();
+                                  return (
+                                    <div key={i} className="flex items-start space-x-2 text-sm">
+                                      <span className="text-gray-500 font-medium min-w-[20px]">{i + 1}.</span>
+                                      <div className="flex-1">
+                                        <div className="text-gray-900 font-medium mb-1">{title}</div>
+                                        <a 
+                                          href={url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:text-blue-800 underline text-xs break-all hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+                                        >
+                                          {url}
+                                        </a>
+                                      </div>
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div key={i} className="flex items-start space-x-2 text-sm">
+                                      <span className="text-gray-500 font-medium min-w-[20px]">{i + 1}.</span>
+                                      <div className="text-gray-700 leading-relaxed">{source}</div>
+                                    </div>
+                                  );
+                                }
+                              });
+                          })()
+                          }
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1310,14 +1429,26 @@ const ProspectApplication = () => {
                     <span className="bg-indigo-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">🤝</span>
                     現有夥伴合作建議
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-4">
                     {computePartnerSuggestions(aiAnalysisResult).map((suggestion, idx) => (
-                      <div key={idx} className="bg-white bg-opacity-70 rounded-lg p-3 border border-indigo-100">
-                        <div className="flex items-start">
-                          <span className="bg-indigo-100 text-indigo-600 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mr-2 mt-0.5 flex-shrink-0">
+                      <div key={idx} className="bg-white bg-opacity-90 rounded-lg p-4 border border-indigo-100 shadow-sm">
+                        <div className="flex items-start mb-3">
+                          <span className="bg-indigo-100 text-indigo-600 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">
                             {idx + 1}
                           </span>
-                          <p className="text-indigo-800 text-sm leading-relaxed">{suggestion}</p>
+                          <div className="flex-1">
+                            <h5 className="font-semibold text-indigo-900 mb-2 text-sm">{suggestion.partner}</h5>
+                          </div>
+                        </div>
+                        <div className="ml-9 space-y-2">
+                          <div>
+                            <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded">合作原因</span>
+                            <p className="text-indigo-800 text-sm mt-1 leading-relaxed">{suggestion.reason}</p>
+                          </div>
+                          <div>
+                            <span className="text-xs font-medium text-purple-700 bg-purple-50 px-2 py-1 rounded">建議行動</span>
+                            <p className="text-purple-800 text-sm mt-1 leading-relaxed">{suggestion.action}</p>
+                          </div>
                         </div>
                       </div>
                     ))}
