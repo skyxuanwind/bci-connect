@@ -31,6 +31,17 @@ const CheckInScanner = () => {
   const processedSseCheckinsRef = useRef(new Set());
   const modalTimeoutRef = useRef(null);
 
+  // 平台自動偵測與最新版本下載連結（GitHub Releases）
+  const GITHUB_OWNER = 'skyxuanwind';
+  const GITHUB_REPO = 'bci-connect';
+  const MAC_ASSET = 'BCI-NFC-Gateway-Launcher-macOS.zip';
+  const WIN_ASSET = 'BCI-NFC-Gateway-Launcher-Windows.exe';
+  const latestReleaseBase = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download`;
+  const macReleaseUrl = `${latestReleaseBase}/${MAC_ASSET}`;
+  const winReleaseUrl = `${latestReleaseBase}/${WIN_ASSET}`;
+  const isMac = typeof navigator !== 'undefined' && (/Mac|Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.platform) || /Mac OS X/i.test(navigator.userAgent));
+  const isWindows = typeof navigator !== 'undefined' && (/Win/i.test(navigator.platform) || /Windows/i.test(navigator.userAgent));
+  
   // 添加調試訊息
   const addDebugInfo = (message) => {
     const timestamp = new Date().toLocaleTimeString('zh-TW');
@@ -790,21 +801,56 @@ const CheckInScanner = () => {
                     {gatewayStatus?.message || '無法連接到本地 NFC Gateway Service'}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <a
-                      href="/BCI-NFC-Gateway-Launcher.command"
-                      download
-                      className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
-                    >
-                      下載 Gateway 啟動器（macOS）
-                    </a>
-                    {/* Windows one-click launcher */}
-                    <a
-                      href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
-                      download
-                      className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
-                    >
-                      下載 Gateway 啟動器（Windows）
-                    </a>
+                    {isMac && (
+                      <>
+                        <a
+                          href={macReleaseUrl}
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
+                        >
+                          下載 Gateway 啟動器（macOS App，建議）
+                        </a>
+                        <a
+                          href="/BCI-NFC-Gateway-Launcher.command"
+                          download
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-800 text-white text-sm hover:bg-gray-900"
+                        >
+                          備用：macOS .command
+                        </a>
+                      </>
+                    )}
+                    {isWindows && (
+                      <>
+                        <a
+                          href={winReleaseUrl}
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+                        >
+                          下載 Gateway 啟動器（Windows EXE，建議）
+                        </a>
+                        <a
+                          href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
+                          download
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-white border text-sm hover:bg-gray-50"
+                        >
+                          備用：Windows VBS
+                        </a>
+                      </>
+                    )}
+                    {!isMac && !isWindows && (
+                      <>
+                        <a
+                          href={macReleaseUrl}
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
+                        >
+                          下載 macOS App
+                        </a>
+                        <a
+                          href={winReleaseUrl}
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+                        >
+                          下載 Windows EXE
+                        </a>
+                      </>
+                    )}
                     <button
                       onClick={checkGatewayStatus}
                       className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-white border text-sm hover:bg-gray-50"
