@@ -797,6 +797,14 @@ const CheckInScanner = () => {
                     >
                       下載 Gateway 啟動器（macOS）
                     </a>
+                    {/* Windows one-click launcher */}
+                    <a
+                      href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
+                      download
+                      className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+                    >
+                      下載 Gateway 啟動器（Windows）
+                    </a>
                     <button
                       onClick={checkGatewayStatus}
                       className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-white border text-sm hover:bg-gray-50"
