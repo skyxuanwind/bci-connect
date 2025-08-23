@@ -109,7 +109,7 @@ const MemberCardEditor = () => {
   };
 
   const deleteContentBlock = async (blockId) => {
-    if (!confirm('確定要刪除此內容區塊嗎？')) return;
+    if (!window.confirm('確定要刪除此內容區塊嗎？')) return;
 
     try {
       await axios.delete(`/api/member-cards/content-block/${blockId}`);
