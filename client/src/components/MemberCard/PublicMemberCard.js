@@ -61,8 +61,8 @@ const PublicMemberCard = () => {
 
   const handleShare = async () => {
     const shareData = {
-      title: `${cardData.user.name}的電子名片`,
-      text: `查看${cardData.user.name}的電子名片`,
+      title: `${cardData.member?.name || ''}的電子名片`,
+      text: `查看${cardData.member?.name || ''}的電子名片`,
       url: window.location.href
     };
 
@@ -88,7 +88,7 @@ const PublicMemberCard = () => {
   };
 
   const renderContentBlock = (block) => {
-    switch (block.type) {
+    switch (block.block_type) {
       case 'text':
         return (
           <div key={block.id} className="mb-6">
@@ -129,9 +129,9 @@ const PublicMemberCard = () => {
               </h3>
             )}
             <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-              {block.video_url ? (
+              {block.url ? (
                 <iframe
-                  src={block.video_url}
+                  src={block.url}
                   className="w-full h-full"
                   frameBorder="0"
                   allowFullScreen
@@ -172,22 +172,18 @@ const PublicMemberCard = () => {
                 {block.title}
               </h3>
             )}
-            <div className="flex flex-wrap gap-3">
-              {block.social_links && Object.entries(block.social_links).map(([platform, url]) => {
-                if (!url) return null;
-                return (
-                  <a
-                    key={platform}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors capitalize"
-                  >
-                    {platform}
-                  </a>
-                );
-              })}
-            </div>
+            {block.url ? (
+              <a
+                href={block.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors capitalize"
+              >
+                {block.title || block.social_platform || '社群連結'}
+              </a>
+            ) : (
+              <p className="text-gray-500">未提供連結</p>
+            )}
           </div>
         );
 
@@ -226,7 +222,7 @@ const PublicMemberCard = () => {
       header: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white',
       accent: 'text-blue-600'
     },
-    creative: {
+    dynamic: {
       container: 'bg-gradient-to-br from-purple-50 to-pink-100',
       card: 'bg-white shadow-xl',
       header: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white',
@@ -240,7 +236,7 @@ const PublicMemberCard = () => {
     }
   };
 
-  const currentStyle = templateStyles[cardData.template?.style] || templateStyles.professional;
+  const currentStyle = templateStyles[cardData.templateId] || templateStyles.professional;
 
   return (
     <div className={`min-h-screen py-8 px-4 ${currentStyle.container}`}>
@@ -272,22 +268,22 @@ const PublicMemberCard = () => {
           {/* 聯絡資訊 */}
           <div className="px-8 py-6 border-b border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {cardData.user.phone && (
+              {cardData.member?.contactNumber && (
                 <a
-                  href={`tel:${cardData.user.phone}`}
+                  href={`tel:${cardData.member.contactNumber}`}
                   className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
                 >
                   <PhoneIcon className="w-5 h-5 mr-3" />
-                  {cardData.user.phone}
+                  {cardData.member.contactNumber}
                 </a>
               )}
-              {cardData.user.email && (
+              {cardData.member?.email && (
                 <a
-                  href={`mailto:${cardData.user.email}`}
+                  href={`mailto:${cardData.member.email}`}
                   className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
                 >
                   <EnvelopeIcon className="w-5 h-5 mr-3" />
-                  {cardData.user.email}
+                  {cardData.member.email}
                 </a>
               )}
             </div>
@@ -314,19 +310,19 @@ const PublicMemberCard = () => {
           </div>
 
           {/* 內容區塊 */}
-          {cardData.content_blocks && cardData.content_blocks.length > 0 && (
+          {cardData.contentBlocks && cardData.contentBlocks.length > 0 && (
             <div className="px-8 py-6">
-              {cardData.content_blocks
-                .sort((a, b) => a.sort_order - b.sort_order)
+              {cardData.contentBlocks
+                .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
                 .map(renderContentBlock)}
             </div>
           )}
         </div>
 
         {/* 瀏覽統計 */}
-        {cardData.views > 0 && (
+        {cardData.viewCount > 0 && (
           <div className="mt-6 text-center text-sm text-gray-500">
-            此名片已被瀏覽 {cardData.views} 次
+            此名片已被瀏覽 {cardData.viewCount} 次
           </div>
         )}
       </div>

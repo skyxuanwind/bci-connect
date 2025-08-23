@@ -13,7 +13,10 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   ChartBarIcon,
-  ClipboardDocumentIcon
+  ClipboardDocumentIcon,
+  BriefcaseIcon,
+  SparklesIcon,
+  PaintBrushIcon
 } from '@heroicons/react/24/outline';
 
 const MemberCardEditor = () => {
@@ -30,6 +33,8 @@ const MemberCardEditor = () => {
     { id: 'creative', name: '活力動感版', style: 'creative' },
     { id: 'elegant', name: '經典典雅版', style: 'elegant' }
   ]);
+  const [showPreviewHint, setShowPreviewHint] = useState(false);
+  const previewHintTimerRef = useRef(null);
 
   useEffect(() => {
     fetchCardData();
@@ -42,6 +47,9 @@ const MemberCardEditor = () => {
       Object.values(debounceTimers.current).forEach(timer => {
         if (timer) clearTimeout(timer);
       });
+      if (previewHintTimerRef.current) {
+        clearTimeout(previewHintTimerRef.current);
+      }
     };
   }, []);
 
@@ -145,6 +153,7 @@ const MemberCardEditor = () => {
           ...prev,
           content_blocks: [...prev.content_blocks, addedBlock]
         }));
+       triggerPreviewHint();
     } catch (error) {
       console.error('Error adding content block:', error);
       alert('新增內容區塊失敗');
@@ -178,7 +187,6 @@ const MemberCardEditor = () => {
         title: currentBlock.title || '',
         content: currentBlock.content || '',
         url: currentBlock.url || '',
-        video_url: currentBlock.video_url || '',
         socialPlatform: currentBlock.social_platform || '',
         isVisible: currentBlock.is_visible !== false,
         ...localData,
@@ -192,7 +200,6 @@ const MemberCardEditor = () => {
         title: response.data.block.title,
         content: response.data.block.content,
         url: response.data.block.url,
-        video_url: response.data.block.video_url,
         image_url: response.data.block.image_url,
         social_platform: response.data.block.social_platform,
         display_order: response.data.block.display_order,
@@ -205,6 +212,7 @@ const MemberCardEditor = () => {
           block.id === blockId ? updatedBlock : block
         )
       }));
+      triggerPreviewHint();
       
       // 清除本地數據
       setLocalBlockData(prev => {
@@ -243,6 +251,7 @@ const MemberCardEditor = () => {
         ...prev,
         content_blocks: prev.content_blocks.filter(block => block.id !== blockId)
       }));
+      triggerPreviewHint();
     } catch (error) {
       console.error('Error deleting content block:', error);
       alert('刪除內容區塊失敗');
@@ -274,6 +283,7 @@ const MemberCardEditor = () => {
         ...prev,
         content_blocks: reorderedBlocks
       }));
+      triggerPreviewHint();
     } catch (error) {
       console.error('Error reordering blocks:', error);
       alert('調整順序失敗');
@@ -291,6 +301,7 @@ const MemberCardEditor = () => {
       });
 
       updateContentBlock(blockId, { image_url: response.data.imageUrl });
+      triggerPreviewHint();
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('圖片上傳失敗');
@@ -413,10 +424,10 @@ const MemberCardEditor = () => {
             </label>
             <input
               type="url"
-              value={block.video_url || ''}
-              onChange={(e) => updateContentBlock(block.id, { video_url: e.target.value })}
+              value={block.url || ''}
+              onChange={(e) => updateContentBlock(block.id, { url: normalizeVideoUrl(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://www.youtube.com/embed/..."
+              placeholder="https://www.youtube.com/watch?v=... 或 https://youtu.be/..."
             />
           </div>
         );
@@ -503,6 +514,71 @@ const MemberCardEditor = () => {
     return names[type] || type;
   };
 
+  const getTemplateIcon = (templateId) => {
+    const iconClass = 'w-6 h-6';
+    switch (templateId) {
+      case 'professional':
+        return <BriefcaseIcon className={`${iconClass} text-blue-600`} />;
+      case 'dynamic':
+      case 'creative':
+        return <SparklesIcon className={`${iconClass} text-purple-600`} />;
+      case 'elegant':
+        return <PaintBrushIcon className={`${iconClass} text-gray-700`} />;
+      default:
+        return <PhotoIcon className={iconClass} />;
+    }
+  };
+
+  const getTemplatePreviewClasses = (templateId) => {
+    switch (templateId) {
+      case 'professional':
+        return 'bg-gradient-to-br from-blue-50 to-blue-100';
+      case 'dynamic':
+      case 'creative':
+        return 'bg-gradient-to-br from-purple-50 to-pink-100';
+      case 'elegant':
+        return 'bg-gradient-to-br from-amber-50 to-stone-100';
+      default:
+        return 'bg-gradient-to-br from-gray-100 to-gray-200';
+    }
+  };
+
+  const normalizeVideoUrl = (input) => {
+    if (!input) return '';
+    try {
+      const url = new URL(input);
+      const host = url.hostname.replace('www.', '');
+      // YouTube watch or share links -> embed
+      if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be') {
+        // youtu.be/VIDEOID
+        if (host === 'youtu.be') {
+          const id = url.pathname.split('/').filter(Boolean)[0];
+          if (id) return `https://www.youtube.com/embed/${id}`;
+        }
+        // youtube.com/watch?v=VIDEOID
+        const v = url.searchParams.get('v');
+        if (v) return `https://www.youtube.com/embed/${v}`;
+        // youtube.com/shorts/VIDEOID
+        const parts = url.pathname.split('/').filter(Boolean);
+        if (parts[0] === 'shorts' && parts[1]) return `https://www.youtube.com/embed/${parts[1]}`;
+      }
+      // Vimeo -> player embed
+      if (host === 'vimeo.com') {
+        const id = url.pathname.split('/').filter(Boolean)[0];
+        if (id) return `https://player.vimeo.com/video/${id}`;
+      }
+      return input;
+    } catch {
+      return input;
+    }
+  };
+
+  const triggerPreviewHint = () => {
+    setShowPreviewHint(true);
+    if (previewHintTimerRef.current) clearTimeout(previewHintTimerRef.current);
+    previewHintTimerRef.current = setTimeout(() => setShowPreviewHint(false), 8000);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -531,6 +607,15 @@ const MemberCardEditor = () => {
             複製網址
           </button>
         </div>
+        {showPreviewHint && (
+          <div className="mt-3 p-3 border border-blue-200 bg-blue-50 text-blue-800 rounded-lg flex items-center justify-between">
+            <span>已保存變更，想立即查看公開頁最新效果？</span>
+            <div className="space-x-2">
+              <button onClick={openPreview} className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">立即預覽</button>
+              <button onClick={() => setShowPreviewHint(false)} className="px-3 py-1 text-blue-700 hover:underline">稍後</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 分頁導航 */}
@@ -628,9 +713,15 @@ const MemberCardEditor = () => {
                 onClick={() => handleTemplateChange(template.id)}
               >
                 <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-md mb-3 flex items-center justify-center">
-                  <span className="text-gray-500 text-sm">模板預覽</span>
+                  <span className="text-gray-500 text-sm flex items-center gap-2">
+                    {getTemplateIcon(template.id)}
+                    模板預覽
+                  </span>
                 </div>
-                <h3 className="font-medium text-center">{template.name}</h3>
+                <h3 className="font-medium text-center flex items-center justify-center gap-2">
+                  {getTemplateIcon(template.id)}
+                  {template.name}
+                </h3>
                 {cardData?.template_id === template.id && (
                   <div className="text-center mt-2">
                     <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
