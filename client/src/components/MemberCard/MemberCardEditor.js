@@ -142,7 +142,24 @@ const MemberCardEditor = () => {
 
   const updateContentBlock = async (blockId, updates) => {
     try {
-      const response = await axios.put(`/api/member-cards/content-block/${blockId}`, updates);
+      // 找到當前區塊的完整數據
+      const currentBlock = cardData.content_blocks.find(block => block.id === blockId);
+      if (!currentBlock) {
+        console.error('找不到要更新的區塊');
+        return;
+      }
+
+      // 合併現有數據和更新數據
+      const updateData = {
+        title: currentBlock.title || '',
+        content: currentBlock.content || '',
+        url: currentBlock.url || '',
+        socialPlatform: currentBlock.social_platform || '',
+        isVisible: currentBlock.is_visible !== false, // 默認為 true
+        ...updates // 覆蓋要更新的字段
+      };
+
+      const response = await axios.put(`/api/member-cards/content-block/${blockId}`, updateData);
       const updatedBlock = {
         id: response.data.block.id,
         type: response.data.block.block_type,
