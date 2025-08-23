@@ -29,6 +29,7 @@ const CheckInScanner = () => {
   const GATEWAY_URL = 'http://localhost:3002';
   const html5QrcodeScannerRef = useRef(null);
   const processedSseCheckinsRef = useRef(new Set());
+  const modalTimeoutRef = useRef(null);
 
   // 添加調試訊息
   const addDebugInfo = (message) => {
@@ -72,6 +73,15 @@ const CheckInScanner = () => {
       es.addEventListener('nfc-checkin', async (event) => {
         try {
           const payload = JSON.parse(event.data || '{}');
+
+          // 去重處理，避免同一筆事件重複處理導致彈窗閃爍
+          if (payload?.id) {
+            if (processedSseCheckinsRef.current.has(payload.id)) {
+              return;
+            }
+            processedSseCheckinsRef.current.add(payload.id);
+          }
+
           const normalized = normalizeCheckinRecord({
             id: payload.id,
             cardUid: payload.cardUid,
@@ -100,16 +110,43 @@ const CheckInScanner = () => {
               method: 'NFC',
               checkinTime: payload.checkinTime
             });
-            setShowSuccessModal(true);
+            // 僅在目前未顯示時才開啟，避免重覆開關造成閃爍
+            setShowSuccessModal(prev => {
+              if (!prev) return true;
+              return prev;
+            });
 
-            // 5秒後自動關閉彈窗
-            setTimeout(() => {
+            // 重設計時器為 1 秒，避免閃爍（多筆事件快速到達時只會延長/重置，不會關閉再打開）
+            if (modalTimeoutRef.current) {
+              clearTimeout(modalTimeoutRef.current);
+            }
+            modalTimeoutRef.current = setTimeout(() => {
               setShowSuccessModal(false);
               setSuccessModalData(null);
-            }, 5000);
+              modalTimeoutRef.current = null;
+            }, 1000);
+
+            // 若有選擇活動，將此 NFC 報到同步到對應活動的出席管理
+            if (selectedEvent) {
+              try {
+                await api.post('/api/attendance/nfc-checkin', {
+                  nfcCardId: payload.cardUid,
+                  eventId: selectedEvent,
+                });
+                addDebugInfo(`已同步到出席管理：${payload.member.name} -> 活動ID ${selectedEvent}`);
+              } catch (syncErr) {
+                // 忽略重複報到錯誤（HTTP 400）
+                const status = syncErr?.response?.status;
+                if (status === 400) {
+                  addDebugInfo('此會員已在該活動完成報到（略過重複）');
+                } else {
+                  addDebugInfo(`同步出席管理失敗：${syncErr?.response?.data?.message || syncErr?.message || '未知錯誤'}`);
+                }
+              }
+            }
           }
           
-          // 注意：同步邏輯已移至後端 nfc-mongodb.js 的 submit 端點
+          // 注意：同步邏輯主要在後端 nfc-mongodb.js，但此處在有選擇活動時會顯式同步以確保顯示在對應活動
         } catch (e) {
           console.warn('解析 SSE 資料失敗:', e);
         }
@@ -124,6 +161,10 @@ const CheckInScanner = () => {
 
     return () => {
       try { es && es.close(); } catch (_) {}
+      if (modalTimeoutRef.current) {
+        clearTimeout(modalTimeoutRef.current);
+        modalTimeoutRef.current = null;
+      }
     };
   }, [selectedEvent]);
 
