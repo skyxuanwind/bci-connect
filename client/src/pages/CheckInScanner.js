@@ -503,6 +503,14 @@ const CheckInScanner = () => {
       
       const data = await response.json();
       
+      if (response.status === 503) {
+        setNfcResult({
+          success: false,
+          message: 'NFC 模組不可用：請先在本機啟動 Gateway 並安裝 nfc-pcsc。建議點擊下方「下載 Gateway 啟動器」後按兩下執行，再按一次「開始 NFC 報到」。'
+        });
+        return;
+      }
+      
       if (data.success) {
         setNfcResult({
           success: true,
@@ -520,7 +528,7 @@ const CheckInScanner = () => {
       console.error('啟動 NFC 讀卡機失敗:', error);
       setNfcResult({
         success: false,
-        message: '無法啟動 NFC 讀卡機，請檢查本地 Gateway Service'
+        message: '無法啟動 NFC 讀卡機，請檢查本地 Gateway Service 是否啟動。若尚未安裝，請點擊下方「下載 Gateway 啟動器」後執行。'
       });
     } finally {
       setLoading(false);
@@ -774,6 +782,35 @@ const CheckInScanner = () => {
               >
                 {loading ? '啟動中...' : '🚀 開始 NFC 報到'}
               </button>
+
+              {/* Gateway 一鍵啟動器下載與連線檢查 */}
+              {(gatewayError || gatewayStatus?.nfcModuleAvailable === false) && (
+                <div className="mt-4 p-3 rounded-lg border border-red-200 bg-red-50 text-left">
+                  <p className="text-sm text-red-700 font-medium mb-2">
+                    {gatewayStatus?.message || '無法連接到本地 NFC Gateway Service'}
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <a
+                      href="/BCI-NFC-Gateway-Launcher.command"
+                      download
+                      className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
+                    >
+                      下載 Gateway 啟動器（macOS）
+                    </a>
+                    <button
+                      onClick={checkGatewayStatus}
+                      className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-white border text-sm hover:bg-gray-50"
+                    >
+                      重新檢查連線
+                    </button>
+                  </div>
+                  <ul className="mt-2 text-xs text-red-700 list-disc pl-5 space-y-1">
+                    <li>下載後，在「下載」資料夾按兩下執行；若被阻擋，請右鍵 → 開啟</li>
+                    <li>首次執行會自動安裝套件（含 nfc-pcsc），請保持讀卡機已插上</li>
+                    <li>啟動完成後回到本頁再按一次「開始 NFC 報到」</li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* 報到結果提示 */}

@@ -41,6 +41,33 @@ if [ ! -d "node_modules" ]; then
     fi
 fi
 
+# 針對 macOS：檢查是否安裝 Xcode Command Line Tools（nfc-pcsc 原生模組常需要）
+if [[ "$(uname)" == "Darwin" ]]; then
+    if ! xcode-select -p &> /dev/null; then
+        echo "⚠️  警告: 尚未安裝 Xcode Command Line Tools，可能導致 nfc-pcsc 編譯失敗"
+        echo "請先執行：xcode-select --install"
+    fi
+fi
+
+# 檢查 nfc-pcsc 是否可正常載入，若失敗則嘗試安裝/重建
+echo "🔍 檢查 nfc-pcsc 模組..."
+node -e "try{require('nfc-pcsc');console.log('✅ nfc-pcsc 模組可用')}catch(e){console.error('❌ nfc-pcsc 模組不可用');process.exit(1)}"
+if [ $? -ne 0 ]; then
+    echo "📦 嘗試安裝/重建 nfc-pcsc...（過程可能需數十秒）"
+    npm install nfc-pcsc --build-from-source
+    if [ $? -ne 0 ]; then
+        echo "❌ 安裝/重建 nfc-pcsc 失敗。請檢查是否已安裝建置工具與權限，再重試。"
+        echo "   macOS: 建議安裝 Xcode Command Line Tools (xcode-select --install)"
+        exit 1
+    fi
+
+    # 再次檢查
+    node -e "try{require('nfc-pcsc');console.log('✅ nfc-pcsc 模組可用')}catch(e){console.error('❌ nfc-pcsc 模組仍不可用');process.exit(1)}"
+    if [ $? -ne 0 ]; then
+        echo "❌ nfc-pcsc 模組仍不可用，將以降級模式啟動（無法讀取實體卡片）"
+    fi
+fi
+
 # 檢查 NFC 讀卡機連接
 echo "🔍 檢查 NFC 讀卡機..."
 if command -v system_profiler &> /dev/null; then
@@ -55,7 +82,7 @@ fi
 
 echo "======================================"
 echo "🎯 啟動服務..."
-echo "服務地址: http://localhost:3002"
+
 echo "健康檢查: http://localhost:3002/health"
 echo "按 Ctrl+C 停止服務"
 echo "======================================"
