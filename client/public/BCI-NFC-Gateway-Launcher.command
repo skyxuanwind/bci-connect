@@ -85,23 +85,48 @@ if ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
+# 2.1) 檢查 Node 版本，必要時自動切換到 LTS (20.x) 以確保 nfc-pcsc 相容性
+NODE_MAJOR=$(node -p "process.versions.node.split('.')[0]")
+if [ "$NODE_MAJOR" -ge 21 ]; then
+  yellow "⚠️ 偵測到 Node.js v$NODE_MAJOR，可能導致原生模組 ABI 不相容。"
+  if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    # shellcheck disable=SC1090
+    . "$HOME/.nvm/nvm.sh"
+    nvm install --lts=Hydrogen >/dev/null 2>&1 || nvm install 20
+    nvm use 20 || true
+    echo "$(green "✅ 已切換到 Node.js $(node -v)")"
+  else
+    yellow "ℹ️ 未偵測到 nvm，將嘗試以目前版本重新建置 nfc-pcsc。若遇到 NODE_MODULE_VERSION 錯誤，建議安裝 nvm 並使用 Node 20。"
+  fi
+fi
+
 # 3) 安裝依賴
 cd nfc-gateway-service
 echo "$(bold "📦 安裝套件 (第一次可能需較久)...")"
 npm install
 
 echo "$(bold "🔍 檢查 nfc-pcsc 模組...")"
-if node -e "require('nfc-pcsc')" 2>/dev/null; then
+test_nfc_pcsc() {
+  node -e "try{require('nfc-pcsc');console.log('OK')}catch(e){console.error(e.message);process.exit(1)}" >/dev/null 2>nfc_test_err.log
+}
+if test_nfc_pcsc; then
   echo "$(green "✅ nfc-pcsc 可用")"
 else
-  yellow "⚠️ nfc-pcsc 不可用，嘗試以原始碼建置..."
-  npm install nfc-pcsc --build-from-source || true
-  if node -e "require('nfc-pcsc')" 2>/dev/null; then
+  if grep -qi 'NODE_MODULE_VERSION' nfc_test_err.log; then
+    yellow "⚠️ 偵測到原生模組 ABI 不相容（NODE_MODULE_VERSION）→ 重新建置中..."
+  else
+    yellow "⚠️ nfc-pcsc 無法載入 → 嘗試以原始碼建置..."
+  fi
+  export npm_config_build_from_source=true
+  npm rebuild nfc-pcsc --build-from-source || npm install nfc-pcsc --build-from-source || true
+  if test_nfc_pcsc; then
     echo "$(green "✅ 已修復 nfc-pcsc")"
   else
     yellow "⚠️ 仍無法載入 nfc-pcsc，將以『降級模式』啟動 (可連線，但無法讀取實體卡)"
+    echo "🔎 詳細錯誤：" && sed -n '1,4p' nfc_test_err.log 2>/dev/null || true
   fi
 fi
+rm -f nfc_test_err.log
 
 # 4) 設定雲端 API URL（預設為 Render 部署）
 CLOUD_API_URL="${CLOUD_API_URL:-$CLOUD_API_URL_DEFAULT}"
@@ -122,7 +147,7 @@ echo "$(green "✅ 設定完成：CLOUD_API_URL=$CLOUD_API_URL")"
 
 # 5) 啟動服務
 open "http://localhost:3002/health" 2>/dev/null || true
-open "$CLOUD_API_URL/nfc-report-system" 2>/dev/null || true
+open "http://localhost:3000/checkin-scanner" 2>/dev/null || true
 
 echo "=============================================="
 echo "$(bold "🚀 正在啟動 NFC Gateway Service (3002)...")"
