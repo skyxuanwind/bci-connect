@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "client": "cd client && npm start",
+    "client": "cd client && PORT=3001 npm start",
     "server": "nodemon server.js",
     "nfc-server": "node nfc-server.js",
     "build": "cd client && npm run build",

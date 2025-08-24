@@ -16,8 +16,14 @@ import {
   ClipboardDocumentIcon,
   BriefcaseIcon,
   SparklesIcon,
-  PaintBrushIcon
+  PaintBrushIcon,
+  MoonIcon,
+  RectangleGroupIcon,
+  Squares2X2Icon,
+  ArrowDownTrayIcon,
+  ShareIcon
 } from '@heroicons/react/24/outline';
+import { FaFacebook, FaInstagram, FaLine, FaLinkedin, FaTwitter, FaYoutube, FaLink } from 'react-icons/fa';
 
 const MemberCardEditor = () => {
   const { user } = useAuth();
@@ -462,12 +468,12 @@ const MemberCardEditor = () => {
 
       case 'social':
         const platforms = [
-          { id: 'facebook', name: 'Facebook', icon: '📘' },
-          { id: 'instagram', name: 'Instagram', icon: '📸' },
-          { id: 'line', name: 'Line', icon: '💬' },
-          { id: 'linkedin', name: 'LinkedIn', icon: '💼' },
-          { id: 'twitter', name: 'Twitter', icon: '🐦' },
-          { id: 'youtube', name: 'YouTube', icon: '▶️' }
+          { id: 'facebook', name: 'Facebook', icon: <FaFacebook className="text-[#1877F2]" /> },
+          { id: 'instagram', name: 'Instagram', icon: <FaInstagram className="text-pink-500" /> },
+          { id: 'line', name: 'Line', icon: <FaLine className="text-[#06C755]" /> },
+          { id: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin className="text-[#0A66C2]" /> },
+          { id: 'twitter', name: 'Twitter', icon: <FaTwitter className="text-[#1DA1F2]" /> },
+          { id: 'youtube', name: 'YouTube', icon: <FaYoutube className="text-[#FF0000]" /> },
         ];
         const effectivePlatform = block.social_platform || block.socialPlatform || '';
         return (
@@ -484,10 +490,12 @@ const MemberCardEditor = () => {
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
-              {effectivePlatform && (
-                <span className="text-xl" title={platforms.find(p=>p.id===effectivePlatform)?.name || ''}>
-                  {platforms.find(p=>p.id===effectivePlatform)?.icon || '🔗'}
-                </span>
+              {effectivePlatform ? (
+                <div className="text-xl" title={platforms.find(p=>p.id===effectivePlatform)?.name || ''}>
+                  {platforms.find(p=>p.id===effectivePlatform)?.icon || <FaLink />}
+                </div>
+              ) : (
+                <div className="text-xl text-gray-400"><FaLink /></div>
               )}
             </div>
 
@@ -499,16 +507,6 @@ const MemberCardEditor = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="輸入該平台的個人或公司頁面連結"
             />
-
-            {/* 即時預覽 */}
-            <div className="mt-3">
-              <span className="text-sm text-gray-500">預覽</span>
-              <div className="mt-1 inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg">
-                <span className="mr-2 text-lg">{platforms.find(p=>p.id===effectivePlatform)?.icon || '🔗'}</span>
-                <span className="capitalize mr-2">{effectivePlatform || '社群'}</span>
-                <span className="truncate max-w-xs text-gray-500">{block.url || '未填寫'}</span>
-              </div>
-            </div>
           </div>
         );
 
@@ -550,6 +548,12 @@ const MemberCardEditor = () => {
         return <SparklesIcon className={`${iconClass} text-purple-600`} />;
       case 'elegant':
         return <PaintBrushIcon className={`${iconClass} text-gray-700`} />;
+      case 'minimal-dark':
+        return <MoonIcon className={`${iconClass} text-emerald-500`} />;
+      case 'card':
+        return <RectangleGroupIcon className={`${iconClass} text-blue-600`} />;
+      case 'neumorphism':
+        return <Squares2X2Icon className={`${iconClass} text-slate-600`} />;
       default:
         return <PhotoIcon className={iconClass} />;
     }
@@ -564,9 +568,189 @@ const MemberCardEditor = () => {
         return 'bg-gradient-to-br from-purple-50 to-pink-100';
       case 'elegant':
         return 'bg-gradient-to-br from-amber-50 to-stone-100';
+      case 'minimal-dark':
+        return 'bg-gradient-to-br from-slate-800 to-slate-700';
+      case 'card':
+        return 'bg-gradient-to-br from-slate-100 to-white';
+      case 'neumorphism':
+        return 'bg-gradient-to-br from-slate-100 to-slate-200';
       default:
         return 'bg-gradient-to-br from-gray-100 to-gray-200';
     }
+  };
+
+  // 模板樣式（與公開頁一致，供即時預覽使用）
+  const templateStyles = {
+    professional: {
+      container: 'bg-gradient-to-br from-blue-50 to-indigo-100',
+      card: 'bg-white shadow-xl',
+      header: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white',
+      accent: 'text-blue-600',
+      primaryButton: 'bg-blue-600 hover:bg-blue-700 text-white',
+      secondaryButton: 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+    },
+    dynamic: {
+      container: 'bg-gradient-to-br from-purple-50 to-pink-100',
+      card: 'bg-white shadow-xl',
+      header: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white',
+      accent: 'text-purple-600',
+      primaryButton: 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white',
+      secondaryButton: 'border border-pink-300 text-purple-700 hover:bg-pink-50'
+    },
+    elegant: {
+      container: 'bg-gradient-to-br from-gray-50 to-slate-100',
+      card: 'bg-white shadow-xl',
+      header: 'bg-gradient-to-r from-gray-800 to-slate-800 text-white',
+      accent: 'text-gray-700',
+      primaryButton: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+      secondaryButton: 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+    },
+    'minimal-dark': {
+      container: 'bg-slate-900',
+      card: 'bg-slate-800 text-gray-100 shadow-xl',
+      header: 'bg-gradient-to-r from-slate-800 to-slate-700 text-white',
+      accent: 'text-emerald-400',
+      primaryButton: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+      secondaryButton: 'border border-slate-600 text-gray-100 hover:bg-slate-700'
+    },
+    card: {
+      container: 'bg-slate-100',
+      card: 'bg-white shadow-2xl',
+      header: 'bg-white text-slate-800 border-b border-slate-200',
+      accent: 'text-blue-600',
+      primaryButton: 'bg-blue-600 hover:bg-blue-700 text-white rounded-full',
+      secondaryButton: 'border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-full'
+    },
+    neumorphism: {
+      container: 'bg-slate-100',
+      card: 'bg-slate-100 shadow-[inset_8px_8px_16px_#cbd5e1,inset_-8px_-8px_16px_#ffffff] rounded-2xl',
+      header: 'bg-slate-100 text-slate-700',
+      accent: 'text-slate-600',
+      primaryButton: 'bg-slate-200 hover:bg-slate-300 text-slate-800 shadow-[8px_8px_16px_#cbd5e1,-8px_-8px_16px_#ffffff]',
+      secondaryButton: 'bg-slate-100 border border-slate-300 text-slate-600 hover:bg-slate-200'
+    }
+  };
+
+  const getSocialMeta = (platform) => {
+    const base = { className: 'w-4 h-4', label: platform };
+    switch ((platform || '').toLowerCase()) {
+      case 'facebook':
+        return { icon: <FaFacebook className="text-[#1877F2]" />, ...base, label: 'Facebook' };
+      case 'instagram':
+        return { icon: <FaInstagram className="text-[#E4405F]" />, ...base, label: 'Instagram' };
+      case 'line':
+        return { icon: <FaLine className="text-[#06C755]" />, ...base, label: 'Line' };
+      case 'linkedin':
+        return { icon: <FaLinkedin className="text-[#0A66C2]" />, ...base, label: 'LinkedIn' };
+      case 'twitter':
+        return { icon: <FaTwitter className="text-[#1DA1F2]" />, ...base, label: 'Twitter' };
+      case 'youtube':
+        return { icon: <FaYoutube className="text-[#FF0000]" />, ...base, label: 'YouTube' };
+      default:
+        return { icon: <FaLink className="text-gray-500" />, ...base, label: platform || '社群' };
+    }
+  };
+
+  const renderPreviewCard = () => {
+    if (!cardData) return null;
+    const templateId = cardData.template_id || 'professional';
+    const currentStyle = templateStyles[templateId] || templateStyles.professional;
+
+    const visibleBlocks = (cardData.content_blocks || [])
+      .filter(b => b.is_visible !== false)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+    return (
+      <div className={`rounded-2xl overflow-hidden ${currentStyle.card}`}>
+        <div className={`px-6 py-5 ${currentStyle.header}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold mb-1">{user?.name || '您的姓名'}</h3>
+              {user?.title && <p className="opacity-90">{user.title}</p>}
+              {user?.company && <p className="opacity-80">{user.company}</p>}
+            </div>
+            {user?.profilePictureUrl ? (
+              <img src={user.profilePictureUrl} alt="profile" className="w-12 h-12 rounded-full object-cover border-2 border-white/30" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-white/20" />
+            )}
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex flex-wrap gap-3">
+            <button disabled className={`flex items-center px-3 py-1.5 text-sm rounded-lg opacity-80 cursor-not-allowed ${currentStyle.primaryButton}`}>
+              <ArrowDownTrayIcon className="w-4 h-4 mr-1.5" /> 儲存聯絡人
+            </button>
+            <button disabled className={`flex items-center px-3 py-1.5 text-sm rounded-lg opacity-80 cursor-not-allowed ${currentStyle.secondaryButton}`}>
+              <ShareIcon className="w-4 h-4 mr-1.5" /> 分享名片
+            </button>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {visibleBlocks.length === 0 && (
+            <div className="text-center text-gray-400 text-sm">尚未新增內容區塊</div>
+          )}
+
+          {visibleBlocks.map((block) => {
+            switch (block.type) {
+              case 'text':
+                return (
+                  <div key={block.id} className="">
+                    {block.title && <h4 className={`font-semibold ${currentStyle.accent}`}>{block.title}</h4>}
+                    {block.content && <p className="text-gray-700 whitespace-pre-line">{block.content}</p>}
+                  </div>
+                );
+              case 'link': {
+                const href = block.url || '#';
+                return (
+                  <a key={block.id} href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <div>
+                      {block.title && <div className="font-medium text-gray-800">{block.title}</div>}
+                      <div className="text-sm text-gray-500 truncate">{href}</div>
+                    </div>
+                    <LinkIcon className="w-5 h-5 text-gray-400" />
+                  </a>
+                );
+              }
+              case 'image':
+                return (
+                  <div key={block.id} className="">
+                    {block.title && <div className={`font-medium mb-1 ${currentStyle.accent}`}>{block.title}</div>}
+                    {block.image_url ? (
+                      <img src={block.image_url} alt={block.title || 'image'} className="w-full rounded-lg object-cover" />
+                    ) : (
+                      <div className="w-full h-40 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-sm">尚未選擇圖片</div>
+                    )}
+                  </div>
+                );
+              case 'video':
+                return (
+                  <div key={block.id} className="">
+                    {block.title && <div className={`font-medium mb-1 ${currentStyle.accent}`}>{block.title}</div>}
+                    <div className="w-full aspect-video rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                      影片預覽（僅示意）
+                    </div>
+                  </div>
+                );
+              case 'social': {
+                const meta = getSocialMeta(block.social_platform);
+                const href = block.url || '#';
+                return (
+                  <a key={block.id} href={href} target="_blank" rel="noreferrer" className="inline-flex items-center px-3 py-1.5 border rounded-full text-sm hover:bg-gray-50">
+                    <span className="mr-2">{meta.icon}</span>
+                    <span className="text-gray-700">{block.title || meta.label}</span>
+                  </a>
+                );
+              }
+              default:
+                return null;
+            }
+          })}
+        </div>
+      </div>
+    );
   };
 
   const normalizeVideoUrl = (input) => {
@@ -714,10 +898,7 @@ const MemberCardEditor = () => {
           <div className="lg:sticky lg:top-6">
             <h2 className="text-lg font-semibold mb-4">即時預覽</h2>
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <div className="text-center text-gray-500 py-8">
-                <EyeIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>點擊「預覽名片」查看完整效果</p>
-              </div>
+              {renderPreviewCard()}
             </div>
           </div>
         </div>
@@ -727,6 +908,14 @@ const MemberCardEditor = () => {
       {activeTab === 'template' && (
         <div>
           <h2 className="text-lg font-semibold mb-4">選擇模板</h2>
+
+          <div className="mb-6">
+            <h3 className="text-base font-medium mb-2">即時模板預覽</h3>
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              {renderPreviewCard()}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {templates.map(template => (
               <div
@@ -749,7 +938,7 @@ const MemberCardEditor = () => {
                       <div className="h-3 bg-white/70 rounded" />
                       <div className="h-3 bg-white/70 rounded" />
                     </div>
-                    <div className="bg-white/80 rounded flex items-center justify-center text-xs text-gray-600">內容預覽</div>
+                    <div className="bg-white/80 flex items-center justify-center text-xs text-gray-600">內容預覽</div>
                   </div>
                 </div>
                 <h3 className="font-medium text-center flex items-center justify-center gap-2">

@@ -33,6 +33,9 @@ const judgmentSyncService = require('./services/judgmentSyncService');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// 信任反向代理（Render/Heroku 等），以正確取得 HTTPS 與真實客戶端 IP
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },

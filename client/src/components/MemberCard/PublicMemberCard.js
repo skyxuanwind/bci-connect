@@ -9,18 +9,26 @@ import {
   ShareIcon,
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
+import { FaFacebook, FaInstagram, FaLine, FaLinkedin, FaTwitter, FaYoutube, FaLink } from 'react-icons/fa';
 
 const getSocialMeta = (platform) => {
-  const map = {
-    facebook: { label: 'Facebook', icon: '📘', classes: 'bg-blue-600 hover:bg-blue-700 text-white' },
-    instagram: { label: 'Instagram', icon: '📸', classes: 'bg-pink-600 hover:bg-pink-700 text-white' },
-    line: { label: 'LINE', icon: '💬', classes: 'bg-green-500 hover:bg-green-600 text-white' },
-    linkedin: { label: 'LinkedIn', icon: '💼', classes: 'bg-sky-700 hover:bg-sky-800 text-white' },
-    twitter: { label: 'Twitter', icon: '🐦', classes: 'bg-sky-500 hover:bg-sky-600 text-white' },
-    youtube: { label: 'YouTube', icon: '▶️', classes: 'bg-red-600 hover:bg-red-700 text-white' }
-  };
   const key = (platform || '').toLowerCase();
-  return map[key] || { label: '社群', icon: '🔗', classes: 'bg-gray-100 hover:bg-gray-200 text-gray-700' };
+  switch (key) {
+    case 'facebook':
+      return { label: 'Facebook', icon: <FaFacebook className="mr-2" />, classes: 'bg-[#1877F2] hover:bg-[#165FDB] text-white' };
+    case 'instagram':
+      return { label: 'Instagram', icon: <FaInstagram className="mr-2" />, classes: 'bg-gradient-to-r from-pink-500 to-yellow-500 hover:from-pink-600 hover:to-yellow-600 text-white' };
+    case 'line':
+      return { label: 'LINE', icon: <FaLine className="mr-2" />, classes: 'bg-[#06C755] hover:bg-[#05b64d] text-white' };
+    case 'linkedin':
+      return { label: 'LinkedIn', icon: <FaLinkedin className="mr-2" />, classes: 'bg-[#0A66C2] hover:bg-[#095AA9] text-white' };
+    case 'twitter':
+      return { label: 'Twitter', icon: <FaTwitter className="mr-2" />, classes: 'bg-[#1DA1F2] hover:bg-[#178CD1] text-white' };
+    case 'youtube':
+      return { label: 'YouTube', icon: <FaYoutube className="mr-2" />, classes: 'bg-[#FF0000] hover:bg-[#E60000] text-white' };
+    default:
+      return { label: '社群', icon: <FaLink className="mr-2" />, classes: 'bg-gray-100 hover:bg-gray-200 text-gray-700' };
+  }
 };
 
 const PublicMemberCard = () => {
@@ -192,7 +200,7 @@ const PublicMemberCard = () => {
                 rel="noopener noreferrer"
                 className={`inline-flex items-center px-3 py-2 rounded-lg transition-colors ${getSocialMeta(block.social_platform || block.socialPlatform).classes}`}
               >
-                <span className="mr-2 text-lg">{getSocialMeta(block.social_platform || block.socialPlatform).icon}</span>
+                {getSocialMeta(block.social_platform || block.socialPlatform).icon}
                 <span className="font-medium">{block.title || getSocialMeta(block.social_platform || block.socialPlatform).label}</span>
               </a>
             ) : (
@@ -234,19 +242,49 @@ const PublicMemberCard = () => {
       container: 'bg-gradient-to-br from-blue-50 to-indigo-100',
       card: 'bg-white shadow-xl',
       header: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white',
-      accent: 'text-blue-600'
+      accent: 'text-blue-600',
+      primaryButton: 'bg-blue-600 hover:bg-blue-700 text-white',
+      secondaryButton: 'border border-gray-300 text-gray-700 hover:bg-gray-50'
     },
     dynamic: {
       container: 'bg-gradient-to-br from-purple-50 to-pink-100',
       card: 'bg-white shadow-xl',
       header: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white',
-      accent: 'text-purple-600'
+      accent: 'text-purple-600',
+      primaryButton: 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white',
+      secondaryButton: 'border border-pink-300 text-purple-700 hover:bg-pink-50'
     },
     elegant: {
       container: 'bg-gradient-to-br from-gray-50 to-slate-100',
       card: 'bg-white shadow-xl',
       header: 'bg-gradient-to-r from-gray-800 to-slate-800 text-white',
-      accent: 'text-gray-700'
+      accent: 'text-gray-700',
+      primaryButton: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+      secondaryButton: 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+    },
+    'minimal-dark': {
+      container: 'bg-slate-900',
+      card: 'bg-slate-800 text-gray-100 shadow-xl',
+      header: 'bg-gradient-to-r from-slate-800 to-slate-700 text-white',
+      accent: 'text-emerald-400',
+      primaryButton: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+      secondaryButton: 'border border-slate-600 text-gray-100 hover:bg-slate-700'
+    },
+    card: {
+      container: 'bg-slate-100',
+      card: 'bg-white shadow-2xl',
+      header: 'bg-white text-slate-800 border-b border-slate-200',
+      accent: 'text-blue-600',
+      primaryButton: 'bg-blue-600 hover:bg-blue-700 text-white rounded-full',
+      secondaryButton: 'border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-full'
+    },
+    neumorphism: {
+      container: 'bg-slate-100',
+      card: 'bg-slate-100 shadow-[inset_8px_8px_16px_#cbd5e1,inset_-8px_-8px_16px_#ffffff] rounded-2xl',
+      header: 'bg-slate-100 text-slate-700',
+      accent: 'text-slate-600',
+      primaryButton: 'bg-slate-200 hover:bg-slate-300 text-slate-800 shadow-[8px_8px_16px_#cbd5e1,-8px_-8px_16px_#ffffff]',
+      secondaryButton: 'bg-slate-100 border border-slate-300 text-slate-600 hover:bg-slate-200'
     }
   };
 
@@ -313,14 +351,14 @@ const PublicMemberCard = () => {
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleDownloadVCard}
-                className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors`}
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${currentStyle.primaryButton}`}
               >
                 <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
                 儲存聯絡人
               </button>
               <button
                 onClick={handleShare}
-                className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${currentStyle.secondaryButton}`}
               >
                 <ShareIcon className="w-5 h-5 mr-2" />
                 分享名片

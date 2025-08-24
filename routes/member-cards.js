@@ -5,21 +5,10 @@ const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { cloudinary } = require('../config/cloudinary');
 
 // Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = 'uploads/card-images';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'card-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage: storage,
@@ -84,6 +73,13 @@ router.get('/public/:userId', async (req, res) => {
       ORDER BY display_order ASC, created_at ASC
     `, [card.card_id]);
 
+    // 將相對路徑圖片補上完整網域（相容舊資料）
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const sanitizedBlocks = blocksResult.rows.map(b => ({
+      ...b,
+      image_url: (b.image_url && b.image_url.startsWith('/uploads/')) ? `${baseUrl}${b.image_url}` : b.image_url
+    }));
+
     // Record visit (async, don't wait)
     const visitorIp = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent');
@@ -122,7 +118,7 @@ router.get('/public/:userId', async (req, res) => {
           profilePictureUrl: card.profile_picture_url,
           chapterName: card.chapter_name
         },
-        contentBlocks: blocksResult.rows
+        contentBlocks: sanitizedBlocks
       }
     });
 
@@ -347,7 +343,7 @@ router.delete('/content-block/:blockId', authenticateToken, async (req, res) => 
     await pool.query('DELETE FROM card_content_blocks WHERE id = $1', [blockId]);
 
     // Clean up image file if exists
-    if (block.image_url) {
+    if (block.image_url && block.image_url.startsWith('/uploads/')) {
       const imagePath = path.join(__dirname, '..', block.image_url);
       fs.unlink(imagePath, (err) => {
         if (err) console.error('刪除圖片文件失敗:', err);
@@ -424,7 +420,25 @@ router.post('/upload-image', authenticateToken, upload.single('image'), async (r
       return res.status(400).json({ message: '請選擇要上傳的圖片' });
     }
 
-    const imageUrl = `/uploads/card-images/${req.file.filename}`;
+    // 上傳至 Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'bci-connect/cards',
+          transformation: [
+            { width: 1200, height: 1200, crop: 'limit' },
+            { quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    const imageUrl = result.secure_url;
     
     res.json({
       success: true,

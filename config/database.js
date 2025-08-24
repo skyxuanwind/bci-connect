@@ -368,7 +368,10 @@ const initializeDatabase = async () => {
       INSERT INTO card_templates (id, name, description, css_styles) VALUES 
         ('professional', '簡約專業版', '適合商務與企業高層的簡潔設計', '{"primaryColor": "#1f2937", "secondaryColor": "#6b7280", "backgroundColor": "#ffffff", "fontFamily": "Inter, sans-serif"}'),
         ('dynamic', '活力動感版', '適合創意與新創產業的活潑設計', '{"primaryColor": "#3b82f6", "secondaryColor": "#8b5cf6", "backgroundColor": "#f8fafc", "fontFamily": "Poppins, sans-serif"}'),
-        ('elegant', '經典典雅版', '適合重視質感與美學的優雅設計', '{"primaryColor": "#059669", "secondaryColor": "#d97706", "backgroundColor": "#fefefe", "fontFamily": "Playfair Display, serif"}')
+        ('elegant', '經典典雅版', '適合重視質感與美學的優雅設計', '{"primaryColor": "#059669", "secondaryColor": "#d97706", "backgroundColor": "#fefefe", "fontFamily": "Playfair Display, serif"}'),
+        ('minimal-dark', '極簡暗色版', '深色背景，強調對比與易讀性', '{"primaryColor": "#111827", "secondaryColor": "#9CA3AF", "backgroundColor": "#0f172a", "fontFamily": "Inter, sans-serif"}'),
+        ('card', '卡片式風格', '內容以卡片形式呈現，明顯的陰影與邊框', '{"primaryColor": "#2563eb", "secondaryColor": "#64748b", "backgroundColor": "#f1f5f9", "fontFamily": "Inter, sans-serif"}'),
+        ('neumorphism', '新擬物風格', '柔和陰影與浮起效果，現代質感', '{"primaryColor": "#334155", "secondaryColor": "#64748b", "backgroundColor": "#f8fafc", "fontFamily": "Poppins, sans-serif"}')
       ON CONFLICT (id) DO NOTHING
     `);
 
