@@ -44,7 +44,31 @@ const fetchMembersForSuggestions = async () => {
     const response = await axios.get('/api/users/members', { 
       params: { limit: 100, page: 1 } 
     });
-    return response.data.members || [];
+    // 排除系統管理員 (membership_level = 0) 並去重
+    const members = response.data.members || [];
+    const uniqueMembers = [];
+    const seenCompanies = new Set();
+    
+    members.forEach(member => {
+      // 排除系統管理員
+      if (member.membership_level === 0) return;
+      
+      // 避免重複會員（以公司名稱為準）
+      const companyKey = member.company?.toLowerCase().trim();
+      if (companyKey && !seenCompanies.has(companyKey)) {
+        seenCompanies.add(companyKey);
+        uniqueMembers.push(member);
+      } else if (!companyKey && member.name) {
+        // 如果沒有公司名稱，以姓名為準
+        const nameKey = member.name.toLowerCase().trim();
+        if (!seenCompanies.has(nameKey)) {
+          seenCompanies.add(nameKey);
+          uniqueMembers.push(member);
+        }
+      }
+    });
+    
+    return uniqueMembers;
   } catch (error) {
     console.error('獲取會員資料失敗:', error);
     return [];

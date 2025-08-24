@@ -238,30 +238,10 @@ async function performFastAnalysis(prospect) {
     
     await new Promise(resolve => setTimeout(resolve, 1000)); // 模擬處理時間
     
-    // 1. 快速聲譽分析 (基於關鍵字和數據)
-    await updateAnalysisProgress(prospect.id, {
-      stage: 'reputation_analysis',
-      progress: 25,
-      currentStep: '正在分析市場聲譽...',
-      details: `正在分析「${prospect.company}」的市場聲譽和公司形象，檢查公司名稱和產業關鍵字...`
-    });
-    
-    const sentiment = analyzeCompanyReputation(prospect);
-    const reputationText = `市場聲譽分析：${sentiment === 'positive' ? '正面' : sentiment === 'negative' ? '負面' : '中性'}`;
-    
-    await updateAnalysisProgress(prospect.id, {
-      stage: 'reputation_analysis',
-      progress: 35,
-      currentStep: '市場聲譽分析完成',
-      details: `聲譽評估結果：${sentiment === 'positive' ? '該公司展現正面的市場形象，具備良好的品牌聲譽。' : sentiment === 'negative' ? '該公司存在負面市場評價，需要謹慎評估。' : '該公司市場聲譽中性，無明顯正負面評價。'}`
-    });
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // 2. 快速產業衝突檢查
+    // 1. 快速產業衝突檢查
     await updateAnalysisProgress(prospect.id, {
       stage: 'conflict_analysis',
-      progress: 45,
+      progress: 25,
       currentStep: '正在檢查產業衝突...',
       details: `正在檢查「${prospect.company}」與現有會員的產業重疊情況，分析潛在競爭關係...`
     });
@@ -277,17 +257,17 @@ async function performFastAnalysis(prospect) {
     
     await updateAnalysisProgress(prospect.id, {
       stage: 'conflict_analysis',
-      progress: 55,
+      progress: 45,
       currentStep: '產業衝突檢查完成',
       details: `衝突評估結果：${conflictLevel === 'high' ? '發現與現有會員存在高度產業重疊，可能產生競爭衝突。' : conflictLevel === 'medium' ? '與現有會員存在部分產業重疊，需要進一步評估。' : '與現有會員產業重疊度低，衝突風險較小。'}`
     });
     
     await new Promise(resolve => setTimeout(resolve, 1000));
      
-    // 3. 快速法律風險評估 (司法院裁判書開放 API)
+    // 2. 快速法律風險評估 (司法院裁判書開放 API)
     await updateAnalysisProgress(prospect.id, {
       stage: 'legal_analysis',
-      progress: 65,
+      progress: 55,
       currentStep: '正在評估法律風險...',
       details: `正在查詢「${prospect.company}」的司法記錄和法律風險，檢查相關訴訟案件 (司法院裁判書開放 API)...`
     });
@@ -329,17 +309,17 @@ async function performFastAnalysis(prospect) {
     
     await updateAnalysisProgress(prospect.id, {
       stage: 'legal_analysis',
-      progress: 75,
+      progress: 65,
       currentStep: '法律風險評估完成',
       details: `法律風險結果：${legalRiskAnalysis.riskLevel === 'high' ? '發現多筆司法記錄，存在較高法律風險。' : legalRiskAnalysis.riskLevel === 'medium' ? '發現部分司法記錄，需要進一步關注。' : '未發現重大司法記錄，法律風險較低。'}`
-    });
+    })
     
     await new Promise(resolve => setTimeout(resolve, 1000));
      
     // 4. Gemini AI 綜合分析
     await updateAnalysisProgress(prospect.id, {
       stage: 'gemini_analysis',
-      progress: 75,
+      progress: 70,
       currentStep: '正在執行 AI 綜合分析...',
       details: `正在使用 Gemini AI 進行「${prospect.company}」的公開資訊掃描、市場聲譽分析、產業衝突檢測和 BCI 契合度評分...`
     });
@@ -403,15 +383,6 @@ async function performFastAnalysis(prospect) {
           : '—',
         rawSources: publicInfo?.realData ? publicInfo.sources : [], // 新增：原始 sources 資料供前端使用
         realData: !!publicInfo?.realData
-      },
-      
-      // 市場聲譽分析
-      marketSentiment: {
-        sentiment: aiSentiment,
-        analysis: geminiResult?.analysis?.sentiment?.analysis ?
-          `📈 **真實評價**: ${geminiResult.analysis.sentiment.analysis.substring(0, 150)}...` :
-          `${aiSentiment === 'positive' ? '✅ 正面' : aiSentiment === 'negative' ? '❌ 負面' : '➖ 中性'} | ${aiSentiment === 'positive' ? '市場形象佳' : aiSentiment === 'negative' ? '負面評價' : '評價中性'}`,
-        confidence: publicInfo?.realData ? 'high' : 'medium'
       },
       
       // 產業衝突檢測

@@ -81,15 +81,15 @@ class JudicialService {
       console.warn('⚠️ 開發模式覆寫：強制啟用司法院 API 服務時間檢查');
       return true;
     }
+    
+    // 暫時停用時間限制，因為司法院 API 服務時間限制導致大部分時間無法使用
+    // 改為直接提供風險評估分析，而不是依賴實時 API
     const now = new Date();
     const hour = now.getHours();
-    const isAvailable = hour >= 0 && hour < 6;
+    console.log(`司法院 API 服務時間檢查: 目前時間 ${hour}:${now.getMinutes().toString().padStart(2, '0')}，由於服務時間限制（00:00-06:00），將使用風險評估分析`);
     
-    if (!isAvailable) {
-      console.log(`司法院 API 服務時間檢查: 目前時間 ${hour}:${now.getMinutes().toString().padStart(2, '0')}，服務時間為每日 00:00-06:00`);
-    }
-    
-    return isAvailable;
+    // 返回 false，讓系統使用風險評估分析而不是實時 API
+    return false;
   }
 
   // 取得特定分類的資料源
