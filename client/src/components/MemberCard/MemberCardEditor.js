@@ -660,6 +660,23 @@ const MemberCardEditor = () => {
       .filter(b => b.is_visible !== false)
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
+    // Button style helper based on user selection
+    const getCtaButtonClasses = (type) => {
+      const sizeA = 'px-3 py-1.5 text-sm';
+      switch (buttonStyle) {
+        case 'A': // 更圓潤 + 陰影（擬物）
+          return `${type === 'primary' ? currentStyle.primaryButton : currentStyle.secondaryButton} ${sizeA} rounded-xl shadow-md hover:shadow-lg active:shadow-sm transition-all`;
+        case 'B': // 双色渐变 + 更大点击区（动感）
+          return `${type === 'primary'
+            ? 'bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white'
+            : 'bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700'} px-5 py-3 text-base rounded-lg shadow-sm transition-colors`;
+        case 'C': // 扁平無邊框 + 字重強調（極簡）
+          return `${type === 'primary' ? 'bg-transparent text-gray-900 font-semibold' : 'bg-transparent text-gray-600 font-semibold'} px-2 py-1.5 text-sm rounded-none shadow-none border-0 hover:underline underline-offset-4`;
+        default:
+          return `${type === 'primary' ? currentStyle.primaryButton : currentStyle.secondaryButton} ${sizeA} rounded-lg`;
+      }
+    };
+
     return (
       <div className={`rounded-2xl overflow-hidden ${currentStyle.card}`}>
         <div className={`px-6 py-5 ${currentStyle.header}`}>
@@ -679,10 +696,10 @@ const MemberCardEditor = () => {
 
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex flex-wrap gap-3">
-            <button disabled className={`flex items-center px-3 py-1.5 text-sm rounded-lg opacity-80 cursor-not-allowed ${currentStyle.primaryButton}`}>
+            <button disabled className={`${getCtaButtonClasses('primary')} opacity-80 cursor-not-allowed`}>
               <ArrowDownTrayIcon className="w-4 h-4 mr-1.5" /> 儲存聯絡人
             </button>
-            <button disabled className={`flex items-center px-3 py-1.5 text-sm rounded-lg opacity-80 cursor-not-allowed ${currentStyle.secondaryButton}`}>
+            <button disabled className={`${getCtaButtonClasses('secondary')} opacity-80 cursor-not-allowed`}>
               <ShareIcon className="w-4 h-4 mr-1.5" /> 分享名片
             </button>
           </div>
@@ -913,6 +930,48 @@ const MemberCardEditor = () => {
             <h3 className="text-base font-medium mb-2">即時模板預覽</h3>
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
               {renderPreviewCard()}
+            </div>
+          </div>
+
+          {/* Button Style Picker */}
+          <div className="mb-6">
+            <h3 className="text-base font-medium mb-2">按鈕風格</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { id: 'A', title: '選項 A', subtitle: '更圓潤 + 陰影（擬物）', demo: (
+                  <div className="flex gap-2">
+                    <span className="px-3 py-1.5 text-sm rounded-xl shadow-md bg-blue-600 text-white">主要</span>
+                    <span className="px-3 py-1.5 text-sm rounded-xl shadow-md border">次要</span>
+                  </div>
+                )},
+                { id: 'B', title: '選項 B', subtitle: '双色漸變 + 更大點擊區（動感）', demo: (
+                  <div className="flex gap-2">
+                    <span className="px-5 py-3 text-base rounded-lg bg-gradient-to-r from-indigo-500 to-violet-500 text-white">主要</span>
+                    <span className="px-5 py-3 text-base rounded-lg bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700">次要</span>
+                  </div>
+                )},
+                { id: 'C', title: '選項 C', subtitle: '扁平無邊框 + 字重強調（極簡）', demo: (
+                  <div className="flex gap-2">
+                    <span className="px-2 py-1.5 text-sm font-semibold">主要</span>
+                    <span className="px-2 py-1.5 text-sm font-semibold text-gray-600">次要</span>
+                  </div>
+                )}
+              ].map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => setButtonStyle(opt.id)}
+                  className={`text-left border rounded-lg p-4 transition-all ${buttonStyle === opt.id ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium">{opt.title}</div>
+                    {buttonStyle === opt.id && (
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">已選擇</span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600 mb-3">{opt.subtitle}</div>
+                  {opt.demo}
+                </button>
+              ))}
             </div>
           </div>
 

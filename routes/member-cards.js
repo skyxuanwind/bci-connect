@@ -230,6 +230,9 @@ router.put('/template', authenticateToken, async (req, res) => {
 router.post('/content-block', authenticateToken, async (req, res) => {
   try {
     const { blockType, title, content, url, socialPlatform } = req.body;
+    // Accept image url (both camelCase and snake_case) and visibility flag
+    const imageUrl = req.body.imageUrl || req.body.image_url || null;
+    const isVisible = typeof req.body.isVisible === 'boolean' ? req.body.isVisible : true;
     const userId = req.user.id;
 
     // Get or create card
@@ -255,13 +258,13 @@ router.post('/content-block', authenticateToken, async (req, res) => {
 
     const displayOrder = orderResult.rows[0].next_order;
 
-    // Insert content block
+    // Insert content block (persist image_url and is_visible)
     const blockResult = await pool.query(`
       INSERT INTO card_content_blocks 
-      (card_id, block_type, title, content, url, social_platform, display_order)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      (card_id, block_type, title, content, url, image_url, social_platform, display_order, is_visible)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
-    `, [cardId, blockType, title, content, url, socialPlatform, displayOrder]);
+    `, [cardId, blockType, title, content, url, imageUrl, socialPlatform, displayOrder, isVisible]);
 
     res.json({
       success: true,
@@ -282,6 +285,8 @@ router.put('/content-block/:blockId', authenticateToken, async (req, res) => {
   try {
     const { blockId } = req.params;
     const { title, content, url, socialPlatform, isVisible } = req.body;
+    // Accept image url from either camelCase or snake_case
+    const imageUrl = req.body.imageUrl || req.body.image_url || null;
     const userId = req.user.id;
 
     // Verify ownership
@@ -296,14 +301,14 @@ router.put('/content-block/:blockId', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: '無權限編輯此內容區塊' });
     }
 
-    // Update block
+    // Update block (persist image_url)
     const updateResult = await pool.query(`
       UPDATE card_content_blocks
       SET title = $1, content = $2, url = $3, social_platform = $4, 
-          is_visible = $5, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $6
+          image_url = $5, is_visible = $6, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $7
       RETURNING *
-    `, [title, content, url, socialPlatform, isVisible, blockId]);
+    `, [title, content, url, socialPlatform, imageUrl, isVisible, blockId]);
 
     res.json({
       success: true,
