@@ -41,11 +41,19 @@ const MemberCardEditor = () => {
   ]);
   const [showPreviewHint, setShowPreviewHint] = useState(false);
   const previewHintTimerRef = useRef(null);
+  const [buttonStyle, setButtonStyle] = useState(() => {
+    return localStorage.getItem('memberCardButtonStyle') || 'style-a';
+  });
 
   useEffect(() => {
     fetchCardData();
     fetchStats();
   }, []);
+
+  // 保存按鈕樣式到 localStorage
+  useEffect(() => {
+    localStorage.setItem('memberCardButtonStyle', buttonStyle);
+  }, [buttonStyle]);
 
   // 清理防抖計時器
   useEffect(() => {
