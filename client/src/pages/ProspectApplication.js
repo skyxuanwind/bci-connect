@@ -172,34 +172,82 @@ const generateCollaborationScenarios = (partner, needType, prospectIndustry) => 
 };
 
 // Helpers: compute collaboration suggestions with existing partners
-const computePartnerSuggestions = async (result, prospectIndustry = '') => {
+const computePartnerSuggestions = async (result, primaryProfession = '', secondaryProfession = '') => {
   const suggestions = [];
   if (!result) return suggestions;
-  
-  // 獲取現有會員資料
+
+  // 獲取現有會員資料（已在函式內排除系統管理員並去重）
   const members = await fetchMembersForSuggestions();
   if (members.length === 0) return suggestions;
-  
-  // 根據申請人的產業，推薦不同類型的合作夥伴
-  const collaborationNeeds = [
-    { type: 'photography', title: '影像紀錄服務', priority: 1 },
+
+  // 以主要/次要專業作為申請人產業，避免同業互推
+  const prospectIndustryPrimary = (primaryProfession || '').trim();
+  const prospectIndustrySecondary = (secondaryProfession || '').trim();
+
+  // 依據申請人的主要/次要專業，設定合作需求優先順序
+  const baseNeeds = [
+    { type: 'photography', title: '影像紀錄服務', priority: 3 },
     { type: 'marketing', title: '行銷推廣合作', priority: 2 },
-    { type: 'event', title: '活動策劃支援', priority: 3 },
-    { type: 'design', title: '設計服務合作', priority: 4 },
-    { type: 'consulting', title: '專業顧問諮詢', priority: 5 }
+    { type: 'event', title: '活動策劃支援', priority: 4 },
+    { type: 'design', title: '設計服務合作', priority: 3 },
+    { type: 'consulting', title: '專業顧問諮詢', priority: 5 },
+    { type: 'legal', title: '法務/智財支援', priority: 6 },
+    { type: 'finance', title: '財務/會計/保險', priority: 6 },
+    { type: 'tech', title: '系統/數位轉型', priority: 4 }
   ];
-  
-  // 為每種需求類型尋找合適的夥伴
+
+  // 簡單規則：若申請人的專業屬於其中一類，則略微提升互補需求的優先級
+  const boostNeed = (needs, type, boost = -1) => {
+    return needs.map(n => n.type === type ? { ...n, priority: Math.max(1, n.priority + boost) } : n);
+  };
+
+  let collaborationNeeds = [...baseNeeds];
+  const lower = (s) => (s || '').toLowerCase();
+  const p1 = lower(primaryProfession);
+  const p2 = lower(secondaryProfession);
+
+  // 依據專業調整需求：
+  // - 若本業是行銷，優先找影像/設計/法務（合約/智財）
+  if (/行銷|marketing|媒體|廣告/.test(p1) || /行銷|marketing|媒體|廣告/.test(p2)) {
+    collaborationNeeds = boostNeed(collaborationNeeds, 'photography');
+    collaborationNeeds = boostNeed(collaborationNeeds, 'design');
+    collaborationNeeds = boostNeed(collaborationNeeds, 'legal');
+  }
+  // - 若本業是攝影，優先找行銷/設計/活動
+  if (/攝影|影像|拍攝/.test(p1) || /攝影|影像|拍攝/.test(p2)) {
+    collaborationNeeds = boostNeed(collaborationNeeds, 'marketing');
+    collaborationNeeds = boostNeed(collaborationNeeds, 'design');
+    collaborationNeeds = boostNeed(collaborationNeeds, 'event');
+  }
+  // - 若本業是法務/律師，優先找行銷/活動/金融
+  if (/法務|律師|法律|智財|專利|商標/.test(p1) || /法務|律師|法律|智財|專利|商標/.test(p2)) {
+    collaborationNeeds = boostNeed(collaborationNeeds, 'marketing');
+    collaborationNeeds = boostNeed(collaborationNeeds, 'event');
+    collaborationNeeds = boostNeed(collaborationNeeds, 'finance');
+  }
+  // - 若本業是顧問/管理，優先找行銷/活動/系統
+  if (/顧問|管理|諮詢|策略/.test(p1) || /顧問|管理|諮詢|策略/.test(p2)) {
+    collaborationNeeds = boostNeed(collaborationNeeds, 'marketing');
+    collaborationNeeds = boostNeed(collaborationNeeds, 'event');
+    collaborationNeeds = boostNeed(collaborationNeeds, 'tech');
+  }
+
+  // 為每種需求類型尋找合適的夥伴（避開同業）
   collaborationNeeds.forEach(need => {
-    const partners = getPartnersByNeed(members, need.type, prospectIndustry);
-    
-    if (partners.length > 0) {
-      // 選擇最匹配的夥伴（可以是多個）
-      const topPartners = partners.slice(0, 2); // 每類最多推薦2個
-      
+    const partners = getPartnersByNeed(members, need.type, prospectIndustryPrimary);
+
+    // 若次要專業與主要相同，仍然排除；否則可以再過一輪過濾避免同業
+    const filtered = partners.filter(p => {
+      const ind = (p.industry || '').trim();
+      if (prospectIndustryPrimary && ind.includes(prospectIndustryPrimary)) return false;
+      if (prospectIndustrySecondary && ind.includes(prospectIndustrySecondary)) return false;
+      return true;
+    });
+
+    if (filtered.length > 0) {
+      const topPartners = filtered.slice(0, 2); // 每類最多推薦2個
       topPartners.forEach((partner, index) => {
-        const collaboration = generateCollaborationScenarios(partner, need.type, prospectIndustry);
-        
+        const collaboration = generateCollaborationScenarios(partner, need.type, prospectIndustryPrimary);
         suggestions.push({
           partner: `${partner.name}${partner.company ? ` (${partner.company})` : ''} - ${partner.industry}`,
           category: need.title,
@@ -211,16 +259,15 @@ const computePartnerSuggestions = async (result, prospectIndustry = '') => {
             industry: partner.industry,
             title: partner.title
           },
-          priority: need.priority + (index * 0.1) // 同類型中的排序
+          priority: need.priority + (index * 0.1)
         });
       });
     }
   });
-  
-  // 按優先級排序並限制數量
+
   return suggestions
     .sort((a, b) => a.priority - b.priority)
-    .slice(0, 8); // 最多顯示8個建議
+    .slice(0, 8);
 };
 
 const ProspectApplication = () => {
@@ -461,9 +508,10 @@ const ProspectApplication = () => {
           const company = normalizeCompany(picked);
           setCompanyLookupResult(company);
           
-          // 自動填入統編和其他資料
+          // 自動填入公司名稱、統編和其他資料
           setFormData(prev => ({
             ...prev,
+            companyName: company.companyName,
             companyTaxId: company.unifiedBusinessNumber,
             companyCapital: company.capital,
             companyEstablished: formatDateForInput(company.setupDate)
@@ -625,7 +673,7 @@ const ProspectApplication = () => {
                 // 計算合作建議
                 setPartnerSuggestionsLoading(true);
                 try {
-                  const suggestions = await computePartnerSuggestions(statusResponse.data.report, formData.primaryProfession);
+                  const suggestions = await computePartnerSuggestions(statusResponse.data.report, formData.primaryProfession, formData.secondaryProfession);
                   setPartnerSuggestions(suggestions);
                 } catch (error) {
                   console.error('計算合作建議失敗:', error);
@@ -1017,6 +1065,8 @@ const ProspectApplication = () => {
                       name="companyTaxId"
                       value={formData.companyTaxId}
                       onChange={handleInputChange}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookupCompanyByTaxId(); } }}
+                      onBlur={() => { if (formData.companyTaxId && /^\d{8}$/.test(formData.companyTaxId.trim())) lookupCompanyByTaxId(); }}
                       placeholder="請輸入統一編號"
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -1042,6 +1092,8 @@ const ProspectApplication = () => {
                       name="companyName"
                       value={formData.companyName}
                       onChange={handleInputChange}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookupCompanyByName(); } }}
+                      onBlur={() => { if (formData.companyName && formData.companyName.trim().length >= 2) lookupCompanyByName(); }}
                       placeholder="請輸入公司名稱"
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
