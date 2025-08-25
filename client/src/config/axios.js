@@ -50,17 +50,6 @@ axios.interceptors.response.use(
     const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
     const errorStatus = error.response?.status || 'No status';
     
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // Token expired or invalid - clear authentication data
-      document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      localStorage.removeItem('user');
-      sessionStorage.clear();
-      // Only redirect if not already on login page
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-    
     console.error('API Error:', {
       status: errorStatus,
       message: errorMessage,
@@ -68,6 +57,7 @@ axios.interceptors.response.use(
       method: error.config?.method
     });
     
+    // 不在這裡處理認證錯誤，讓 AuthContext 統一處理
     return Promise.reject(error);
   }
 );

@@ -85,8 +85,8 @@ export const AuthProvider = ({ children }) => {
         expires: 7, 
         secure: isProduction, 
         sameSite: isProduction ? 'strict' : 'lax',
-        path: '/',
-        domain: isProduction ? undefined : 'localhost'
+        path: '/'
+        // 不設置 domain，讓瀏覽器自動處理
       });
       
       setUser(userData);
