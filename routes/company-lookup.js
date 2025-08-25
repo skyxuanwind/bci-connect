@@ -38,7 +38,7 @@ router.get('/by-number/:number', async (req, res) => {
         timeout: 10000
       });
 
-      console.log('政府 API 回應:', response.data);
+
       
       // 檢查回應資料格式
       let companies = [];
@@ -153,24 +153,11 @@ router.get('/by-name/:name', async (req, res) => {
           $format: 'json',
           $filter: `contains(Company_Name,'${encodedName}')`,
           $select: 'Business_Accounting_NO,Company_Name,Company_Status,Company_Setup_Date,Paid_In_Capital_Stock_Amount,Company_Location,Business_Address,Responsible_Name,Company_Status_Desc',
-          $top: 10 // 限制回傳筆數
+          $top: 10
         },
-        timeout: 10000,
-        // 確保正確處理中文字符
-        paramsSerializer: function(params) {
-          return Object.keys(params).map(key => {
-            const value = params[key];
-            if (key === '$filter') {
-              // 對於 $filter 參數，我們需要特殊處理
-              return `${key}=${value}`;
-            }
-            return `${key}=${encodeURIComponent(value)}`;
-          }).join('&');
-        }
+        timeout: 5000
       });
 
-      console.log('政府 API 回應 (by-name):', response.data);
-      
       // 檢查回應資料格式
       let companies = [];
       if (Array.isArray(response.data)) {
@@ -182,7 +169,6 @@ router.get('/by-name/:name', async (req, res) => {
       }
       
       if (companies.length > 0) {
-        // 取第一個匹配的公司，格式化為與 by-number 相同的單一物件格式
         const companyData = companies[0];
         
         res.json({
@@ -199,16 +185,23 @@ router.get('/by-name/:name', async (req, res) => {
           }
         });
       } else {
-        res.json({
-          success: false,
-          message: '查無相關公司資料'
-        });
+        throw new Error('政府 API 無資料');
       }
     } catch (apiError) {
       console.warn('政府 API 調用失敗，使用備用資料:', apiError.message);
       
       // API 調用失敗時的備用模擬資料
       const mockSearchResults = [
+        {
+          unifiedBusinessNumber: '13196078',
+          companyName: '建邑國際行銷股份有限公司',
+          status: '核准設立',
+          setupDate: '2003-01-29',
+          capital: '11000000',
+          location: '台北市',
+          address: '台北市中山區建國北路二段145號',
+          responsiblePerson: '陳建邑'
+        },
         {
           unifiedBusinessNumber: '12345678',
           companyName: '台灣科技股份有限公司',
@@ -228,14 +221,26 @@ router.get('/by-name/:name', async (req, res) => {
           location: '台中市西屯區',
           address: '台中市西屯區台灣大道三段99號',
           responsiblePerson: '張三豐'
+        },
+        {
+          unifiedBusinessNumber: '87654321',
+          companyName: '國際貿易股份有限公司',
+          status: '核准設立',
+          setupDate: '2015-03-20',
+          capital: '5000000',
+          location: '高雄市',
+          address: '高雄市前鎮區中山二路100號',
+          responsiblePerson: '李國際'
         }
       ];
       
       // 模擬搜尋邏輯 - 取第一個匹配的結果
       const searchTerm = name.toLowerCase();
-      const results = mockSearchResults.filter(company => 
-        company.companyName.toLowerCase().includes(searchTerm)
-      );
+      
+      const results = mockSearchResults.filter(company => {
+        const companyNameLower = company.companyName.toLowerCase();
+        return companyNameLower.includes(searchTerm) || searchTerm.includes(companyNameLower);
+      });
       
       if (results.length > 0) {
         res.json({
