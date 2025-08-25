@@ -182,21 +182,21 @@ router.get('/by-name/:name', async (req, res) => {
       }
       
       if (companies.length > 0) {
-        const formattedCompanies = companies.map(company => ({
-          unifiedBusinessNumber: company.Business_Accounting_NO,
-          companyName: company.Company_Name,
-          status: company.Company_Status_Desc || company.Company_Status,
-          setupDate: company.Company_Setup_Date,
-          capital: company.Paid_In_Capital_Stock_Amount || company.Capital_Stock_Amount,
-          location: company.Company_Location,
-          address: company.Business_Address || company.Company_Location,
-          responsiblePerson: company.Responsible_Name
-        }));
+        // 取第一個匹配的公司，格式化為與 by-number 相同的單一物件格式
+        const companyData = companies[0];
         
         res.json({
           success: true,
-          data: formattedCompanies,
-          count: formattedCompanies.length
+          data: {
+            unifiedBusinessNumber: companyData.Business_Accounting_NO,
+            companyName: companyData.Company_Name,
+            status: companyData.Company_Status_Desc || companyData.Company_Status,
+            setupDate: companyData.Company_Setup_Date,
+            capital: companyData.Paid_In_Capital_Stock_Amount || companyData.Capital_Stock_Amount,
+            location: companyData.Company_Location,
+            address: companyData.Business_Address || companyData.Company_Location,
+            responsiblePerson: companyData.Responsible_Name
+          }
         });
       } else {
         res.json({
@@ -231,18 +231,24 @@ router.get('/by-name/:name', async (req, res) => {
         }
       ];
       
-      // 模擬搜尋邏輯
+      // 模擬搜尋邏輯 - 取第一個匹配的結果
       const searchTerm = name.toLowerCase();
       const results = mockSearchResults.filter(company => 
         company.companyName.toLowerCase().includes(searchTerm)
       );
       
-      res.json({
-        success: true,
-        data: results,
-        count: results.length,
-        note: '使用備用資料（政府 API 暫時無法使用）'
-      });
+      if (results.length > 0) {
+        res.json({
+          success: true,
+          data: results[0], // 返回第一個匹配的公司
+          note: '使用備用資料（政府 API 暫時無法使用）'
+        });
+      } else {
+        res.json({
+          success: false,
+          message: '查無相關公司資料（政府 API 暫時無法使用）'
+        });
+      }
     }
   } catch (error) {
     console.error('Company lookup by name error:', error);
