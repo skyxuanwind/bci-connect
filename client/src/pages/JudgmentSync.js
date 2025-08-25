@@ -19,7 +19,7 @@ const JudgmentSync = () => {
   // 載入同步狀態
   const loadSyncStatus = async () => {
     try {
-      const response = await api.get('/judgment-sync/status');
+      const response = await api.get('/api/judgment-sync/status');
       setSyncStatus(response.data.data);
     } catch (error) {
       console.error('載入同步狀態失敗:', error);
@@ -30,7 +30,7 @@ const JudgmentSync = () => {
   // 載入統計資訊
   const loadStatistics = async () => {
     try {
-      const response = await api.get('/judgment-sync/statistics');
+      const response = await api.get('/api/judgment-sync/statistics');
       setStatistics(response.data.data);
     } catch (error) {
       console.error('載入統計資訊失敗:', error);
@@ -52,7 +52,7 @@ const JudgmentSync = () => {
 
     setLoading(true);
     try {
-      await api.post('/judgment-sync/manual-sync');
+      await api.post('/api/judgment-sync/manual-sync');
       toast.success('同步作業已開始，請稍後查看狀態');
       // 延遲重新載入狀態
       setTimeout(() => {
@@ -82,7 +82,7 @@ const JudgmentSync = () => {
         if (!params[key]) delete params[key];
       });
 
-      const response = await api.get('/judgment-sync/search', { params });
+      const response = await api.get('/api/judgment-sync/search', { params });
       setSearchResults(response.data);
     } catch (error) {
       console.error('搜尋失敗:', error);
