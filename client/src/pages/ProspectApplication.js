@@ -87,193 +87,140 @@ const findMatchingPartners = (members, targetIndustries, excludeIndustry = null)
   }).slice(0, 3); // 限制最多3個推薦
 };
 
+// 根據需求類型匹配合作夥伴
+const getPartnersByNeed = (members, needType, prospectIndustry = '') => {
+  const partnerCategories = {
+    marketing: ['行銷', '廣告', '媒體', '設計', '影音', '公關', '傳播', '數位', '網路'],
+    photography: ['攝影', '影像', '視覺', '拍攝', '商業攝影', '婚攝', '活動攝影'],
+    event: ['活動', '企劃', '會展', '展覽', '策展', '活動企劃', '會議', '論壇'],
+    design: ['設計', '視覺', '平面', '網頁', 'UI', 'UX', '品牌', '包裝'],
+    tech: ['科技', '軟體', '系統', '資訊', 'IT', '程式', '開發', '技術'],
+    consulting: ['顧問', '管理', '策略', '諮詢', '顧問公司', '管理顧問'],
+    legal: ['法務', '律師', '智財', '合規', '法律', '專利', '商標'],
+    finance: ['財務', '會計', '稅務', '金融', '投資', '理財', '保險'],
+    manufacturing: ['製造', '生產', '工廠', '加工', '代工', 'OEM', 'ODM'],
+    food: ['餐飲', '食品', '烘焙', '料理', '餐廳', '咖啡', '茶飲'],
+    education: ['教育', '培訓', '訓練', '學習', '課程', '講師', '教學'],
+    healthcare: ['醫療', '健康', '保健', '醫美', '診所', '藥局', '復健']
+  };
+  
+  const keywords = partnerCategories[needType] || [];
+  return members.filter(member => {
+    if (member.industry === prospectIndustry) return false; // 排除同業
+    return keywords.some(keyword => 
+      member.industry?.toLowerCase().includes(keyword.toLowerCase()) ||
+      member.company?.toLowerCase().includes(keyword.toLowerCase()) ||
+      member.title?.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }).slice(0, 5); // 最多5個推薦
+};
+
+// 生成具體的合作場景建議
+const generateCollaborationScenarios = (partner, needType, prospectIndustry) => {
+  const scenarios = {
+    photography: {
+      reason: `${partner.company || partner.name} 專精於 ${partner.industry}，可為您的業務提供專業影像服務`,
+      scenarios: [
+        '活動紀錄攝影：重要會議、產品發表會、企業活動的專業拍攝',
+        '商品攝影：產品型錄、網站商品圖、電商平台使用',
+        '企業形象照：團隊照片、個人專業照、公司環境拍攝',
+        '行銷素材製作：廣告用途、社群媒體內容、宣傳品素材'
+      ]
+    },
+    marketing: {
+      reason: `${partner.company || partner.name} 在 ${partner.industry} 領域經驗豐富，可協助提升品牌曝光度`,
+      scenarios: [
+        '數位行銷策略：社群媒體經營、內容行銷、SEO優化',
+        '廣告投放：Google Ads、Facebook廣告、LINE廣告投放',
+        '品牌建立：Logo設計、CI設計、品牌定位策略',
+        '活動行銷：記者會策劃、產品發表會、展覽參與'
+      ]
+    },
+    event: {
+      reason: `${partner.company || partner.name} 具備豐富的活動策劃經驗，可協助舉辦各類型活動`,
+      scenarios: [
+        '企業活動：尾牙春酒、員工旅遊、團建活動策劃',
+        '產品發表：新品上市發表會、媒體記者會',
+        '展覽會議：參展規劃、研討會、論壇活動',
+        '客戶活動：VIP客戶聚會、產品體驗會、感謝餐會'
+      ]
+    },
+    design: {
+      reason: `${partner.company || partner.name} 的設計專業可提升您的視覺形象與品牌價值`,
+      scenarios: [
+        '品牌設計：Logo、名片、信紙、企業識別系統',
+        '網站設計：官網建置、電商平台、RWD響應式設計',
+        '印刷設計：型錄、DM、海報、包裝設計',
+        '數位設計：社群圖片、廣告素材、簡報模板'
+      ]
+    },
+    consulting: {
+      reason: `${partner.company || partner.name} 的專業顧問服務可協助優化營運效率`,
+      scenarios: [
+        '營運優化：流程改善、成本控制、效率提升',
+        '策略規劃：市場分析、競爭策略、發展規劃',
+        '組織發展：人力資源、組織架構、績效管理',
+        '數位轉型：系統導入、流程數位化、資料分析'
+      ]
+    }
+  };
+  
+  return scenarios[needType] || {
+    reason: `${partner.company || partner.name} 在 ${partner.industry} 領域的專業能力`,
+    scenarios: ['業務合作機會', '資源互補', '客戶轉介', '聯合行銷']
+  };
+};
+
 // Helpers: compute collaboration suggestions with existing partners
 const computePartnerSuggestions = async (result, prospectIndustry = '') => {
   const suggestions = [];
   if (!result) return suggestions;
   
-  const score = result?.bciFitScore?.score || 0;
-  const sentiment = result?.marketSentiment?.sentiment || 'neutral';
-  const conflict = result?.industryConflict?.conflictLevel || 'low';
-  const legal = result?.legalRiskAssessment?.riskLevel || 'low';
-  const publicReal = !!result?.publicInformationScan?.realData;
-  const existingMembersText = result?.industryConflict?.analysis || '';
-  const match = existingMembersText.match(/同業\s*:\s*(\d+)位/);
-  const sameIndustryCount = match ? parseInt(match[1], 10) : 0;
-
   // 獲取現有會員資料
   const members = await fetchMembersForSuggestions();
+  if (members.length === 0) return suggestions;
   
-  // 根據不同情況推薦具體的現有夥伴合作
+  // 根據申請人的產業，推薦不同類型的合作夥伴
+  const collaborationNeeds = [
+    { type: 'photography', title: '影像紀錄服務', priority: 1 },
+    { type: 'marketing', title: '行銷推廣合作', priority: 2 },
+    { type: 'event', title: '活動策劃支援', priority: 3 },
+    { type: 'design', title: '設計服務合作', priority: 4 },
+    { type: 'consulting', title: '專業顧問諮詢', priority: 5 }
+  ];
   
-  // 1. 數位行銷與客戶管理合作
-  const marketingPartners = findMatchingPartners(members, ['行銷', '廣告', '媒體', '設計', '影音'], prospectIndustry);
-  if (marketingPartners.length > 0) {
-    const partner = marketingPartners[0];
-    suggestions.push({
-      partner: `${partner.name}（${partner.company}）- ${partner.industry}`,
-      reason: `${partner.name} 在 ${partner.industry} 領域的專業能力，可協助建立完整的數位轉換漏斗`,
-      action: `與 ${partner.name} 合作導入「活動 NFC 簽到 → 名單 → EDM → 回流」閉環，共同建立 30 天轉化追蹤系統`
-    });
-  } else {
-    suggestions.push({
-      partner: '數位行銷夥伴（如：網路行銷公司、社群媒體代理商）',
-      reason: '建立完整的數位轉換漏斗，從活動 NFC 簽到到 EDM 再行銷',
-      action: '導入「活動 NFC 簽到 → 名單 → EDM → 回流」閉環，共同建立 30 天轉化追蹤系統'
-    });
-  }
-
-  // 2. 根據產業衝突程度推薦不同合作夥伴
-  if (conflict === 'low') {
-    const contentPartners = findMatchingPartners(members, ['影音', '製作', '公關', '媒體', '創作'], prospectIndustry);
-    if (contentPartners.length > 0) {
-      const partner = contentPartners[0];
-      suggestions.push({
-        partner: `${partner.name}（${partner.company}）- ${partner.industry}`,
-        reason: `產業衝突低，可與 ${partner.name} 的 ${partner.industry} 專業合作提升品牌權威性`,
-        action: `與 ${partner.name} 合作製作 2-3 則案例短影音或新聞稿，建立可擴散的權威背書與成功案例`
-      });
-    } else {
-      suggestions.push({
-        partner: '內容創作夥伴（如：影音製作公司、公關顧問、媒體代理商）',
-        reason: '產業衝突低，適合共同製作內容提升品牌權威性',
-        action: '合作製作 2-3 則案例短影音或新聞稿，建立可擴散的權威背書與成功案例'
+  // 為每種需求類型尋找合適的夥伴
+  collaborationNeeds.forEach(need => {
+    const partners = getPartnersByNeed(members, need.type, prospectIndustry);
+    
+    if (partners.length > 0) {
+      // 選擇最匹配的夥伴（可以是多個）
+      const topPartners = partners.slice(0, 2); // 每類最多推薦2個
+      
+      topPartners.forEach((partner, index) => {
+        const collaboration = generateCollaborationScenarios(partner, need.type, prospectIndustry);
+        
+        suggestions.push({
+          partner: `${partner.name}${partner.company ? ` (${partner.company})` : ''} - ${partner.industry}`,
+          category: need.title,
+          reason: collaboration.reason,
+          scenarios: collaboration.scenarios,
+          contactInfo: {
+            name: partner.name,
+            company: partner.company,
+            industry: partner.industry,
+            title: partner.title
+          },
+          priority: need.priority + (index * 0.1) // 同類型中的排序
+        });
       });
     }
-  } else if (conflict === 'medium') {
-    const consultingPartners = findMatchingPartners(members, ['顧問', '管理', '策略', '諮詢'], prospectIndustry);
-    if (consultingPartners.length > 0) {
-      const partner = consultingPartners[0];
-      suggestions.push({
-        partner: `${partner.name}（${partner.company}）- ${partner.industry}`,
-        reason: `需要 ${partner.name} 等專業第三方協助釐清市場定位，避免業務重疊`,
-        action: `與 ${partner.name} 安排三方定位澄清會議，對齊目標客群與服務邊界，建立合作分工機制`
-      });
-    } else {
-      suggestions.push({
-        partner: '策略顧問夥伴（如：管理顧問公司、商業策略顧問）',
-        reason: '需要專業第三方協助釐清市場定位，避免業務重疊',
-        action: '安排三方定位澄清會議，對齊目標客群與服務邊界，建立合作分工機制'
-      });
-    }
-  } else {
-    const legalPartners = findMatchingPartners(members, ['法務', '律師', '合規', '法律'], prospectIndustry);
-    if (legalPartners.length > 0) {
-      const partner = legalPartners[0];
-      suggestions.push({
-        partner: `${partner.name}（${partner.company}）- ${partner.industry}`,
-        reason: `高衝突需要 ${partner.name} 等法務專業協助建立明確的業務邊界與轉介規則`,
-        action: `與 ${partner.name} 制定服務範圍限制與客戶轉介標準作業程序，降低競爭風險`
-      });
-    } else {
-      suggestions.push({
-        partner: '法務與合規夥伴（如：律師事務所、合規顧問）',
-        reason: '高衝突需要建立明確的業務邊界與轉介規則',
-        action: '制定服務範圍限制與客戶轉介標準作業程序，降低競爭風險'
-      });
-    }
-  }
-
-  // 3. 根據市場聲譽推薦公關與媒體夥伴
-  if (publicReal && (sentiment === 'neutral' || sentiment === 'negative')) {
-    const prPartners = findMatchingPartners(members, ['公關', '媒體', '傳播', 'PR'], prospectIndustry);
-    if (prPartners.length > 0) {
-      const partner = prPartners[0];
-      suggestions.push({
-        partner: `${partner.name}（${partner.company}）- ${partner.industry}`,
-        reason: `市場聲譽需要改善，需要 ${partner.name} 等專業公關操作提升正面形象`,
-        action: `與 ${partner.name} 執行 30 天「正面內容建置 + 媒體曝光」專案，提升搜尋可見度與品牌聲量`
-      });
-    } else {
-      suggestions.push({
-        partner: '公關與媒體夥伴（如：公關公司、媒體代理商、KOL 經紀公司）',
-        reason: '市場聲譽需要改善，需要專業公關操作提升正面形象',
-        action: '執行 30 天「正面內容建置 + 媒體曝光」專案，提升搜尋可見度與品牌聲量'
-      });
-    }
-  }
-
-  // 4. 根據法律風險推薦法務合作
-  if (legal === 'medium' || legal === 'high') {
-    const legalPartners = findMatchingPartners(members, ['法務', '律師', '智財', '合規'], prospectIndustry);
-    if (legalPartners.length > 0) {
-      const partner = legalPartners[0];
-      suggestions.push({
-        partner: `${partner.name}（${partner.company}）- ${partner.industry}`,
-        reason: `法律風險較高，需要 ${partner.name} 等專業法務支援建立合規機制`,
-        action: `與 ${partner.name} 進行「合約/個資/著作權」全面健檢，建立標案投標與客戶委託標準作業流程`
-      });
-    } else {
-      suggestions.push({
-        partner: '專業法務夥伴（如：商務律師事務所、智財權顧問）',
-        reason: '法律風險較高，需要專業法務支援建立合規機制',
-        action: '進行「合約/個資/著作權」全面健檢，建立標案投標與客戶委託標準作業流程'
-      });
-    }
-  }
-
-  // 5. 同業或互補產業合作
-  if (sameIndustryCount > 0 && conflict !== 'high') {
-    const sameIndustryPartners = findMatchingPartners(members, [prospectIndustry]);
-    if (sameIndustryPartners.length > 0) {
-      const partner = sameIndustryPartners[0];
-      suggestions.push({
-        partner: `${partner.name}（${partner.company}）等同業夥伴`,
-        reason: `與 ${partner.name} 等同業經驗豐富且衝突可控，適合建立策略聯盟`,
-        action: `與 ${partner.name} 等同業夥伴發起交叉引薦與聯合提案機制，擴大服務範圍與客戶基礎`
-      });
-    } else {
-      suggestions.push({
-        partner: `同產業現有會員（約 ${sameIndustryCount} 位）或互補產業夥伴`,
-        reason: '同業經驗豐富且衝突可控，適合建立策略聯盟',
-        action: '發起交叉引薦與聯合提案機制，擴大服務範圍與客戶基礎'
-      });
-    }
-  }
-
-  // 6. 根據契合度分數推薦不同層級的合作
-  if (score >= 80) {
-    const strategicPartners = findMatchingPartners(members, ['顧問', '策略', '品牌', '整合', '活動'], prospectIndustry);
-    if (strategicPartners.length > 0) {
-      const partner = strategicPartners[0];
-      suggestions.push({
-        partner: `${partner.name}（${partner.company}）等策略級夥伴`,
-        reason: `高契合度適合與 ${partner.name} 等進行深度戰略合作，共同開發大型專案`,
-        action: `與 ${partner.name} 安排深度面談與小型試案，規劃季度級聯合專案（品牌重塑/大型活動/整合行銷）`
-      });
-    } else {
-      suggestions.push({
-        partner: '策略級合作夥伴（如：品牌顧問、整合行銷公司、活動策劃公司）',
-        reason: '高契合度適合深度戰略合作，共同開發大型專案',
-        action: '安排深度面談與小型試案，規劃季度級聯合專案（品牌重塑/大型活動/整合行銷）'
-      });
-    }
-  } else if (score >= 60) {
-    const projectPartners = findMatchingPartners(members, ['專案', '管理', '技術', '服務'], prospectIndustry);
-    if (projectPartners.length > 0) {
-      const partner = projectPartners[0];
-      suggestions.push({
-        partner: `${partner.name}（${partner.company}）等專案型夥伴`,
-        reason: `中等契合度適合與 ${partner.name} 等進行階段性合作，先驗證合作模式`,
-        action: `與 ${partner.name} 以 2-4 週 POC 專案驗證合作流程與轉化效果，達標後再擴大投入規模`
-      });
-    } else {
-      suggestions.push({
-        partner: '專案型合作夥伴（如：專案管理顧問、技術服務商）',
-        reason: '中等契合度適合階段性合作，先驗證合作模式',
-        action: '以 2-4 週 POC 專案驗證合作流程與轉化效果，達標後再擴大投入規模'
-      });
-    }
-  }
-
-  // 去重並限制數量
-  const seen = new Set();
-  return suggestions.filter(s => {
-    const key = s.partner + s.action;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 6);
+  });
+  
+  // 按優先級排序並限制數量
+  return suggestions
+    .sort((a, b) => a.priority - b.priority)
+    .slice(0, 8); // 最多顯示8個建議
 };
 
 const ProspectApplication = () => {
@@ -1586,35 +1533,61 @@ const ProspectApplication = () => {
                     <>
                       <div className="space-y-4">
                         {partnerSuggestions.map((suggestion, idx) => (
-                          <div key={idx} className="bg-white bg-opacity-90 rounded-lg p-4 border border-indigo-100 shadow-sm">
-                            <div className="flex items-start mb-3">
-                              <span className="bg-indigo-100 text-indigo-600 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">
+                          <div key={idx} className="bg-white bg-opacity-90 rounded-lg p-5 border border-indigo-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-start mb-4">
+                              <span className="bg-indigo-100 text-indigo-600 rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">
                                 {idx + 1}
                               </span>
                               <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded-full">
+                                    {suggestion.category}
+                                  </span>
+                                </div>
                                 <h5 className="font-semibold text-indigo-900 mb-2 text-sm">{suggestion.partner}</h5>
                               </div>
                             </div>
-                            <div className="ml-9 space-y-2">
+                            <div className="ml-10 space-y-3">
                               <div>
-                                <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded">合作原因</span>
+                                <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded">合作優勢</span>
                                 <p className="text-indigo-800 text-sm mt-1 leading-relaxed">{suggestion.reason}</p>
                               </div>
                               <div>
-                                <span className="text-xs font-medium text-purple-700 bg-purple-50 px-2 py-1 rounded">建議行動</span>
-                                <p className="text-purple-800 text-sm mt-1 leading-relaxed">{suggestion.action}</p>
+                                <span className="text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded">具體合作場景</span>
+                                <div className="mt-2 space-y-1">
+                                  {suggestion.scenarios.map((scenario, scenarioIdx) => (
+                                    <div key={scenarioIdx} className="flex items-start text-sm text-green-800">
+                                      <span className="text-green-600 mr-2 mt-1">•</span>
+                                      <span className="leading-relaxed">{scenario}</span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
+                              {suggestion.contactInfo && (
+                                <div className="pt-2 border-t border-indigo-100">
+                                  <div className="flex items-center justify-between text-xs text-gray-600">
+                                    <span>聯絡資訊：{suggestion.contactInfo.name}</span>
+                                    <span className="text-indigo-600 font-medium">{suggestion.contactInfo.title}</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
                       </div>
                       
                       {/* 行動提醒 */}
-                      <div className="mt-4 bg-indigo-100 bg-opacity-50 rounded-lg p-3 border border-indigo-200">
-                        <div className="text-sm font-medium text-indigo-900 mb-1">💡 下一步行動：</div>
-                        <p className="text-indigo-800 text-sm">
-                          建議優先執行前 2-3 項合作方案，並在 30 天內安排具體的合作會議與試行計畫。
-                        </p>
+                      <div className="mt-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 border border-indigo-200">
+                        <div className="flex items-center mb-2">
+                          <span className="text-lg mr-2">💡</span>
+                          <div className="text-sm font-medium text-indigo-900">合作建議使用指南</div>
+                        </div>
+                        <div className="space-y-2 text-sm text-indigo-800">
+                          <p>• <strong>優先順序：</strong>建議優先考慮「影像紀錄服務」和「行銷推廣合作」，這些是大多數企業的基本需求</p>
+                          <p>• <strong>聯絡方式：</strong>可透過 BCI Connect 會員目錄或活動場合主動接觸推薦的夥伴</p>
+                          <p>• <strong>合作模式：</strong>建議先從小型專案開始合作，驗證合作效果後再擴大規模</p>
+                          <p>• <strong>時間規劃：</strong>建議在加入 BCI 後 30 天內，至少與 2-3 位推薦夥伴進行初步接觸</p>
+                        </div>
                       </div>
                     </>
                   ) : (
