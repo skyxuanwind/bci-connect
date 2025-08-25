@@ -1,4 +1,6 @@
 const axios = require('axios');
+const { pool } = require('../config/database');
+const judgmentSyncService = require('./judgmentSyncService');
 
 // 司法院開放資料 API 基礎 URL（根據官方文件）
 const JUDICIAL_API_BASE = 'https://data.judicial.gov.tw/jdg/api';
@@ -119,11 +121,30 @@ class JudicialService {
         format = 'json'
       } = options;
 
-      // 驗證 API 連接
-      const token = await this.getToken();
       console.log(`開始搜尋公司 ${companyName} 的判決書資料...`);
       
-      // 嘗試從司法院 API 取得最近的判決書清單
+      // 優先使用本地裁判書同步管理系統的資料
+      try {
+        console.log('嘗試從本地裁判書同步管理系統搜尋資料...');
+        const localJudgments = await judgmentSyncService.searchJudgmentsByCompany(companyName, { limit: top });
+        
+        if (localJudgments && localJudgments.length > 0) {
+          console.log(`從本地系統找到 ${localJudgments.length} 筆相關判決書`);
+          return {
+            success: true,
+            judgments: localJudgments,
+            data: localJudgments,
+            total: localJudgments.length,
+            companyName: companyName,
+            note: '來自本地裁判書同步管理系統的資料',
+            source: 'local'
+          };
+        }
+      } catch (localError) {
+        console.warn('本地裁判書系統查詢失敗，回退到司法院 API:', localError.message);
+      }
+      
+      // 如果本地系統沒有資料，嘗試從司法院 API 取得最近的判決書清單
       const recentJudgmentsResult = await this.getRecentJudgmentsList();
       
       if (!recentJudgmentsResult.success) {
@@ -135,7 +156,8 @@ class JudicialService {
           data: riskAnalysis,
           total: riskAnalysis.length,
           companyName: companyName,
-          note: recentJudgmentsResult.message || 'API 服務不可用，此為基於公司特徵的風險評估分析'
+          note: recentJudgmentsResult.message || 'API 服務不可用，此為基於公司特徵的風險評估分析',
+          source: 'risk_analysis'
         };
       }
       
@@ -150,7 +172,8 @@ class JudicialService {
           data: matchingJudgments,
           total: matchingJudgments.length,
           companyName: companyName,
-          note: '來自司法院開放資料平台的真實判決書資料'
+          note: '來自司法院開放資料平台的真實判決書資料',
+          source: 'judicial_api'
         };
       } else {
         console.log(`未找到包含 ${companyName} 的判決書，提供風險評估分析`);
@@ -162,7 +185,8 @@ class JudicialService {
           data: riskAnalysis,
           total: riskAnalysis.length,
           companyName: companyName,
-          note: '未找到直接相關的判決書，此為基於公司特徵的風險評估分析'
+          note: '未找到直接相關的判決書，此為基於公司特徵的風險評估分析',
+          source: 'risk_analysis'
         };
       }
     } catch (error) {
@@ -175,7 +199,8 @@ class JudicialService {
         data: riskAnalysis,
         total: riskAnalysis.length,
         companyName: companyName,
-        note: 'API 連接失敗，此為基於公司特徵的風險評估分析'
+        note: 'API 連接失敗，此為基於公司特徵的風險評估分析',
+        source: 'risk_analysis'
       };
     }
   }

@@ -514,6 +514,42 @@ const ProspectApplication = () => {
     setAiAnalysisError('');
     setAiAnalysisResult(null);
     
+    // 同時查詢裁判書資料
+    let judgmentRiskData = null;
+    try {
+      const judgmentResponse = await axios.get('/api/judgment-sync/search', {
+        params: {
+          query: formData.companyName.trim(),
+          limit: 10
+        }
+      });
+      
+      if (judgmentResponse.data.success && judgmentResponse.data.data.length > 0) {
+        const judgments = judgmentResponse.data.data;
+        const highRiskCount = judgments.filter(j => j.risk_level === 'HIGH').length;
+        const mediumRiskCount = judgments.filter(j => j.risk_level === 'MEDIUM').length;
+        const totalCount = judgments.length;
+        
+        judgmentRiskData = {
+          totalJudgments: totalCount,
+          highRiskCount,
+          mediumRiskCount,
+          lowRiskCount: totalCount - highRiskCount - mediumRiskCount,
+          recentJudgments: judgments.slice(0, 5).map(j => ({
+            caseNumber: j.case_number,
+            judgmentDate: j.judgment_date,
+            caseType: j.case_type,
+            riskLevel: j.risk_level,
+            summary: j.summary
+          })),
+          overallRiskLevel: highRiskCount > 0 ? 'HIGH' : (mediumRiskCount > 2 ? 'MEDIUM' : 'LOW')
+        };
+      }
+    } catch (judgmentError) {
+      console.warn('裁判書查詢失敗:', judgmentError);
+      // 不影響主要分析流程
+    }
+    
     try {
       // 先創建臨時的潛在客戶資料
       const prospectData = {
@@ -534,6 +570,7 @@ const ProspectApplication = () => {
             mainBusiness: formData.mainBusiness,
             professionalExperience: formData.professionalExperience
           },
+          judgmentRisk: judgmentRiskData,
           interview: {
             bciExpectations: formData.bciExpectations,
             pastAchievements: formData.pastAchievements,
@@ -1388,6 +1425,48 @@ const ProspectApplication = () => {
                         <div className="text-red-700 font-semibold">
                           {aiAnalysisResult.legalRiskAssessment.judicialRecordsCount} 件相關記錄
                         </div>
+                      </div>
+                    )}
+                    
+                    {/* 裁判書風險分析 */}
+                    {aiAnalysisResult.judgmentRiskAnalysis && (
+                      <div className="bg-white bg-opacity-60 rounded-lg p-3 mb-3">
+                        <div className="text-sm font-medium text-red-800 mb-2">裁判書風險分析：</div>
+                        <div className="grid grid-cols-4 gap-2 mb-3">
+                          <div className="text-center">
+                            <div className="text-xs text-red-600">總計</div>
+                            <div className="font-semibold text-red-800">{aiAnalysisResult.judgmentRiskAnalysis.totalJudgments || 0}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-red-600">高風險</div>
+                            <div className="font-semibold text-red-700">{aiAnalysisResult.judgmentRiskAnalysis.highRiskCount || 0}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-yellow-600">中風險</div>
+                            <div className="font-semibold text-yellow-700">{aiAnalysisResult.judgmentRiskAnalysis.mediumRiskCount || 0}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-green-600">低風險</div>
+                            <div className="font-semibold text-green-700">{aiAnalysisResult.judgmentRiskAnalysis.lowRiskCount || 0}</div>
+                          </div>
+                        </div>
+                        
+                        {aiAnalysisResult.judgmentRiskAnalysis.recentJudgments && aiAnalysisResult.judgmentRiskAnalysis.recentJudgments.length > 0 && (
+                          <div>
+                            <div className="text-xs font-medium text-red-800 mb-2">近期相關案件：</div>
+                            <div className="space-y-1">
+                              {aiAnalysisResult.judgmentRiskAnalysis.recentJudgments.slice(0, 3).map((judgment, idx) => (
+                                <div key={idx} className="text-xs text-red-700 bg-red-25 p-2 rounded border-l-2 border-red-300">
+                                  <div className="font-medium">{judgment.caseNumber} ({judgment.caseType})</div>
+                                  <div className="text-red-600">{judgment.judgmentDate} - 風險等級: {judgment.riskLevel}</div>
+                                  {judgment.summary && (
+                                    <div className="mt-1 text-red-600">{judgment.summary.substring(0, 80)}...</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     

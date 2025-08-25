@@ -276,33 +276,93 @@ async function performFastAnalysis(prospect) {
     let judicialResult = { total: 0, data: [] };
     let legalRiskAnalysis = { riskLevel: 'low', riskScore: 0, summary: '無重大法律風險', details: [] };
     
-    // 查詢司法院裁判書開放 API
-    try {
-      const judicialData = await Promise.race([
-        judicialService.searchJudgments(prospect.company, { top: 10 }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Judicial API Timeout')), 15000))
-      ]);
+    // 檢查是否有前端傳來的裁判書風險資料
+    let judgmentRiskData = null;
+    if (prospect.notes && typeof prospect.notes === 'string') {
+      try {
+        const notes = JSON.parse(prospect.notes);
+        judgmentRiskData = notes.judgmentRisk;
+      } catch (e) {
+        console.log('無法解析 notes 中的 judgmentRisk 資料');
+      }
+    } else if (prospect.notes && prospect.notes.judgmentRisk) {
+      judgmentRiskData = prospect.notes.judgmentRisk;
+    }
+    
+    if (judgmentRiskData && judgmentRiskData.totalCount !== undefined) {
+      // 使用前端查詢到的裁判書資料
+      console.log(`使用前端查詢的裁判書資料，共 ${judgmentRiskData.totalCount} 筆記錄`);
       
-      if (judicialData && judicialData.success) {
-        judicialResult = {
-          total: judicialData.total || judicialData.data?.length || 0,
-          data: judicialData.data || judicialData.judgments || [],
-          note: judicialData.note || '來自司法院裁判書開放 API'
-        };
-        
-        // 分析判決書風險
-        legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
-        console.log(`司法院 API 查詢成功，找到 ${judicialResult.total} 筆相關記錄`);
+      judicialResult = {
+        total: judgmentRiskData.totalCount,
+        data: judgmentRiskData.recentCases || [],
+        note: '來自裁判書同步管理系統'
+      };
+      
+      // 根據前端資料分析風險
+      const highRisk = judgmentRiskData.highRiskCount || 0;
+      const mediumRisk = judgmentRiskData.mediumRiskCount || 0;
+      const lowRisk = judgmentRiskData.lowRiskCount || 0;
+      const total = judgmentRiskData.totalCount || 0;
+      
+      let riskLevel = 'low';
+      let riskScore = 0;
+      let summary = '';
+      
+      if (total === 0) {
+        riskLevel = 'low';
+        riskScore = 0;
+        summary = '無相關裁判書記錄，法律風險較低';
+      } else if (highRisk > 0) {
+        riskLevel = 'high';
+        riskScore = Math.min(90, 60 + (highRisk * 10) + (mediumRisk * 5));
+        summary = `發現 ${highRisk} 筆高風險案件，需要特別關注`;
+      } else if (mediumRisk > 0) {
+        riskLevel = 'medium';
+        riskScore = Math.min(60, 30 + (mediumRisk * 8) + (lowRisk * 2));
+        summary = `發現 ${mediumRisk} 筆中風險案件，建議進一步評估`;
       } else {
-        console.log('司法院 API 查詢失敗或無結果');
-        // 使用預設的低風險評估
-        legalRiskAnalysis = { riskLevel: 'low', riskScore: 5, summary: 'API 查詢無結果，風險較低', details: [] };
+        riskLevel = 'low';
+        riskScore = Math.min(30, lowRisk * 3);
+        summary = `僅有 ${lowRisk} 筆低風險案件，整體風險可控`;
       }
       
-    } catch (error) {
-      console.error('司法院 API 查詢失敗:', error.message);
-      // 使用預設的低風險評估
-      legalRiskAnalysis = { riskLevel: 'low', riskScore: 10, summary: 'API 查詢超時，採用保守評估', details: [] };
+      legalRiskAnalysis = {
+        riskLevel,
+        riskScore,
+        summary,
+        details: judgmentRiskData.recentCases || []
+      };
+      
+    } else {
+      // 查詢司法院裁判書開放 API
+      try {
+        const judicialData = await Promise.race([
+          judicialService.searchJudgments(prospect.company, { top: 10 }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Judicial API Timeout')), 15000))
+        ]);
+        
+        if (judicialData && judicialData.success) {
+          judicialResult = {
+            total: judicialData.total || judicialData.data?.length || 0,
+            data: judicialData.data || judicialData.judgments || [],
+            note: judicialData.note || '來自司法院裁判書開放 API'
+          };
+          
+          // 分析判決書風險
+          legalRiskAnalysis = judicialService.analyzeJudgmentRisk(judicialResult.data);
+          console.log(`司法院 API 查詢成功，找到 ${judicialResult.total} 筆相關記錄`);
+        } else {
+          console.log('司法院 API 查詢失敗或無結果');
+          // 使用預設的低風險評估
+          legalRiskAnalysis = { riskLevel: 'low', riskScore: 5, summary: 'API 查詢無結果，風險較低', details: [] };
+        }
+        
+      } catch (error) {
+        console.error('司法院 API 查詢失敗:', error.message);
+        // 使用預設的低風險評估
+        legalRiskAnalysis = { riskLevel: 'low', riskScore: 10, summary: 'API 查詢超時，採用保守評估', details: [] };
+      }
     }
     
     const legalRiskText = `法律風險評估：${legalRiskAnalysis.riskLevel === 'high' ? '高風險' : legalRiskAnalysis.riskLevel === 'medium' ? '中風險' : '低風險'}`;

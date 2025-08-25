@@ -147,7 +147,7 @@ router.get('/by-name/:name', async (req, res) => {
 
     try {
       // 調用政府開放資料API
-      const response = await axios.get(`${GOV_API_BASE_URL}/236B`, {
+      const response = await axios.get(`${GOV_API_BASE_URL}/5F64D864-61CB-4D0D-8AD9-492047CC1EA6`, {
         params: {
           $format: 'json',
           $filter: `contains(Company_Name,'${name.trim()}')`,
@@ -157,22 +157,34 @@ router.get('/by-name/:name', async (req, res) => {
         timeout: 10000
       });
 
-      if (response.data && response.data.length > 0) {
-        const companies = response.data.map(company => ({
+      console.log('政府 API 回應 (by-name):', response.data);
+      
+      // 檢查回應資料格式
+      let companies = [];
+      if (Array.isArray(response.data)) {
+        companies = response.data;
+      } else if (response.data && response.data.value && Array.isArray(response.data.value)) {
+        companies = response.data.value;
+      } else if (response.data && typeof response.data === 'object') {
+        companies = [response.data];
+      }
+      
+      if (companies.length > 0) {
+        const formattedCompanies = companies.map(company => ({
           unifiedBusinessNumber: company.Business_Accounting_NO,
           companyName: company.Company_Name,
-          status: company.Company_Status_Desc,
+          status: company.Company_Status_Desc || company.Company_Status,
           setupDate: company.Company_Setup_Date,
-          capital: company.Paid_In_Capital_Stock_Amount,
+          capital: company.Paid_In_Capital_Stock_Amount || company.Capital_Stock_Amount,
           location: company.Company_Location,
-          address: company.Business_Address,
+          address: company.Business_Address || company.Company_Location,
           responsiblePerson: company.Responsible_Name
         }));
         
         res.json({
           success: true,
-          data: companies,
-          count: companies.length
+          data: formattedCompanies,
+          count: formattedCompanies.length
         });
       } else {
         res.json({

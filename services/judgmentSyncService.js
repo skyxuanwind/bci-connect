@@ -447,6 +447,60 @@ class JudgmentSyncService {
       hasMore: offset + limit < total
     };
   }
+
+  /**
+   * 根據公司名稱搜尋裁判書（專門用於AI分析）
+   */
+  async searchJudgmentsByCompany(companyName, options = {}) {
+    const { limit = 10 } = options;
+    
+    try {
+      console.log(`從本地資料庫搜尋公司 ${companyName} 的裁判書...`);
+      
+      // 搜尋包含公司名稱的裁判書
+      const query = `
+        SELECT id, jid, case_number, judgment_date, case_type, court_name, 
+               parties, summary, risk_level, judgment_content, created_at, updated_at
+        FROM judgments 
+        WHERE (
+          judgment_content ILIKE $1 OR 
+          case_number ILIKE $1 OR 
+          parties ILIKE $1 OR 
+          summary ILIKE $1
+        )
+        ORDER BY judgment_date DESC, created_at DESC
+        LIMIT $2
+      `;
+      
+      const result = await pool.query(query, [`%${companyName}%`, limit]);
+      
+      if (result.rows.length > 0) {
+        // 轉換為與司法院API相容的格式
+        const formattedJudgments = result.rows.map(row => ({
+          JID: row.jid,
+          JCASE: row.case_number,
+          JDATE: row.judgment_date,
+          JCOURT: row.court_name,
+          JTITLE: row.summary || `${row.court_name} ${row.case_number}`,
+          JFULL: row.judgment_content,
+          parties: row.parties,
+          riskLevel: row.risk_level,
+          source: 'local_database',
+          localId: row.id
+        }));
+        
+        console.log(`從本地資料庫找到 ${formattedJudgments.length} 筆相關裁判書`);
+        return formattedJudgments;
+      } else {
+        console.log(`本地資料庫中未找到包含 ${companyName} 的裁判書`);
+        return [];
+      }
+      
+    } catch (error) {
+      console.error('本地裁判書搜尋失敗:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new JudgmentSyncService();
