@@ -147,14 +147,26 @@ router.get('/by-name/:name', async (req, res) => {
 
     try {
       // 調用政府開放資料API
+      const encodedName = encodeURIComponent(name.trim());
       const response = await axios.get(`${GOV_API_BASE_URL}/5F64D864-61CB-4D0D-8AD9-492047CC1EA6`, {
         params: {
           $format: 'json',
-          $filter: `contains(Company_Name,'${name.trim()}')`,
+          $filter: `contains(Company_Name,'${encodedName}')`,
           $select: 'Business_Accounting_NO,Company_Name,Company_Status,Company_Setup_Date,Paid_In_Capital_Stock_Amount,Company_Location,Business_Address,Responsible_Name,Company_Status_Desc',
           $top: 10 // 限制回傳筆數
         },
-        timeout: 10000
+        timeout: 10000,
+        // 確保正確處理中文字符
+        paramsSerializer: function(params) {
+          return Object.keys(params).map(key => {
+            const value = params[key];
+            if (key === '$filter') {
+              // 對於 $filter 參數，我們需要特殊處理
+              return `${key}=${value}`;
+            }
+            return `${key}=${encodeURIComponent(value)}`;
+          }).join('&');
+        }
       });
 
       console.log('政府 API 回應 (by-name):', response.data);
