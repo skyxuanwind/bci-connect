@@ -919,53 +919,65 @@ const CheckInScanner = () => {
                     {isMac && (
                       <>
                         <a
-                          href={macReleaseUrl}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
-                        >
-                          下載 Gateway 啟動器（macOS App，建議）
-                        </a>
-                        <a
                           href="/BCI-NFC-Gateway-Launcher.command"
                           download
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-800 text-white text-sm hover:bg-gray-900"
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
                         >
-                          備用：macOS .command
+                          🚀 下載 Gateway 啟動器（macOS，推薦）
+                        </a>
+                        <a
+                          href={macReleaseUrl}
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-600 text-white text-sm hover:bg-gray-700"
+                        >
+                          備用：macOS App
                         </a>
                       </>
                     )}
                     {isWindows && (
                       <>
                         <a
-                          href={winReleaseUrl}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
-                        >
-                          下載 Gateway 啟動器（Windows EXE，建議）
-                        </a>
-                        <a
                           href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
                           download
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-white border text-sm hover:bg-gray-50"
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
                         >
-                          備用：Windows VBS
+                          🚀 下載 Gateway 啟動器（Windows，推薦）
+                        </a>
+                        <a
+                          href={winReleaseUrl}
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-600 text-white text-sm hover:bg-gray-700"
+                        >
+                          備用：Windows EXE
                         </a>
                       </>
                     )}
                     {!isMac && !isWindows && (
                       <>
                         <a
-                          href={macReleaseUrl}
+                          href="/BCI-NFC-Gateway-Launcher.command"
+                          download
                           className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
                         >
-                          下載 macOS App
+                          下載 macOS 啟動器
                         </a>
                         <a
-                          href={winReleaseUrl}
+                          href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
+                          download
                           className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
                         >
-                          下載 Windows EXE
+                          下載 Windows 啟動器
                         </a>
                       </>
                     )}
+                  </div>
+                  <div className="mt-3 p-2 bg-blue-50 rounded-md">
+                    <p className="text-xs text-blue-700">
+                      💡 <strong>使用說明：</strong>
+                      {isMac && '下載 .command 文件後，右鍵選擇「打開」，首次可能需要到「系統設定 > 隱私權與安全性」允許執行。'}
+                      {isWindows && '下載 .vbs 文件後，雙擊執行即可自動安裝並啟動 Gateway 服務。'}
+                      {!isMac && !isWindows && 'macOS 用戶下載 .command 文件，Windows 用戶下載 .vbs 文件。'}
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2">
                     <button
                       onClick={checkGatewayStatus}
                       className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-white border text-sm hover:bg-gray-50"
