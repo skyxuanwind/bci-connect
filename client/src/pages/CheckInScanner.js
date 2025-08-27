@@ -919,34 +919,34 @@ const CheckInScanner = () => {
                     {isMac && (
                       <>
                         <a
-                          href="/BCI-NFC-Gateway-Launcher.command"
-                          download
+                          href={macReleaseUrl}
                           className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
                         >
-                          🚀 下載 Gateway 啟動器（macOS，推薦）
+                          🚀 下載 Gateway 啟動器（macOS App）
                         </a>
                         <a
-                          href={macReleaseUrl}
+                          href="/BCI-NFC-Gateway-Launcher.command"
+                          download
                           className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-600 text-white text-sm hover:bg-gray-700"
                         >
-                          備用：macOS App
+                          備用：命令腳本
                         </a>
                       </>
                     )}
                     {isWindows && (
                       <>
                         <a
-                          href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
-                          download
+                          href={winReleaseUrl}
                           className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
                         >
-                          🚀 下載 Gateway 啟動器（Windows，推薦）
+                          🚀 下載 Gateway 啟動器（Windows EXE）
                         </a>
                         <a
-                          href={winReleaseUrl}
+                          href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
+                          download
                           className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-600 text-white text-sm hover:bg-gray-700"
                         >
-                          備用：Windows EXE
+                          備用：VBS 腳本
                         </a>
                       </>
                     )}
