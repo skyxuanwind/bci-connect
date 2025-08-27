@@ -28,7 +28,7 @@ const CheckInScanner = () => {
   // Gateway Service URL - 在生產環境使用當前域名，開發環境使用localhost:8000
   const GATEWAY_URL = process.env.NODE_ENV === 'production' 
     ? window.location.origin 
-    : 'http://localhost:8000';
+    : 'http://localhost:3002';
   const html5QrcodeScannerRef = useRef(null);
   const processedSseCheckinsRef = useRef(new Set());
   const modalTimeoutRef = useRef(null);

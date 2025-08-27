@@ -14,8 +14,8 @@ const NFCReportSystem = () => {
   
   // Gateway Service URL - 在生產環境使用當前域名，開發環境使用localhost:8000
 const GATEWAY_URL = process.env.NODE_ENV === 'production' 
-  ? window.location.origin 
-  : 'http://localhost:8000';
+    ? window.location.origin 
+    : 'http://localhost:3002';
   
   // 檢查本地 Gateway Service 狀態
   const checkGatewayStatus = async () => {
