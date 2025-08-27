@@ -919,6 +919,13 @@ const CheckInScanner = () => {
                     {isMac && (
                       <>
                         <a
+                          href="/BCI-NFC-Gateway-Launcher-macOS.zip"
+                          download
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-green-600 text-white text-sm hover:bg-green-700"
+                        >
+                          ✅ 下載已簽名版本（推薦）
+                        </a>
+                        <a
                           href="/BCI-NFC-Gateway-Launcher.command"
                           download
                           className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
