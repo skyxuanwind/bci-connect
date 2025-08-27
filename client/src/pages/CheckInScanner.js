@@ -25,8 +25,10 @@ const CheckInScanner = () => {
   const [lastNfcCheckin, setLastNfcCheckin] = useState(null);
   const [nfcCheckinRecords, setNfcCheckinRecords] = useState([]);
   
-  // 本地 Gateway Service URL
-  const GATEWAY_URL = 'http://localhost:3002';
+  // Gateway Service URL - 在生產環境使用當前域名，開發環境使用localhost
+  const GATEWAY_URL = process.env.NODE_ENV === 'production' 
+    ? window.location.origin 
+    : 'http://localhost:3002';
   const html5QrcodeScannerRef = useRef(null);
   const processedSseCheckinsRef = useRef(new Set());
   const modalTimeoutRef = useRef(null);

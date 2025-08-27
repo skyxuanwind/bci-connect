@@ -14,8 +14,10 @@ const NFCGatewayCheckin = () => {
   const [stats, setStats] = useState(null);
   const [connecting, setConnecting] = useState(false);
   
-  // NFC Gateway Service URL
-  const GATEWAY_URL = process.env.REACT_APP_NFC_GATEWAY_URL || 'http://localhost:3002';
+  // NFC Gateway Service URL - 在生產環境使用當前域名，開發環境使用localhost
+  const GATEWAY_URL = process.env.NODE_ENV === 'production' 
+    ? window.location.origin 
+    : (process.env.REACT_APP_NFC_GATEWAY_URL || 'http://localhost:3002');
   
   // 檢查 NFC Gateway Service 狀態
   const checkGatewayStatus = async () => {
