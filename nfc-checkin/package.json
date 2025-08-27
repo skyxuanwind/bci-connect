@@ -8,14 +8,20 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "nfc-pcsc": "^0.8.0",
-    "sqlite3": "^5.1.6"
+    "express": "^4.21.2",
+    "nfc-pcsc": "^0.8.1",
+    "sqlite3": "^5.1.6",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "keywords": ["nfc", "checkin", "attendance", "acr122u"],
+  "keywords": [
+    "nfc",
+    "checkin",
+    "attendance",
+    "acr122u"
+  ],
   "author": "Your Name",
   "license": "MIT"
 }

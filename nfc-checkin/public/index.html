@@ -1,241 +1,28 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC 報到系統</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', 'Microsoft JhengHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #333;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-        }
-
-        .title {
-            font-size: 2.5em;
-            color: #667eea;
-            margin-bottom: 30px;
-            font-weight: bold;
-        }
-
-        .status {
-            font-size: 1.5em;
-            margin: 30px 0;
-            padding: 20px;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .waiting {
-            background: #f8f9fa;
-            color: #6c757d;
-            border: 2px dashed #dee2e6;
-        }
-
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 2px solid #c3e6cb;
-        }
-
-        .card-info {
-            font-size: 1.2em;
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 5px solid #667eea;
-        }
-
-        .time-info {
-            font-size: 1em;
-            color: #6c757d;
-            margin-top: 10px;
-        }
-
-        .nfc-icon {
-            font-size: 4em;
-            margin: 20px 0;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .footer {
-            margin-top: 30px;
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>NFC 報到系統</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    .uid { font-size: 24px; color: green; margin-top: 20px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="title">📱 NFC 報到系統</h1>
-        
-        <div class="nfc-icon">📡</div>
-        
-        <div id="status" class="status waiting">
-            <div class="loading"></div>
-            等待報到中...
-        </div>
-        
-        <div id="checkin-info" style="display: none;">
-            <div class="card-info">
-                <strong>卡號：</strong><span id="card-uid">-</span>
-            </div>
-            <div class="time-info">
-                報到時間：<span id="checkin-time">-</span>
-            </div>
-        </div>
-        
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-number" id="total-checkins">0</div>
-                <div class="stat-label">總報到次數</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number" id="last-update">-</div>
-                <div class="stat-label">最後更新</div>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>請將 NFC 卡片靠近讀卡機</p>
-            <p>系統每 2 秒自動更新</p>
-        </div>
-    </div>
+  <h1>📋 NFC 報到系統</h1>
+  <p>請將電子名片靠近讀卡機</p>
+  <div class="uid" id="uid">等待刷卡...</div>
 
-    <script>
-        let totalCheckins = 0;
-        let lastCheckinId = null;
-
-        // 更新報到狀態
-        async function updateCheckinStatus() {
-            try {
-                const response = await fetch('/last-checkin');
-                const data = await response.json();
-                
-                const statusDiv = document.getElementById('status');
-                const checkinInfo = document.getElementById('checkin-info');
-                const cardUid = document.getElementById('card-uid');
-                const checkinTime = document.getElementById('checkin-time');
-                const lastUpdate = document.getElementById('last-update');
-                
-                // 更新最後更新時間
-                lastUpdate.textContent = new Date().toLocaleTimeString('zh-TW');
-                
-                if (data.id && data.id !== lastCheckinId) {
-                    // 有新的報到紀錄
-                    lastCheckinId = data.id;
-                    
-                    statusDiv.className = 'status success';
-                    statusDiv.innerHTML = '✅ 報到成功！';
-                    
-                    cardUid.textContent = data.card_uid;
-                    checkinTime.textContent = data.checkin_time;
-                    checkinInfo.style.display = 'block';
-                    
-                    // 3秒後恢復等待狀態
-                    setTimeout(() => {
-                        statusDiv.className = 'status waiting';
-                        statusDiv.innerHTML = '<div class="loading"></div>等待報到中...';
-                        checkinInfo.style.display = 'none';
-                    }, 3000);
-                } else if (data.id) {
-                    // 顯示最後一筆紀錄但不是新的
-                    if (statusDiv.className.includes('waiting')) {
-                        cardUid.textContent = data.card_uid;
-                        checkinTime.textContent = data.checkin_time;
-                    }
-                }
-                
-                // 更新總報到次數
-                if (data.id) {
-                    totalCheckins = data.id;
-                    document.getElementById('total-checkins').textContent = totalCheckins;
-                }
-                
-            } catch (error) {
-                console.error('更新報到狀態錯誤:', error);
-                const statusDiv = document.getElementById('status');
-                statusDiv.className = 'status waiting';
-                statusDiv.innerHTML = '❌ 連線錯誤，請檢查伺服器';
-            }
-        }
-
-        // 頁面載入時立即更新一次
-        updateCheckinStatus();
-        
-        // 每2秒自動更新
-        setInterval(updateCheckinStatus, 2000);
-        
-        // 頁面可見性變化時也更新
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                updateCheckinStatus();
-            }
-        });
-    </script>
+  <script>
+    const ws = new WebSocket(`ws://${window.location.host}`);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.uid) {
+        document.getElementById('uid').textContent = `✅ 報到成功！UID: ${data.uid}`;
+      } else if (data.msg) {
+        document.getElementById('uid').textContent = data.msg;
+      }
+    };
+  </script>
 </body>
 </html>
