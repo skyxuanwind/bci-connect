@@ -30,6 +30,7 @@ const CheckInScanner = () => {
   const html5QrcodeScannerRef = useRef(null);
   const processedSseCheckinsRef = useRef(new Set());
   const modalTimeoutRef = useRef(null);
+  const nfcScanControllerRef = useRef(null);
 
   // 平台自動偵測與最新版本下載連結（GitHub Releases）
   const GITHUB_OWNER = 'skyxuanwind';
@@ -186,6 +187,20 @@ const CheckInScanner = () => {
       console.log('NFC not supported on this device/browser');
     }
   };
+
+  // 在元件卸載時中止任何進行中的 Web NFC 掃描
+  useEffect(() => {
+    return () => {
+      try {
+        if (nfcScanControllerRef.current) {
+          nfcScanControllerRef.current.abort();
+          nfcScanControllerRef.current = null;
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, []);
 
   // 檢查權限 - 僅限一級核心和管理員
   if (!user || (user.membershipLevel !== 1 && !isAdmin())) {
@@ -386,6 +401,76 @@ const CheckInScanner = () => {
   const stopNFCReading = () => {
     setNfcReading(false);
     setNfcResult(null);
+  };
+
+  // 使用 Web NFC（免安裝）直接從瀏覽器讀取卡號（僅支援特定裝置/瀏覽器）
+  const startWebNFCReading = async () => {
+    if (!selectedEvent) {
+      alert('請先選擇活動');
+      return;
+    }
+    if (!('NDEFReader' in window)) {
+      alert('此裝置或瀏覽器不支援 Web NFC。建議使用 Android 手機的 Chrome 瀏覽器，或改用下方 Gateway 方案。');
+      return;
+    }
+
+    try {
+      setNfcReading(true);
+      setNfcResult(null);
+
+      const controller = new AbortController();
+      nfcScanControllerRef.current = controller;
+
+      const ndef = new window.NDEFReader();
+      await ndef.scan({ signal: controller.signal });
+      addDebugInfo('Web NFC 掃描已啟動，請將 NFC 卡片靠近裝置');
+
+      ndef.addEventListener('reading', async ({ message, serialNumber }) => {
+        try {
+          addDebugInfo(`偵測到 NFC 卡片：${serialNumber || '(無序號)'}`);
+          const uid = (serialNumber || '').toUpperCase();
+          if (uid) {
+            await handleNFCReading(uid);
+          } else {
+            setNfcResult({ success: false, message: '未能取得卡片序號，請再試一次' });
+          }
+        } catch (err) {
+          console.error('Web NFC 報到處理失敗:', err);
+          setNfcResult({ success: false, message: err?.response?.data?.message || err?.message || 'Web NFC 報到失敗' });
+        } finally {
+          // 單次讀取後即停止（避免重複觸發）
+          try {
+            if (nfcScanControllerRef.current) {
+              nfcScanControllerRef.current.abort();
+              nfcScanControllerRef.current = null;
+            }
+          } catch (_) {}
+          setNfcReading(false);
+        }
+      });
+
+      ndef.addEventListener('readingerror', () => {
+        setNfcResult({ success: false, message: '讀取失敗，請將卡片更靠近或穩定放置再試一次' });
+      });
+    } catch (error) {
+      console.error('啟動 Web NFC 失敗:', error);
+      let msg = error?.message || '請確認使用支援 Web NFC 的裝置/瀏覽器，並在 HTTPS 頁面下使用';
+      if (error?.name === 'NotAllowedError') {
+        msg = '瀏覽器未授權使用 NFC，請允許權限後重試';
+      }
+      setNfcResult({ success: false, message: 'Web NFC 啟動失敗：' + msg });
+      setNfcReading(false);
+    }
+  };
+
+  const stopWebNFCReading = () => {
+    try {
+      if (nfcScanControllerRef.current) {
+        nfcScanControllerRef.current.abort();
+        nfcScanControllerRef.current = null;
+      }
+    } catch (_) {}
+    setNfcReading(false);
   };
 
   // QR Code 掃描成功處理
@@ -758,6 +843,36 @@ const CheckInScanner = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">NFC 名片報到</h2>
             
+            {/* Web NFC（免安裝）區塊 */}
+            {nfcSupported ? (
+              <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 className="text-sm font-medium text-green-800 mb-1">行動裝置 Web NFC（免安裝）</h3>
+                <p className="text-xs text-green-700 mb-3">使用支援 NFC 的 Android Chrome 裝置，直接在瀏覽器讀卡完成報到</p>
+                <div className="flex gap-2">
+                  {!nfcReading ? (
+                    <button
+                      onClick={startWebNFCReading}
+                      disabled={loading || !selectedEvent}
+                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                    >
+                      🚀 手機直接讀取（Web NFC）
+                    </button>
+                  ) : (
+                    <button
+                      onClick={stopWebNFCReading}
+                      className="flex-1 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors"
+                    >
+                      ⏹️ 停止 Web NFC
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-800 text-sm">
+                此裝置或瀏覽器不支援 Web NFC。建議使用 Android 手機的 Chrome 瀏覽器開啟此網站（HTTPS），或使用下方 Gateway 方案。
+              </div>
+            )}
+
             {/* Gateway 狀態 */}
             <div className="mb-4 p-4 bg-gray-50 rounded-lg">
               <h3 className="text-sm font-medium text-gray-800 mb-2">Gateway Service 狀態</h3>
