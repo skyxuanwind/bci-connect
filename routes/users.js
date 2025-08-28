@@ -23,7 +23,39 @@ const upload = multer({
   }
 });
 
-// Apply authentication to all routes
+// 獲取用戶公開資訊 (不需要認證)
+router.get('/:id/public', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      `SELECT id, name, company, title
+       FROM users 
+       WHERE id = $1 AND status = 'active'`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '用戶不存在或未啟用'
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error fetching public user info:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取用戶資訊失敗'
+    });
+  }
+});
+
+// Apply authentication to all routes below
 router.use(authenticateToken);
 
 // @route   GET /api/users/profile

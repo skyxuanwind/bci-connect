@@ -10,8 +10,11 @@ const EventManagement = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
+  const [showGuestRegistrationsModal, setShowGuestRegistrationsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [registrations, setRegistrations] = useState([]);
+  const [guestRegistrations, setGuestRegistrations] = useState([]);
+  const [activeTab, setActiveTab] = useState('members'); // 'members' or 'guests'
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -166,6 +169,7 @@ const EventManagement = () => {
       const data = await response.json();
       if (data.success) {
         setRegistrations(data.registrations);
+        setActiveTab('members');
         setShowRegistrationsModal(true);
       } else {
         alert(data.message || '獲取報名列表失敗');
@@ -174,6 +178,33 @@ const EventManagement = () => {
       console.error('Error fetching registrations:', error);
       alert('網路錯誤，請稍後再試');
     }
+  };
+
+  const fetchGuestRegistrations = async (eventId) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}/guest-registrations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setGuestRegistrations(data.guestRegistrations);
+      } else {
+        alert(data.message || '獲取來賓報名列表失敗');
+      }
+    } catch (error) {
+      console.error('Error fetching guest registrations:', error);
+      alert('網路錯誤，請稍後再試');
+    }
+  };
+
+  const handleViewRegistrations = async (eventId) => {
+    await Promise.all([
+      fetchRegistrations(eventId),
+      fetchGuestRegistrations(eventId)
+    ]);
   };
 
   const openEditModal = (event) => {
@@ -375,7 +406,7 @@ const EventManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
-                        onClick={() => fetchRegistrations(event.id)}
+                        onClick={() => handleViewRegistrations(event.id)}
                         className="text-blue-600 hover:text-blue-900"
                       >
                         查看報名
@@ -740,69 +771,174 @@ const EventManagement = () => {
           <div className="relative top-10 mx-auto p-5 border w-4/5 max-w-4xl shadow-lg rounded-md bg-white">
             <div className="mb-4">
               <h3 className="text-lg font-medium text-gray-900">報名人員列表</h3>
-            </div>
-            
-            <div className="overflow-x-auto max-h-96">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      姓名
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      公司
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      職位
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      聯絡電話
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      邀請人
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      報名時間
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {registrations.map((registration) => (
-                    <tr key={registration.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {registration.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {registration.email}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {registration.company || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {registration.title || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {registration.contact_number || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {registration.inviter_name || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(registration.registration_date).toLocaleString('zh-TW')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {registrations.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-500">暫無報名人員</p>
+              
+              {/* Tab Navigation */}
+              <div className="mt-4 border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8">
+                  <button
+                    onClick={() => setActiveTab('members')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'members'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    會員報名 ({registrations.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('guests')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'guests'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    來賓報名 ({guestRegistrations.length})
+                  </button>
+                </nav>
               </div>
+            </div>
+            
+            {/* Members Tab */}
+            {activeTab === 'members' && (
+              <>
+                <div className="overflow-x-auto max-h-96">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          姓名
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          公司
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          職位
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          聯絡電話
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          邀請人
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          報名時間
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {registrations.map((registration) => (
+                        <tr key={registration.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {registration.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {registration.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {registration.company || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {registration.title || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {registration.contact_number || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {registration.inviter_name || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(registration.registration_date).toLocaleString('zh-TW')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {registrations.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">暫無會員報名</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Guests Tab */}
+            {activeTab === 'guests' && (
+              <>
+                <div className="overflow-x-auto max-h-96">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          姓名
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          電話
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          公司
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          產業別
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          想要連結的人脈
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          邀請人
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          報名時間
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {guestRegistrations.map((guest) => (
+                        <tr key={guest.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {guest.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {guest.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {guest.phone}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {guest.company}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {guest.industry}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                            {guest.desired_connections || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {guest.inviter_name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(guest.registration_date).toLocaleString('zh-TW')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {guestRegistrations.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">暫無來賓報名</p>
+                  </div>
+                )}
+              </>
             )}
             
             <div className="flex justify-end mt-6">

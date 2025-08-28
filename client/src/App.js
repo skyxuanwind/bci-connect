@@ -26,6 +26,7 @@ import MeetingScheduler from './pages/MeetingScheduler';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import EventManagement from './pages/admin/EventManagement';
+import GuestRegistration from './pages/GuestRegistration';
 
 import ProspectVoting from './pages/ProspectVoting';
 import ProspectApplication from './pages/ProspectApplication';
@@ -53,6 +54,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/guest-registration" element={<GuestRegistration />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           

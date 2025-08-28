@@ -165,6 +165,25 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create guest_registrations table (來賓報名表)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS guest_registrations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        phone VARCHAR(20) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        company VARCHAR(200) NOT NULL,
+        industry VARCHAR(100) NOT NULL,
+        desired_connections TEXT,
+        event_id INTEGER NOT NULL REFERENCES events(id),
+        inviter_id INTEGER NOT NULL REFERENCES users(id),
+        registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status VARCHAR(20) DEFAULT 'registered' CHECK (status IN ('registered', 'attended', 'cancelled')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(email, event_id)
+      )
+    `);
+
     // Create prospects table (商訪準會員資料表)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS prospects (
