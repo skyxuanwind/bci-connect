@@ -46,6 +46,41 @@ const Profile = () => {
     }
   });
 
+  const {
+    register: registerPassword,
+    handleSubmit: handleSubmitPassword,
+    formState: { errors: passwordErrors },
+    reset: resetPassword,
+    watch
+  } = useForm();
+
+  const {
+    register: registerInterview,
+    handleSubmit: handleSubmitInterview,
+    formState: { errors: interviewErrors },
+    reset: resetInterview
+  } = useForm({
+    defaultValues: {
+      companyName: user?.interviewForm?.companyName || '',
+      brandLogo: user?.interviewForm?.brandLogo || '',
+      industry: user?.interviewForm?.industry || '',
+      coreServices: user?.interviewForm?.coreServices || '',
+      competitiveAdvantage: user?.interviewForm?.competitiveAdvantage || '',
+      targetMarket: user?.interviewForm?.targetMarket || '',
+      idealCustomer: user?.interviewForm?.idealCustomer || '',
+      customerExamples: user?.interviewForm?.customerExamples || '',
+      customerTraits: user?.interviewForm?.customerTraits || '',
+      customerPainPoints: user?.interviewForm?.customerPainPoints || '',
+      referralTrigger: user?.interviewForm?.referralTrigger || '',
+      referralOpening: user?.interviewForm?.referralOpening || '',
+      qualityReferral: user?.interviewForm?.qualityReferral || '',
+      unsuitableReferral: user?.interviewForm?.unsuitableReferral || '',
+      partnerTypes: user?.interviewForm?.partnerTypes || '',
+      businessGoals: user?.interviewForm?.businessGoals || '',
+      personalInterests: user?.interviewForm?.personalInterests || ''
+    }
+  });
+
   // 當 AuthContext 的 user 更新時，同步表單顯示值（react-hook-form 的 defaultValues 只在初始化時生效）
   useEffect(() => {
     if (!user) return;
@@ -82,41 +117,6 @@ const Profile = () => {
       personalInterests: user.interviewForm.personalInterests || ''
     });
   }, [user?.interviewForm, resetInterview]);
-
-  const {
-    register: registerPassword,
-    handleSubmit: handleSubmitPassword,
-    formState: { errors: passwordErrors },
-    reset: resetPassword,
-    watch
-  } = useForm();
-
-  const {
-    register: registerInterview,
-    handleSubmit: handleSubmitInterview,
-    formState: { errors: interviewErrors },
-    reset: resetInterview
-  } = useForm({
-    defaultValues: {
-      companyName: user?.interviewForm?.companyName || '',
-      brandLogo: user?.interviewForm?.brandLogo || '',
-      industry: user?.interviewForm?.industry || '',
-      coreServices: user?.interviewForm?.coreServices || '',
-      competitiveAdvantage: user?.interviewForm?.competitiveAdvantage || '',
-      targetMarket: user?.interviewForm?.targetMarket || '',
-      idealCustomer: user?.interviewForm?.idealCustomer || '',
-      customerExamples: user?.interviewForm?.customerExamples || '',
-      customerTraits: user?.interviewForm?.customerTraits || '',
-      customerPainPoints: user?.interviewForm?.customerPainPoints || '',
-      referralTrigger: user?.interviewForm?.referralTrigger || '',
-      referralOpening: user?.interviewForm?.referralOpening || '',
-      qualityReferral: user?.interviewForm?.qualityReferral || '',
-      unsuitableReferral: user?.interviewForm?.unsuitableReferral || '',
-      partnerTypes: user?.interviewForm?.partnerTypes || '',
-      businessGoals: user?.interviewForm?.businessGoals || '',
-      personalInterests: user?.interviewForm?.personalInterests || ''
-    }
-  });
 
   const newPassword = watch('newPassword');
 
