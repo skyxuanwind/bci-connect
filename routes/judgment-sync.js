@@ -19,14 +19,30 @@ const requireAdminOrLevel1 = (req, res, next) => {
 router.get('/status', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const syncLogs = await judgmentSyncService.getSyncStatus();
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isApiAvailable = judgmentSyncService.isApiAvailable();
+    
+    // 獲取環境變量狀態
+    const devForceEnabled = process.env.JUDICIAL_DEV_FORCE === 'true';
     
     res.json({
       success: true,
       data: {
         isRunning: judgmentSyncService.isRunning,
         currentSyncId: judgmentSyncService.currentSyncId,
-        isApiAvailable: judgmentSyncService.isApiAvailable(),
-        recentLogs: syncLogs
+        isApiAvailable: isApiAvailable,
+        recentLogs: syncLogs,
+        // 調試信息
+        debugInfo: {
+          currentTime: now.toISOString(),
+          currentHour: currentHour,
+          taiwanTime: now.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+          devForceEnabled: devForceEnabled,
+          apiServiceWindow: '00:00 - 06:00 (台北時間)',
+          isInServiceWindow: currentHour >= 0 && currentHour < 6,
+          environment: process.env.NODE_ENV || 'development'
+        }
       }
     });
   } catch (error) {
@@ -51,6 +67,29 @@ router.post('/manual-sync', authenticateToken, requireAdminOrLevel1, async (req,
       });
     }
 
+    const { forceSync } = req.body;
+    const isApiAvailable = judgmentSyncService.isApiAvailable();
+    
+    // 檢查API可用性，除非強制同步
+    if (!isApiAvailable && !forceSync) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      return res.status(400).json({
+        success: false,
+        message: `司法院 API 僅在凌晨 0-6 點提供服務，當前時間 ${currentHour}:${String(now.getMinutes()).padStart(2, '0')} 不在服務時間內`,
+        debugInfo: {
+          currentHour: currentHour,
+          serviceWindow: '00:00 - 06:00',
+          suggestion: '請在服務時間內重試，或聯繫管理員啟用開發模式'
+        }
+      });
+    }
+
+    // 記錄強制同步
+    if (forceSync && !isApiAvailable) {
+      console.warn(`⚠️ 管理員強制同步：用戶 ${req.user.username} 在非服務時間啟動同步`);
+    }
+
     // 非同步執行同步作業
     judgmentSyncService.manualSync().catch(error => {
       console.error('手動同步失敗:', error);
@@ -58,13 +97,48 @@ router.post('/manual-sync', authenticateToken, requireAdminOrLevel1, async (req,
 
     res.json({
       success: true,
-      message: '同步作業已開始，請稍後查看狀態'
+      message: forceSync ? '強制同步作業已開始，請稍後查看狀態' : '同步作業已開始，請稍後查看狀態'
     });
   } catch (error) {
     console.error('觸發手動同步失敗:', error);
     res.status(500).json({
       success: false,
       message: '觸發同步失敗',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * 管理員功能：切換開發模式
+ */
+router.post('/toggle-dev-mode', authenticateToken, async (req, res) => {
+  try {
+    // 只有管理員可以切換開發模式
+    if (req.user.membership_level !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: '只有管理員可以切換開發模式'
+      });
+    }
+
+    const { enable } = req.body;
+    
+    // 注意：這只是臨時設置，重啟後會恢復
+    process.env.JUDICIAL_DEV_FORCE = enable ? 'true' : 'false';
+    
+    console.log(`🔧 管理員 ${req.user.username} ${enable ? '啟用' : '停用'}了開發模式`);
+    
+    res.json({
+      success: true,
+      message: `開發模式已${enable ? '啟用' : '停用'}（重啟後恢復預設值）`,
+      devModeEnabled: enable
+    });
+  } catch (error) {
+    console.error('切換開發模式失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '切換開發模式失敗',
       error: error.message
     });
   }

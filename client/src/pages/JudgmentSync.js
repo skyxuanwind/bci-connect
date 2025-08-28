@@ -39,21 +39,21 @@ const JudgmentSync = () => {
   };
 
   // 手動觸發同步
-  const handleManualSync = async () => {
+  const handleManualSync = async (forceSync = false) => {
     if (syncStatus?.isRunning) {
       toast.warning('同步作業已在進行中');
       return;
     }
 
-    if (!syncStatus?.isApiAvailable) {
+    if (!syncStatus?.isApiAvailable && !forceSync) {
       toast.warning('司法院 API 僅在凌晨 0-6 點提供服務');
       return;
     }
 
     setLoading(true);
     try {
-      await api.post('/api/judgment-sync/manual-sync');
-      toast.success('同步作業已開始，請稍後查看狀態');
+      await api.post('/api/judgment-sync/manual-sync', { forceSync });
+      toast.success(forceSync ? '強制同步作業已開始' : '同步作業已開始，請稍後查看狀態');
       // 延遲重新載入狀態
       setTimeout(() => {
         loadSyncStatus();
@@ -63,6 +63,21 @@ const JudgmentSync = () => {
       toast.error(error.response?.data?.message || '觸發同步失敗');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 切換開發模式
+  const handleToggleDevMode = async (enable) => {
+    try {
+      await api.post('/api/judgment-sync/toggle-dev-mode', { enable });
+      toast.success(`開發模式已${enable ? '啟用' : '停用'}`);
+      // 重新載入狀態
+      setTimeout(() => {
+        loadSyncStatus();
+      }, 1000);
+    } catch (error) {
+      console.error('切換開發模式失敗:', error);
+      toast.error(error.response?.data?.message || '切換開發模式失敗');
     }
   };
 
@@ -150,6 +165,22 @@ const JudgmentSync = () => {
           <h3 className="text-lg font-medium text-gray-900 mb-4">同步狀態</h3>
           {syncStatus ? (
             <div className="space-y-3">
+              {/* 當前時間顯示 */}
+              <div className="bg-gray-50 p-3 rounded-md">
+                <div className="text-sm text-gray-600 mb-1">當前時間</div>
+                <div className="font-medium text-gray-900">
+                  {new Date().toLocaleString('zh-TW', {
+                    timeZone: 'Asia/Taipei',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                  })}
+                </div>
+              </div>
+              
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">API 可用性</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -160,6 +191,30 @@ const JudgmentSync = () => {
                   {syncStatus.isApiAvailable ? '可用' : '不可用'}
                 </span>
               </div>
+              
+              {/* API 限制說明 */}
+              {!syncStatus.isApiAvailable && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-yellow-800">
+                        司法院 API 服務時間限制
+                      </h3>
+                      <div className="mt-2 text-sm text-yellow-700">
+                        <p>• 服務時間：每日凌晨 00:00 - 06:00</p>
+                        <p>• 當前時間：{new Date().getHours()}:{String(new Date().getMinutes()).padStart(2, '0')}</p>
+                        <p>• 如需測試，請聯繫管理員啟用開發模式</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">同步狀態</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -170,13 +225,86 @@ const JudgmentSync = () => {
                   {syncStatus.isRunning ? '進行中' : '閒置'}
                 </span>
               </div>
-              <button
-                onClick={handleManualSync}
-                disabled={loading || syncStatus.isRunning || !syncStatus.isApiAvailable}
-                className="w-full mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {loading ? '啟動中...' : '手動同步'}
-              </button>
+              
+              {/* 同步進度顯示 */}
+              {syncStatus.isRunning && syncStatus.currentSyncId && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <div className="text-sm text-blue-800">
+                    <p>同步作業進行中...</p>
+                    <p>同步 ID: {syncStatus.currentSyncId}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleManualSync(false)}
+                  disabled={loading || syncStatus.isRunning || !syncStatus.isApiAvailable}
+                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {loading ? '啟動中...' : syncStatus.isRunning ? '同步進行中' : !syncStatus.isApiAvailable ? 'API 不可用' : '手動同步'}
+                </button>
+                
+                {/* 管理員控制面板 */}
+                {syncStatus.debugInfo && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-md p-3">
+                    <div className="text-sm font-medium text-orange-800 mb-2">管理員控制</div>
+                    <div className="space-y-2">
+                      {/* 開發模式切換 */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-orange-700">開發模式</span>
+                        <button
+                          onClick={() => handleToggleDevMode(!syncStatus.debugInfo.devForceEnabled)}
+                          className={`px-3 py-1 rounded text-xs font-medium ${
+                            syncStatus.debugInfo.devForceEnabled
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                          }`}
+                        >
+                          {syncStatus.debugInfo.devForceEnabled ? '已啟用' : '已停用'}
+                        </button>
+                      </div>
+                      
+                      {/* 強制同步按鈕 */}
+                      {!syncStatus.isApiAvailable && (
+                        <button
+                          onClick={() => handleManualSync(true)}
+                          disabled={loading || syncStatus.isRunning}
+                          className="w-full bg-orange-600 text-white px-4 py-1 rounded text-sm hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {loading ? '啟動中...' : '強制同步（忽略時間限制）'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* 錯誤提示 */}
+              {!syncStatus.isApiAvailable && !syncStatus.debugInfo?.devForceEnabled && (
+                <div className="text-xs text-gray-500 text-center">
+                  手動同步僅在 API 服務時間內可用，或聯繫管理員啟用開發模式
+                </div>
+              )}
+              
+              {/* 調試信息顯示 */}
+              {syncStatus.debugInfo && (
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3 mt-3">
+                  <div className="text-sm font-medium text-gray-800 mb-2">系統狀態詳情</div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>環境: {syncStatus.debugInfo.environment}</div>
+                      <div>開發模式: {syncStatus.debugInfo.devForceEnabled ? '已啟用' : '未啟用'}</div>
+                      <div>當前小時: {syncStatus.debugInfo.currentHour}</div>
+                      <div>服務窗口: {syncStatus.debugInfo.isInServiceWindow ? '是' : '否'}</div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div>台北時間: {syncStatus.debugInfo.taiwanTime}</div>
+                      <div>服務時間: {syncStatus.debugInfo.apiServiceWindow}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-gray-500">載入中...</div>
@@ -195,6 +323,20 @@ const JudgmentSync = () => {
               <div className="text-sm text-gray-500">
                 最後更新: {formatDate(statistics.lastUpdate)}
               </div>
+              {/* 調試信息顯示 */}
+              {statistics.debugInfo && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-3">
+                  <div className="text-sm font-medium text-blue-800 mb-2">調試信息</div>
+                  <div className="text-xs text-blue-700 space-y-1">
+                    {Object.entries(statistics.debugInfo).map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span className="font-medium">{key}:</span>
+                        <span>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <div className="text-sm font-medium text-gray-700">風險等級分布</div>
                 {statistics.riskLevelStats.map(stat => (
@@ -213,32 +355,57 @@ const JudgmentSync = () => {
         {/* 最近同步記錄 */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">最近同步</h3>
-          {syncStatus?.recentLogs ? (
+          {syncStatus?.recentLogs && syncStatus.recentLogs.length > 0 ? (
             <div className="space-y-3">
-              {syncStatus.recentLogs.slice(0, 5).map(log => (
-                <div key={log.id} className="border-b border-gray-200 pb-2 last:border-b-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">{formatDate(log.sync_date)}</span>
+              {syncStatus.recentLogs.slice(0, 5).map((log, index) => (
+                <div key={index} className="border border-gray-200 rounded-md p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-900">
+                      {formatDate(log.sync_date)}
+                    </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       log.status === 'completed' 
                         ? 'text-green-600 bg-green-100'
-                        : log.status === 'failed'
-                        ? 'text-red-600 bg-red-100'
-                        : 'text-blue-600 bg-blue-100'
+                        : log.status === 'running'
+                        ? 'text-blue-600 bg-blue-100'
+                        : 'text-red-600 bg-red-100'
                     }`}>
-                      {log.status === 'completed' ? '完成' : log.status === 'failed' ? '失敗' : '進行中'}
+                      {log.status === 'completed' ? '完成' : log.status === 'running' ? '進行中' : '失敗'}
                     </span>
                   </div>
+                  
+                  {/* 同步統計 */}
                   {log.status === 'completed' && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      新增 {log.new_records} 筆，更新 {log.updated_records} 筆
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                      <div>總計: {log.total_fetched || 0}</div>
+                      <div>新增: {log.new_records || 0}</div>
+                      <div>更新: {log.updated_records || 0}</div>
+                      <div>錯誤: {log.errors || 0}</div>
                     </div>
                   )}
+                  
+                  {/* 錯誤信息 */}
+                  {log.status === 'failed' && log.error_message && (
+                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                      <div className="font-medium">錯誤信息:</div>
+                      <div className="mt-1">{log.error_message}</div>
+                    </div>
+                  )}
+                  
+                  {/* 時間信息 */}
+                  <div className="mt-2 text-xs text-gray-500">
+                    {log.started_at && (
+                      <div>開始: {formatDate(log.started_at)}</div>
+                    )}
+                    {log.completed_at && (
+                      <div>完成: {formatDate(log.completed_at)}</div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-gray-500">載入中...</div>
+            <div className="text-gray-500">暫無同步記錄</div>
           )}
         </div>
       </div>
