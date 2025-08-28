@@ -134,7 +134,7 @@ const GuestRegistration = () => {
               <img 
                 src={event.poster_image_url} 
                 alt={event.title}
-                className="w-full h-64 object-cover rounded-lg"
+                className="w-full max-h-80 object-contain rounded-lg bg-gray-50"
                 onError={(e) => {
                   e.target.style.display = 'none';
                 }}
