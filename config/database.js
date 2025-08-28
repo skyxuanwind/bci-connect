@@ -351,7 +351,7 @@ const initializeDatabase = async () => {
       CREATE TABLE IF NOT EXISTS card_content_blocks (
         id SERIAL PRIMARY KEY,
         card_id INTEGER NOT NULL REFERENCES member_cards(id) ON DELETE CASCADE,
-        block_type VARCHAR(20) NOT NULL CHECK (block_type IN ('text', 'link', 'video', 'image', 'social')),
+        block_type VARCHAR(20) NOT NULL CHECK (block_type IN ('text', 'link', 'video', 'image', 'social', 'contact', 'location', 'skills', 'experience', 'education', 'portfolio', 'testimonial', 'achievement', 'service', 'pricing', 'calendar', 'qrcode', 'gallery', 'map', 'countdown')),
         title VARCHAR(200),
         content TEXT,
         url VARCHAR(500),
@@ -398,6 +398,18 @@ const initializeDatabase = async () => {
         ('card', '卡片式風格', '內容以卡片形式呈現，明顯的陰影與邊框', '{"primaryColor": "#2563eb", "secondaryColor": "#64748b", "backgroundColor": "#f1f5f9", "fontFamily": "Inter, sans-serif"}'),
         ('neumorphism', '新擬物風格', '柔和陰影與浮起效果，現代質感', '{"primaryColor": "#334155", "secondaryColor": "#64748b", "backgroundColor": "#f8fafc", "fontFamily": "Poppins, sans-serif"}')
       ON CONFLICT (id) DO NOTHING
+    `);
+
+    // Update card_content_blocks block_type constraint to support more types
+    await pool.query(`
+      ALTER TABLE card_content_blocks 
+      DROP CONSTRAINT IF EXISTS card_content_blocks_block_type_check
+    `);
+    
+    await pool.query(`
+      ALTER TABLE card_content_blocks 
+      ADD CONSTRAINT card_content_blocks_block_type_check 
+      CHECK (block_type IN ('text', 'link', 'video', 'image', 'social', 'contact', 'location', 'skills', 'experience', 'education', 'portfolio', 'testimonial', 'achievement', 'service', 'pricing', 'calendar', 'qrcode', 'gallery', 'map', 'countdown'))
     `);
 
     // Create indexes for better performance
