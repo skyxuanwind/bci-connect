@@ -128,6 +128,20 @@ const GuestRegistration = () => {
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">活動報名</h1>
           
+          {/* 活動圖片 */}
+          {event.image_url && (
+            <div className="mb-6">
+              <img 
+                src={event.image_url} 
+                alt={event.title}
+                className="w-full h-64 object-cover rounded-lg"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+          
           <div className="border-l-4 border-blue-500 pl-4 mb-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">{event.title}</h2>
             <div className="space-y-2 text-gray-600">
@@ -145,6 +159,24 @@ const GuestRegistration = () => {
             <div className="mb-6">
               <h3 className="font-medium text-gray-900 mb-2">活動描述</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{event.description}</p>
+            </div>
+          )}
+
+          {/* 活動詳細資訊 */}
+          {(event.max_participants || event.registration_deadline || event.contact_info) && (
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-900 mb-2">活動詳細資訊</h3>
+              <div className="space-y-2 text-gray-600">
+                {event.max_participants && (
+                  <p><span className="font-medium">參與人數限制：</span>{event.max_participants} 人</p>
+                )}
+                {event.registration_deadline && (
+                  <p><span className="font-medium">報名截止：</span>{formatDate(event.registration_deadline)}</p>
+                )}
+                {event.contact_info && (
+                  <p><span className="font-medium">聯絡資訊：</span>{event.contact_info}</p>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -229,28 +261,12 @@ const GuestRegistration = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 產業別 *
               </label>
-              <select
-                {...register('industry', { required: '請選擇產業別' })}
+              <input
+                type="text"
+                {...register('industry', { required: '請輸入產業別' })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">請選擇產業別</option>
-                <option value="科技業">科技業</option>
-                <option value="金融業">金融業</option>
-                <option value="製造業">製造業</option>
-                <option value="服務業">服務業</option>
-                <option value="醫療保健">醫療保健</option>
-                <option value="教育">教育</option>
-                <option value="零售業">零售業</option>
-                <option value="建築房地產">建築房地產</option>
-                <option value="媒體廣告">媒體廣告</option>
-                <option value="餐飲業">餐飲業</option>
-                <option value="運輸物流">運輸物流</option>
-                <option value="能源">能源</option>
-                <option value="農業">農業</option>
-                <option value="政府機關">政府機關</option>
-                <option value="非營利組織">非營利組織</option>
-                <option value="其他">其他</option>
-              </select>
+                placeholder="請輸入您的產業別"
+              />
               {errors.industry && (
                 <p className="mt-1 text-sm text-red-600">{errors.industry.message}</p>
               )}
