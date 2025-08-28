@@ -204,7 +204,7 @@ const CheckInScanner = () => {
     };
   }, []);
 
-  // 檢查權限 - 僅限一級核心和管理員
+  // 檢查權限 - 僅限核心和管理員
   if (!user || (user.membershipLevel !== 1 && !isAdmin())) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

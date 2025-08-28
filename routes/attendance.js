@@ -8,7 +8,7 @@ const checkAttendancePermission = async (req, res, next) => {
   try {
     const userId = req.user.id;
     
-    // 檢查是否為管理員或一級核心
+    // 檢查是否為管理員或核心
     const userResult = await pool.query(
       'SELECT membership_level, status FROM users WHERE id = $1',
       [userId]
@@ -20,7 +20,7 @@ const checkAttendancePermission = async (req, res, next) => {
     
     const user = userResult.rows[0];
     
-    // 管理員或一級核心可以進行報到操作
+    // 管理員或核心可以進行報到操作
     if (user.membership_level === 1 || user.status === 'admin') {
       next();
     } else {
@@ -112,7 +112,7 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
     const { eventId } = req.params;
     const userId = req.user.id;
     
-    // 檢查權限 (管理員或一級核心)
+    // 檢查權限 (管理員或核心)
     const userResult = await pool.query(
       'SELECT membership_level, status FROM users WHERE id = $1',
       [userId]

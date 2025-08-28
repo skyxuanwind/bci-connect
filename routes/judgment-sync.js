@@ -4,12 +4,12 @@ const judgmentSyncService = require('../services/judgmentSyncService');
 const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../config/database');
 
-// 管理員或一級核心會員權限檢查
+// 管理員或核心會員權限檢查
 const requireAdminOrLevel1 = (req, res, next) => {
   if (req.user.membership_level === 'admin' || req.user.membership_level <= 1) {
     next();
   } else {
-    res.status(403).json({ message: '需要管理員或一級核心會員權限' });
+    res.status(403).json({ message: '需要管理員或核心會員權限' });
   }
 };
 

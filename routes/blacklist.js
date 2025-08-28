@@ -3,7 +3,7 @@ const router = express.Router();
 const { pool } = require('../config/database');
 const { authenticateToken, requireMembershipLevel } = require('../middleware/auth');
 
-// 獲取黑名單條目列表 - 僅限一級核心
+// 獲取黑名單條目列表 - 僅限核心
 router.get('/', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const result = await pool.query(`
@@ -28,7 +28,7 @@ router.get('/', authenticateToken, requireMembershipLevel(1), async (req, res) =
   }
 });
 
-// 獲取已被列入黑名單的會員列表 - 僅限一級核心
+// 獲取已被列入黑名單的會員列表 - 僅限核心
 router.get('/users', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const result = await pool.query(`
@@ -53,7 +53,7 @@ router.get('/users', authenticateToken, requireMembershipLevel(1), async (req, r
   }
 });
 
-// 新增黑名單條目 - 僅限一級核心
+// 新增黑名單條目 - 僅限核心
 router.post('/add', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { name, industry, company, contact_info, reason, notes } = req.body;
@@ -86,7 +86,7 @@ router.post('/add', authenticateToken, requireMembershipLevel(1), async (req, re
   }
 });
 
-// 將會員加入黑名單 - 僅限一級核心
+// 將會員加入黑名單 - 僅限核心
 router.post('/add/:userId', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { userId } = req.params;
@@ -120,7 +120,7 @@ router.post('/add/:userId', authenticateToken, requireMembershipLevel(1), async 
   }
 });
 
-// 編輯黑名單條目 - 僅限一級核心
+// 編輯黑名單條目 - 僅限核心
 router.put('/edit/:entryId', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { entryId } = req.params;
@@ -162,7 +162,7 @@ router.put('/edit/:entryId', authenticateToken, requireMembershipLevel(1), async
   }
 });
 
-// 刪除黑名單條目 - 僅限一級核心
+// 刪除黑名單條目 - 僅限核心
 router.delete('/remove/:entryId', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { entryId } = req.params;
@@ -191,7 +191,7 @@ router.delete('/remove/:entryId', authenticateToken, requireMembershipLevel(1), 
   }
 });
 
-// 從黑名單移除會員 - 僅限一級核心
+// 從黑名單移除會員 - 僅限核心
 router.post('/remove/:userId', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { userId } = req.params;

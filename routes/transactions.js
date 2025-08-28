@@ -3,16 +3,16 @@ const router = express.Router();
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
-// 自定義中間件：允許一級核心會員(1)和管理員(2)
+// 自定義中間件：允許核心會員(1)和管理員(2)
 const requireAdminOrLevel1 = (req, res, next) => {
   if (req.user.membership_level === 1 || req.user.membership_level === 2) {
     next();
   } else {
-    res.status(403).json({ message: '權限不足，僅限管理員和一級核心會員' });
+    res.status(403).json({ message: '權限不足，僅限管理員和核心會員' });
   }
 };
 
-// 獲取所有交易記錄和統計數據 - 僅限管理員和一級核心
+// 獲取所有交易記錄和統計數據 - 僅限管理員和核心
 router.get('/', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const { startDate, endDate, type } = req.query;
@@ -107,7 +107,7 @@ router.get('/', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   }
 });
 
-// 獲取財務統計數據 - 僅限管理員和一級核心
+// 獲取財務統計數據 - 僅限管理員和核心
 router.get('/statistics', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -170,7 +170,7 @@ router.get('/statistics', authenticateToken, requireAdminOrLevel1, async (req, r
   }
 });
 
-// 新增交易記錄 - 僅限管理員和一級核心
+// 新增交易記錄 - 僅限管理員和核心
 router.post('/', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const { date, item_name, type, amount, notes } = req.body;
@@ -221,7 +221,7 @@ router.post('/', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   }
 });
 
-// 更新交易記錄 - 僅限管理員和一級核心
+// 更新交易記錄 - 僅限管理員和核心
 router.put('/:id', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const { id } = req.params;
@@ -286,7 +286,7 @@ router.put('/:id', authenticateToken, requireAdminOrLevel1, async (req, res) => 
   }
 });
 
-// 刪除交易記錄 - 僅限管理員和一級核心
+// 刪除交易記錄 - 僅限管理員和核心
 router.delete('/:id', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
     const { id } = req.params;

@@ -362,7 +362,8 @@ router.get('/members', async (req, res) => {
 
     let whereConditions = [
       'u.status = $1',
-      `u.membership_level = ANY($2)`
+      `u.membership_level = ANY($2)`,
+      `NOT (u.membership_level = 1 AND u.email LIKE '%admin%')`  // 排除系統管理員
     ];
     let queryParams = ['active', accessibleLevels];
     let paramIndex = 3;
@@ -512,7 +513,7 @@ router.get('/core-members', async (req, res) => {
     });
   } catch (error) {
     console.error('Get core members error:', error);
-    res.status(500).json({ message: '獲取一級核心人員列表時發生錯誤' });
+    res.status(500).json({ message: '獲取核心人員列表時發生錯誤' });
   }
 });
 

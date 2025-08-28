@@ -22,13 +22,13 @@ const AttendanceManagement = () => {
     }
   }, [selectedEvent]);
 
-  // 檢查權限 - 僅限一級核心和管理員
+  // 檢查權限 - 僅限核心和管理員
   if (!user || (user.membershipLevel !== 1 && !isAdmin())) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">權限不足</h2>
-          <p className="text-gray-600">此功能僅限管理員和一級核心使用</p>
+          <p className="text-gray-600">此功能僅限管理員和核心使用</p>
         </div>
       </div>
     );

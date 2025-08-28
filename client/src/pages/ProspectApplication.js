@@ -335,7 +335,7 @@ const ProspectApplication = () => {
   const [partnerSuggestions, setPartnerSuggestions] = useState([]);
   const [partnerSuggestionsLoading, setPartnerSuggestionsLoading] = useState(false);
 
-  // 獲取分會和一級核心人員數據
+  // 獲取分會和核心人員數據
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -345,7 +345,7 @@ const ProspectApplication = () => {
         const chaptersResponse = await axios.get('/api/chapters');
         setChapters(chaptersResponse.data.chapters || []);
         
-        // 獲取一級核心人員列表
+        // 獲取核心人員列表
         const coreMembersResponse = await axios.get('/api/users/core-members');
         setCoreMembers(coreMembersResponse.data.coreMembers || []);
         

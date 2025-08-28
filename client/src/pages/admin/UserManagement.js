@@ -193,9 +193,9 @@ const UserManagement = () => {
 
   const getMembershipLevelText = (level) => {
     const levels = {
-      1: '一級核心',
-      2: '二級幹部',
-      3: '三級會員'
+      1: '核心',
+    2: '幹部',
+    3: '會員'
     };
     return levels[level] || '未設定';
   };
@@ -448,9 +448,9 @@ const UserManagement = () => {
                   className="input"
                 >
                   <option value="">所有等級</option>
-                  <option value="1">一級核心</option>
-                  <option value="2">二級幹部</option>
-                  <option value="3">三級會員</option>
+                  <option value="1">核心</option>
+                      <option value="2">幹部</option>
+                      <option value="3">會員</option>
                 </select>
               </div>
 
@@ -665,9 +665,9 @@ const UserManagement = () => {
                       onChange={(e) => setNewMembershipLevel(e.target.value)}
                       className="input mt-1"
                     >
-                      <option value="3">三級會員</option>
-                      <option value="2">二級幹部</option>
-                      <option value="1">一級核心</option>
+                      <option value="3">會員</option>
+                        <option value="2">幹部</option>
+                        <option value="1">核心</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
                       選擇的會員等級將決定用戶的系統權限

@@ -11,7 +11,7 @@ const requireAdminOrLevel1 = (req, res, next) => {
   const isAdmin = req.user.membership_level === 1 && req.user.email.includes('admin');
   
   if (!isLevel1 && !isAdmin) {
-    return res.status(403).json({ message: '權限不足：僅限管理員或一級核心成員' });
+    return res.status(403).json({ message: '權限不足：僅限管理員或核心成員' });
   }
   next();
 };
@@ -19,7 +19,7 @@ const requireAdminOrLevel1 = (req, res, next) => {
 // Middleware to check if user is level 1 core member (for voting)
 const requireLevel1 = (req, res, next) => {
   if (req.user.membership_level !== 1) {
-    return res.status(403).json({ message: '權限不足：僅限一級核心成員投票' });
+    return res.status(403).json({ message: '權限不足：僅限核心成員投票' });
   }
   next();
 };

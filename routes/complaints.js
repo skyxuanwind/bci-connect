@@ -3,7 +3,7 @@ const router = express.Router();
 const { pool } = require('../config/database');
 const { authenticateToken, requireMembershipLevel } = require('../middleware/auth');
 
-// 獲取所有申訴 - 僅限一級核心
+// 獲取所有申訴 - 僅限核心
 router.get('/', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { status } = req.query;
@@ -40,7 +40,7 @@ router.get('/', authenticateToken, requireMembershipLevel(1), async (req, res) =
   }
 });
 
-// 獲取申訴統計 - 僅限一級核心
+// 獲取申訴統計 - 僅限核心
 router.get('/statistics', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const result = await pool.query(`
@@ -121,7 +121,7 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// 標記申訴為已讀 - 僅限一級核心
+// 標記申訴為已讀 - 僅限核心
 router.patch('/:id/read', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { id } = req.params;
@@ -157,7 +157,7 @@ router.patch('/:id/read', authenticateToken, requireMembershipLevel(1), async (r
   }
 });
 
-// 標記申訴為未讀 - 僅限一級核心
+// 標記申訴為未讀 - 僅限核心
 router.patch('/:id/unread', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { id } = req.params;
@@ -193,7 +193,7 @@ router.patch('/:id/unread', authenticateToken, requireMembershipLevel(1), async 
   }
 });
 
-// 刪除申訴 - 僅限一級核心
+// 刪除申訴 - 僅限核心
 router.delete('/:id', authenticateToken, requireMembershipLevel(1), async (req, res) => {
   try {
     const { id } = req.params;

@@ -36,7 +36,7 @@ const Level1Route = ({ children }) => {
           </h3>
           
           <p className="text-gray-600 mb-6">
-            您沒有權限訪問此頁面。此頁面僅限管理員或一級核心成員使用。
+            您沒有權限訪問此頁面。此頁面僅限管理員或核心成員使用。
           </p>
           
           <button

@@ -19,7 +19,7 @@ const ComplaintBox = () => {
     is_anonymous: false
   });
 
-  // 檢查是否為一級核心或管理員（查看申訴）
+  // 檢查是否為核心或管理員（查看申訴）
   const canViewComplaints = user && (user.membershipLevel === 1 || isAdmin());
 
   const fetchComplaints = useCallback(async () => {
@@ -82,7 +82,7 @@ const ComplaintBox = () => {
         setFormData({
           content: ''
         });
-        // 如果是一級核心，重新載入申訴列表
+        // 如果是核心，重新載入申訴列表
         if (canViewComplaints) {
           fetchComplaints();
           fetchStatistics();
@@ -214,7 +214,7 @@ const ComplaintBox = () => {
             <h3 className="text-lg font-medium text-blue-900 mb-3">提交須知</h3>
             <ul className="text-sm text-blue-800 space-y-2">
               <li>• 請確實填寫申訴內容，以便我們更好地了解和處理您的問題</li>
-              <li>• 申訴內容將由一級核心成員審閱和處理</li>
+              <li>• 申訴內容將由核心成員審閱和處理</li>
 
               <li>• 請避免提交重複或無意義的申訴內容</li>
               <li>• 我們會盡快處理您的申訴，感謝您的耐心等待</li>
@@ -225,7 +225,7 @@ const ComplaintBox = () => {
     );
   }
 
-  // 一級核心查看申訴頁面
+  // 核心查看申訴頁面
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

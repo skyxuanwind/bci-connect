@@ -10,14 +10,14 @@ router.post('/create', authenticateToken, async (req, res) => {
     const { attendee_id, meeting_time_start, meeting_time_end, notes } = req.body;
     const requester_id = req.user.id;
 
-    // 檢查發起人是否為三級會員以上
+    // 檢查發起人是否為會員以上
     const requesterCheck = await pool.query(
       'SELECT membership_level FROM users WHERE id = $1',
       [requester_id]
     );
 
     if (!requesterCheck.rows[0] || requesterCheck.rows[0].membership_level > 3) {
-      return res.status(403).json({ error: '只有三級會員以上才能預約會議' });
+      return res.status(403).json({ error: '只有會員以上才能預約會議' });
     }
 
     // 檢查受邀者是否存在且為活躍會員

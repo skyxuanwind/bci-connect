@@ -10,14 +10,14 @@ router.post('/create', authenticateToken, async (req, res) => {
     const { referred_to_id, referral_amount, description } = req.body;
     const referrer_id = req.user.id;
 
-    // 檢查引薦人是否為三級會員以上
+    // 檢查引薦人是否為會員以上
     const referrerCheck = await pool.query(
       'SELECT membership_level FROM users WHERE id = $1',
       [referrer_id]
     );
 
     if (!referrerCheck.rows[0] || referrerCheck.rows[0].membership_level > 3) {
-      return res.status(403).json({ error: '只有三級會員以上才能發起引薦' });
+      return res.status(403).json({ error: '只有會員以上才能發起引薦' });
     }
 
     // 檢查被引薦人是否存在且為活躍會員

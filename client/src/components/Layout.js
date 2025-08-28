@@ -72,20 +72,20 @@ const Layout = ({ children }) => {
     { name: '電子名片', href: '/member-card-editor', icon: IdentificationIcon },
   ];
 
-  // 三級會員以上功能
+  // 會員以上功能
   const memberFeatures = [
     { name: '引薦系統', href: '/referrals', icon: HandRaisedIcon, minLevel: 3 },
     { name: '會議預約', href: '/meetings', icon: CalendarDaysIcon, minLevel: 3 },
   ];
 
-  // 一級核心專屬功能
+  // 核心專屬功能
   const level1Features = [
     { name: '商訪申請表', href: '/prospect-application', icon: ClipboardDocumentListIcon, minLevel: 1 },
     { name: '商訪專區', href: '/prospect-voting', icon: CheckBadgeIcon, minLevel: 1 },
     { name: '黑名單專區', href: '/blacklist', icon: ExclamationTriangleIcon, minLevel: 1 },
   ];
 
-  // 管理員和一級核心功能
+  // 管理員和核心功能
   const managementFeatures = [
     { name: '財務收支表', href: '/financial', icon: CurrencyDollarIcon, minLevel: 1 },
     { name: '申訴信箱', href: '/complaints', icon: ChatBubbleLeftEllipsisIcon, minLevel: 1 },
@@ -115,9 +115,9 @@ const Layout = ({ children }) => {
 
   const getMembershipLevelBadge = (level) => {
     const badges = {
-      1: { text: '一級核心', class: 'level-1' },
-      2: { text: '二級幹部', class: 'level-2' },
-      3: { text: '三級會員', class: 'level-3' }
+      1: { text: '核心', class: 'level-1' },
+      2: { text: '幹部', class: 'level-2' },
+      3: { text: '會員', class: 'level-3' }
     };
     
     const badge = badges[level] || { text: '未設定', class: 'bg-gray-500' };

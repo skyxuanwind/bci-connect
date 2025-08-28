@@ -12,7 +12,7 @@ const requireAdminOrLevel1 = (req, res, next) => {
   const isAdmin = req.user.membership_level === 1 && req.user.email.includes('admin');
   
   if (!isLevel1 && !isAdmin) {
-    return res.status(403).json({ message: '權限不足：僅限管理員或一級核心成員' });
+    return res.status(403).json({ message: '權限不足：僅限管理員或核心成員' });
   }
   next();
 };

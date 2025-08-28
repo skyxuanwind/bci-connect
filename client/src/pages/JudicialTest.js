@@ -82,7 +82,7 @@ const JudicialTest = () => {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="text-red-800">權限不足：僅限管理員或一級核心成員使用此功能</div>
+          <div className="text-red-800">權限不足：僅限管理員或核心成員使用此功能</div>
         </div>
       </div>
     );

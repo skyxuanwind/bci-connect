@@ -96,9 +96,9 @@ const PendingUsers = () => {
 
   const getMembershipLevelText = (level) => {
     const levels = {
-      1: '一級核心',
-      2: '二級幹部',
-      3: '三級會員'
+      1: '核心',
+    2: '幹部',
+    3: '會員'
     };
     return levels[level] || '未設定';
   };
@@ -275,9 +275,9 @@ const PendingUsers = () => {
                   onChange={(e) => setSelectedLevel(e.target.value)}
                   className="input"
                 >
-                  <option value="3">三級會員</option>
-                  <option value="2">二級幹部</option>
-                  <option value="1">一級核心</option>
+                  <option value="3">會員</option>
+                        <option value="2">幹部</option>
+                        <option value="1">核心</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
                   選擇的會員等級將決定用戶的系統權限
@@ -293,10 +293,10 @@ const PendingUsers = () => {
                     <p>可查看所有會員資料（一級、二級、三級）</p>
                   )}
                   {selectedLevel === '2' && (
-                    <p>可查看二級和三級會員資料</p>
+                    <p>可查看幹部和會員資料</p>
                   )}
                   {selectedLevel === '3' && (
-                    <p>僅可查看三級會員資料</p>
+                    <p>僅可查看會員資料</p>
                   )}
                 </div>
               </div>

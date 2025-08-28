@@ -38,9 +38,9 @@ const AdminDashboard = () => {
 
   const getMembershipLevelText = (level) => {
     const levels = {
-      1: '一級核心',
-      2: '二級幹部',
-      3: '三級會員'
+      1: '核心',
+    2: '幹部',
+    3: '會員'
     };
     return levels[level] || '未設定';
   };
