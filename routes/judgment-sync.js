@@ -112,15 +112,8 @@ router.post('/manual-sync', authenticateToken, requireAdminOrLevel1, async (req,
 /**
  * 管理員功能：切換開發模式
  */
-router.post('/toggle-dev-mode', authenticateToken, async (req, res) => {
+router.post('/toggle-dev-mode', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
-    // 只有管理員可以切換開發模式
-    if (req.user.membership_level !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: '只有管理員可以切換開發模式'
-      });
-    }
 
     const { enable } = req.body;
     
