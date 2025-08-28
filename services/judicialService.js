@@ -1,6 +1,5 @@
 const axios = require('axios');
 const { pool } = require('../config/database');
-const judgmentSyncService = require('./judgmentSyncService');
 
 // 司法院開放資料 API 基礎 URL（根據官方文件）
 const JUDICIAL_API_BASE = 'https://data.judicial.gov.tw/jdg/api';
