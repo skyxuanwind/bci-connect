@@ -129,10 +129,10 @@ const GuestRegistration = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">活動報名</h1>
           
           {/* 活動圖片 */}
-          {event.image_url && (
+          {event.poster_image_url && (
             <div className="mb-6">
               <img 
-                src={event.image_url} 
+                src={event.poster_image_url} 
                 alt={event.title}
                 className="w-full h-64 object-cover rounded-lg"
                 onError={(e) => {
