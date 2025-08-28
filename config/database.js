@@ -90,6 +90,12 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP
     `);
 
+    // Add interview_form column if it doesn't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS interview_form JSONB
+    `);
+
     // Create referrals table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS referrals (

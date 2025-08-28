@@ -34,7 +34,7 @@ router.get('/profile', async (req, res) => {
     const result = await pool.query(
       `SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
               u.profile_picture_url, u.contact_number, u.membership_level,
-              u.status, u.nfc_card_id, u.qr_code_url, u.created_at,
+              u.status, u.nfc_card_id, u.qr_code_url, u.interview_form, u.created_at,
               c.name as chapter_name
        FROM users u
        LEFT JOIN chapters c ON u.chapter_id = c.id
@@ -62,6 +62,7 @@ router.get('/profile', async (req, res) => {
         status: user.status,
         nfcCardId: user.nfc_card_id,
         qrCodeUrl: `/api/qrcode/member/${user.id}`,
+        interviewForm: user.interview_form ? JSON.parse(user.interview_form) : null,
         chapterName: user.chapter_name,
         createdAt: user.created_at
       }
@@ -166,6 +167,84 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ message: '更新個人資料時發生錯誤' });
+  }
+});
+
+// @route   PUT /api/users/interview-form
+// @desc    Update user interview form
+// @access  Private
+router.put('/interview-form', async (req, res) => {
+  try {
+    const {
+      companyName,
+      brandLogo,
+      industry,
+      coreServices,
+      competitiveAdvantage,
+      targetMarket,
+      idealCustomer,
+      customerExamples,
+      customerTraits,
+      customerPainPoints,
+      referralTrigger,
+      referralOpening,
+      qualityReferral,
+      unsuitableReferral,
+      partnerTypes,
+      businessGoals,
+      personalInterests
+    } = req.body;
+
+    // 準備面談表單數據
+    const interviewFormData = {
+      companyName: companyName?.trim() || null,
+      brandLogo: brandLogo?.trim() || null,
+      industry: industry?.trim() || null,
+      coreServices: coreServices?.trim() || null,
+      competitiveAdvantage: competitiveAdvantage?.trim() || null,
+      targetMarket: targetMarket?.trim() || null,
+      idealCustomer: idealCustomer?.trim() || null,
+      customerExamples: customerExamples?.trim() || null,
+      customerTraits: customerTraits?.trim() || null,
+      customerPainPoints: customerPainPoints?.trim() || null,
+      referralTrigger: referralTrigger?.trim() || null,
+      referralOpening: referralOpening?.trim() || null,
+      qualityReferral: qualityReferral?.trim() || null,
+      unsuitableReferral: unsuitableReferral?.trim() || null,
+      partnerTypes: partnerTypes?.trim() || null,
+      businessGoals: businessGoals?.trim() || null,
+      personalInterests: personalInterests?.trim() || null
+    };
+
+    // 更新用戶的面談表單數據
+    const updateQuery = `
+      UPDATE users 
+      SET interview_form = $1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+      RETURNING id, name, email, interview_form
+    `;
+    
+    const result = await pool.query(updateQuery, [
+      JSON.stringify(interviewFormData),
+      req.user.id
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: '用戶不存在' });
+    }
+
+    const user = result.rows[0];
+    user.interviewForm = user.interview_form;
+    delete user.interview_form;
+
+    res.json({
+      message: '面談表單儲存成功',
+      user: user
+    });
+
+  } catch (error) {
+    console.error('Update interview form error:', error);
+    res.status(500).json({ message: '儲存面談表單時發生錯誤' });
   }
 });
 
