@@ -285,6 +285,46 @@ const PublicMemberCard = () => {
       accent: 'text-slate-600',
       primaryButton: 'bg-slate-200 hover:bg-slate-300 text-slate-800 shadow-[8px_8px_16px_#cbd5e1,-8px_-8px_16px_#ffffff]',
       secondaryButton: 'bg-slate-100 border border-slate-300 text-slate-600 hover:bg-slate-200'
+    },
+    'modern-gradient': {
+      container: 'bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100',
+      card: 'bg-white/90 backdrop-blur-sm shadow-2xl border border-white/20',
+      header: 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white',
+      accent: 'text-indigo-600',
+      primaryButton: 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg',
+      secondaryButton: 'border border-indigo-300 text-indigo-700 hover:bg-indigo-50 backdrop-blur-sm'
+    },
+    'coffee-warm': {
+      container: 'bg-gradient-to-br from-amber-50 to-orange-100',
+      card: 'bg-gradient-to-b from-white to-amber-50/50 shadow-xl border border-amber-200/50',
+      header: 'bg-gradient-to-r from-amber-600 to-orange-600 text-white',
+      accent: 'text-amber-700',
+      primaryButton: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md',
+      secondaryButton: 'border border-amber-300 text-amber-800 hover:bg-amber-50'
+    },
+    'tech-blue': {
+      container: 'bg-gradient-to-br from-slate-900 to-blue-900',
+      card: 'bg-slate-800/90 backdrop-blur-sm shadow-2xl border border-blue-500/20 text-gray-100',
+      header: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white',
+      accent: 'text-cyan-400',
+      primaryButton: 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg shadow-blue-500/25',
+      secondaryButton: 'border border-blue-400 text-blue-300 hover:bg-blue-900/50'
+    },
+    'nature-green': {
+      container: 'bg-gradient-to-br from-emerald-50 to-teal-100',
+      card: 'bg-white/95 backdrop-blur-sm shadow-xl border border-emerald-200/50',
+      header: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white',
+      accent: 'text-emerald-700',
+      primaryButton: 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md',
+      secondaryButton: 'border border-emerald-300 text-emerald-800 hover:bg-emerald-50'
+    },
+    'luxury-gold': {
+      container: 'bg-gradient-to-br from-yellow-50 to-amber-100',
+      card: 'bg-gradient-to-b from-white to-yellow-50/30 shadow-2xl border border-yellow-300/30',
+      header: 'bg-gradient-to-r from-yellow-600 to-amber-600 text-white',
+      accent: 'text-yellow-700',
+      primaryButton: 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white shadow-lg shadow-yellow-500/25',
+      secondaryButton: 'border border-yellow-400 text-yellow-800 hover:bg-yellow-50'
     }
   };
 
@@ -371,7 +411,129 @@ const PublicMemberCard = () => {
             <div className="px-8 py-6">
               {cardData.contentBlocks
                 .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-                .map(renderContentBlock)}
+                .map((block) => {
+                  switch (block.block_type) {
+                    case 'skills':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">技能專長</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {block.content && block.content.split('\n').filter(skill => skill.trim()).map((skill, idx) => (
+                              <span key={idx} className={`px-3 py-1 rounded-full text-sm ${currentStyle.accent} bg-gray-100`}>
+                                {skill.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    case 'experience':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">工作經歷</h3>
+                          <div className="whitespace-pre-line text-gray-700">{block.content}</div>
+                        </div>
+                      );
+                    case 'education':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">教育背景</h3>
+                          <div className="whitespace-pre-line text-gray-700">{block.content}</div>
+                        </div>
+                      );
+                    case 'portfolio':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">作品集</h3>
+                          {block.content && <p className="text-gray-700 mb-3">{block.content}</p>}
+                          {block.url && (
+                            <a 
+                              href={block.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={`inline-flex items-center px-4 py-2 rounded-lg transition-colors ${currentStyle.primaryButton}`}
+                            >
+                              查看作品
+                            </a>
+                          )}
+                        </div>
+                      );
+                    case 'testimonial':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">客戶推薦</h3>
+                          <blockquote className="text-gray-700 italic mb-2">"{block.content}"</blockquote>
+                          {block.author && (
+                            <cite className={`text-sm ${currentStyle.accent} not-italic`}>— {block.author}</cite>
+                          )}
+                        </div>
+                      );
+                    case 'achievement':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">成就獎項</h3>
+                          <div className="space-y-2">
+                            {block.content && block.content.split('\n').filter(achievement => achievement.trim()).map((achievement, idx) => (
+                              <div key={idx} className="flex items-center">
+                                <span className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></span>
+                                <span className="text-gray-700">{achievement.trim()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    case 'service':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">服務項目</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {block.content && block.content.split('\n').filter(service => service.trim()).map((service, idx) => (
+                              <div key={idx} className="flex items-center p-2 bg-gray-50 rounded">
+                                <span className="w-2 h-2 bg-blue-400 rounded-full mr-3"></span>
+                                <span className="text-gray-700">{service.trim()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    case 'pricing':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">價格方案</h3>
+                          <div className="whitespace-pre-line text-gray-700">{block.content}</div>
+                        </div>
+                      );
+                    case 'location':
+                      return (
+                        <div key={block.id} className="mb-6">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">地址位置</h3>
+                          <p className="text-gray-700">{block.content}</p>
+                        </div>
+                      );
+                    case 'qrcode':
+                      return (
+                        <div key={block.id} className="mb-6 text-center">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">QR Code</h3>
+                          <div className="inline-block p-4 bg-white rounded-lg">
+                            <div className="w-32 h-32 bg-gray-200 flex items-center justify-center rounded">
+                              <span className="text-xs text-gray-500">QR Code</span>
+                            </div>
+                          </div>
+                          {block.content && <p className="text-sm text-gray-600 mt-2">{block.content}</p>}
+                        </div>
+                      );
+                    case 'countdown':
+                      return (
+                        <div key={block.id} className="mb-6 text-center">
+                          <h3 className="text-lg font-semibold mb-3 text-gray-800">{block.title || '倒數計時'}</h3>
+                          <div className="text-2xl font-bold text-gray-800">
+                            {block.target_date ? new Date(block.target_date).toLocaleDateString() : '設定目標日期'}
+                          </div>
+                        </div>
+                      );
+                    default:
+                      return renderContentBlock(block);
+                  }
+                })}
             </div>
           )}
         </div>

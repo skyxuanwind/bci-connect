@@ -21,7 +21,11 @@ import {
   RectangleGroupIcon,
   Squares2X2Icon,
   ArrowDownTrayIcon,
-  ShareIcon
+  ShareIcon,
+  MapPinIcon,
+  TrophyIcon,
+  CalendarIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaLine, FaLinkedin, FaTwitter, FaYoutube, FaLink } from 'react-icons/fa';
 
@@ -37,7 +41,12 @@ const MemberCardEditor = () => {
   const [templates, setTemplates] = useState([
     { id: 'professional', name: '簡約專業版', style: 'professional' },
     { id: 'creative', name: '活力動感版', style: 'creative' },
-    { id: 'elegant', name: '經典典雅版', style: 'elegant' }
+    { id: 'elegant', name: '經典典雅版', style: 'elegant' },
+    { id: 'modern-gradient', name: '現代漸變版', style: 'modern-gradient' },
+    { id: 'coffee-warm', name: '咖啡暖色版', style: 'coffee-warm' },
+    { id: 'tech-blue', name: '科技藍調版', style: 'tech-blue' },
+    { id: 'nature-green', name: '自然綠意版', style: 'nature-green' },
+    { id: 'luxury-gold', name: '奢華金色版', style: 'luxury-gold' }
   ]);
   const [showPreviewHint, setShowPreviewHint] = useState(false);
   const previewHintTimerRef = useRef(null);
@@ -128,11 +137,55 @@ const MemberCardEditor = () => {
         ...prev,
         template_id: templateId
       }));
+      triggerPreviewHint();
     } catch (error) {
       console.error('Error updating template:', error);
       alert('更新模板失敗');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCustomColorChange = async (colorType, colorValue) => {
+    try {
+      const updatedColors = {
+        ...cardData.custom_colors,
+        [colorType]: colorValue
+      };
+      
+      const response = await axios.put('/api/member-cards/custom-colors', {
+        customColors: updatedColors
+      });
+      
+      if (response.data.success) {
+        setCardData(prev => ({ 
+          ...prev, 
+          custom_colors: updatedColors 
+        }));
+        triggerPreviewHint();
+      }
+    } catch (error) {
+      console.error('更新自定義顏色失敗:', error);
+      alert('更新顏色失敗，請稍後再試');
+    }
+  };
+
+  const resetCustomColors = async () => {
+    try {
+      const response = await axios.put('/api/member-cards/custom-colors', {
+        customColors: null
+      });
+      
+      if (response.data.success) {
+        setCardData(prev => ({ 
+          ...prev, 
+          custom_colors: null 
+        }));
+        triggerPreviewHint();
+      }
+    } catch (error) {
+      console.error('重置顏色失敗:', error);
+      alert('重置顏色失敗，請稍後再試');
     }
   };
 
@@ -414,6 +467,282 @@ const MemberCardEditor = () => {
           </div>
         );
 
+      case 'contact':
+        return (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">電話</label>
+              <input
+                type="tel"
+                value={block.phone || ''}
+                onChange={(e) => updateContentBlock(block.id, { phone: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="+886 912 345 678"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                type="email"
+                value={block.email || ''}
+                onChange={(e) => updateContentBlock(block.id, { email: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="example@email.com"
+              />
+            </div>
+          </div>
+        );
+
+      case 'location':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">地址</label>
+            <textarea
+              value={block.address || ''}
+              onChange={(e) => updateContentBlock(block.id, { address: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="輸入完整地址"
+            />
+          </div>
+        );
+
+      case 'skills':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">技能列表 (每行一個)</label>
+            <textarea
+              value={block.skills || ''}
+              onChange={(e) => updateContentBlock(block.id, { skills: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="JavaScript\nReact\nNode.js\nPython"
+            />
+          </div>
+        );
+
+      case 'experience':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">工作經歷</label>
+            <textarea
+              value={block.experience || ''}
+              onChange={(e) => updateContentBlock(block.id, { experience: e.target.value })}
+              rows={5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="公司名稱 - 職位\n時間期間\n工作內容描述..."
+            />
+          </div>
+        );
+
+      case 'education':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">學歷</label>
+            <textarea
+              value={block.education || ''}
+              onChange={(e) => updateContentBlock(block.id, { education: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="學校名稱\n科系\n畢業年份"
+            />
+          </div>
+        );
+
+      case 'portfolio':
+        return (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">作品描述</label>
+              <textarea
+                value={block.description || ''}
+                onChange={(e) => updateContentBlock(block.id, { description: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="作品介紹..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">作品連結</label>
+              <input
+                type="url"
+                value={block.url || ''}
+                onChange={(e) => updateContentBlock(block.id, { url: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="https://example.com"
+              />
+            </div>
+          </div>
+        );
+
+      case 'testimonial':
+        return (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">推薦內容</label>
+              <textarea
+                value={block.testimonial || ''}
+                onChange={(e) => updateContentBlock(block.id, { testimonial: e.target.value })}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="推薦人的評價內容..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">推薦人</label>
+              <input
+                type="text"
+                value={block.author || ''}
+                onChange={(e) => updateContentBlock(block.id, { author: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="推薦人姓名"
+              />
+            </div>
+          </div>
+        );
+
+      case 'achievement':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">成就列表</label>
+            <textarea
+              value={block.achievements || ''}
+              onChange={(e) => updateContentBlock(block.id, { achievements: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="獲獎記錄\n認證證書\n重要成就"
+            />
+          </div>
+        );
+
+      case 'service':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">服務項目</label>
+            <textarea
+              value={block.services || ''}
+              onChange={(e) => updateContentBlock(block.id, { services: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="服務項目1\n服務項目2\n服務項目3"
+            />
+          </div>
+        );
+
+      case 'pricing':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">價格方案</label>
+            <textarea
+              value={block.pricing || ''}
+              onChange={(e) => updateContentBlock(block.id, { pricing: e.target.value })}
+              rows={5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="基礎方案 - $1000\n進階方案 - $2000\n專業方案 - $3000"
+            />
+          </div>
+        );
+
+      case 'calendar':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">行事曆連結</label>
+            <input
+              type="url"
+              value={block.url || ''}
+              onChange={(e) => updateContentBlock(block.id, { url: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Google Calendar 或其他行事曆服務連結"
+            />
+          </div>
+        );
+
+      case 'qrcode':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">QR碼內容</label>
+            <input
+              type="text"
+              value={block.qr_content || ''}
+              onChange={(e) => updateContentBlock(block.id, { qr_content: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="輸入要生成QR碼的內容 (網址、文字等)"
+            />
+          </div>
+        );
+
+      case 'gallery':
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">圖片畫廊</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files);
+                if (files.length > 0) {
+                  // Handle multiple image upload
+                  console.log('Multiple images selected:', files);
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-sm text-gray-500 mt-1">可選擇多張圖片</p>
+          </div>
+        );
+
+      case 'map':
+        return (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">地址</label>
+              <input
+                type="text"
+                value={block.address || ''}
+                onChange={(e) => updateContentBlock(block.id, { address: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="輸入地址以顯示地圖"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Google Maps 嵌入連結 (選填)</label>
+              <input
+                type="url"
+                value={block.map_url || ''}
+                onChange={(e) => updateContentBlock(block.id, { map_url: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Google Maps 嵌入網址"
+              />
+            </div>
+          </div>
+        );
+
+      case 'countdown':
+        return (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">倒數標題</label>
+              <input
+                type="text"
+                value={block.countdown_title || ''}
+                onChange={(e) => updateContentBlock(block.id, { countdown_title: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="活動名稱或倒數標題"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">目標日期時間</label>
+              <input
+                type="datetime-local"
+                value={block.target_date || ''}
+                onChange={(e) => updateContentBlock(block.id, { target_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        );
+
       case 'link':
         return (
           <div>
@@ -636,6 +965,46 @@ const MemberCardEditor = () => {
       accent: 'text-slate-600',
       primaryButton: 'bg-slate-200 hover:bg-slate-300 text-slate-800 shadow-[8px_8px_16px_#cbd5e1,-8px_-8px_16px_#ffffff]',
       secondaryButton: 'bg-slate-100 border border-slate-300 text-slate-600 hover:bg-slate-200'
+    },
+    'modern-gradient': {
+      container: 'bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100',
+      card: 'bg-white/90 backdrop-blur-sm shadow-2xl border border-white/20',
+      header: 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white',
+      accent: 'text-indigo-600',
+      primaryButton: 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg',
+      secondaryButton: 'border border-indigo-300 text-indigo-700 hover:bg-indigo-50 backdrop-blur-sm'
+    },
+    'coffee-warm': {
+      container: 'bg-gradient-to-br from-amber-50 to-orange-100',
+      card: 'bg-gradient-to-b from-white to-amber-50/50 shadow-xl border border-amber-200/50',
+      header: 'bg-gradient-to-r from-amber-600 to-orange-600 text-white',
+      accent: 'text-amber-700',
+      primaryButton: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md',
+      secondaryButton: 'border border-amber-300 text-amber-800 hover:bg-amber-50'
+    },
+    'tech-blue': {
+      container: 'bg-gradient-to-br from-slate-900 to-blue-900',
+      card: 'bg-slate-800/90 backdrop-blur-sm shadow-2xl border border-blue-500/20 text-gray-100',
+      header: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white',
+      accent: 'text-cyan-400',
+      primaryButton: 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg shadow-blue-500/25',
+      secondaryButton: 'border border-blue-400 text-blue-300 hover:bg-blue-900/50'
+    },
+    'nature-green': {
+      container: 'bg-gradient-to-br from-emerald-50 to-teal-100',
+      card: 'bg-white/95 backdrop-blur-sm shadow-xl border border-emerald-200/50',
+      header: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white',
+      accent: 'text-emerald-700',
+      primaryButton: 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md',
+      secondaryButton: 'border border-emerald-300 text-emerald-800 hover:bg-emerald-50'
+    },
+    'luxury-gold': {
+      container: 'bg-gradient-to-br from-yellow-50 to-amber-100',
+      card: 'bg-gradient-to-b from-white to-yellow-50/30 shadow-2xl border border-yellow-300/30',
+      header: 'bg-gradient-to-r from-yellow-600 to-amber-600 text-white',
+      accent: 'text-yellow-700',
+      primaryButton: 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white shadow-lg shadow-yellow-500/25',
+      secondaryButton: 'border border-yellow-400 text-yellow-800 hover:bg-yellow-50'
     }
   };
 
@@ -883,21 +1252,36 @@ const MemberCardEditor = () => {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">內容區塊</h2>
-              <div className="flex space-x-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 {[
                   { type: 'text', name: '文字', icon: DocumentTextIcon },
                   { type: 'link', name: '連結', icon: LinkIcon },
                   { type: 'video', name: '影片', icon: VideoCameraIcon },
                   { type: 'image', name: '圖片', icon: PhotoIcon },
-                  { type: 'social', name: '社群', icon: ChatBubbleLeftRightIcon }
+                  { type: 'social', name: '社群', icon: ChatBubbleLeftRightIcon },
+                  { type: 'contact', name: '聯絡', icon: BriefcaseIcon },
+                  { type: 'location', name: '地址', icon: MapPinIcon },
+                  { type: 'qrcode', name: 'QR碼', icon: RectangleGroupIcon },
+                  { type: 'skills', name: '技能', icon: Squares2X2Icon },
+                  { type: 'experience', name: '經歷', icon: BriefcaseIcon },
+                  { type: 'education', name: '學歷', icon: DocumentTextIcon },
+                  { type: 'portfolio', name: '作品', icon: PaintBrushIcon },
+                  { type: 'testimonial', name: '推薦', icon: ChatBubbleLeftRightIcon },
+                  { type: 'achievement', name: '成就', icon: TrophyIcon },
+                  { type: 'service', name: '服務', icon: BriefcaseIcon },
+                  { type: 'pricing', name: '價格', icon: ChartBarIcon },
+                  { type: 'calendar', name: '行事曆', icon: CalendarIcon },
+                  { type: 'gallery', name: '畫廊', icon: PhotoIcon },
+                  { type: 'map', name: '地圖', icon: MapPinIcon },
+                  { type: 'countdown', name: '倒數', icon: ClockIcon }
                 ].map(blockType => (
                   <button
                     key={blockType.type}
                     onClick={() => addContentBlock(blockType.type)}
-                    className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                    className="flex flex-col items-center px-2 py-3 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                     title={`新增${blockType.name}`}
                   >
-                    <blockType.icon className="w-4 h-4 mr-1" />
+                    <blockType.icon className="w-4 h-4 mb-1" />
                     {blockType.name}
                   </button>
                 ))}
@@ -983,7 +1367,7 @@ const MemberCardEditor = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {templates.map(template => (
               <div
                 key={template.id}
@@ -1021,6 +1405,98 @@ const MemberCardEditor = () => {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* 自定義顏色設定 */}
+          <div className="border-t pt-8">
+            <h3 className="text-lg font-semibold mb-4">自定義顏色主題</h3>
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">主要顏色</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={cardData?.custom_colors?.primary || '#3B82F6'}
+                      onChange={(e) => handleCustomColorChange('primary', e.target.value)}
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={cardData?.custom_colors?.primary || '#3B82F6'}
+                      onChange={(e) => handleCustomColorChange('primary', e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      placeholder="#3B82F6"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">次要顏色</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={cardData?.custom_colors?.secondary || '#6B7280'}
+                      onChange={(e) => handleCustomColorChange('secondary', e.target.value)}
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={cardData?.custom_colors?.secondary || '#6B7280'}
+                      onChange={(e) => handleCustomColorChange('secondary', e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      placeholder="#6B7280"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">背景顏色</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={cardData?.custom_colors?.background || '#FFFFFF'}
+                      onChange={(e) => handleCustomColorChange('background', e.target.value)}
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={cardData?.custom_colors?.background || '#FFFFFF'}
+                      onChange={(e) => handleCustomColorChange('background', e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      placeholder="#FFFFFF"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">文字顏色</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={cardData?.custom_colors?.text || '#1F2937'}
+                      onChange={(e) => handleCustomColorChange('text', e.target.value)}
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={cardData?.custom_colors?.text || '#1F2937'}
+                      onChange={(e) => handleCustomColorChange('text', e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      placeholder="#1F2937"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-between items-center">
+                <button
+                  onClick={resetCustomColors}
+                  className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                >
+                  重置為預設顏色
+                </button>
+                <div className="text-sm text-gray-500">
+                  自定義顏色會覆蓋模板的預設配色
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
