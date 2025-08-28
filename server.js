@@ -135,9 +135,36 @@ app.use('/api/member-cards', memberCardRoutes);
 const nfcMongodbRoutes = require('./routes/nfc-mongodb');
 app.use('/api/nfc-checkin-mongo', nfcMongodbRoutes);
 
-// Health check endpoint
+// Health check endpoint - critical for Render deployment
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT
+  });
+});
+
+// API Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Simple readiness check
+app.get('/ready', (req, res) => {
+  res.status(200).send('Ready');
+});
+
+// Root endpoint for basic info
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'BCI Business Elite Club API Server', 
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Serve static files from React app in production
@@ -178,26 +205,63 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', async () => {
+// Start server first, then initialize databases asynchronously
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 BCI Business Elite Club server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   
-  // Initialize databases
+  // Initialize databases asynchronously after server starts
+  initializeDatabasesAsync();
+});
+
+// Set server timeout for Render deployment
+server.timeout = 30000; // 30 seconds
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
+});
+
+// Async database initialization
+async function initializeDatabasesAsync() {
   try {
-    // Initialize PostgreSQL
-    await initializeDatabase();
+    console.log('🔄 Starting database initialization...');
+    
+    // Initialize PostgreSQL with timeout
+    const dbInitPromise = Promise.race([
+      initializeDatabase(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database initialization timeout')), 25000)
+      )
+    ]);
+    
+    await dbInitPromise;
     console.log('✅ PostgreSQL database initialized successfully');
     
-    // Initialize MongoDB for NFC system
-    await connectMongoDB();
-    console.log('✅ MongoDB initialized successfully');
+    // Initialize MongoDB for NFC system (non-blocking)
+    try {
+      await connectMongoDB();
+      console.log('✅ MongoDB initialized successfully');
+    } catch (mongoError) {
+      console.warn('⚠️ MongoDB initialization failed (non-critical):', mongoError.message);
+    }
     
     // Start judgment sync scheduler
-    judgmentSyncService.startScheduler();
-    console.log('⏰ 裁判書同步排程已啟動');
+    try {
+      judgmentSyncService.startScheduler();
+      console.log('⏰ 裁判書同步排程已啟動');
+    } catch (schedulerError) {
+      console.warn('⚠️ Scheduler initialization failed (non-critical):', schedulerError.message);
+    }
+    
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
+    // Don't exit process, let the server continue running
+    console.log('🔄 Server will continue running without full database initialization');
   }
-});
+}
 
 module.exports = app;

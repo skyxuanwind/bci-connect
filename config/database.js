@@ -9,9 +9,14 @@ if (process.env.DATABASE_URL) {
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    max: 10, // Reduced for faster startup
+    idleTimeoutMillis: 10000, // Reduced timeout
+    connectionTimeoutMillis: 5000, // Increased connection timeout
+    acquireTimeoutMillis: 10000, // Added acquire timeout
+    createTimeoutMillis: 10000, // Added create timeout
+    destroyTimeoutMillis: 5000, // Added destroy timeout
+    reapIntervalMillis: 1000, // Added reap interval
+    createRetryIntervalMillis: 200, // Added retry interval
   };
 } else {
   // Development: Use individual environment variables
@@ -22,9 +27,9 @@ if (process.env.DATABASE_URL) {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    max: 10,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 5000,
   };
 }
 
