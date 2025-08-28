@@ -83,14 +83,16 @@ class JudicialService {
       return true;
     }
     
-    // 暫時停用時間限制，因為司法院 API 服務時間限制導致大部分時間無法使用
-    // 改為直接提供風險評估分析，而不是依賴實時 API
+    // 司法院 API 服務時間：每日凌晨 0:00-6:00 (台北時間)
     const now = new Date();
-    const hour = now.getHours();
-    console.log(`司法院 API 服務時間檢查: 目前時間 ${hour}:${now.getMinutes().toString().padStart(2, '0')}，由於服務時間限制（00:00-06:00），將使用風險評估分析`);
+    // 轉換為台北時間
+    const taipeiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Taipei"}));
+    const hour = taipeiTime.getHours();
+    const isAvailable = hour >= 0 && hour < 6;
     
-    // 返回 false，讓系統使用風險評估分析而不是實時 API
-    return false;
+    console.log(`司法院 API 服務時間檢查: 台北時間 ${hour}:${taipeiTime.getMinutes().toString().padStart(2, '0')}，服務${isAvailable ? '可用' : '不可用'}（服務時間：00:00-06:00）`);
+    
+    return isAvailable;
   }
 
   // 取得特定分類的資料源

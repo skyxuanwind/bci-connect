@@ -9,7 +9,7 @@ class JudgmentSyncService {
   }
 
   /**
-   * 檢查司法院 API 是否可用（凌晨 0-6 點）
+   * 檢查司法院 API 是否可用（凌晨 0-6 點台北時間）
    */
   isApiAvailable() {
     if (process.env.JUDICIAL_DEV_FORCE === 'true') {
@@ -17,7 +17,9 @@ class JudgmentSyncService {
       return true;
     }
     const now = new Date();
-    const hour = now.getHours();
+    // 轉換為台北時間
+    const taipeiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Taipei"}));
+    const hour = taipeiTime.getHours();
     return hour >= 0 && hour < 6;
   }
 
