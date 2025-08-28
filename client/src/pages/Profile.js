@@ -808,19 +808,29 @@ const Profile = () => {
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-gray-700 font-medium">請完成這句引薦開場白：</p>
-                  <div className="flex items-center space-x-2 text-sm bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center space-x-2 text-sm bg-gray-50 p-3 rounded-lg flex-wrap">
                     <span className="text-gray-700">「我認識一位</span>
                     <input
                       type="text"
-                      className={`input flex-1 ${interviewErrors.referralOpening ? 'input-error' : ''}`}
+                      className={`input flex-1 min-w-[120px] ${interviewErrors.referralOpening ? 'input-error' : ''}`}
                       placeholder="您的專業領域，如：財務顧問、行銷專家"
                       {...registerInterview('referralOpening')}
                     />
-                    <span className="text-gray-700">，他/她可以協助您處理 __________________ 的問題。」</span>
+                    <span className="text-gray-700">，他/她可以協助您處理</span>
+                    <input
+                      type="text"
+                      className={`input flex-1 min-w-[120px] ${interviewErrors.referralProblem ? 'input-error' : ''}`}
+                      placeholder="您能解決的問題類型，如：系統整合、財務規劃"
+                      {...registerInterview('referralProblem')}
+                    />
+                    <span className="text-gray-700">的問題。」</span>
                   </div>
                 </div>
                 {interviewErrors.referralOpening && (
                   <p className="error-message">{interviewErrors.referralOpening.message}</p>
+                )}
+                {interviewErrors.referralProblem && (
+                  <p className="error-message">{interviewErrors.referralProblem.message}</p>
                 )}
               </div>
 
