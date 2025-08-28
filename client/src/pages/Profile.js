@@ -103,29 +103,30 @@ const Profile = () => {
     });
   }, [user, resetProfile]);
 
-  // 同步面談表單數據
+  // 同步面談表單數據，並從個人資料自動填入公司和專業別
   useEffect(() => {
-    if (!user?.interviewForm) return;
+    if (!user) return;
     resetInterview({
-      companyName: user.interviewForm.companyName || '',
-      brandLogo: user.interviewForm.brandLogo || '',
-      industry: user.interviewForm.industry || '',
-      coreServices: user.interviewForm.coreServices || '',
-      competitiveAdvantage: user.interviewForm.competitiveAdvantage || '',
-      targetMarket: user.interviewForm.targetMarket || '',
-      idealCustomer: user.interviewForm.idealCustomer || '',
-      customerExamples: user.interviewForm.customerExamples || '',
-      customerTraits: user.interviewForm.customerTraits || '',
-      customerPainPoints: user.interviewForm.customerPainPoints || '',
-      referralTrigger: user.interviewForm.referralTrigger || '',
-      referralOpening: user.interviewForm.referralOpening || '',
-      qualityReferral: user.interviewForm.qualityReferral || '',
-      unsuitableReferral: user.interviewForm.unsuitableReferral || '',
-      partnerTypes: user.interviewForm.partnerTypes || '',
-      businessGoals: user.interviewForm.businessGoals || '',
-      personalInterests: user.interviewForm.personalInterests || ''
+      // 優先使用面談表單已保存的數據，如果沒有則從個人資料自動填入
+      companyName: user.interviewForm?.companyName || user.company || '',
+      brandLogo: user.interviewForm?.brandLogo || '',
+      industry: user.interviewForm?.industry || user.industry || '',
+      coreServices: user.interviewForm?.coreServices || '',
+      competitiveAdvantage: user.interviewForm?.competitiveAdvantage || '',
+      targetMarket: user.interviewForm?.targetMarket || '',
+      idealCustomer: user.interviewForm?.idealCustomer || '',
+      customerExamples: user.interviewForm?.customerExamples || '',
+      customerTraits: user.interviewForm?.customerTraits || '',
+      customerPainPoints: user.interviewForm?.customerPainPoints || '',
+      referralTrigger: user.interviewForm?.referralTrigger || '',
+      referralOpening: user.interviewForm?.referralOpening || '',
+      qualityReferral: user.interviewForm?.qualityReferral || '',
+      unsuitableReferral: user.interviewForm?.unsuitableReferral || '',
+      partnerTypes: user.interviewForm?.partnerTypes || '',
+      businessGoals: user.interviewForm?.businessGoals || '',
+      personalInterests: user.interviewForm?.personalInterests || ''
     });
-  }, [user?.interviewForm, resetInterview]);
+  }, [user, resetInterview]);
 
   const newPassword = watch('newPassword');
 
@@ -300,7 +301,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Name */}
               <div>
                 <label className="label">
@@ -309,7 +310,7 @@ const Profile = () => {
                 </label>
                 <input
                   type="text"
-                  className={`input ${profileErrors.name ? 'input-error' : ''}`}
+                  className={`input w-full ${profileErrors.name ? 'input-error' : ''}`}
                   {...registerProfile('name', {
                     required: '請輸入姓名',
                     minLength: { value: 2, message: '姓名至少需要2個字符' }
@@ -329,7 +330,7 @@ const Profile = () => {
                 <input
                   type="email"
                   value={user?.email || ''}
-                  className="input bg-gray-50 cursor-not-allowed"
+                  className="input w-full bg-gray-50 cursor-not-allowed"
                   disabled
                 />
                 <p className="text-xs text-gray-500 mt-1">電子郵件無法修改</p>
@@ -343,7 +344,7 @@ const Profile = () => {
                 </label>
                 <input
                   type="text"
-                  className={`input ${profileErrors.company ? 'input-error' : ''}`}
+                  className={`input w-full ${profileErrors.company ? 'input-error' : ''}`}
                   {...registerProfile('company', {
                     required: '請輸入公司名稱'
                   })}
@@ -361,7 +362,7 @@ const Profile = () => {
                 </label>
                 <input
                   type="text"
-                  className={`input ${profileErrors.industry ? 'input-error' : ''}`}
+                  className={`input w-full ${profileErrors.industry ? 'input-error' : ''}`}
                   {...registerProfile('industry', {
                     required: '請輸入產業別'
                   })}
@@ -379,7 +380,7 @@ const Profile = () => {
                 </label>
                 <input
                   type="text"
-                  className={`input ${profileErrors.title ? 'input-error' : ''}`}
+                  className={`input w-full ${profileErrors.title ? 'input-error' : ''}`}
                   {...registerProfile('title', {
                     required: '請輸入職稱'
                   })}
@@ -397,7 +398,7 @@ const Profile = () => {
                 </label>
                 <input
                   type="tel"
-                  className={`input ${profileErrors.contactNumber ? 'input-error' : ''}`}
+                  className={`input w-full ${profileErrors.contactNumber ? 'input-error' : ''}`}
                   {...registerProfile('contactNumber', {
                     required: '請輸入聯絡電話',
                     pattern: {
@@ -412,14 +413,14 @@ const Profile = () => {
               </div>
 
               {/* NFC Card ID */}
-              <div>
+              <div className="md:col-span-2">
                 <label className="label">
                   <CreditCardIcon className="h-4 w-4 mr-2" />
                   NFC 卡片 UID
                 </label>
                 <input
                   type="text"
-                  className={`input ${profileErrors.nfcCardId ? 'input-error' : ''}`}
+                  className={`input w-full ${profileErrors.nfcCardId ? 'input-error' : ''}`}
                   placeholder="請輸入 NFC 卡片 UID（選填）"
                   {...registerProfile('nfcCardId', {
                     pattern: {
@@ -565,7 +566,7 @@ const Profile = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 {/* 公司／品牌名稱 */}
                 <div className="space-y-2">
                   <label className="label font-semibold">
@@ -575,10 +576,10 @@ const Profile = () => {
                   <input
                     type="text"
                     placeholder="例如：ABC科技有限公司"
-                    className={`input ${interviewErrors.companyName ? 'input-error' : ''}`}
+                    className={`input w-full ${interviewErrors.companyName ? 'input-error' : ''}`}
                     {...registerInterview('companyName')}
                   />
-                  <p className="text-xs text-gray-500">💡 填寫您的公司或個人品牌名稱</p>
+                  <p className="text-xs text-gray-500">💡 填寫您的公司或個人品牌名稱（已自動從個人資料填入）</p>
                   {interviewErrors.companyName && (
                     <p className="error-message">{interviewErrors.companyName.message}</p>
                   )}
@@ -593,10 +594,10 @@ const Profile = () => {
                   <input
                     type="text"
                     placeholder="例如：資訊科技業、財務顧問"
-                    className={`input ${interviewErrors.industry ? 'input-error' : ''}`}
+                    className={`input w-full ${interviewErrors.industry ? 'input-error' : ''}`}
                     {...registerInterview('industry')}
                   />
-                  <p className="text-xs text-gray-500">💡 讓人一眼就知道您的專業領域</p>
+                  <p className="text-xs text-gray-500">💡 讓人一眼就知道您的專業領域（已自動從個人資料填入）</p>
                   {interviewErrors.industry && (
                     <p className="error-message">{interviewErrors.industry.message}</p>
                   )}
@@ -615,7 +616,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={4}
-                  className={`input ${interviewErrors.coreServices ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.coreServices ? 'input-error' : ''}`}
                   placeholder="請詳細描述您的核心產品或服務，包含具體內容和服務範圍..."
                   {...registerInterview('coreServices')}
                 />
@@ -636,7 +637,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={3}
-                  className={`input ${interviewErrors.competitiveAdvantage ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.competitiveAdvantage ? 'input-error' : ''}`}
                   placeholder="請說明您的競爭優勢，什麼讓您與眾不同..."
                   {...registerInterview('competitiveAdvantage')}
                 />
@@ -672,7 +673,7 @@ const Profile = () => {
                 </div>
                 <input
                   type="text"
-                  className={`input ${interviewErrors.targetMarket ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.targetMarket ? 'input-error' : ''}`}
                   placeholder="請描述您的目標市場，如行業別、地區、企業規模等..."
                   {...registerInterview('targetMarket')}
                 />
@@ -693,7 +694,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={3}
-                  className={`input ${interviewErrors.idealCustomer ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.idealCustomer ? 'input-error' : ''}`}
                   placeholder="請具體描述理想客戶的特徵，包含公司規模、需求、決策者特質等..."
                   {...registerInterview('idealCustomer')}
                 />
@@ -714,7 +715,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={2}
-                  className={`input ${interviewErrors.customerExamples ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.customerExamples ? 'input-error' : ''}`}
                   placeholder="請舉例說明您曾服務過的代表性客戶類型..."
                   {...registerInterview('customerExamples')}
                 />
@@ -735,7 +736,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={2}
-                  className={`input ${interviewErrors.customerTraits ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.customerTraits ? 'input-error' : ''}`}
                   placeholder="請描述您的客戶通常具備的共同特質或價值觀..."
                   {...registerInterview('customerTraits')}
                 />
@@ -751,7 +752,7 @@ const Profile = () => {
                 </label>
                 <textarea
                   rows={3}
-                  className={`input ${interviewErrors.customerPainPoints ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.customerPainPoints ? 'input-error' : ''}`}
                   placeholder="他們會遇到什麼問題，正好是您可以解決的？"
                   {...registerInterview('customerPainPoints')}
                 />
@@ -835,7 +836,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={3}
-                  className={`input ${interviewErrors.qualityReferral ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.qualityReferral ? 'input-error' : ''}`}
                   placeholder="請具體描述什麼樣的引薦對您最有價值，包含客戶狀態、需求急迫性、決策能力等..."
                   {...registerInterview('qualityReferral')}
                 />
@@ -856,7 +857,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={3}
-                  className={`input ${interviewErrors.unsuitableReferral ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.unsuitableReferral ? 'input-error' : ''}`}
                   placeholder="請說明什麼樣的引薦不適合您，幫助夥伴避免無效推薦..."
                   {...registerInterview('unsuitableReferral')}
                 />
@@ -877,7 +878,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={2}
-                  className={`input ${interviewErrors.partnerTypes ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.partnerTypes ? 'input-error' : ''}`}
                   placeholder="請說明您希望合作的夥伴類型，能與您的服務形成互補的專業領域..."
                   {...registerInterview('partnerTypes')}
                 />
@@ -913,7 +914,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={3}
-                  className={`input ${interviewErrors.businessGoals ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.businessGoals ? 'input-error' : ''}`}
                   placeholder="請分享您的近期事業或個人目標，讓夥伴知道如何協助您..."
                   {...registerInterview('businessGoals')}
                 />
@@ -934,7 +935,7 @@ const Profile = () => {
                 </div>
                 <textarea
                   rows={3}
-                  className={`input ${interviewErrors.personalInterests ? 'input-error' : ''}`}
+                  className={`input w-full ${interviewErrors.personalInterests ? 'input-error' : ''}`}
                   placeholder="請分享您的興趣愛好，讓夥伴更了解您的個人面向..."
                   {...registerInterview('personalInterests')}
                 />
@@ -992,7 +993,7 @@ const Profile = () => {
               <div className="relative">
                 <input
                   type={showCurrentPassword ? 'text' : 'password'}
-                  className={`input pr-10 ${passwordErrors.currentPassword ? 'input-error' : ''}`}
+                  className={`input w-full pr-10 ${passwordErrors.currentPassword ? 'input-error' : ''}`}
                   {...registerPassword('currentPassword', {
                     required: '請輸入目前密碼'
                   })}
@@ -1023,7 +1024,7 @@ const Profile = () => {
               <div className="relative">
                 <input
                   type={showNewPassword ? 'text' : 'password'}
-                  className={`input pr-10 ${passwordErrors.newPassword ? 'input-error' : ''}`}
+                  className={`input w-full pr-10 ${passwordErrors.newPassword ? 'input-error' : ''}`}
                   {...registerPassword('newPassword', {
                     required: '請輸入新密碼',
                     minLength: { value: 6, message: '密碼至少需要6個字符' }
@@ -1055,7 +1056,7 @@ const Profile = () => {
               <div className="relative">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  className={`input pr-10 ${passwordErrors.confirmPassword ? 'input-error' : ''}`}
+                  className={`input w-full pr-10 ${passwordErrors.confirmPassword ? 'input-error' : ''}`}
                   {...registerPassword('confirmPassword', {
                     required: '請確認新密碼',
                     validate: value => value === newPassword || '密碼不一致'
