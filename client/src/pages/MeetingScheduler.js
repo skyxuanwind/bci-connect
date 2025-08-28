@@ -214,13 +214,13 @@ const MeetingScheduler = () => {
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('schedule')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 px-4 border-b-2 font-semibold text-base rounded-t-lg transition-all duration-200 ${
                   activeTab === 'schedule'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-purple-500 text-purple-700 bg-purple-50 shadow-sm'
+                    : 'border-transparent text-gray-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50'
                 }`}
               >
-                預約會議
+                📅 預約會議
               </button>
               <button
                 onClick={() => setActiveTab('meetings')}
@@ -328,9 +328,9 @@ const MeetingScheduler = () => {
                       type="submit"
                       disabled={loading || (newMeeting.meeting_date && newMeeting.start_time && newMeeting.end_time && 
                                isTimeSlotBusy(newMeeting.meeting_date, newMeeting.start_time, newMeeting.end_time))}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                      className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50 transform hover:scale-105 transition-all duration-200"
                     >
-                      {loading ? '發送中...' : '發送會議邀請'}
+                      {loading ? '🔄 發送中...' : '📅 預約會議'}
                     </button>
                   </form>
                 </div>

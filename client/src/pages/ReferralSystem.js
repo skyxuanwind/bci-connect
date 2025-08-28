@@ -242,13 +242,13 @@ const ReferralSystem = () => {
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('create')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 px-4 border-b-2 font-semibold text-base rounded-t-lg transition-all duration-200 ${
                   activeTab === 'create'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-green-500 text-green-700 bg-green-50 shadow-sm'
+                    : 'border-transparent text-gray-500 hover:text-green-600 hover:border-green-300 hover:bg-green-50'
                 }`}
               >
-                發起引薦
+                🚀 發起引薦
               </button>
               <button
                 onClick={() => setActiveTab('received')}
@@ -330,9 +330,9 @@ const ReferralSystem = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-50 transform hover:scale-105 transition-all duration-200"
                   >
-                    {loading ? '發送中...' : '發送引薦'}
+                    {loading ? '🔄 發送中...' : '🚀 發起引薦'}
                   </button>
                 </form>
               </div>
