@@ -23,7 +23,7 @@ import {
   HandshakeIcon,
   HeartIcon,
   LightBulbIcon,
-  TargetIcon,
+  FlagIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
@@ -627,7 +627,7 @@ const Profile = () => {
               {/* 我與競爭者的最大差異 */}
               <div className="mt-8 space-y-2">
                 <label className="label font-semibold">
-                  <TargetIcon className="h-5 w-5 mr-2 text-blue-600" />
+                  <FlagIcon className="h-5 w-5 mr-2 text-blue-600" />
                   我與競爭者的最大差異
                 </label>
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
@@ -663,7 +663,7 @@ const Profile = () => {
               {/* 主力目標客群／市場 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <TargetIcon className="h-5 w-5 mr-2 text-purple-600" />
+                  <FlagIcon className="h-5 w-5 mr-2 text-purple-600" />
                   主力目標客群／市場
                 </label>
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
@@ -904,7 +904,7 @@ const Profile = () => {
               {/* 近期的事業／個人目標 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <TargetIcon className="h-5 w-5 mr-2 text-pink-600" />
+                  <FlagIcon className="h-5 w-5 mr-2 text-pink-600" />
                   近期的事業／個人目標
                 </label>
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
