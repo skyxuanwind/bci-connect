@@ -198,7 +198,7 @@ export const AuthProvider = ({ children }) => {
 
   // Helper function to check if user is admin
   const isAdmin = () => {
-    return user && user.membershipLevel === 1;
+    return user && user.membershipLevel === 1 && user.email && user.email.includes('admin');
   };
 
   // Helper function to check membership level access
