@@ -93,7 +93,7 @@
   
   /* Membership Level Badges */
   .level-1 {
-    @apply bg-gradient-to-r from-gold-500 to-gold-600 text-white;
+    @apply bg-gradient-to-r from-blue-600 to-blue-700 text-white;
   }
   
   .level-2 {
@@ -101,7 +101,7 @@
   }
   
   .level-3 {
-    @apply bg-gradient-to-r from-amber-600 to-amber-700 text-white;
+    @apply bg-gradient-to-r from-green-600 to-green-700 text-white;
   }
 }
 
