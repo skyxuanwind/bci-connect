@@ -20,7 +20,7 @@ import {
   StarIcon,
   UsersIcon,
   MegaphoneIcon,
-  HandshakeIcon,
+  UserGroupIcon,
   HeartIcon,
   LightBulbIcon,
   FlagIcon,
@@ -786,7 +786,7 @@ const Profile = () => {
               <div className="flex items-center space-x-3 mb-6">
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <HandshakeIcon className="h-6 w-6 text-orange-600" />
+                    <UserGroupIcon className="h-6 w-6 text-orange-600" />
                   </div>
                 </div>
                 <div>
@@ -868,7 +868,7 @@ const Profile = () => {
               {/* 我正在尋找的「合作」夥伴 */}
               <div className="mb-6 space-y-2">
                 <label className="label font-semibold">
-                  <HandshakeIcon className="h-5 w-5 mr-2 text-orange-600" />
+                  <UserGroupIcon className="h-5 w-5 mr-2 text-orange-600" />
                   我正在尋找的「合作」夥伴
                 </label>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
