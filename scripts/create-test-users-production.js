@@ -14,7 +14,7 @@ const testUsers = [
     title: '技術總監',
     contact_number: '0912-345-678',
     chapter_id: 1,
-    membership_level: 'gold',
+    membership_level: 2,
     status: 'active',
     interview_form: {
       company_description: '專注於AI和機器學習解決方案的科技公司',
@@ -36,7 +36,7 @@ const testUsers = [
     title: '營運經理',
     contact_number: '0923-456-789',
     chapter_id: 1,
-    membership_level: 'silver',
+    membership_level: 3,
     status: 'active',
     interview_form: {
       company_description: '致力於可再生能源和環保技術的推廣',
@@ -58,7 +58,7 @@ const testUsers = [
     title: '執行長',
     contact_number: '0934-567-890',
     chapter_id: 1,
-    membership_level: 'platinum',
+    membership_level: 1,
     status: 'active',
     interview_form: {
       company_description: '經營多家高端餐廳和咖啡廳的餐飲集團',
@@ -80,7 +80,7 @@ const testUsers = [
     title: '創辦人',
     contact_number: '0945-678-901',
     chapter_id: 1,
-    membership_level: 'gold',
+    membership_level: 2,
     status: 'active',
     interview_form: {
       company_description: '提供個人化健康管理和生活方式改善服務',
@@ -102,7 +102,7 @@ const testUsers = [
     title: '策略總監',
     contact_number: '0956-789-012',
     chapter_id: 1,
-    membership_level: 'silver',
+    membership_level: 3,
     status: 'active',
     interview_form: {
       company_description: '專業的數位行銷和品牌策略顧問公司',
