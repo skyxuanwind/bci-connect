@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import api from '../services/api';
 
 const SmartCollaborationDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -70,38 +71,26 @@ const SmartCollaborationDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      // 並行載入所有數據
+
       const [opportunitiesRes, wishesRes, membersRes, notificationsRes, profileRes] = await Promise.all([
-        fetch('/api/notifications/opportunities', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('/api/wishes/my-wishes', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('/api/ai-profiles/similar-members', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('/api/notifications?limit=5', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('/api/ai-profiles/current', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        api.get('/api/notifications/opportunities'),
+        api.get('/api/wishes/my-wishes'),
+        api.get('/api/ai-profiles/similar-members'),
+        api.get('/api/notifications', { params: { limit: 5 } }),
+        api.get('/api/ai-profiles/current')
       ]);
 
-      const opportunities = opportunitiesRes.ok ? await opportunitiesRes.json() : [];
-      const wishes = wishesRes.ok ? await wishesRes.json() : [];
-      const similarMembers = membersRes.ok ? await membersRes.json() : [];
-      const notifications = notificationsRes.ok ? await notificationsRes.json() : { notifications: [] };
-      const aiProfile = profileRes.ok ? await profileRes.json() : null;
+      const opportunities = Array.isArray(opportunitiesRes.data) ? opportunitiesRes.data : (opportunitiesRes.data?.opportunities || []);
+      const wishes = Array.isArray(wishesRes.data) ? wishesRes.data : (wishesRes.data?.wishes || []);
+      const similarMembers = Array.isArray(membersRes.data) ? membersRes.data : (membersRes.data?.members || []);
+      const notifications = notificationsRes.data?.notifications || (Array.isArray(notificationsRes.data) ? notificationsRes.data : []);
+      const aiProfile = profileRes.data || null;
 
       setDashboardData({
         opportunities: opportunities.slice(0, 5),
         wishes: wishes.slice(0, 5),
         similarMembers: similarMembers.slice(0, 5),
-        notifications: notifications.notifications || [],
+        notifications,
         aiProfile
       });
     } catch (error) {
@@ -114,25 +103,13 @@ const SmartCollaborationDashboard = () => {
   const refreshOpportunities = async () => {
     try {
       setRefreshing(true);
-      const token = localStorage.getItem('token');
-      
-      await fetch('/api/notifications/scan-opportunities', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      // 重新載入機會數據
-      const opportunitiesRes = await fetch('/api/notifications/opportunities', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (opportunitiesRes.ok) {
-        const opportunities = await opportunitiesRes.json();
-        setDashboardData(prev => ({
-          ...prev,
-          opportunities: opportunities.slice(0, 5)
-        }));
-      }
+      await api.post('/api/notifications/scan-opportunities');
+      const opportunitiesRes = await api.get('/api/notifications/opportunities');
+      const opportunities = Array.isArray(opportunitiesRes.data) ? opportunitiesRes.data : (opportunitiesRes.data?.opportunities || []);
+      setDashboardData(prev => ({
+        ...prev,
+        opportunities: opportunities.slice(0, 5)
+      }));
     } catch (error) {
       console.error('刷新機會失敗:', error);
     } finally {
@@ -142,27 +119,16 @@ const SmartCollaborationDashboard = () => {
 
   const createWish = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/wishes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newWish)
+      await api.post('/api/wishes', newWish);
+      setShowCreateWish(false);
+      setNewWish({
+        title: '',
+        description: '',
+        category: '',
+        collaboration_type: '',
+        urgency_level: 1
       });
-
-      if (response.ok) {
-        setShowCreateWish(false);
-        setNewWish({
-          title: '',
-          description: '',
-          category: '',
-          collaboration_type: '',
-          urgency_level: 1
-        });
-        loadDashboardData(); // 重新載入數據
-      }
+      loadDashboardData();
     } catch (error) {
       console.error('創建願望失敗:', error);
     }
@@ -170,13 +136,7 @@ const SmartCollaborationDashboard = () => {
 
   const markNotificationAsRead = async (notificationId) => {
     try {
-      const token = localStorage.getItem('token');
-      await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      // 更新本地狀態
+      await api.put(`/api/notifications/${notificationId}/read`);
       setDashboardData(prev => ({
         ...prev,
         notifications: prev.notifications.map(n => 
