@@ -16,7 +16,8 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-  CreditCardIcon
+  CreditCardIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 const UserManagement = () => {
@@ -189,6 +190,32 @@ const UserManagement = () => {
     if (!ok) return;
     setNewNfcCardId('');
     await saveNfcCard();
+  };
+
+  const deleteUser = async (user) => {
+    // 防止刪除系統管理員
+    if (user.id === 1) {
+      toast.error('無法刪除系統管理員帳號');
+      return;
+    }
+
+    const confirmMessage = `確定要刪除用戶「${user.name}」嗎？\n\n⚠️ 警告：此操作將永久刪除該用戶及其所有相關數據，包括：\n• 引薦記錄\n• 會議預約\n• 活動報名\n• 商訪記錄\n• 財務記錄\n\n此操作無法復原！`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setUpdatingUser(user.id);
+    try {
+      await axios.delete(`/api/admin/users/${user.id}`);
+      toast.success(`用戶 ${user.name} 已成功刪除`);
+      loadUsers();
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      toast.error(error.response?.data?.message || '刪除用戶失敗');
+    } finally {
+      setUpdatingUser(null);
+    }
   };
 
   const getMembershipLevelText = (level) => {
@@ -602,6 +629,15 @@ const UserManagement = () => {
                               >
                                 <CreditCardIcon className="h-4 w-4" />
                               </button>
+                              {user.id !== 1 && (
+                                <button
+                                  onClick={() => deleteUser(user)}
+                                  className="text-red-600 hover:text-red-900"
+                                  title="刪除用戶"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              )}
                               <div className="flex space-x-1">
                                 {getStatusActions(user)}
                               </div>

@@ -379,6 +379,68 @@ router.put('/users/:id/nfc-card', async (req, res) => {
   }
 });
 
+// @route   DELETE /api/admin/users/:id
+// @desc    Delete user account
+// @access  Private (Admin only)
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const userCheck = await pool.query(
+      'SELECT id, name, email FROM users WHERE id = $1',
+      [id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ message: '用戶不存在' });
+    }
+
+    const user = userCheck.rows[0];
+
+    // Prevent deleting admin user (id = 1)
+    if (parseInt(id) === 1) {
+      return res.status(403).json({ message: '無法刪除系統管理員帳號' });
+    }
+
+    // Start transaction to delete user and related data
+    await pool.query('BEGIN');
+
+    try {
+      // Delete related data first (foreign key constraints)
+      await pool.query('DELETE FROM referrals WHERE referrer_id = $1 OR referred_to_id = $1', [id]);
+      await pool.query('DELETE FROM meetings WHERE requester_id = $1 OR attendee_id = $1', [id]);
+      await pool.query('DELETE FROM event_registrations WHERE user_id = $1', [id]);
+      await pool.query('DELETE FROM guest_registrations WHERE inviter_id = $1', [id]);
+      await pool.query('DELETE FROM prospect_votes WHERE voter_id = $1', [id]);
+      await pool.query('DELETE FROM prospects WHERE created_by_id = $1', [id]);
+      await pool.query('DELETE FROM transactions WHERE created_by_id = $1', [id]);
+      
+      // Finally delete the user
+      await pool.query('DELETE FROM users WHERE id = $1', [id]);
+      
+      await pool.query('COMMIT');
+
+      res.json({
+        message: `用戶 ${user.name} (${user.email}) 已成功刪除`,
+        deletedUser: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        }
+      });
+
+    } catch (deleteError) {
+      await pool.query('ROLLBACK');
+      throw deleteError;
+    }
+
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: '刪除用戶時發生錯誤' });
+  }
+});
+
 // @route   GET /api/admin/dashboard
 // @desc    Get admin dashboard statistics
 // @access  Private (Admin only)
