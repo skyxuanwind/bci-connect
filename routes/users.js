@@ -444,8 +444,84 @@ router.get('/members', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get members error:', error);
-    res.status(500).json({ message: '獲取會員列表時發生錯誤' });
+    console.error('Get member error:', error);
+    res.status(500).json({ message: '獲取會員資料時發生錯誤' });
+  }
+});
+
+// @route   GET /api/users/member/:id/interview
+// @desc    Get member interview form by ID (based on access level)
+// @access  Private
+router.get('/member/:id/interview', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT u.id, u.name, u.company, u.industry, u.title,
+              u.profile_picture_url, u.membership_level, u.interview_form,
+              c.name as chapter_name
+       FROM users u
+       LEFT JOIN chapters c ON u.chapter_id = c.id
+       WHERE u.id = $1 AND u.status = 'active'`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: '會員不存在或未啟用' });
+    }
+
+    const member = result.rows[0];
+
+    // Check access permission based on membership level
+    const canAccess = (
+      (req.user.membership_level === 1) || // Level 1 can see all
+      (req.user.membership_level === 2 && member.membership_level >= 2) || // Level 2 can see 2,3
+      (req.user.membership_level === 3 && member.membership_level === 3) // Level 3 can see only 3
+    );
+
+    if (!canAccess) {
+      return res.status(403).json({ message: '無權限查看此會員的面談表' });
+    }
+
+    // Check if interview form exists
+    if (!member.interview_form) {
+      return res.status(404).json({ message: '此會員尚未填寫面談表' });
+    }
+
+    // Safely parse interview_form
+    let interviewForm = null;
+    try {
+      if (typeof member.interview_form === 'string') {
+        interviewForm = JSON.parse(member.interview_form);
+      } else if (typeof member.interview_form === 'object') {
+        interviewForm = member.interview_form;
+      }
+    } catch (parseError) {
+      console.error('Interview form parsing error:', parseError, 'Raw data:', member.interview_form);
+      return res.status(500).json({ message: '面談表資料格式錯誤' });
+    }
+
+    if (!interviewForm) {
+      return res.status(404).json({ message: '此會員尚未填寫面談表' });
+    }
+
+    res.json({
+      member: {
+        id: member.id,
+        name: member.name,
+        company: member.company,
+        industry: member.industry,
+        title: member.title,
+        profilePictureUrl: member.profile_picture_url,
+        membershipLevel: member.membership_level,
+        chapterName: member.chapter_name
+      },
+      interviewForm
+    });
+
+  } catch (error) {
+    console.error('Get member interview error:', error);
+    res.status(500).json({ message: '獲取會員面談表時發生錯誤' });
   }
 });
 

@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import Members from './pages/Members';
 import MemberDetail from './pages/MemberDetail';
+import MemberInterview from './pages/MemberInterview';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import PendingUsers from './pages/admin/PendingUsers';
@@ -87,6 +88,14 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <MemberDetail />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/member-interview/:id" element={
+            <ProtectedRoute>
+              <Layout>
+                <MemberInterview />
               </Layout>
             </ProtectedRoute>
           } />
