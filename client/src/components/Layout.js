@@ -79,6 +79,7 @@ const Layout = ({ children }) => {
   // AI 智慧合作網絡功能
   const aiFeatures = [
     { name: 'AI 智慧儀表板', href: '/smart-collaboration', icon: CpuChipIcon },
+    { name: 'AI 個人檔案', href: '/ai-profile', icon: UserIcon },
     { name: '會員許願版', href: '/wishes', icon: StarIcon },
     { name: 'AI 智慧通知', href: '/notifications', icon: BellIcon },
   ];

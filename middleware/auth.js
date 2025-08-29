@@ -11,6 +11,11 @@ const authenticateToken = async (req, res, next) => {
     // Try to get token from Authorization header first, then from cookies
     const authHeader = req.headers['authorization'];
     let token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    // Treat invalid placeholder tokens as missing so we can fall back to cookies
+    if (token === 'null' || token === 'undefined' || token === '') {
+      token = undefined;
+    }
     
     if (!token && req.cookies) {
       token = req.cookies.token;
