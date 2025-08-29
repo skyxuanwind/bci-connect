@@ -297,6 +297,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         status: user.status,
         nfcCardId: user.nfc_card_id,
         qrCodeUrl: `/api/qrcode/member/${user.id}`,
+        interviewForm: user.interview_form ? JSON.parse(user.interview_form) : null,
         createdAt: user.created_at
       }
     });
