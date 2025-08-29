@@ -218,6 +218,42 @@ const UserManagement = () => {
     }
   };
 
+  const createTestAccounts = async () => {
+    const confirmMessage = `確定要創建測試帳號嗎？\n\n此操作將創建 5 個測試用戶帳號，包含完整的面談表單資料。\n\n⚠️ 注意：此功能僅在生產環境可用，且只有系統管理員可以執行。`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/admin/create-test-accounts');
+      
+      if (response.data.success) {
+        toast.success('測試帳號創建成功！');
+        
+        // 顯示創建的帳號資訊
+        const accountsInfo = response.data.accounts.map(acc => 
+          `${acc.name} (${acc.email}) - ${acc.company}`
+        ).join('\n');
+        
+        alert(`測試帳號創建成功！\n\n創建的帳號：\n${accountsInfo}\n\n統一密碼：${response.data.password}\n\n請使用這些帳號進行系統測試。`);
+        
+        loadUsers(); // 重新載入用戶列表
+      }
+    } catch (error) {
+      console.error('Failed to create test accounts:', error);
+      const errorMessage = error.response?.data?.message || '創建測試帳號失敗';
+      toast.error(errorMessage);
+      
+      if (error.response?.status === 403) {
+        alert('權限不足：只有系統管理員可以在生產環境中創建測試帳號。');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getMembershipLevelText = (level) => {
     const levels = {
       1: '核心',
@@ -420,6 +456,15 @@ const UserManagement = () => {
           >
             <FunnelIcon className="h-4 w-4 mr-2" />
             篩選
+          </button>
+          <button
+            onClick={createTestAccounts}
+            disabled={loading}
+            className="btn-secondary flex items-center text-blue-600 border-blue-600 hover:bg-blue-50"
+            title="創建測試帳號（僅生產環境）"
+          >
+            <UserIcon className="h-4 w-4 mr-2" />
+            創建測試帳號
           </button>
           <Link to="/admin/pending" className="btn-primary">
             待審核用戶

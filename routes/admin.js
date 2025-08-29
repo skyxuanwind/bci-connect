@@ -441,6 +441,55 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/create-test-accounts
+// @desc    Create test accounts in production environment
+// @access  Private (Admin only)
+router.post('/create-test-accounts', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    // 只允許在生產環境執行
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(403).json({ 
+        success: false, 
+        message: '此功能僅在生產環境可用' 
+      });
+    }
+
+    // 只允許系統管理員（ID為1）執行
+    if (req.user.id !== 1) {
+      return res.status(403).json({ 
+        success: false, 
+        message: '只有系統管理員可以創建測試帳號' 
+      });
+    }
+
+    const { createTestUsers } = require('../scripts/create-test-users-production');
+    
+    // 執行測試帳號創建
+    await createTestUsers();
+    
+    res.json({ 
+      success: true, 
+      message: '測試帳號創建成功',
+      accounts: [
+        { name: '張志明', email: 'test1@example.com', company: '創新科技有限公司' },
+        { name: '李美華', email: 'test2@example.com', company: '綠能環保股份有限公司' },
+        { name: '王建國', email: 'test3@example.com', company: '精品餐飲集團' },
+        { name: '陳淑芬', email: 'test4@example.com', company: '健康生活顧問公司' },
+        { name: '林志偉', email: 'test5@example.com', company: '數位行銷策略公司' }
+      ],
+      password: 'test123456'
+    });
+    
+  } catch (error) {
+    console.error('創建測試帳號錯誤:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '創建測試帳號失敗', 
+      error: error.message 
+    });
+  }
+});
+
 // @route   GET /api/admin/dashboard
 // @desc    Get admin dashboard statistics
 // @access  Private (Admin only)
