@@ -386,6 +386,51 @@ ${JSON.stringify(newData, null, 2)}
     
     return expertise;
   }
+
+  /**
+   * 計算畫像完整度
+   */
+  calculateProfileCompleteness(profile) {
+    if (!profile) {
+      return 0;
+    }
+
+    let totalScore = 0;
+    let maxScore = 100;
+
+    // 靜態資料完整度 (40%)
+    const staticData = profile.static_data || {};
+    let staticScore = 0;
+    
+    if (staticData.skills && staticData.skills.length > 0) staticScore += 10;
+    if (staticData.industries && staticData.industries.length > 0) staticScore += 10;
+    if (staticData.expertise_areas && staticData.expertise_areas.length > 0) staticScore += 10;
+    if (staticData.company_info && Object.keys(staticData.company_info).length > 0) staticScore += 10;
+    
+    totalScore += staticScore;
+
+    // 行為資料完整度 (30%)
+    const behavioralData = profile.behavioral_data || {};
+    let behavioralScore = 0;
+    
+    if (behavioralData.activity_patterns && Object.keys(behavioralData.activity_patterns).length > 0) behavioralScore += 10;
+    if (behavioralData.event_participation && behavioralData.event_participation.length > 0) behavioralScore += 10;
+    if (behavioralData.network_connections && behavioralData.network_connections.length > 0) behavioralScore += 10;
+    
+    totalScore += behavioralScore;
+
+    // 對話資料完整度 (30%)
+    const conversationalData = profile.conversational_data || {};
+    let conversationalScore = 0;
+    
+    if (conversationalData.business_intents && conversationalData.business_intents.length > 0) conversationalScore += 10;
+    if (conversationalData.pain_points && conversationalData.pain_points.length > 0) conversationalScore += 10;
+    if (conversationalData.collaboration_interests && conversationalData.collaboration_interests.length > 0) conversationalScore += 10;
+    
+    totalScore += conversationalScore;
+
+    return Math.min(100, totalScore);
+  }
 }
 
 module.exports = { AIProfileService };
