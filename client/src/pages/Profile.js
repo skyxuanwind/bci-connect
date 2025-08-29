@@ -104,8 +104,12 @@ const Profile = () => {
   }, [user, resetProfile]);
 
   // 同步面談表單數據，並從個人資料自動填入公司和專業別
+  // 使用 ref 來追蹤是否已經初始化，避免重複重置表單
+  const [isInterviewFormInitialized, setIsInterviewFormInitialized] = useState(false);
+  
   useEffect(() => {
-    if (!user) return;
+    if (!user || isInterviewFormInitialized) return;
+    
     resetInterview({
       // 優先使用面談表單已保存的數據，如果沒有則從個人資料自動填入
       companyName: user.interviewForm?.companyName || user.company || '',
@@ -126,7 +130,9 @@ const Profile = () => {
       businessGoals: user.interviewForm?.businessGoals || '',
       personalInterests: user.interviewForm?.personalInterests || ''
     });
-  }, [user]); // 移除 resetInterview 依賴項，避免無限循環
+    
+    setIsInterviewFormInitialized(true);
+  }, [user, isInterviewFormInitialized]); // 只在用戶載入且未初始化時執行
 
   const newPassword = watch('newPassword');
 
@@ -179,11 +185,9 @@ const Profile = () => {
     try {
       const response = await axios.put('/api/users/interview-form', data);
       toast.success('面談表單儲存成功！');
-      // 延遲更新 AuthContext 中的用戶資料，避免立即觸發表單重置
+      // 直接更新 AuthContext 中的用戶資料
       if (response.data.user) {
-        setTimeout(() => {
-          updateProfile(response.data.user);
-        }, 100);
+        updateProfile(response.data.user);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || '面談表單儲存失敗，請稍後再試');

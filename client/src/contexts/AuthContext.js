@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (profileData) => {
     try {
       // 如果 profileData 是直接的用戶數據對象（來自面談表單儲存），直接更新用戶狀態
-      if (profileData && typeof profileData === 'object' && !profileData instanceof FormData && profileData.id) {
+      if (profileData && typeof profileData === 'object' && !(profileData instanceof FormData) && profileData.id) {
         setUser(prevUser => ({
           ...prevUser,
           ...profileData
