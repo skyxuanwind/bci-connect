@@ -671,8 +671,8 @@ const Profile = () => {
                   <p className="text-sm text-purple-800">🎯 <strong>填寫提示：</strong>描述您最想服務的客戶群體</p>
                   <p className="text-xs text-purple-600 mt-1">範例：「中小企業主、科技業、台北地區製造業」</p>
                 </div>
-                <input
-                  type="text"
+                <textarea
+                  rows={3}
                   className={`input w-full ${interviewErrors.targetMarket ? 'input-error' : ''}`}
                   placeholder="請描述您的目標市場，如行業別、地區、企業規模等..."
                   {...registerInterview('targetMarket')}

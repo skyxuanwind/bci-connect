@@ -255,7 +255,7 @@ router.put('/interview-form', async (req, res) => {
       UPDATE users 
       SET interview_form = $1, updated_at = CURRENT_TIMESTAMP
       WHERE id = $2
-      RETURNING id, name, email, interview_form
+      RETURNING id, name, email, company, industry, title, contact_number, profile_picture_url, membership_level, status, nfc_card_id, interview_form
     `;
     
     const result = await pool.query(updateQuery, [
