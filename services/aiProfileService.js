@@ -51,7 +51,32 @@ class AIProfileService {
         throw new Error(`會員不存在: ${userId}`);
       }
       
-      return result.rows[0].ai_deep_profile || this.getDefaultProfile();
+      const rawProfile = result.rows[0].ai_deep_profile;
+      if (!rawProfile) {
+        return this.getDefaultProfile();
+      }
+
+      // 兼容資料庫中以文字形式存儲的 JSON
+      let profile = rawProfile;
+      if (typeof rawProfile === 'string') {
+        try {
+          profile = JSON.parse(rawProfile);
+        } catch (e) {
+          console.warn('⚠️ 解析 ai_deep_profile JSON 失敗，使用空物件回退:', e.message);
+          profile = {};
+        }
+      }
+
+      // 補齊缺失的結構，避免空物件造成後續讀取錯誤
+      const base = this.getDefaultProfile();
+      profile.static_data = { ...base.static_data, ...(profile.static_data || {}) };
+      profile.behavioral_data = { ...base.behavioral_data, ...(profile.behavioral_data || {}) };
+      profile.conversational_data = { ...base.conversational_data, ...(profile.conversational_data || {}) };
+      profile.ai_insights = { ...base.ai_insights, ...(profile.ai_insights || {}) };
+      profile.data_sources = { ...base.data_sources, ...(profile.data_sources || {}) };
+      profile.last_updated = profile.last_updated || base.last_updated;
+      
+      return profile;
     } catch (error) {
       console.error('❌ 獲取AI深度畫像失敗:', error);
       throw error;
@@ -132,10 +157,14 @@ class AIProfileService {
    * 合併行為數據
    */
   mergeBehavioralData(current, newData) {
+    // 防禦性處理，避免 current 為 undefined 造成錯誤
+    current = current || {};
+    newData = newData || {};
+
     return {
-      activity_patterns: { ...current.activity_patterns, ...newData.activity_patterns },
-      interaction_preferences: { ...current.interaction_preferences, ...newData.interaction_preferences },
-      search_history: [...(current.search_history || []), ...(newData.search_history || [])].slice(-100), // 保留最近100筆
+      activity_patterns: { ...(current.activity_patterns || {}), ...(newData.activity_patterns || {}) },
+      interaction_preferences: { ...(current.interaction_preferences || {}), ...(newData.interaction_preferences || {}) },
+      search_history: [...(current.search_history || []), ...(newData.search_history || [])].slice(-100),
       event_participation: [...(current.event_participation || []), ...(newData.event_participation || [])],
       network_connections: [...(current.network_connections || []), ...(newData.network_connections || [])]
     };
@@ -145,12 +174,16 @@ class AIProfileService {
    * 合併對話數據
    */
   mergeConversationalData(current, newData) {
+    // 防禦性處理，避免 current 為 undefined 造成錯誤
+    current = current || {};
+    newData = newData || {};
+
     return {
       business_intents: [...(current.business_intents || []), ...(newData.business_intents || [])],
       pain_points: [...(current.pain_points || []), ...(newData.pain_points || [])],
       collaboration_interests: [...(current.collaboration_interests || []), ...(newData.collaboration_interests || [])],
       future_plans: [...(current.future_plans || []), ...(newData.future_plans || [])],
-      communication_style: { ...current.communication_style, ...newData.communication_style }
+      communication_style: { ...(current.communication_style || {}), ...(newData.communication_style || {}) }
     };
   }
 
@@ -403,6 +436,13 @@ ${JSON.stringify(newData, null, 2)}
         console.log(`📝 用戶 ${userId} 沒有現有畫像，創建新的預設畫像`);
         currentProfile = this.getDefaultProfile();
       }
+
+      // 確保結構完整，避免空物件導致合併報錯
+      const base = this.getDefaultProfile();
+      currentProfile.static_data = { ...base.static_data, ...(currentProfile.static_data || {}) };
+      currentProfile.behavioral_data = { ...base.behavioral_data, ...(currentProfile.behavioral_data || {}) };
+      currentProfile.conversational_data = { ...base.conversational_data, ...(currentProfile.conversational_data || {}) };
+      currentProfile.data_sources = { ...base.data_sources, ...(currentProfile.data_sources || {}) };
 
       let updatedProfile = { ...currentProfile };
       const timestamp = new Date().toISOString();

@@ -99,6 +99,12 @@ router.post('/me/update', authenticateToken, async (req, res) => {
       forceUpdate
     };
 
+    console.log('📦 更新資料彙總', {
+      activitiesCount: Array.isArray(updateData.behavioralData?.activities) ? updateData.behavioralData.activities.length : 0,
+      meetingsCount: updateData.conversationalData?.totalMeetings || 0,
+      hasInterviewForm: !!updateData.staticData?.interviewForm
+    });
+
     // 執行AI畫像更新
     const updatedProfile = await aiProfileService.updateProfile(userId, updateData);
 
@@ -119,13 +125,16 @@ router.post('/me/update', authenticateToken, async (req, res) => {
         profileCompleteness: aiProfileService.calculateProfileCompleteness(updatedProfile),
         updateSummary: {
           staticDataUpdated: !!updateData.staticData,
-          behavioralDataUpdated: updateData.behavioralData.activities.length > 0,
-          conversationalDataUpdated: updateData.conversationalData.totalMeetings > 0
+          behavioralDataUpdated: Array.isArray(updateData.behavioralData?.activities) && updateData.behavioralData.activities.length > 0,
+          conversationalDataUpdated: (updateData.conversationalData?.totalMeetings || 0) > 0
         }
       }
     });
   } catch (error) {
-    console.error('❌ 更新AI深度畫像失敗:', error);
+    console.error('❌ 更新AI深度畫像失敗:', error?.message || error);
+    if (error && error.stack) {
+      console.error(error.stack);
+    }
     res.status(500).json({ 
       success: false, 
       message: '更新AI深度畫像失敗' 
