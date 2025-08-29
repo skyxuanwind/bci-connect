@@ -281,6 +281,21 @@ router.get('/me', authenticateToken, async (req, res) => {
 
     const user = result.rows[0];
 
+    // Safely parse interview_form
+    let interviewForm = null;
+    if (user.interview_form) {
+      try {
+        if (typeof user.interview_form === 'string') {
+          interviewForm = JSON.parse(user.interview_form);
+        } else if (typeof user.interview_form === 'object') {
+          interviewForm = user.interview_form;
+        }
+      } catch (parseError) {
+        console.error('Interview form parsing error:', parseError, 'Raw data:', user.interview_form);
+        interviewForm = null;
+      }
+    }
+
     res.json({
       user: {
         id: user.id,
@@ -297,7 +312,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         status: user.status,
         nfcCardId: user.nfc_card_id,
         qrCodeUrl: `/api/qrcode/member/${user.id}`,
-        interviewForm: user.interview_form ? JSON.parse(user.interview_form) : null,
+        interviewForm: interviewForm,
         createdAt: user.created_at
       }
     });
