@@ -102,7 +102,8 @@ router.post('/me/update', authenticateToken, async (req, res) => {
     console.log('📦 更新資料彙總', {
       activitiesCount: Array.isArray(updateData.behavioralData?.activities) ? updateData.behavioralData.activities.length : 0,
       meetingsCount: updateData.conversationalData?.totalMeetings || 0,
-      hasInterviewForm: !!updateData.staticData?.interviewForm
+      hasInterviewForm: !!updateData.staticData?.interviewForm,
+      interviewFormType: updateData.staticData?.interviewForm ? typeof updateData.staticData.interviewForm : 'none'
     });
 
     // 執行AI畫像更新

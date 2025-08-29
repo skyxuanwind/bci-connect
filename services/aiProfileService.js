@@ -373,16 +373,45 @@ ${JSON.stringify(newData, null, 2)}
    * 輔助方法：從面試表單提取技能
    */
   extractSkillsFromInterview(interviewForm) {
+    // 允許傳入為字串或物件，若為字串則嘗試解析
+    if (!interviewForm) return [];
+    let form = interviewForm;
+    if (typeof form === 'string') {
+      try {
+        form = JSON.parse(form);
+      } catch (e) {
+        console.warn('⚠️ 面試表單(JSON)解析失敗，跳過技能提取:', e.message);
+        return [];
+      }
+    }
+
     const skills = [];
-    
-    if (interviewForm.expertise_areas) {
-      skills.push(...interviewForm.expertise_areas.split(',').map(s => s.trim()));
+
+    // expertise_areas 可能是陣列或逗號分隔字串
+    const pushCSV = (val) => {
+      if (typeof val === 'string') {
+        skills.push(
+          ...val
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        );
+      }
+    };
+
+    if (Array.isArray(form.expertise_areas)) {
+      skills.push(...form.expertise_areas.map((s) => String(s).trim()).filter(Boolean));
+    } else {
+      pushCSV(form.expertise_areas);
     }
-    
-    if (interviewForm.coreServices) {
-      skills.push(...interviewForm.coreServices.split(',').map(s => s.trim()));
+
+    // coreServices 可能是陣列或逗號分隔字串
+    if (Array.isArray(form.coreServices)) {
+      skills.push(...form.coreServices.map((s) => String(s).trim()).filter(Boolean));
+    } else {
+      pushCSV(form.coreServices);
     }
-    
+
     return [...new Set(skills)]; // 去重
   }
 
@@ -390,16 +419,40 @@ ${JSON.stringify(newData, null, 2)}
    * 輔助方法：從面試表單提取產業
    */
   extractIndustriesFromInterview(interviewForm) {
+    if (!interviewForm) return [];
+    let form = interviewForm;
+    if (typeof form === 'string') {
+      try {
+        form = JSON.parse(form);
+      } catch (e) {
+        console.warn('⚠️ 面試表單(JSON)解析失敗，跳過產業提取:', e.message);
+        return [];
+      }
+    }
+
     const industries = [];
-    
-    if (interviewForm.industry) {
-      industries.push(interviewForm.industry);
+
+    if (form.industry) {
+      industries.push(String(form.industry).trim());
     }
-    
-    if (interviewForm.targetMarket) {
-      industries.push(...interviewForm.targetMarket.split(',').map(s => s.trim()));
+
+    const pushCSV = (val) => {
+      if (typeof val === 'string') {
+        industries.push(
+          ...val
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        );
+      }
+    };
+
+    if (Array.isArray(form.targetMarket)) {
+      industries.push(...form.targetMarket.map((s) => String(s).trim()).filter(Boolean));
+    } else {
+      pushCSV(form.targetMarket);
     }
-    
+
     return [...new Set(industries)];
   }
 
@@ -407,17 +460,36 @@ ${JSON.stringify(newData, null, 2)}
    * 輔助方法：從面試表單提取專業領域
    */
   extractExpertiseFromInterview(interviewForm) {
+    if (!interviewForm) return [];
+    let form = interviewForm;
+    if (typeof form === 'string') {
+      try {
+        form = JSON.parse(form);
+      } catch (e) {
+        console.warn('⚠️ 面試表單(JSON)解析失敗，跳過專業領域提取:', e.message);
+        return [];
+      }
+    }
+
     const expertise = [];
-    
-    if (interviewForm.competitiveAdvantage) {
-      expertise.push(interviewForm.competitiveAdvantage);
+
+    if (Array.isArray(form.expertise_areas)) {
+      expertise.push(...form.expertise_areas.map((s) => String(s).trim()).filter(Boolean));
+    } else if (typeof form.expertise_areas === 'string') {
+      expertise.push(...form.expertise_areas.split(',').map((s) => s.trim()).filter(Boolean));
     }
-    
-    if (interviewForm.coreServices) {
-      expertise.push(interviewForm.coreServices);
+
+    if (typeof form.competitiveAdvantage === 'string') {
+      expertise.push(form.competitiveAdvantage.trim());
     }
-    
-    return expertise;
+
+    if (Array.isArray(form.coreServices)) {
+      expertise.push(...form.coreServices.map((s) => String(s).trim()).filter(Boolean));
+    } else if (typeof form.coreServices === 'string') {
+      expertise.push(...form.coreServices.split(',').map((s) => s.trim()).filter(Boolean));
+    }
+
+    return [...new Set(expertise)];
   }
 
   /**
