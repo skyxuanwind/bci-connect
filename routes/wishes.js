@@ -255,6 +255,47 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// 新增：獲取當前用戶的許願列表
+router.get('/my-wishes', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { limit = 10 } = req.query;
+
+    const result = await pool.query(`
+      SELECT *
+      FROM member_wishes
+      WHERE user_id = $1
+      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+      ORDER BY created_at DESC
+      LIMIT $2
+    `, [userId, parseInt(limit)]);
+
+    const wishes = result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      category: row.category,
+      tags: row.tags,
+      extractedIntents: row.ai_extracted_intents,
+      status: row.status,
+      priority: row.priority,
+      urgency_level: row.priority ? parseInt(row.priority) : 1,
+      expiresAt: row.expires_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+
+    res.json({
+      success: true,
+      wishes,
+      data: { wishes }
+    });
+  } catch (error) {
+    console.error('❌ 獲取我的許願失敗:', error);
+    res.status(500).json({ success: false, message: '獲取我的許願失敗' });
+  }
+});
+
 /**
  * 獲取單個許願詳情
  * GET /api/wishes/:id

@@ -403,7 +403,7 @@ router.get('/opportunities', authenticateToken, async (req, res) => {
 
     // 主動掃描新機會
     console.log('🔍 為用戶掃描新機會...');
-    await aiNotificationService.scanForOpportunities(userId);
+    await aiNotificationService.scanAndNotifyOpportunities(userId);
 
     // 獲取最新的機會通知
     const result = await pool.query(`
@@ -437,7 +437,7 @@ router.get('/opportunities', authenticateToken, async (req, res) => {
         END as related_wish
       FROM ai_notifications an
       WHERE an.user_id = $1 
-      AND an.type IN ('collaboration_opportunity', 'wish_opportunity', 'market_opportunity')
+      AND an.notification_type IN ('collaboration_opportunity', 'wish_opportunity', 'market_opportunity')
       AND an.status != 'dismissed'
       ORDER BY an.priority DESC, an.created_at DESC
       LIMIT $2
@@ -445,14 +445,15 @@ router.get('/opportunities', authenticateToken, async (req, res) => {
 
     const opportunities = result.rows.map(row => ({
       id: row.id,
-      type: row.type,
+      type: row.notification_type,
       title: row.title,
-      message: row.message,
+      description: row.content,
+      message: row.content,
       aiReasoning: row.ai_reasoning,
       status: row.status,
       priority: row.priority,
-      actionUrl: row.action_url,
-      actionData: row.action_data,
+      actionUrl: row.action_url || null,
+      actionData: row.action_data || null,
       relatedUser: row.related_user,
       relatedWish: row.related_wish,
       createdAt: row.created_at
@@ -460,6 +461,8 @@ router.get('/opportunities', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
+      opportunities,
+      totalCount: opportunities.length,
       data: {
         opportunities,
         totalCount: opportunities.length
