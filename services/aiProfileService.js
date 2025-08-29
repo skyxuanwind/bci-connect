@@ -388,6 +388,146 @@ ${JSON.stringify(newData, null, 2)}
   }
 
   /**
+   * 更新AI深度畫像 - 統一入口方法
+   * @param {number} userId - 會員ID
+   * @param {object} updateData - 更新數據
+   * @returns {object} 更新後的畫像
+   */
+  async updateProfile(userId, updateData) {
+    try {
+      console.log(`🔄 開始更新用戶 ${userId} 的AI深度畫像...`);
+      
+      // 獲取現有的AI深度畫像
+      let currentProfile = await this.getCurrentProfile(userId);
+      if (!currentProfile) {
+        console.log(`📝 用戶 ${userId} 沒有現有畫像，創建新的預設畫像`);
+        currentProfile = this.getDefaultProfile();
+      }
+
+      let updatedProfile = { ...currentProfile };
+      const timestamp = new Date().toISOString();
+
+      // 處理靜態數據更新
+      if (updateData.staticData) {
+        console.log('📊 更新靜態數據...');
+        const staticData = {
+          company_info: {
+            name: updateData.staticData.company,
+            industry: updateData.staticData.industry,
+            title: updateData.staticData.title
+          },
+          professional_background: {
+            industry: updateData.staticData.industry,
+            title: updateData.staticData.title,
+            name: updateData.staticData.name
+          }
+        };
+
+        // 如果有面試表單數據，也包含進來
+        if (updateData.staticData.interviewForm) {
+          staticData.skills = this.extractSkillsFromInterview(updateData.staticData.interviewForm);
+          staticData.industries = this.extractIndustriesFromInterview(updateData.staticData.interviewForm);
+          staticData.expertise_areas = this.extractExpertiseFromInterview(updateData.staticData.interviewForm);
+        }
+
+        updatedProfile.static_data = { ...updatedProfile.static_data, ...staticData };
+        updatedProfile.data_sources = updatedProfile.data_sources || {};
+        updatedProfile.data_sources.static = {
+          last_update: timestamp,
+          confidence: Math.min(100, (updatedProfile.data_sources.static?.confidence || 0) + 5)
+        };
+      }
+
+      // 處理行為數據更新
+      if (updateData.behavioralData) {
+        console.log('🎯 更新行為數據...');
+        const behavioralData = {
+          activity_patterns: {},
+          interaction_preferences: {},
+          search_history: [],
+          event_participation: [],
+          network_connections: []
+        };
+
+        // 處理活動數據
+        if (updateData.behavioralData.activities && updateData.behavioralData.activities.length > 0) {
+          updateData.behavioralData.activities.forEach(activity => {
+            behavioralData.activity_patterns[activity.activity_type] = activity.created_at;
+          });
+        }
+
+        updatedProfile.behavioral_data = this.mergeBehavioralData(updatedProfile.behavioral_data, behavioralData);
+        updatedProfile.data_sources = updatedProfile.data_sources || {};
+        updatedProfile.data_sources.behavioral = {
+          last_update: timestamp,
+          confidence: Math.min(100, (updatedProfile.data_sources.behavioral?.confidence || 0) + 10)
+        };
+      }
+
+      // 處理對話數據更新
+      if (updateData.conversationalData) {
+        console.log('💬 更新對話數據...');
+        const conversationalData = {
+          business_intents: [],
+          pain_points: [],
+          collaboration_interests: [],
+          future_plans: [],
+          communication_style: {}
+        };
+
+        // 處理會議分析數據
+        if (updateData.conversationalData.meetingAnalyses && updateData.conversationalData.meetingAnalyses.length > 0) {
+          updateData.conversationalData.meetingAnalyses.forEach(analysis => {
+            if (analysis.business_intents) conversationalData.business_intents.push(...analysis.business_intents);
+            if (analysis.pain_points) conversationalData.pain_points.push(...analysis.pain_points);
+            if (analysis.collaboration_interests) conversationalData.collaboration_interests.push(...analysis.collaboration_interests);
+          });
+        }
+
+        updatedProfile.conversational_data = this.mergeConversationalData(updatedProfile.conversational_data, conversationalData);
+        updatedProfile.data_sources = updatedProfile.data_sources || {};
+        updatedProfile.data_sources.conversational = {
+          last_update: timestamp,
+          confidence: Math.min(100, (updatedProfile.data_sources.conversational?.confidence || 0) + 15)
+        };
+      }
+
+      // 更新時間戳
+      updatedProfile.last_updated = timestamp;
+
+      // 如果需要強制更新或有足夠的數據，進行AI分析
+      if (updateData.forceUpdate || this.shouldPerformAIAnalysis(updatedProfile)) {
+        console.log('🤖 執行AI分析...');
+        try {
+          updatedProfile = await this.analyzeWithAI(updatedProfile, 'comprehensive', updateData);
+        } catch (aiError) {
+          console.warn('⚠️ AI分析失敗，但繼續更新基本畫像:', aiError.message);
+        }
+      }
+
+      // 更新資料庫
+      await pool.query(
+        'UPDATE users SET ai_deep_profile = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [JSON.stringify(updatedProfile), userId]
+      );
+
+      console.log(`✅ AI深度畫像更新完成 - 用戶ID: ${userId}`);
+      return updatedProfile;
+    } catch (error) {
+      console.error('❌ 更新AI深度畫像失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 判斷是否應該執行AI分析
+   */
+  shouldPerformAIAnalysis(profile) {
+    const dataSourcesCount = Object.values(profile.data_sources || {}).filter(source => source.last_update).length;
+    return dataSourcesCount >= 2; // 至少有兩種數據來源時才進行AI分析
+  }
+
+  /**
    * 計算畫像完整度
    */
   calculateProfileCompleteness(profile) {
