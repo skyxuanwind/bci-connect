@@ -26,9 +26,11 @@ const judicialLookupRoutes = require('./routes/judicial-lookup');
 const judgmentSyncRoutes = require('./routes/judgment-sync');
 const nfcCheckinRoutes = require('./routes/nfc-checkin');
 const memberCardRoutes = require('./routes/member-cards');
-const { initializeDatabase } = require('./config/database');
+const { initializeDatabase, pool } = require('./config/database');
 const { connectMongoDB } = require('./config/mongodb');
 const judgmentSyncService = require('./services/judgmentSyncService');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -225,6 +227,163 @@ process.on('SIGTERM', () => {
   });
 });
 
+// Function to create test accounts if they don't exist
+async function createTestAccountsIfNeeded() {
+  const testUsers = [
+    {
+      name: '張志明',
+      email: 'test1@example.com',
+      password: 'Test123!',
+      company: '創新科技有限公司',
+      industry: '資訊科技',
+      title: '技術總監',
+      contact_number: '0912-345-678',
+      membership_level: 1,
+      interview_form: {
+        business_experience: '10年軟體開發經驗，專精於企業級應用系統開發',
+        expertise_areas: ['軟體開發', '系統架構', '團隊管理'],
+        business_goals: '擴展企業客戶群，建立長期合作關係',
+        networking_interests: '尋找技術合作夥伴和潛在客戶',
+        referral_willingness: '非常願意',
+        meeting_frequency: '每月2-3次',
+        contribution_ideas: '分享技術趨勢和數位轉型經驗',
+        questions_concerns: '希望了解更多關於商業拓展的策略'
+      }
+    },
+    {
+      name: '李美華',
+      email: 'test2@example.com',
+      password: 'Test123!',
+      company: '美華行銷顧問',
+      industry: '行銷顧問',
+      title: '執行長',
+      contact_number: '0923-456-789',
+      membership_level: 2,
+      interview_form: {
+        business_experience: '15年行銷顧問經驗，服務過多家知名企業',
+        expertise_areas: ['數位行銷', '品牌策略', '市場分析'],
+        business_goals: '成為業界領導品牌，拓展國際市場',
+        networking_interests: '尋找策略合作夥伴和新客戶',
+        referral_willingness: '非常願意',
+        meeting_frequency: '每週1-2次',
+        contribution_ideas: '提供行銷策略諮詢和市場洞察',
+        questions_concerns: '關心如何在競爭激烈的市場中脫穎而出'
+      }
+    },
+    {
+      name: '王大明',
+      email: 'test3@example.com',
+      password: 'Test123!',
+      company: '大明建設股份有限公司',
+      industry: '建築營造',
+      title: '董事長',
+      contact_number: '0934-567-890',
+      membership_level: 3,
+      interview_form: {
+        business_experience: '25年建築業經驗，完成多項大型建設專案',
+        expertise_areas: ['建築設計', '專案管理', '土地開發'],
+        business_goals: '發展綠建築和智慧建築項目',
+        networking_interests: '尋找投資機會和合作夥伴',
+        referral_willingness: '願意',
+        meeting_frequency: '每月1-2次',
+        contribution_ideas: '分享建築業趨勢和投資機會',
+        questions_concerns: '關注永續發展和環保建築的未來'
+      }
+    },
+    {
+      name: '陳小芳',
+      email: 'test4@example.com',
+      password: 'Test123!',
+      company: '芳華餐飲集團',
+      industry: '餐飲服務',
+      title: '營運總監',
+      contact_number: '0945-678-901',
+      membership_level: 1,
+      interview_form: {
+        business_experience: '12年餐飲業經驗，管理多家連鎖餐廳',
+        expertise_areas: ['餐廳營運', '食品安全', '客戶服務'],
+        business_goals: '擴展連鎖店數量，提升品牌知名度',
+        networking_interests: '尋找供應商和加盟夥伴',
+        referral_willingness: '非常願意',
+        meeting_frequency: '每月2-3次',
+        contribution_ideas: '分享餐飲業營運經驗和趨勢',
+        questions_concerns: '關心食安法規和消費者偏好變化'
+      }
+    },
+    {
+      name: '林志偉',
+      email: 'test5@example.com',
+      password: 'Test123!',
+      company: '志偉金融服務',
+      industry: '金融服務',
+      title: '財務顧問',
+      contact_number: '0956-789-012',
+      membership_level: 2,
+      interview_form: {
+        business_experience: '8年金融服務經驗，專精於投資理財規劃',
+        expertise_areas: ['投資理財', '保險規劃', '稅務諮詢'],
+        business_goals: '建立專業財務顧問品牌，擴大客戶基礎',
+        networking_interests: '尋找高淨值客戶和合作夥伴',
+        referral_willingness: '願意',
+        meeting_frequency: '每週1次',
+        contribution_ideas: '提供財務規劃和投資建議',
+        questions_concerns: '關注金融法規變化和市場波動影響'
+      }
+    }
+  ];
+
+  let createdCount = 0;
+  let skippedCount = 0;
+
+  for (const userData of testUsers) {
+    try {
+      // Check if user already exists
+      const existingUser = await pool.query(
+        'SELECT id FROM users WHERE email = $1',
+        [userData.email]
+      );
+
+      if (existingUser.rows.length > 0) {
+        skippedCount++;
+        continue;
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(userData.password, 12);
+
+      // Generate unique NFC card ID
+      const nfcCardId = crypto.randomBytes(8).toString('hex').toUpperCase();
+
+      // Insert user
+      await pool.query(`
+        INSERT INTO users (
+          name, email, password, company, industry, title, 
+          contact_number, membership_level, status, nfc_card_id, interview_form
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `, [
+        userData.name,
+        userData.email,
+        hashedPassword,
+        userData.company,
+        userData.industry,
+        userData.title,
+        userData.contact_number,
+        userData.membership_level,
+        'active',
+        nfcCardId,
+        JSON.stringify(userData.interview_form)
+      ]);
+
+      createdCount++;
+      console.log(`✅ Created test user: ${userData.name} (${userData.email})`);
+    } catch (error) {
+      console.error(`❌ Failed to create test user ${userData.email}:`, error.message);
+    }
+  }
+
+  console.log(`📊 Test account creation summary: ${createdCount} created, ${skippedCount} skipped`);
+}
+
 // Async database initialization
 async function initializeDatabasesAsync() {
   try {
@@ -240,6 +399,16 @@ async function initializeDatabasesAsync() {
     
     await dbInitPromise;
     console.log('✅ PostgreSQL database initialized successfully');
+    
+    // Create test accounts in production if they don't exist
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        console.log('🔄 Checking for test accounts...');
+        await createTestAccountsIfNeeded();
+      } catch (testAccountError) {
+        console.warn('⚠️ Test account creation failed (non-critical):', testAccountError.message);
+      }
+    }
     
     // Initialize MongoDB for NFC system (non-blocking)
     try {
