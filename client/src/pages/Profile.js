@@ -126,7 +126,7 @@ const Profile = () => {
       businessGoals: user.interviewForm?.businessGoals || '',
       personalInterests: user.interviewForm?.personalInterests || ''
     });
-  }, [user, resetInterview]);
+  }, [user]); // 移除 resetInterview 依賴項，避免無限循環
 
   const newPassword = watch('newPassword');
 
@@ -179,9 +179,11 @@ const Profile = () => {
     try {
       const response = await axios.put('/api/users/interview-form', data);
       toast.success('面談表單儲存成功！');
-      // 更新 AuthContext 中的用戶資料
+      // 延遲更新 AuthContext 中的用戶資料，避免立即觸發表單重置
       if (response.data.user) {
-        updateProfile(response.data.user);
+        setTimeout(() => {
+          updateProfile(response.data.user);
+        }, 100);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || '面談表單儲存失敗，請稍後再試');
