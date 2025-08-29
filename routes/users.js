@@ -411,7 +411,7 @@ router.get('/members', async (req, res) => {
     const membersQuery = `
       SELECT u.id, u.name, u.company, u.industry, u.title,
              u.profile_picture_url, u.contact_number, u.membership_level,
-             c.name as chapter_name
+             u.interview_form, c.name as chapter_name
       FROM users u
       LEFT JOIN chapters c ON u.chapter_id = c.id
       ${whereClause}
@@ -432,7 +432,8 @@ router.get('/members', async (req, res) => {
         profilePictureUrl: member.profile_picture_url,
         contactNumber: member.contact_number,
         membershipLevel: member.membership_level,
-        chapterName: member.chapter_name
+        chapterName: member.chapter_name,
+        interviewData: member.interview_form ? true : false
       })),
       pagination: {
         currentPage: parseInt(page),
