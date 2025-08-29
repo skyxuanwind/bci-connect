@@ -302,7 +302,7 @@ const NFCCheckin = () => {
           {/* 標題 */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-white mb-2">📱 NFC 報到系統</h1>
-            <p className="text-blue-100">BCI Connect - NFC 卡片報到功能</p>
+            <p className="text-blue-100">GBC Connect - NFC 卡片報到功能</p>
           </div>
 
           {/* 主要報到區域 */}

@@ -381,7 +381,7 @@ async function performFastAnalysis(prospect) {
       stage: 'gemini_analysis',
       progress: 70,
       currentStep: '正在執行 AI 綜合分析...',
-      details: `正在使用 Gemini AI 進行「${prospect.company}」的公開資訊掃描、市場聲譽分析、產業衝突檢測和 BCI 契合度評分...`
+      details: `正在使用 Gemini AI 進行「${prospect.company}」的公開資訊掃描、市場聲譽分析、產業衝突檢測和 GBC 契合度評分...`
     });
     
     let geminiResult = null;
@@ -401,7 +401,7 @@ async function performFastAnalysis(prospect) {
       };
     }
     
-    const score = geminiResult?.summary?.overallScore || calculateBCICompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis);
+    const score = geminiResult?.summary?.overallScore || calculateGBCCompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis);
     const aiSentiment = geminiResult?.summary?.sentiment || sentiment;
     const aiConflictLevel = geminiResult?.summary?.conflictLevel || conflictLevel;
     
@@ -465,8 +465,8 @@ async function performFastAnalysis(prospect) {
         apiNote: judicialResult.note
       },
       
-      // BCI 契合度評分
-      bciFitScore: {
+      // GBC 契合度評分
+    gbcFitScore: {
         score: score,
         analysis: `🎯 **${score}分** ${score >= 80 ? '(優秀)' : score >= 60 ? '(良好)' : '(待改善)'}\n\n📊 **評估**: 聲譽${aiSentiment === 'positive' ? '✅' : aiSentiment === 'negative' ? '❌' : '➖'} | 衝突${aiConflictLevel === 'low' ? '✅' : '⚠️'} | 風險${legalRiskAnalysis.riskLevel === 'low' ? '✅' : '⚠️'}\n\n💡 **建議**: ${score >= 80 ? '強烈推薦' : score >= 60 ? '建議通過' : '謹慎評估'}`,
         recommendation: score >= 80 ? 'strongly_recommend' : score >= 60 ? 'recommend' : 'caution',
@@ -475,7 +475,7 @@ async function performFastAnalysis(prospect) {
           industryConflict: aiConflictLevel,
           legalRisk: legalRiskAnalysis.riskLevel
         },
-        geminiAnalysis: geminiResult?.analysis?.bciFitScore || null
+        geminiAnalysis: geminiResult?.analysis?.gbcFitScore || null
       },
       overallRecommendation: recommendationText,
       analysisMetadata: {
@@ -615,7 +615,7 @@ function analyzeIndustryConflict(prospect, existingMembers) {
   return 'low';
 }
 
-function calculateBCICompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis) {
+function calculateGBCCompatibilityScore(prospect, sentiment, conflictLevel, legalRiskAnalysis) {
   let score = 70; // 基礎分數
   
   // 聲譽評分影響
@@ -656,19 +656,19 @@ function generateFastRecommendation(score, sentiment, conflictLevel, legalRiskLe
   } else if (score >= 40) {
     return '不建議：該公司存在較多疑慮，建議暫緩考慮。';
   } else {
-    return '強烈不建議：該公司風險過高，不適合加入BCI。';
+    return '強烈不建議：該公司風險過高，不適合加入GBC。';
   }
 }
 
 function generateOverallRecommendation(score, sentiment, conflict) {
   if (score >= 80) {
-    return '強烈推薦：該公司展現出優秀的專業能力和良好的市場聲譽，與 BCI 核心價值高度契合。';
+    return '強烈推薦：該公司展現出優秀的專業能力和良好的市場聲譽，與 GBC 核心價值高度契合。';
   } else if (score >= 60) {
     return '推薦：該公司具備良好的基礎條件，建議進一步了解後考慮接納。';
   } else if (score >= 40) {
     return '謹慎考慮：該公司存在一些疑慮，建議詳細評估後再做決定。';
   } else {
-    return '不建議：該公司可能不適合加入 BCI，建議暫緩考慮。';
+    return '不建議：該公司可能不適合加入 GBC，建議暫緩考慮。';
   }
 }
 

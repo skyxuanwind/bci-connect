@@ -270,13 +270,13 @@ class GeminiService {
     }
   }
 
-  // BCI 契合度評分
-  async calculateBCIFitScore(companyName, publicInfoResult, sentimentResult, conflictResult) {
+  // GBC 契合度評分
+  async calculateGBCFitScore(companyName, publicInfoResult, sentimentResult, conflictResult) {
     try {
-      console.log(`開始 BCI 契合度評分: ${companyName}`);
-      const prompt = `我們 BCI 商務菁英會的核心價值是「專業」、「誠信」與「合作」。請根據以下分析資訊，為「${companyName}」評估一個與我們商會的契合度分數（1-100分），並簡述給分的理由。\n\n公開資訊：\n${publicInfoResult}\n\n市場聲譽：\n${sentimentResult}\n\n產業衝突分析：\n${conflictResult}`;
+      console.log(`開始 GBC 契合度評分: ${companyName}`);
+      const prompt = `我們 GBC 商務菁英會的核心價值是「專業」、「誠信」與「合作」。請根據以下分析資訊，為「${companyName}」評估一個與我們商會的契合度分數（1-100分），並簡述給分的理由。\n\n公開資訊：\n${publicInfoResult}\n\n市場聲譽：\n${sentimentResult}\n\n產業衝突分析：\n${conflictResult}`;
       
-      console.log('正在調用 Gemini API 進行 BCI 契合度評分...');
+      console.log('正在調用 Gemini API 進行 GBC 契合度評分...');
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -287,7 +287,7 @@ class GeminiService {
       if (scoreMatch) {
         score = Math.min(100, Math.max(1, parseInt(scoreMatch[1])));
       }
-      console.log(`BCI 契合度評分完成，分數: ${score}`);
+      console.log(`GBC 契合度評分完成，分數: ${score}`);
       
       return {
         success: true,
@@ -296,12 +296,12 @@ class GeminiService {
         timestamp: new Date().toISOString()
       };
     } catch (error) {
-      console.error('BCI 契合度評分錯誤:', error);
+      console.error('GBC 契合度評分錯誤:', error);
       return {
         success: false,
         error: error.message,
         score: 70,
-        analysis: '無法完成 BCI 契合度評分'
+        analysis: '無法完成 GBC 契合度評分'
       };
     }
   }
@@ -326,9 +326,9 @@ class GeminiService {
       console.log('執行產業衝突檢測...');
       const conflictResult = await this.performIndustryConflictCheck(companyName, industry);
       
-      // 4. BCI 契合度評分
-      console.log('計算 BCI 契合度評分...');
-      const fitScoreResult = await this.calculateBCIFitScore(
+      // 4. GBC 契合度評分
+    console.log('計算 GBC 契合度評分...');
+    const fitScoreResult = await this.calculateGBCFitScore(
         companyName,
         publicInfoResult.data,
         sentimentResult.analysis,
@@ -343,7 +343,7 @@ class GeminiService {
           publicInfo: publicInfoResult,
           sentiment: sentimentResult,
           industryConflict: conflictResult,
-          bciFitScore: fitScoreResult
+          gbcFitScore: fitScoreResult
         },
         summary: {
           overallScore: fitScoreResult.score,

@@ -493,7 +493,7 @@ router.get('/vcard/:userId', async (req, res) => {
       `TITLE:${member.title || ''}`,
       `TEL:${member.contact_number || ''}`,
       `EMAIL:${member.email}`,
-      `NOTE:BCI商務菁英會 - ${member.chapter_name || ''}`,
+      `NOTE:GBC商務菁英會 - ${member.chapter_name || ''}`,
       `URL:${process.env.CLIENT_URL || 'http://localhost:3000'}/member/${userId}`,
       'END:VCARD'
     ].join('\r\n');

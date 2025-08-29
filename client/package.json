@@ -1,7 +1,7 @@
 {
-  "name": "bci-business-elite-club-client",
+  "name": "gbc-business-elite-club-client",
   "version": "1.0.0",
-  "description": "BCI商務菁英會前端應用",
+  "description": "GBC商務菁英會前端應用",
   "private": true,
   "dependencies": {
     "@headlessui/react": "^1.7.17",

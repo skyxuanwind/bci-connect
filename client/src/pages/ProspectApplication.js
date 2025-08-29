@@ -1250,7 +1250,7 @@ const ProspectApplication = () => {
                 <span className="text-purple-800 font-medium">AI 分析功能說明</span>
               </div>
               <p className="text-purple-700 text-sm">
-                系統將自動分析公司的市場聲譽、產業衝突、BCI 契合度，並透過司法院判決書查詢評估法律風險，為入會決策提供參考。
+                系統將自動分析公司的市場聲譽、產業衝突、GBC 契合度，並透過司法院判決書查詢評估法律風險，為入會決策提供參考。
               </p>
             </div>
             
@@ -1324,13 +1324,13 @@ const ProspectApplication = () => {
                   </div>
                 )}
                 
-                {/* BCI 契合度評分 - 卡片式 */}
-                {aiAnalysisResult.bciFitScore && (
-                  <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-5">
+                {/* GBC 契合度評分 - 卡片式 */}
+                {aiAnalysisResult.gbcFitScore && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-semibold text-purple-900 text-lg">BCI 契合度評分</h4>
+                      <h4 className="font-semibold text-purple-900 text-lg">GBC 契合度評分</h4>
                       <div className="text-right">
-                        {getScoreBadge(aiAnalysisResult.bciFitScore.score)}
+                        {getScoreBadge(aiAnalysisResult.gbcFitScore.score)}
                         <div className="text-xs text-purple-600 mt-1">綜合評估</div>
                       </div>
                     </div>
@@ -1370,31 +1370,31 @@ const ProspectApplication = () => {
                     </div>
                     
                     {/* 建議結論 */}
-                    {aiAnalysisResult.bciFitScore?.recommendation && (
+                    {aiAnalysisResult.gbcFitScore?.recommendation && (
                       <div className="bg-white bg-opacity-80 rounded-lg p-3 mb-3">
                         <div className="text-sm font-medium text-purple-800 mb-1">入會建議：</div>
                         <div className={`font-semibold ${
-                          aiAnalysisResult.bciFitScore.recommendation === 'strongly_recommend' ? 'text-green-600' : 
-                          aiAnalysisResult.bciFitScore.recommendation === 'recommend' ? 'text-blue-600' : 'text-yellow-600'
+                          aiAnalysisResult.gbcFitScore.recommendation === 'strongly_recommend' ? 'text-green-600' : 
+                          aiAnalysisResult.gbcFitScore.recommendation === 'recommend' ? 'text-blue-600' : 'text-yellow-600'
                         }`}>
-                          {aiAnalysisResult.bciFitScore.recommendation === 'strongly_recommend' ? '🌟 強烈推薦' : 
-                           aiAnalysisResult.bciFitScore.recommendation === 'recommend' ? '✅ 建議通過' : '⚠️ 謹慎評估'}
+                          {aiAnalysisResult.gbcFitScore.recommendation === 'strongly_recommend' ? '🌟 強烈推薦' : 
+                           aiAnalysisResult.gbcFitScore.recommendation === 'recommend' ? '✅ 建議通過' : '⚠️ 謹慎評估'}
                         </div>
                       </div>
                     )}
                     
                     {/* 分析要點 */}
-                    {aiAnalysisResult.bciFitScore.analysis && (
+                    {aiAnalysisResult.gbcFitScore.analysis && (
                       <div>
                         <div className="text-sm font-medium text-purple-800 mb-2">分析要點：</div>
-                        {parseToBullets(aiAnalysisResult.bciFitScore.analysis, 4).length > 0 ? (
+                        {parseToBullets(aiAnalysisResult.gbcFitScore.analysis, 4).length > 0 ? (
                           <ul className="list-disc list-inside space-y-1 text-purple-700 text-sm">
-                            {parseToBullets(aiAnalysisResult.bciFitScore.analysis, 4).map((bullet, idx) => (
+                            {parseToBullets(aiAnalysisResult.gbcFitScore.analysis, 4).map((bullet, idx) => (
                               <li key={idx} className="leading-relaxed">{bullet}</li>
                             ))}
                           </ul>
                         ) : (
-                          <p className="text-purple-700 text-sm leading-relaxed">{aiAnalysisResult.bciFitScore.analysis}</p>
+                          <p className="text-purple-700 text-sm leading-relaxed">{aiAnalysisResult.gbcFitScore.analysis}</p>
                         )}
                       </div>
                     )}
@@ -1619,9 +1619,9 @@ const ProspectApplication = () => {
                         </div>
                         <div className="space-y-2 text-sm text-indigo-800">
                           <p>• <strong>優先順序：</strong>建議優先考慮「影像紀錄服務」和「行銷推廣合作」，這些是大多數企業的基本需求</p>
-                          <p>• <strong>聯絡方式：</strong>可透過 BCI Connect 會員目錄或活動場合主動接觸推薦的夥伴</p>
+                          <p>• <strong>聯絡方式：</strong>可透過 GBC Connect 會員目錄或活動場合主動接觸推薦的夥伴</p>
                           <p>• <strong>合作模式：</strong>建議先從小型專案開始合作，驗證合作效果後再擴大規模</p>
-                          <p>• <strong>時間規劃：</strong>建議在加入 BCI 後 30 天內，至少與 2-3 位推薦夥伴進行初步接觸</p>
+                          <p>• <strong>時間規劃：</strong>建議在加入 GBC 後 30 天內，至少與 2-3 位推薦夥伴進行初步接觸</p>
                         </div>
                       </div>
                     </>
@@ -1696,7 +1696,7 @@ const ProspectApplication = () => {
                   onChange={handleInputChange}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="希望在 BCI 商會內的合作方向/標的"
+                  placeholder="希望在 GBC 商會內的合作方向/標的"
                 />
               </div>
 
@@ -1713,7 +1713,7 @@ const ProspectApplication = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">加入 BCI 的期待 *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">加入 GBC 的期待 *</label>
                 <textarea
                   name="bciExpectations"
                   value={formData.bciExpectations}
@@ -1780,7 +1780,7 @@ const ProspectApplication = () => {
                   required
                 />
                 <label className="ml-3 text-sm text-gray-700">
-                  我同意遵守 BCI 商會的所有規章制度和行為準則
+                  我同意遵守 GBC 商會的所有規章制度和行為準則
                 </label>
               </div>
               
@@ -1822,7 +1822,7 @@ const ProspectApplication = () => {
                   required
                 />
                 <label className="ml-3 text-sm text-gray-700">
-                  我同意提供的所有資訊真實有效，並接受 BCI 的審核和調查
+                  我同意提供的所有資訊真實有效，並接受 GBC 的審核和調查
                 </label>
               </div>
             </div>

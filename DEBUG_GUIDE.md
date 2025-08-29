@@ -43,7 +43,7 @@ GET /api/nfc-checkin/records
 GET /api/nfc-checkin/records?page=1&limit=10&cardUid=12345678
 
 # 日期範圍查詢
-GET /api/nfc-checkin/records?startDate=2024-01-01&endDate=2024-12-31
+GET /api/nfc-checkin/records?startDate=2025-01-01&endDate=2025-12-31
 ```
 
 ### 使用 curl 測試

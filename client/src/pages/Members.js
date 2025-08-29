@@ -13,7 +13,8 @@ import {
   BuildingOfficeIcon,
   BriefcaseIcon,
   PhoneIcon,
-  EyeIcon
+  EyeIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 const Members = () => {
@@ -382,9 +383,9 @@ const Members = () => {
                     </div>
                   )}
 
-                  {/* View Details Button */}
+                  {/* Action Buttons */}
                   {canViewMember(member.membershipLevel) && (
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-2">
                       <Link
                         to={`/members/${member.id}`}
                         className="w-full btn-secondary flex items-center justify-center text-sm"
@@ -392,6 +393,17 @@ const Members = () => {
                         <EyeIcon className="h-4 w-4 mr-2" />
                         查看詳情
                       </Link>
+                      
+                      {/* Interview Schedule Button */}
+                      {member.interviewData && (
+                        <Link
+                          to={`/member-interview/${member.id}`}
+                          className="w-full btn-primary flex items-center justify-center text-sm"
+                        >
+                          <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
+                          面談表
+                        </Link>
+                      )}
                     </div>
                   )}
                 </div>

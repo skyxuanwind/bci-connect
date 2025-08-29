@@ -54,7 +54,7 @@ const NotFound = () => {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-sm text-gray-500">
-          © 2024 BCI商務菁英會. 版權所有.
+          © 2025 GBC商務菁英會. 版權所有.
         </p>
       </div>
     </div>

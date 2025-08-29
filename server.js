@@ -160,7 +160,7 @@ app.get('/ready', (req, res) => {
 // Root endpoint for basic info
 app.get('/api', (req, res) => {
   res.json({ 
-    message: 'BCI Business Elite Club API Server', 
+    message: 'GBC Business Elite Club API Server', 
     version: '1.0.0',
     status: 'running',
     timestamp: new Date().toISOString()
@@ -179,7 +179,7 @@ if (process.env.NODE_ENV === 'production') {
   // Development: Add a root route for basic info
   app.get('/', (req, res) => {
     res.json({ 
-      message: 'BCI Business Elite Club API Server', 
+      message: 'GBC Business Elite Club API Server', 
       version: '1.0.0',
       environment: 'development',
       endpoints: {
@@ -207,7 +207,7 @@ app.use((err, req, res, next) => {
 
 // Start server first, then initialize databases asynchronously
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 BCI Business Elite Club server running on port ${PORT}`);
+  console.log(`🚀 GBC Business Elite Club server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   
   // Initialize databases asynchronously after server starts

@@ -86,7 +86,7 @@ const sendReferralNotification = async (type, referralData) => {
     }
     
     const mailOptions = {
-      from: `"BCI商務菁英會" <${process.env.SMTP_USER}>`,
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
       to: to,
       subject: subject,
       html: html
@@ -176,7 +176,7 @@ const sendMeetingNotification = async (type, meetingData) => {
     }
     
     const mailOptions = {
-      from: `"BCI商務菁英會" <${process.env.SMTP_USER}>`,
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
       to: to,
       subject: subject,
       html: html
@@ -216,18 +216,18 @@ const sendWelcomeEmail = async ({ email, name }) => {
     const mailOptions = {
       from: process.env.SMTP_USER,
       to: email,
-      subject: 'BCI Connect - 歡迎加入！',
+      subject: 'GBC Connect - 歡迎加入！',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
           <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #2c3e50; margin: 0;">BCI Connect</h1>
+              <h1 style="color: #2c3e50; margin: 0;">GBC Connect</h1>
               <p style="color: #7f8c8d; margin: 5px 0 0 0;">歡迎加入商務菁英會</p>
             </div>
             
             <div style="margin-bottom: 30px;">
               <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">親愛的 ${name}，</p>
-              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">歡迎加入 BCI 商務菁英會！您的註冊申請已成功提交。</p>
+              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">歡迎加入 GBC 商務菁英會！您的註冊申請已成功提交。</p>
             </div>
             
             <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -240,7 +240,7 @@ const sendWelcomeEmail = async ({ email, name }) => {
             </div>
             
             <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #0369a1; margin: 0 0 10px 0;">🌟 BCI Connect 功能亮點：</h3>
+              <h3 style="color: #0369a1; margin: 0 0 10px 0;">🌟 GBC Connect 功能亮點：</h3>
               <ul style="color: #2c3e50; margin: 0; padding-left: 20px;">
                 <li>參與分會活動和會議</li>
                 <li>建立商務人脈網絡</li>
@@ -254,7 +254,7 @@ const sendWelcomeEmail = async ({ email, name }) => {
             </div>
             
             <div style="margin-top: 30px; text-align: center;">
-              <p style="color: #7f8c8d; font-size: 12px;">此郵件由 BCI Connect 系統自動發送，請勿回覆。</p>
+              <p style="color: #7f8c8d; font-size: 12px;">此郵件由 GBC Connect 系統自動發送，請勿回覆。</p>
             </div>
           </div>
         </div>
@@ -282,12 +282,12 @@ const sendPasswordResetEmail = async ({ email, name, resetToken }) => {
   const mailOptions = {
     from: process.env.SMTP_USER,
     to: email,
-    subject: 'BCI Connect - 密碼重置請求',
+    subject: 'GBC Connect - 密碼重置請求',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2c3e50; margin: 0;">BCI Connect</h1>
+            <h1 style="color: #2c3e50; margin: 0;">GBC Connect</h1>
             <p style="color: #7f8c8d; margin: 5px 0 0 0;">密碼重置請求</p>
           </div>
           
@@ -310,7 +310,7 @@ const sendPasswordResetEmail = async ({ email, name, resetToken }) => {
           </div>
           
           <div style="margin-top: 30px; text-align: center;">
-            <p style="color: #7f8c8d; font-size: 12px;">此郵件由 BCI Connect 系統自動發送，請勿回覆。</p>
+            <p style="color: #7f8c8d; font-size: 12px;">此郵件由 GBC Connect 系統自動發送，請勿回覆。</p>
           </div>
         </div>
       </div>

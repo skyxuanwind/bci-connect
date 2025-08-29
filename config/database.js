@@ -447,7 +447,7 @@ const initializeDatabase = async () => {
     
     await pool.query(`
       INSERT INTO users (name, email, password, company, industry, title, membership_level, status, created_at)
-      VALUES ('系統管理員', $1, $2, 'BCI', '系統管理', '管理員', 1, 'active', CURRENT_TIMESTAMP)
+      VALUES ('系統管理員', $1, $2, 'GBC', '系統管理', '管理員', 1, 'active', CURRENT_TIMESTAMP)
       ON CONFLICT (email) DO NOTHING
     `, [adminEmail, hashedPassword]);
 

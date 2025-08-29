@@ -26,7 +26,7 @@ const ProspectVoting = () => {
     mainAdvantages: '主要優勢',
     representativeClients: '代表客戶',
     cooperationTargets: '合作目標',
-    bciExpectations: 'BCI期望',
+    bciExpectations: 'GBC期望',
     pastAchievements: '過往成就',
     futureGoals: '未來目標',
     revenueTarget: '營收目標',
@@ -431,8 +431,8 @@ const ProspectVoting = () => {
                               )}
                               {prospect.bciExpectations && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">BCI期望</div>
-                                  <div className="text-sm text-gray-900">{prospect.bciExpectations}</div>
+                                  <div className="text-xs text-gray-500 font-medium">GBC期望</div>
+                    <div className="text-sm text-gray-900">{prospect.bciExpectations}</div>
                                 </div>
                               )}
                               {prospect.pastAchievements && (
@@ -617,8 +617,8 @@ const ProspectVoting = () => {
                         )}
                         {selectedProspect.parsedContactInfo.interview?.bciExpectations && (
                           <div className="bg-white p-3 rounded border col-span-full">
-                            <div className="text-xs text-gray-500 font-medium">BCI期望</div>
-                            <div className="text-gray-900">{selectedProspect.parsedContactInfo.interview.bciExpectations}</div>
+                            <div className="text-xs text-gray-500 font-medium">GBC期望</div>
+                    <div className="text-gray-900">{selectedProspect.parsedContactInfo.interview.bciExpectations}</div>
                           </div>
                         )}
                       </>

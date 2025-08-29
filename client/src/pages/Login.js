@@ -59,7 +59,7 @@ const Login = () => {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center mb-6">
             <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">BCI</span>
+              <span className="text-white font-bold text-lg">GBC</span>
             </div>
             <span className="ml-3 text-2xl font-bold text-primary-900">商務菁英會</span>
           </Link>

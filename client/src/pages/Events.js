@@ -73,7 +73,7 @@ const Events = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">活動報名</h1>
-          <p className="mt-2 text-gray-600">參與 BCI 商會的各種活動，擴展您的商業網絡</p>
+          <p className="mt-2 text-gray-600">參與 GBC 商會的各種活動，擴展您的商業網絡</p>
         </div>
 
         {/* Error Message */}

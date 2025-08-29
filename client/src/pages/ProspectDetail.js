@@ -327,26 +327,26 @@ const ProspectDetail = () => {
 
             <hr className="border-gray-300" />
 
-            {/* BCI Fit Score */}
+            {/* GBC Fit Score */}
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <span className="text-2xl mr-3">🎯</span>
-                  <h3 className="text-lg font-bold text-gray-900">BCI 契合度評分</h3>
+                  <h3 className="text-lg font-bold text-gray-900">GBC 契合度評分</h3>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {getScoreBadge(analysisReport.bciFitScore?.score)}
-                  {analysisReport.bciFitScore?.recommendation && (
+                  {getScoreBadge(analysisReport.gbcFitScore?.score)}
+                  {analysisReport.gbcFitScore?.recommendation && (
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      analysisReport.bciFitScore.recommendation === 'strongly_recommend' 
+                      analysisReport.gbcFitScore.recommendation === 'strongly_recommend' 
                         ? 'bg-green-100 text-green-700' 
-                        : analysisReport.bciFitScore.recommendation === 'recommend'
+                        : analysisReport.gbcFitScore.recommendation === 'recommend'
                         ? 'bg-blue-100 text-blue-700'
                         : 'bg-yellow-100 text-yellow-700'
                     }`}>
-                      {analysisReport.bciFitScore.recommendation === 'strongly_recommend' 
+                      {analysisReport.gbcFitScore.recommendation === 'strongly_recommend' 
                         ? '強烈推薦' 
-                        : analysisReport.bciFitScore.recommendation === 'recommend'
+                        : analysisReport.gbcFitScore.recommendation === 'recommend'
                         ? '建議通過'
                         : '謹慎評估'}
                     </span>
@@ -356,7 +356,7 @@ const ProspectDetail = () => {
               <div className="bg-gray-50 rounded-lg p-4 border">
                 <div className="text-gray-700 leading-relaxed text-sm"
                      dangerouslySetInnerHTML={{
-                       __html: analysisReport.bciFitScore.analysis
+                       __html: analysisReport.gbcFitScore.analysis
                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                          .replace(/\n/g, '<br>')
                      }}

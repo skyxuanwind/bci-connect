@@ -131,13 +131,13 @@ const Register = () => {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center mb-6">
             <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">BCI</span>
+              <span className="text-white font-bold text-lg">GBC</span>
             </div>
             <span className="ml-3 text-2xl font-bold text-primary-900">商務菁英會</span>
           </Link>
           
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            加入BCI商務菁英會
+            加入GBC商務菁英會
           </h2>
           <p className="text-gray-600">
             填寫以下資訊完成註冊，我們將盡快審核您的申請

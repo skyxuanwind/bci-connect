@@ -46,7 +46,7 @@ const Home = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">BCI</span>
+                <span className="text-white font-bold text-sm">GBC</span>
               </div>
               <span className="ml-2 text-xl font-bold text-primary-900">商務菁英會</span>
             </div>
@@ -85,7 +85,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 text-shadow">
-              BCI商務菁英會
+              GBC商務菁英會
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
               連接商務精英，創造無限商機
@@ -120,7 +120,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-primary-900 mb-4">
-              為什麼選擇BCI商務菁英會？
+              為什麼選擇GBC商務菁英會？
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               我們提供專業的商務交流平台，幫助您建立有價值的商業關係
@@ -157,7 +157,7 @@ const Home = () => {
             準備加入我們了嗎？
           </h2>
           <p className="text-xl mb-8 text-yellow-100">
-            立即註冊成為BCI商務菁英會會員，開始您的商務網絡之旅
+            立即註冊成為GBC商務菁英會會員，開始您的商務網絡之旅
           </p>
           
           {!isAuthenticated && (
@@ -178,7 +178,7 @@ const Home = () => {
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
               <div className="w-8 h-8 bg-gold-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">BCI</span>
+                <span className="text-white font-bold text-sm">GBC</span>
               </div>
               <span className="ml-2 text-xl font-bold">商務菁英會</span>
             </div>
@@ -186,7 +186,7 @@ const Home = () => {
               連接商務精英，創造無限商機
             </p>
             <p className="text-blue-300 text-sm">
-              © 2024 BCI Business Elite Club. All rights reserved.
+              © 2025 GBC Business Elite Club. All rights reserved.
             </p>
           </div>
         </div>

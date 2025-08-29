@@ -156,7 +156,7 @@ const Layout = ({ children }) => {
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
         <div className="flex items-center">
           <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">BCI</span>
+            <span className="text-white font-bold text-sm">GBC</span>
           </div>
           <span className="ml-2 text-lg font-semibold text-primary-900">商務菁英會</span>
         </div>
@@ -409,7 +409,7 @@ const Layout = ({ children }) => {
             </button>
             <div className="flex items-center">
               <div className="w-6 h-6 bg-gradient-primary rounded flex items-center justify-center">
-                <span className="text-white font-bold text-xs">BCI</span>
+                <span className="text-white font-bold text-xs">GBC</span>
               </div>
               <span className="ml-2 text-sm font-semibold text-primary-900">商務菁英會</span>
             </div>

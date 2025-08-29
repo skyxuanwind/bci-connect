@@ -310,7 +310,7 @@ const EventManagement = () => {
         <div className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">活動管理</h1>
-            <p className="mt-2 text-gray-600">管理 BCI 商會的所有活動</p>
+            <p className="mt-2 text-gray-600">管理 GBC 商會的所有活動</p>
           </div>
           <button
             onClick={() => {

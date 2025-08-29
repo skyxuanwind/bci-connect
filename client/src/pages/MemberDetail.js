@@ -286,6 +286,25 @@ const MemberDetail = () => {
 
       {/* QR Code Section removed as requested */}
 
+      {/* One-on-One Meeting Schedule */}
+      {member.interviewData && (
+        <div className="card">
+          <div className="card-header">
+            <h2 className="text-lg font-semibold text-gray-900">一對一面談表</h2>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-gray-600 mb-4">此會員已完成一對一面談表填寫，可查看其商務合作意向。</p>
+            <Link 
+              to={`/member-interview/${member.id}`}
+              className="btn-primary inline-flex items-center"
+            >
+              <UserIcon className="h-4 w-4 mr-2" />
+              查看面談表
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex justify-center space-x-4">
         <button
@@ -299,6 +318,17 @@ const MemberDetail = () => {
         {user?.id === member.id && (
           <Link to="/profile" className="btn-primary">
             編輯個人資料
+          </Link>
+        )}
+        
+        {/* Meeting Schedule Button */}
+        {user?.id !== member.id && user?.membershipLevel <= 3 && (
+          <Link 
+            to={`/meetings/schedule/${member.id}`}
+            className="btn-primary inline-flex items-center"
+          >
+            <CalendarIcon className="h-4 w-4 mr-2" />
+            預約會議
           </Link>
         )}
       </div>
