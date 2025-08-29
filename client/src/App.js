@@ -43,6 +43,9 @@ import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
 import JudicialTest from './pages/JudicialTest';
 import JudgmentSync from './pages/JudgmentSync';
+import WishesPage from './pages/WishesPage';
+import NotificationsPage from './pages/NotificationsPage';
+import SmartCollaborationDashboard from './components/SmartCollaborationDashboard';
 // NFC 功能已整合到 CheckInScanner 中
 
 
@@ -149,6 +152,30 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <FoundationInfo />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/smart-collaboration" element={
+            <ProtectedRoute>
+              <Layout>
+                <SmartCollaborationDashboard />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/wishes" element={
+            <ProtectedRoute>
+              <Layout>
+                <WishesPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <Layout>
+                <NotificationsPage />
               </Layout>
             </ProtectedRoute>
           } />

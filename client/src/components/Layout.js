@@ -31,7 +31,11 @@ import {
   DocumentMagnifyingGlassIcon,
   ArrowPathIcon,
   WifiIcon,
-  IdentificationIcon
+  IdentificationIcon,
+  SparklesIcon,
+  BellIcon,
+  StarIcon,
+  CpuChipIcon
 } from '@heroicons/react/24/outline';
 
 const Layout = ({ children }) => {
@@ -70,6 +74,13 @@ const Layout = ({ children }) => {
     { name: '商會地基', href: '/foundation', icon: InformationCircleIcon },
     { name: '個人資料', href: '/profile', icon: UserIcon },
     { name: '電子名片', href: '/member-card-editor', icon: IdentificationIcon },
+  ];
+
+  // AI 智慧合作網絡功能
+  const aiFeatures = [
+    { name: 'AI 智慧儀表板', href: '/smart-collaboration', icon: CpuChipIcon },
+    { name: '會員許願版', href: '/wishes', icon: StarIcon },
+    { name: 'AI 智慧通知', href: '/notifications', icon: BellIcon },
   ];
 
   // 會員以上功能
@@ -207,6 +218,31 @@ const Layout = ({ children }) => {
         
         {/* 商會簡報連結 */}
         <PresentationLink mobile={mobile} />
+        
+        {/* AI 智慧合作網絡 */}
+        <div className="pt-4 pb-2">
+          <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            🤖 AI 智慧合作網絡
+          </h3>
+        </div>
+        {aiFeatures.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={`${
+                isCurrentPath(item.href)
+                  ? 'nav-link-active'
+                  : 'nav-link'
+              } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
+              onClick={() => mobile && setSidebarOpen(false)}
+            >
+              <Icon className="mr-3 h-5 w-5" />
+              {item.name}
+            </Link>
+          );
+        })}
         
         {/* Member Features (Level 3+) */}
         {user?.membershipLevel <= 3 && (

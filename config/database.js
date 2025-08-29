@@ -101,6 +101,12 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS interview_form JSONB
     `);
 
+    // Add ai_deep_profile column for AI-driven member profiling
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS ai_deep_profile JSONB
+    `);
+
     // Create referrals table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS referrals (
@@ -393,6 +399,88 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create member_wishes table (會員許願版)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS member_wishes (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(200) NOT NULL,
+        description TEXT NOT NULL,
+        category VARCHAR(50),
+        tags TEXT[],
+        ai_extracted_intents JSONB,
+        status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'fulfilled', 'expired', 'cancelled')),
+        priority INTEGER DEFAULT 1 CHECK (priority IN (1, 2, 3)),
+        expires_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create ai_matching_results table (AI媒合結果)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_matching_results (
+        id SERIAL PRIMARY KEY,
+        wish_id INTEGER NOT NULL REFERENCES member_wishes(id) ON DELETE CASCADE,
+        matched_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        matching_score DECIMAL(5,2) NOT NULL CHECK (matching_score >= 0 AND matching_score <= 100),
+        matching_reasons JSONB,
+        ai_explanation TEXT,
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'viewed', 'contacted', 'dismissed')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create member_activities table (會員活動記錄)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS member_activities (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        activity_type VARCHAR(50) NOT NULL,
+        activity_data JSONB,
+        ip_address VARCHAR(45),
+        user_agent TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create ai_notifications table (AI智慧通知)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        notification_type VARCHAR(50) NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        content TEXT NOT NULL,
+        related_user_id INTEGER REFERENCES users(id),
+        related_wish_id INTEGER REFERENCES member_wishes(id),
+        matching_score DECIMAL(5,2),
+        ai_reasoning TEXT,
+        status VARCHAR(20) DEFAULT 'unread' CHECK (status IN ('unread', 'read', 'dismissed')),
+        priority INTEGER DEFAULT 1 CHECK (priority IN (1, 2, 3)),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        read_at TIMESTAMP
+      )
+    `);
+
+    // Create meeting_ai_analysis table (會議AI分析)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS meeting_ai_analysis (
+        id SERIAL PRIMARY KEY,
+        meeting_id INTEGER NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+        summary TEXT,
+        key_insights JSONB,
+        business_intents JSONB,
+        collaboration_opportunities JSONB,
+        extracted_needs JSONB,
+        participant_consent JSONB,
+        analysis_status VARCHAR(20) DEFAULT 'pending' CHECK (analysis_status IN ('pending', 'processing', 'completed', 'failed')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Insert default card templates
     await pool.query(`
       INSERT INTO card_templates (id, name, description, css_styles) VALUES 
@@ -427,6 +515,20 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_card_content_blocks_card_id ON card_content_blocks(card_id);
       CREATE INDEX IF NOT EXISTS idx_card_visits_card_id ON card_visits(card_id);
       CREATE INDEX IF NOT EXISTS idx_member_cards_user_id ON member_cards(user_id);
+      CREATE INDEX IF NOT EXISTS idx_member_wishes_user_id ON member_wishes(user_id);
+      CREATE INDEX IF NOT EXISTS idx_member_wishes_status ON member_wishes(status);
+      CREATE INDEX IF NOT EXISTS idx_member_wishes_category ON member_wishes(category);
+      CREATE INDEX IF NOT EXISTS idx_ai_matching_results_wish_id ON ai_matching_results(wish_id);
+      CREATE INDEX IF NOT EXISTS idx_ai_matching_results_matched_user_id ON ai_matching_results(matched_user_id);
+      CREATE INDEX IF NOT EXISTS idx_ai_matching_results_score ON ai_matching_results(matching_score DESC);
+      CREATE INDEX IF NOT EXISTS idx_member_activities_user_id ON member_activities(user_id);
+      CREATE INDEX IF NOT EXISTS idx_member_activities_type ON member_activities(activity_type);
+      CREATE INDEX IF NOT EXISTS idx_member_activities_created_at ON member_activities(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_notifications_user_id ON ai_notifications(user_id);
+      CREATE INDEX IF NOT EXISTS idx_ai_notifications_status ON ai_notifications(status);
+      CREATE INDEX IF NOT EXISTS idx_ai_notifications_created_at ON ai_notifications(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_meeting_ai_analysis_meeting_id ON meeting_ai_analysis(meeting_id);
+      CREATE INDEX IF NOT EXISTS idx_users_ai_deep_profile ON users USING gin(ai_deep_profile);
     `);
 
     // Insert default chapters

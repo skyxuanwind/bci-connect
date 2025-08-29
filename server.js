@@ -26,6 +26,9 @@ const judicialLookupRoutes = require('./routes/judicial-lookup');
 const judgmentSyncRoutes = require('./routes/judgment-sync');
 const nfcCheckinRoutes = require('./routes/nfc-checkin');
 const memberCardRoutes = require('./routes/member-cards');
+const wishesRoutes = require('./routes/wishes');
+const notificationsRoutes = require('./routes/notifications');
+const aiProfilesRoutes = require('./routes/ai-profiles');
 const { initializeDatabase, pool } = require('./config/database');
 const { connectMongoDB } = require('./config/mongodb');
 const judgmentSyncService = require('./services/judgmentSyncService');
@@ -132,6 +135,9 @@ app.use('/api/judicial-lookup', judicialLookupRoutes);
 app.use('/api/judgment-sync', judgmentSyncRoutes);
 app.use('/api/nfc-checkin', nfcCheckinRoutes);
 app.use('/api/member-cards', memberCardRoutes);
+app.use('/api/wishes', wishesRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/ai-profiles', aiProfilesRoutes);
 
 // 添加MongoDB NFC報到路由
 const nfcMongodbRoutes = require('./routes/nfc-mongodb');
