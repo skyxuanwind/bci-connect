@@ -167,55 +167,87 @@ router.get('/stats', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // 聚合各類型與狀態
     const result = await pool.query(`
       SELECT 
-        type,
+        notification_type AS type,
         status,
-        COUNT(*) as count
+        COUNT(*) AS count
       FROM ai_notifications 
       WHERE user_id = $1
-      GROUP BY type, status
-      ORDER BY type, status
+      GROUP BY notification_type, status
+      ORDER BY notification_type, status
     `, [userId]);
 
-    // 獲取最近7天的通知趨勢
+    // 最近7天的通知趨勢
     const trendResult = await pool.query(`
       SELECT 
-        DATE(created_at) as date,
-        type,
-        COUNT(*) as count
+        DATE(created_at) AS date,
+        notification_type AS type,
+        COUNT(*) AS count
       FROM ai_notifications 
       WHERE user_id = $1 
-      AND created_at >= CURRENT_DATE - INTERVAL '7 days'
-      GROUP BY DATE(created_at), type
-      ORDER BY date DESC, type
+        AND created_at >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY DATE(created_at), notification_type
+      ORDER BY date DESC, notification_type
     `, [userId]);
 
-    // 組織統計數據
-    const stats = {};
+    // 對應到前端顯示的類型鍵值
+    const typeMap = {
+      collaboration_recommendation: 'collaboration',
+      wish_opportunity: 'wish',
+      meeting_insights: 'meeting',
+      market_opportunity: 'market'
+    };
+
+    // 彙總前端所需的統計資料
+    const aggregated = { total: 0, unread: 0, collaboration: 0, wish: 0, meeting: 0, market: 0 };
+
+    // 可選：詳細分類統計（保留以備未來使用）
+    const byTypeStatus = {};
+
     result.rows.forEach(row => {
-      if (!stats[row.type]) {
-        stats[row.type] = { total: 0, unread: 0, read: 0, dismissed: 0 };
+      const count = parseInt(row.count);
+      const uiKey = typeMap[row.type];
+
+      // 詳細分類統計
+      if (!byTypeStatus[row.type]) {
+        byTypeStatus[row.type] = { total: 0, unread: 0, read: 0, dismissed: 0 };
       }
-      stats[row.type][row.status] = parseInt(row.count);
-      stats[row.type].total += parseInt(row.count);
+      byTypeStatus[row.type][row.status] = (byTypeStatus[row.type][row.status] || 0) + count;
+      byTypeStatus[row.type].total += count;
+
+      // 前端所需統計
+      aggregated.total += count;
+      if (row.status === 'unread') aggregated.unread += count;
+      if (uiKey) aggregated[uiKey] += count;
     });
 
-    // 組織趨勢數據
+    // 組織趨勢數據（以 UI 類型鍵值呈現）
     const trends = {};
     trendResult.rows.forEach(row => {
-      const date = row.date.toISOString().split('T')[0];
-      if (!trends[date]) {
-        trends[date] = {};
+      const uiKey = typeMap[row.type];
+      const dateStr = (row.date instanceof Date ? row.date : new Date(row.date)).toISOString().split('T')[0];
+      if (!trends[dateStr]) trends[dateStr] = {};
+      if (uiKey) {
+        trends[dateStr][uiKey] = (trends[dateStr][uiKey] || 0) + parseInt(row.count);
       }
-      trends[date][row.type] = parseInt(row.count);
     });
 
     res.json({
       success: true,
       data: {
-        stats,
-        trends
+        total: aggregated.total,
+        unread: aggregated.unread,
+        collaboration: aggregated.collaboration,
+        wish: aggregated.wish,
+        meeting: aggregated.meeting,
+        market: aggregated.market,
+        // 附帶詳細統計與趨勢（前端目前未使用，保留以備後續圖表需求）
+        details: {
+          byTypeStatus,
+          trends
+        }
       }
     });
   } catch (error) {
