@@ -15,6 +15,16 @@ const JudgmentSync = () => {
   });
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [importStatus, setImportStatus] = useState(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importMode, setImportMode] = useState('batch');
+  const [companyName, setCompanyName] = useState('');
+  const [importConfig, setImportConfig] = useState({
+    batchSize: 50,
+    maxBatches: 10,
+    maxRecords: 100,
+    forceImport: false
+  });
 
   // 載入同步狀態
   const loadSyncStatus = async () => {
@@ -35,6 +45,60 @@ const JudgmentSync = () => {
     } catch (error) {
       console.error('載入統計資訊失敗:', error);
       toast.error('載入統計資訊失敗');
+    }
+  };
+
+  // 載入歷史導入狀態
+  const loadImportStatus = async () => {
+    try {
+      const response = await api.get('/api/judgment-sync/import-status');
+      setImportStatus(response.data.data);
+    } catch (error) {
+      console.error('載入歷史導入狀態失敗:', error);
+    }
+  };
+
+  // 啟動歷史資料導入
+  const handleHistoricalImport = async () => {
+    if (importStatus?.isRunning) {
+      toast.warning('歷史資料導入作業已在進行中');
+      return;
+    }
+
+    if (!importStatus?.isApiAvailable && !importConfig.forceImport) {
+      toast.warning('司法院 API 僅在凌晨 0-6 點提供服務，或啟用強制導入模式');
+      return;
+    }
+
+    if (importMode === 'company' && !companyName.trim()) {
+      toast.error('請輸入公司名稱');
+      return;
+    }
+
+    setImportLoading(true);
+    try {
+      const payload = {
+        mode: importMode,
+        ...importConfig
+      };
+      
+      if (importMode === 'company') {
+        payload.companyName = companyName.trim();
+      }
+
+      const response = await api.post('/api/judgment-sync/import-historical', payload);
+      toast.success(response.data.message);
+      
+      // 延遲重新載入狀態
+      setTimeout(() => {
+        loadImportStatus();
+        loadStatistics();
+      }, 2000);
+    } catch (error) {
+      console.error('啟動歷史資料導入失敗:', error);
+      toast.error(error.response?.data?.message || '啟動歷史資料導入失敗');
+    } finally {
+      setImportLoading(false);
     }
   };
 
@@ -143,10 +207,12 @@ const JudgmentSync = () => {
   useEffect(() => {
     loadSyncStatus();
     loadStatistics();
+    loadImportStatus();
     
     // 每 30 秒自動重新載入狀態
     const interval = setInterval(() => {
       loadSyncStatus();
+      loadImportStatus();
     }, 30000);
 
     return () => clearInterval(interval);
@@ -160,7 +226,7 @@ const JudgmentSync = () => {
       </div>
 
       {/* 同步狀態卡片 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">同步狀態</h3>
           {syncStatus ? (
@@ -244,6 +310,17 @@ const JudgmentSync = () => {
                 >
                   {loading ? '啟動中...' : syncStatus.isRunning ? '同步進行中' : !syncStatus.isApiAvailable ? 'API 不可用' : '手動同步'}
                 </button>
+                
+                {/* 強制同步按鈕 */}
+                {!syncStatus.isApiAvailable && (
+                  <button
+                    onClick={() => handleManualSync(true)}
+                    disabled={loading || syncStatus.isRunning}
+                    className="w-full bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                  >
+                    {loading ? '啟動中...' : '強制同步 (測試用)'}
+                  </button>
+                )}
                 
                 {/* 管理員控制面板 */}
                 {syncStatus.debugInfo && (
@@ -406,6 +483,187 @@ const JudgmentSync = () => {
             </div>
           ) : (
             <div className="text-gray-500">暫無同步記錄</div>
+          )}
+        </div>
+        
+        {/* 歷史資料導入 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">歷史資料導入</h3>
+          {importStatus ? (
+            <div className="space-y-4">
+              {/* 導入狀態顯示 */}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">導入狀態</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  importStatus.isRunning 
+                    ? 'text-blue-600 bg-blue-100' 
+                    : 'text-gray-600 bg-gray-100'
+                }`}>
+                  {importStatus.isRunning ? '進行中' : '閒置'}
+                </span>
+              </div>
+              
+              {/* 導入進度顯示 */}
+              {importStatus.isRunning && importStatus.stats && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <div className="text-sm text-blue-800 mb-2">導入進度</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
+                    <div>已處理: {importStatus.stats.totalProcessed || 0}</div>
+                    <div>新增: {importStatus.stats.newRecords || 0}</div>
+                    <div>更新: {importStatus.stats.updatedRecords || 0}</div>
+                    <div>跳過: {importStatus.stats.skippedRecords || 0}</div>
+                    <div>錯誤: {importStatus.stats.errorRecords || 0}</div>
+                    <div>批次: {importStatus.stats.currentBatch || 0}/{importStatus.stats.totalBatches || 0}</div>
+                  </div>
+                </div>
+              )}
+              
+              {/* 導入模式選擇 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">導入模式</label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="batch"
+                      checked={importMode === 'batch'}
+                      onChange={(e) => setImportMode(e.target.value)}
+                      disabled={importStatus.isRunning}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">批量導入</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="company"
+                      checked={importMode === 'company'}
+                      onChange={(e) => setImportMode(e.target.value)}
+                      disabled={importStatus.isRunning}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">公司導入</span>
+                  </label>
+                </div>
+              </div>
+              
+              {/* 公司名稱輸入 */}
+              {importMode === 'company' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">公司名稱</label>
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="請輸入公司名稱"
+                    disabled={importStatus.isRunning}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  />
+                </div>
+              )}
+              
+              {/* 導入配置 */}
+              <div className="grid grid-cols-2 gap-4">
+                {importMode === 'batch' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">批次大小</label>
+                      <input
+                        type="number"
+                        value={importConfig.batchSize}
+                        onChange={(e) => setImportConfig({...importConfig, batchSize: parseInt(e.target.value) || 50})}
+                        min="10"
+                        max="100"
+                        disabled={importStatus.isRunning}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">最大批次數</label>
+                      <input
+                        type="number"
+                        value={importConfig.maxBatches}
+                        onChange={(e) => setImportConfig({...importConfig, maxBatches: parseInt(e.target.value) || 10})}
+                        min="1"
+                        max="50"
+                        disabled={importStatus.isRunning}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">最大記錄數</label>
+                    <input
+                      type="number"
+                      value={importConfig.maxRecords}
+                      onChange={(e) => setImportConfig({...importConfig, maxRecords: parseInt(e.target.value) || 100})}
+                      min="10"
+                      max="500"
+                      disabled={importStatus.isRunning}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* 強制導入選項 */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="forceImport"
+                  checked={importConfig.forceImport}
+                  onChange={(e) => setImportConfig({...importConfig, forceImport: e.target.checked})}
+                  disabled={importStatus.isRunning}
+                  className="mr-2"
+                />
+                <label htmlFor="forceImport" className="text-sm text-gray-700">
+                  強制導入（忽略API服務時間限制）
+                </label>
+              </div>
+              
+              {/* API 時間限制提示 */}
+              {!importStatus.isApiAvailable && !importConfig.forceImport && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-yellow-800">
+                        API 服務時間限制
+                      </h3>
+                      <div className="mt-2 text-sm text-yellow-700">
+                        <p>司法院 API 僅在凌晨 00:00-06:00 提供服務</p>
+                        <p>當前時間：{importStatus.currentTime ? new Date(importStatus.currentTime).toLocaleString('zh-TW') : '-'}</p>
+                        <p>請在服務時間內執行，或勾選強制導入選項</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* 導入按鈕 */}
+              <button
+                onClick={handleHistoricalImport}
+                disabled={importLoading || importStatus.isRunning || (!importStatus.isApiAvailable && !importConfig.forceImport)}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {importLoading ? '啟動中...' : importStatus.isRunning ? '導入進行中' : '開始歷史資料導入'}
+              </button>
+              
+              {/* 說明文字 */}
+              <div className="text-xs text-gray-500">
+                <p>• 批量導入：從司法院API獲取最新的判決書列表進行導入</p>
+                <p>• 公司導入：搜尋特定公司相關的判決書進行導入</p>
+                <p>• 導入過程會自動跳過已存在的判決書</p>
+                <p>• 建議在API服務時間內（凌晨0-6點）執行以獲得最佳效果</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-gray-500">載入中...</div>
           )}
         </div>
       </div>

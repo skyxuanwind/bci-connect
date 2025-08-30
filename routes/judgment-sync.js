@@ -3,6 +3,7 @@ const router = express.Router();
 const judgmentSyncService = require('../services/judgmentSyncService');
 const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../config/database');
+const HistoricalJudgmentImporter = require('../scripts/import-historical-judgments');
 
 // 管理員或核心會員權限檢查
 const requireAdminOrLevel1 = (req, res, next) => {
@@ -263,6 +264,127 @@ router.get('/statistics', authenticateToken, requireAdminOrLevel1, async (req, r
     res.status(500).json({
       success: false,
       message: '獲取統計資訊失敗',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * 歷史判決書批量導入
+ */
+router.post('/import-historical', authenticateToken, requireAdminOrLevel1, async (req, res) => {
+  try {
+    const { 
+      mode = 'batch', 
+      batchSize = 50, 
+      maxBatches = 10, 
+      companyName,
+      maxRecords = 100,
+      forceImport = false 
+    } = req.body;
+
+    // 檢查是否有其他導入作業在進行
+    const importer = new HistoricalJudgmentImporter();
+    if (importer.isRunning) {
+      return res.status(400).json({
+        success: false,
+        message: '歷史資料導入作業已在進行中，請稍後再試'
+      });
+    }
+
+    // 檢查API可用性
+    if (!importer.isApiAvailable() && !forceImport) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      return res.status(400).json({
+        success: false,
+        message: `司法院 API 僅在凌晨 0-6 點提供服務，當前時間 ${currentHour}:${String(now.getMinutes()).padStart(2, '0')} 不在服務時間內`,
+        debugInfo: {
+          currentHour: currentHour,
+          serviceWindow: '00:00 - 06:00',
+          suggestion: '請在服務時間內重試，或啟用強制導入模式'
+        }
+      });
+    }
+
+    // 記錄操作日誌
+    console.log(`📥 管理員 ${req.user.username} 啟動歷史判決書導入`);
+    console.log(`導入模式: ${mode}`);
+    if (mode === 'company') {
+      console.log(`目標公司: ${companyName}`);
+    }
+    if (forceImport) {
+      console.warn(`⚠️ 強制導入模式已啟用`);
+    }
+
+    // 非同步執行導入作業
+    if (mode === 'company') {
+      if (!companyName) {
+        return res.status(400).json({
+          success: false,
+          message: '公司導入模式需要提供公司名稱'
+        });
+      }
+      
+      importer.importByCompany(companyName, { maxRecords }).catch(error => {
+        console.error('公司歷史判決書導入失敗:', error);
+      });
+      
+      res.json({
+        success: true,
+        message: `公司 "${companyName}" 的歷史判決書導入作業已開始，請稍後查看統計資訊`,
+        mode: 'company',
+        companyName: companyName,
+        maxRecords: maxRecords
+      });
+    } else {
+      // 批量導入模式
+      importer.startImport({ batchSize, maxBatches }).catch(error => {
+        console.error('批量歷史判決書導入失敗:', error);
+      });
+      
+      res.json({
+        success: true,
+        message: `歷史判決書批量導入作業已開始，預計處理 ${maxBatches} 個批次，每批次 ${batchSize} 筆`,
+        mode: 'batch',
+        batchSize: batchSize,
+        maxBatches: maxBatches,
+        estimatedTotal: batchSize * maxBatches
+      });
+    }
+
+  } catch (error) {
+    console.error('啟動歷史判決書導入失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '啟動歷史判決書導入失敗',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * 獲取歷史導入狀態
+ */
+router.get('/import-status', authenticateToken, requireAdminOrLevel1, async (req, res) => {
+  try {
+    const importer = new HistoricalJudgmentImporter();
+    
+    res.json({
+      success: true,
+      data: {
+        isRunning: importer.isRunning,
+        stats: importer.importStats,
+        isApiAvailable: importer.isApiAvailable(),
+        currentTime: new Date().toISOString(),
+        serviceWindow: '00:00-06:00 (台北時間)'
+      }
+    });
+  } catch (error) {
+    console.error('獲取歷史導入狀態失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取歷史導入狀態失敗',
       error: error.message
     });
   }
