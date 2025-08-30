@@ -85,6 +85,10 @@ class JudgmentSyncService {
           if (result.status === 'fulfilled') {
             if (result.value === 'new') newRecords++;
             else if (result.value === 'updated') updatedRecords++;
+            else if (result.value === 'skipped') {
+              // 判決書已被移除或不存在，不計入錯誤
+              console.log(`⚠️ JID ${batch[index]} 已被移除或不存在，跳過處理`);
+            }
           } else {
             errors++;
             console.error(`❌ 處理 JID ${batch[index]} 失敗:`, result.reason?.message || result.reason);
@@ -150,7 +154,9 @@ class JudgmentSyncService {
       const judgmentContent = await judicialService.getJudgmentByJid(jid);
       
       if (!judgmentContent) {
-        throw new Error('無法獲取裁判書內容');
+        // 判決書不存在或已被移除，跳過處理
+        console.log(`⚠️ JID ${jid} 無法獲取內容，可能已被移除`);
+        return 'skipped';
       }
 
       // 解析裁判書資料

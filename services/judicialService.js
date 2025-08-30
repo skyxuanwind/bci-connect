@@ -530,6 +530,14 @@ class JudicialService {
         return response.data;
       }
 
+      // 檢查是否為500錯誤且包含「查無資料」
+      if (response.status === 500 && response.data && 
+          (JSON.stringify(response.data).includes('查無資料') || 
+           JSON.stringify(response.data).includes('查無此筆資料'))) {
+        console.log(`判決書 ${jid} 查無資料，可能已被移除`);
+        return null;
+      }
+
       if (response.status !== 200) {
         throw new Error(`GetJDoc API 回應狀態碼: ${response.status}, 完整錯誤內容: ${JSON.stringify(response.data)}`);
       }
@@ -546,6 +554,14 @@ class JudicialService {
       
       // 詳細的錯誤資訊
       if (error.response) {
+        // 檢查是否為500錯誤且包含「查無資料」
+        if (error.response.status === 500 && error.response.data && 
+            (JSON.stringify(error.response.data).includes('查無資料') || 
+             JSON.stringify(error.response.data).includes('查無此筆資料'))) {
+          console.log(`判決書 ${jid} 查無資料，可能已被移除`);
+          return null;
+        }
+        
         console.error('=== HTTP 回應錯誤 ===');
         console.error('- 狀態碼:', error.response.status);
         console.error('- 狀態文字:', error.response.statusText);
