@@ -284,7 +284,7 @@ router.post('/import-historical', authenticateToken, requireAdminOrLevel1, async
     } = req.body;
 
     // 檢查是否有其他導入作業在進行
-    const importer = new HistoricalJudgmentImporter();
+    const importer = HistoricalJudgmentImporter.getInstance();
     if (importer.isRunning) {
       return res.status(400).json({
         success: false,
@@ -368,7 +368,7 @@ router.post('/import-historical', authenticateToken, requireAdminOrLevel1, async
  */
 router.get('/import-status', authenticateToken, requireAdminOrLevel1, async (req, res) => {
   try {
-    const importer = new HistoricalJudgmentImporter();
+    const importer = HistoricalJudgmentImporter.getInstance();
     
     res.json({
       success: true,

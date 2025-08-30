@@ -14,7 +14,11 @@ class HistoricalJudgmentImporter {
       newRecords: 0,
       updatedRecords: 0,
       skippedRecords: 0,
-      errors: 0
+      errors: 0,
+      currentBatch: 0,
+      totalBatches: 0,
+      currentBatchSize: 0,
+      currentBatchProcessed: 0
     };
     
     // 配置參數
@@ -26,6 +30,14 @@ class HistoricalJudgmentImporter {
       MAX_RETRIES: 3,           // 最大重試次數
       RETRY_DELAY: 1000         // 重試延遲 (毫秒)
     };
+  }
+
+  // 單例模式
+  static getInstance() {
+    if (!HistoricalJudgmentImporter.instance) {
+      HistoricalJudgmentImporter.instance = new HistoricalJudgmentImporter();
+    }
+    return HistoricalJudgmentImporter.instance;
   }
 
   /**
