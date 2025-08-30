@@ -14,7 +14,9 @@ import {
   BriefcaseIcon,
   UsersIcon,
   TrophyIcon,
-  ClockIcon
+  ClockIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 
 const AIProfilePage = () => {
@@ -24,6 +26,7 @@ const AIProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showSourceDetails, setShowSourceDetails] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -46,7 +49,11 @@ const AIProfilePage = () => {
     try {
       const response = await axios.get('/api/ai-profiles/me/analysis');
       if (response.data.success) {
-        setAnalysis(response.data.data);
+        const data = response.data.data || {};
+        setAnalysis({
+          lastAnalyzed: data.lastAnalyzed || null,
+          suggestions: Array.isArray(data.suggestions) ? data.suggestions : []
+        });
       }
     } catch (error) {
       console.error('獲取分析報告失敗:', error);
@@ -135,9 +142,12 @@ const AIProfilePage = () => {
       <div className="bg-white shadow rounded-lg p-6 mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">畫像概覽</h2>
-          <span className="text-sm text-gray-500">
-            最後更新: {formatDate(profile?.lastUpdated)}
-          </span>
+          <div className="text-right text-sm text-gray-500">
+            <div>最後更新: {formatDate(profile?.lastUpdated)}</div>
+            {analysis?.lastAnalyzed && (
+              <div>最後AI分析: {formatDate(analysis.lastAnalyzed)}</div>
+            )}
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -163,7 +173,7 @@ const AIProfilePage = () => {
               <ChartBarIcon className="h-8 w-8 text-blue-500 mx-auto" />
             </div>
             <p className="text-lg font-semibold text-gray-900">
-              {profile?.profile?.dataSources?.length || 0} 個
+              {(Object.values(profile?.profile?.data_sources || {}).filter(src => src && src.last_update).length) || 0} 個
             </p>
             <p className="text-sm text-gray-600">數據來源</p>
           </div>
@@ -174,11 +184,190 @@ const AIProfilePage = () => {
               <BriefcaseIcon className="h-8 w-8 text-purple-500 mx-auto" />
             </div>
             <p className="text-lg font-semibold text-gray-900">
-              {analysis?.personality_traits?.length || 0} 項
+              {profile?.profile?.ai_insights?.personality_traits?.length || 0} 項
             </p>
             <p className="text-sm text-gray-600">個性特質</p>
           </div>
         </div>
+
+        {/* 資料來源詳情展開面板 */}
+        <div className="mt-4 border-t pt-4">
+          <button
+            type="button"
+            onClick={() => setShowSourceDetails((v) => !v)}
+            className="w-full flex items-center justify-between text-left text-sm font-medium text-primary-700 hover:text-primary-900"
+          >
+            <span>資料來源詳情</span>
+            {showSourceDetails ? (
+              <ChevronUpIcon className="h-4 w-4" />
+            ) : (
+              <ChevronDownIcon className="h-4 w-4" />
+            )}
+          </button>
+
+          {showSourceDetails && (
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 靜態資料 */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-sm text-gray-600">靜態資料</div>
+                <div className="mt-2 text-gray-900">最後更新：{formatDate(profile?.profile?.data_sources?.static?.last_update)}</div>
+                <div className="mt-1 text-sm">
+                  <span className="text-gray-600">信心度：</span>
+                  <span
+                    className={`${(profile?.profile?.data_sources?.static?.confidence || 0) >= 80
+                      ? 'text-green-600'
+                      : (profile?.profile?.data_sources?.static?.confidence || 0) >= 50
+                        ? 'text-yellow-600'
+                        : 'text-red-600'
+                    } font-medium`}
+                  >
+                    {(profile?.profile?.data_sources?.static?.confidence ?? 0)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* 行為資料 */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-sm text-gray-600">行為資料</div>
+                <div className="mt-2 text-gray-900">最後更新：{formatDate(profile?.profile?.data_sources?.behavioral?.last_update)}</div>
+                <div className="mt-1 text-sm">
+                  <span className="text-gray-600">信心度：</span>
+                  <span
+                    className={`${(profile?.profile?.data_sources?.behavioral?.confidence || 0) >= 80
+                      ? 'text-green-600'
+                      : (profile?.profile?.data_sources?.behavioral?.confidence || 0) >= 50
+                        ? 'text-yellow-600'
+                        : 'text-red-600'
+                    } font-medium`}
+                  >
+                    {(profile?.profile?.data_sources?.behavioral?.confidence ?? 0)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* 對話資料 */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-sm text-gray-600">對話資料</div>
+                <div className="mt-2 text-gray-900">最後更新：{formatDate(profile?.profile?.data_sources?.conversational?.last_update)}</div>
+                <div className="mt-1 text-sm">
+                  <span className="text-gray-600">信心度：</span>
+                  <span
+                    className={`${(profile?.profile?.data_sources?.conversational?.confidence || 0) >= 80
+                      ? 'text-green-600'
+                      : (profile?.profile?.data_sources?.conversational?.confidence || 0) >= 50
+                        ? 'text-yellow-600'
+                        : 'text-red-600'
+                    } font-medium`}
+                  >
+                    {(profile?.profile?.data_sources?.conversational?.confidence ?? 0)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* AI 建議（顯著展示於概覽卡片下方） */}
+      {analysis?.suggestions?.length > 0 && (
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-5 mb-8">
+          <div className="flex items-center mb-3">
+            <LightBulbIcon className="h-5 w-5 text-primary-600 mr-2" />
+            <h3 className="text-base font-semibold text-primary-900">AI 建議</h3>
+            {analysis.lastAnalyzed && (
+              <span className="ml-auto text-xs text-gray-500">分析時間：{formatDate(analysis.lastAnalyzed)}</span>
+            )}
+          </div>
+          <ul className="space-y-2">
+            {analysis.suggestions.map((s, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span
+                  className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.priority === 'high' ? 'bg-red-100 text-red-700' : s.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}
+                >
+                  {s.priority === 'high' ? '高' : s.priority === 'medium' ? '中' : '低'}
+                </span>
+                <p className="text-gray-800 flex-1">{s.message}</p>
+                {/* 行動按鈕 */}
+                <div className="ml-auto flex flex-wrap gap-2">
+                  {/* 依建議類型顯示對應行動 */}
+                  {(() => {
+                    switch (s.type) {
+                      case 'profile_completion':
+                        return (
+                          <>
+                            <a href="/profile" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700">前往個人檔案</a>
+                            <button onClick={handleUpdateProfile} className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border border-primary-300 text-primary-700 hover:bg-primary-50">更新畫像</button>
+                          </>
+                        );
+                      case 'skills_enhancement':
+                        return (
+                          <>
+                            <a href="/events" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700">參與活動</a>
+                            <a href="/wishes" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50">發布許願</a>
+                          </>
+                        );
+                      case 'engagement_improvement':
+                        return (
+                          <>
+                            <a href="/events" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700">參與活動</a>
+                            <a href="/wishes" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50">發布許願</a>
+                          </>
+                        );
+                      case 'collaboration_openness':
+                        return (
+                          <>
+                            <a href="/meetings" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700">安排會議</a>
+                            <a href="/referrals" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border border-green-300 text-green-700 hover:bg-green-50">轉介系統</a>
+                          </>
+                        );
+                      default:
+                        return (
+                          <a href="/smart-collaboration" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700">智慧合作儀表板</a>
+                        );
+                    }
+                  })()}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 使用說明：如何提升完整度與使用 AI 智慧合作網絡 */}
+      <div className="bg-white shadow rounded-lg p-6 mb-8">
+        <h3 className="text-lg font-medium text-gray-900 mb-3">如何提升畫像完整度</h3>
+        <ul className="list-disc pl-6 space-y-2 text-gray-700">
+          <li>
+            完善個人資料（公司、職稱、產業、專長等）。
+            <a href="/profile" className="ml-2 text-primary-600 hover:underline">前往個人檔案</a>
+          </li>
+          <li>在個人檔案頁填寫「面談表單」，讓 AI 更了解你的背景與目標。</li>
+          <li>
+            增加平台互動數據：
+            <a href="/events" className="ml-1 text-primary-600 hover:underline">參與活動</a>、
+            <a href="/wishes" className="ml-1 text-primary-600 hover:underline">發布許願</a> 等。
+          </li>
+          <li>完成會議並同意生成會議摘要，有助於豐富「對話資料」。</li>
+          <li>點擊上方「更新畫像」，以最新資料重新進行 AI 分析。</li>
+        </ul>
+
+        <h3 className="text-lg font-medium text-gray-900 mt-6 mb-3">如何使用 AI 智慧合作網絡</h3>
+        <ul className="list-disc pl-6 space-y-2 text-gray-700">
+          <li>
+            在「智慧合作儀表板」查看個人化洞察與動態建議。
+            <a href="/smart-collaboration" className="ml-2 text-primary-600 hover:underline">前往儀表板</a>
+          </li>
+          <li>
+            使用「轉介系統」與「會議排程」快速建立合作：
+            <a href="/referrals" className="ml-2 text-primary-600 hover:underline">轉介系統</a>
+            <span className="mx-1">/</span>
+            <a href="/meetings" className="text-primary-600 hover:underline">會議排程</a>
+          </li>
+          <li>
+            追蹤「通知中心」以不漏接媒合建議與重要提醒。
+            <a href="/notifications" className="ml-2 text-primary-600 hover:underline">通知中心</a>
+          </li>
+        </ul>
       </div>
 
       {/* 標籤頁導航 */}
@@ -264,11 +453,11 @@ const AIProfilePage = () => {
           </div>
         )}
 
-        {activeTab === 'personality' && analysis?.personality_traits && (
+        {activeTab === 'personality' && profile?.profile?.ai_insights?.personality_traits && (
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">個性特質分析</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {analysis.personality_traits.map((trait, index) => (
+              {profile.profile.ai_insights.personality_traits.map((trait, index) => (
                 <div key={index} className="bg-blue-50 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <TrophyIcon className="h-5 w-5 text-blue-500" />
@@ -280,11 +469,11 @@ const AIProfilePage = () => {
           </div>
         )}
 
-        {activeTab === 'business' && analysis?.business_compatibility && (
+        {activeTab === 'business' && profile?.profile?.ai_insights?.business_compatibility && (
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">商業相容性評估</h3>
             <div className="space-y-4">
-              {Object.entries(analysis.business_compatibility).map(([industry, score]) => (
+              {Object.entries(profile.profile.ai_insights.business_compatibility).map(([industry, score]) => (
                 <div key={industry} className="flex items-center justify-between">
                   <span className="text-gray-700">{industry}</span>
                   <div className="flex items-center space-x-3">
@@ -302,11 +491,11 @@ const AIProfilePage = () => {
           </div>
         )}
 
-        {activeTab === 'collaboration' && analysis?.collaboration_potential && (
+        {activeTab === 'collaboration' && profile?.profile?.ai_insights?.collaboration_potential && (
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">合作潛力分析</h3>
             <div className="space-y-4">
-              {Object.entries(analysis.collaboration_potential).map(([type, potential]) => (
+              {Object.entries(profile.profile.ai_insights.collaboration_potential).map(([type, potential]) => (
                 <div key={type} className="bg-green-50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-green-900">{type}</span>
@@ -324,11 +513,11 @@ const AIProfilePage = () => {
           </div>
         )}
 
-        {activeTab === 'opportunities' && analysis?.market_opportunities && (
+        {activeTab === 'opportunities' && profile?.profile?.ai_insights?.market_opportunities && (
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">市場機會識別</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {analysis.market_opportunities.map((opportunity, index) => (
+              {profile.profile.ai_insights.market_opportunities.map((opportunity, index) => (
                 <div key={index} className="bg-yellow-50 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
                     <LightBulbIcon className="h-5 w-5 text-yellow-500 mt-0.5" />
@@ -342,11 +531,11 @@ const AIProfilePage = () => {
           </div>
         )}
 
-        {activeTab === 'risks' && analysis?.risk_factors && (
+        {activeTab === 'risks' && profile?.profile?.ai_insights?.risk_factors && (
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">風險因素評估</h3>
             <div className="space-y-4">
-              {analysis.risk_factors.map((risk, index) => (
+              {profile.profile.ai_insights.risk_factors.map((risk, index) => (
                 <div key={index} className="bg-red-50 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
                     <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mt-0.5" />
@@ -362,7 +551,7 @@ const AIProfilePage = () => {
       </div>
 
       {/* 無分析數據提示 */}
-      {!analysis && (
+      {!analysis && !profile?.profile?.ai_insights && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <ExclamationTriangleIcon className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-yellow-900 mb-2">尚無AI分析數據</h3>

@@ -22,6 +22,23 @@ class GeminiService {
     }
   }
 
+  // 通用文字生成包裝：其他服務可直接呼叫本方法
+  async generateContent(prompt) {
+    try {
+      if (!this.model) {
+        console.warn('Gemini 模型未初始化，跳過生成內容');
+        return '';
+      }
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = (response && typeof response.text === 'function') ? response.text() : '';
+      return text || '';
+    } catch (err) {
+      console.error('Gemini generateContent 錯誤:', err.message);
+      return '';
+    }
+  }
+
   // Helper: Fetch news via Google News RSS (no API key required)
   async fetchGoogleNewsRSS(companyName, maxResults = 8) {
     try {
