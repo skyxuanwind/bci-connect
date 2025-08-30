@@ -73,8 +73,7 @@ router.post('/me/update', authenticateToken, async (req, res) => {
     const meetingsResult = await pool.query(`
       SELECT ma.* FROM meeting_ai_analysis ma
       JOIN meetings m ON ma.meeting_id = m.id
-      WHERE (m.host_id = $1 OR m.guest_id = $1)
-      AND ma.consent_given = true
+      WHERE (m.requester_id = $1 OR m.attendee_id = $1)
       ORDER BY ma.created_at DESC
       LIMIT 20
     `, [userId]);
@@ -474,8 +473,7 @@ router.post('/batch-update', authenticateToken, async (req, res) => {
           const meetingsResult = await pool.query(`
             SELECT ma.* FROM meeting_ai_analysis ma
             JOIN meetings m ON ma.meeting_id = m.id
-            WHERE (m.host_id = $1 OR m.guest_id = $1)
-            AND ma.consent_given = true
+            WHERE (m.requester_id = $1 OR m.attendee_id = $1)
             ORDER BY ma.created_at DESC
             LIMIT 20
           `, [userId]);
