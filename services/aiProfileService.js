@@ -358,7 +358,7 @@ ${JSON.stringify(newData, null, 2)}
     if (!title) return 'unknown';
     
     const titleLower = title.toLowerCase();
-    if (titleLower.includes('ceo') || titleLower.includes('總經理') || titleLower.includes('董事')) {
+    if (titleLower.includes('ceo') || titleLower.includes('總經理') || titleLower.includes('董事') || titleLower.includes('執行長')) {
       return 'executive';
     } else if (titleLower.includes('經理') || titleLower.includes('主管') || titleLower.includes('director')) {
       return 'senior';

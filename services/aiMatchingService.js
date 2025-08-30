@@ -469,7 +469,15 @@ class AIMatchingService {
       'junior': 1,
       'mid': 2,
       'senior': 3,
-      'executive': 4
+      'executive': 4,
+      // 中文經驗等級對應
+      '初級': 1,
+      '中級': 2,
+      '高級': 3,
+      '資深': 3,
+      '豐富經驗': 4,
+      '專家': 4,
+      '執行級': 4
     };
     
     const targetLevel = experienceHierarchy[target] || 2;
