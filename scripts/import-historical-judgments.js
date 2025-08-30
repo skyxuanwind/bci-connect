@@ -61,10 +61,15 @@ class HistoricalJudgmentImporter {
     try {
       // 重置統計
       this.resetStats();
+      this.importStats.totalBatches = maxBatches;
 
       // 多批次獲取判決書清單
       for (let batchIndex = 0; batchIndex < maxBatches; batchIndex++) {
+        this.importStats.currentBatch = batchIndex + 1;
         console.log(`\n📦 處理批次 ${batchIndex + 1}/${maxBatches}`);
+        
+        // 重置當前批次進度
+        this.importStats.currentBatchProcessed = 0;
         
         try {
           // 獲取判決書清單
@@ -84,7 +89,9 @@ class HistoricalJudgmentImporter {
           }
 
           // 處理本批次的判決書
-          await this.processBatch(jidList.slice(0, batchSize));
+          const currentBatchJids = jidList.slice(0, batchSize);
+          this.importStats.currentBatchSize = currentBatchJids.length;
+          await this.processBatch(currentBatchJids, batchIndex + 1, maxBatches);
 
           // 批次間延遲
           if (batchIndex < maxBatches - 1) {
@@ -146,6 +153,9 @@ class HistoricalJudgmentImporter {
       }
       
       batchStats.processed++;
+      
+      // 更新當前批次進度
+      this.importStats.currentBatchProcessed = i + 1;
       
       // 請求間延遲
       if (i < jidList.length - 1) {
@@ -285,7 +295,11 @@ class HistoricalJudgmentImporter {
       newRecords: 0,
       updatedRecords: 0,
       skippedRecords: 0,
-      errors: 0
+      errors: 0,
+      currentBatch: 0,
+      totalBatches: 0,
+      currentBatchSize: 0,
+      currentBatchProcessed: 0
     };
   }
 
@@ -334,6 +348,8 @@ class HistoricalJudgmentImporter {
     try {
       // 重置統計
       this.resetStats();
+      this.importStats.totalBatches = 1;
+      this.importStats.currentBatch = 1;
 
       // 先從API搜尋相關判決書
       const searchResult = await judicialService.searchJudgments(companyName, { top: maxRecords });
@@ -355,7 +371,11 @@ class HistoricalJudgmentImporter {
         return;
       }
 
-      await this.processBatch(jids);
+      // 設置批次信息
+      this.importStats.currentBatchSize = jids.length;
+      this.importStats.currentBatchProcessed = 0;
+      
+      await this.processBatch(jids, 1, 1);
       this.showFinalStats();
 
     } catch (error) {

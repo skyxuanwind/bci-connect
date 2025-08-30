@@ -506,7 +506,45 @@ const JudgmentSync = () => {
               {/* 導入進度顯示 */}
               {importStatus.isRunning && importStatus.stats && (
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                  <div className="text-sm text-blue-800 mb-2">導入進度</div>
+                  <div className="text-sm text-blue-800 mb-3">導入進度</div>
+                  
+                  {/* 整體進度條 */}
+                  {importStatus.stats.totalBatches > 0 && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-xs text-blue-700 mb-1">
+                        <span>整體進度</span>
+                        <span>{importStatus.stats.currentBatch || 0}/{importStatus.stats.totalBatches || 0} 批次</span>
+                      </div>
+                      <div className="w-full bg-blue-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                          style={{
+                            width: `${Math.min(100, ((importStatus.stats.currentBatch || 0) / (importStatus.stats.totalBatches || 1)) * 100)}%`
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 當前批次進度條 */}
+                  {importStatus.stats.currentBatchSize > 0 && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-xs text-blue-700 mb-1">
+                        <span>當前批次</span>
+                        <span>{importStatus.stats.currentBatchProcessed || 0}/{importStatus.stats.currentBatchSize || 0} 記錄</span>
+                      </div>
+                      <div className="w-full bg-blue-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full transition-all duration-300 ease-out"
+                          style={{
+                            width: `${Math.min(100, ((importStatus.stats.currentBatchProcessed || 0) / (importStatus.stats.currentBatchSize || 1)) * 100)}%`
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 統計信息 */}
                   <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
                     <div>已處理: {importStatus.stats.totalProcessed || 0}</div>
                     <div>新增: {importStatus.stats.newRecords || 0}</div>
