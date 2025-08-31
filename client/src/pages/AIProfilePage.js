@@ -110,18 +110,18 @@ const AIProfilePage = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* 頁面標題 */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-3">
             <CpuChipIcon className="h-8 w-8 text-primary-600" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">AI 深度畫像</h1>
-              <p className="text-gray-600 mt-1">智能分析您的商業特質與合作潛力</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">AI 深度畫像</h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">智能分析您的商業特質與合作潛力</p>
             </div>
           </div>
           <button
             onClick={handleUpdateProfile}
             disabled={updating}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
           >
             {updating ? (
               <>
@@ -280,7 +280,7 @@ const AIProfilePage = () => {
           </div>
           <ul className="space-y-2">
             {analysis.suggestions.map((s, idx) => (
-              <li key={idx} className="flex items-start gap-2">
+              <li key={idx} className="flex flex-col sm:flex-row sm:items-start gap-2">
                 <span
                   className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.priority === 'high' ? 'bg-red-100 text-red-700' : s.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}
                 >
@@ -288,41 +288,41 @@ const AIProfilePage = () => {
                 </span>
                 <p className="text-gray-800 flex-1">{s.message}</p>
                 {/* 行動按鈕 */}
-                <div className="ml-auto flex flex-wrap gap-2">
+                <div className="mt-2 sm:mt-0 sm:ml-auto flex flex-col sm:flex-row gap-2">
                   {/* 依建議類型顯示對應行動 */}
                   {(() => {
                     switch (s.type) {
                       case 'profile_completion':
                         return (
                           <>
-                            <a href="/profile" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700">前往個人檔案</a>
-                            <button onClick={handleUpdateProfile} className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border border-primary-300 text-primary-700 hover:bg-primary-50">更新畫像</button>
+                            <a href="/profile" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 whitespace-nowrap">前往個人檔案</a>
+                            <button onClick={handleUpdateProfile} className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium border border-primary-300 text-primary-700 hover:bg-primary-50 whitespace-nowrap">更新畫像</button>
                           </>
                         );
                       case 'skills_enhancement':
                         return (
                           <>
-                            <a href="/events" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700">參與活動</a>
-                            <a href="/wishes" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50">發布許願</a>
+                            <a href="/events" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 whitespace-nowrap">參與活動</a>
+                            <a href="/wishes" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap">發布許願</a>
                           </>
                         );
                       case 'engagement_improvement':
                         return (
                           <>
-                            <a href="/events" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700">參與活動</a>
-                            <a href="/wishes" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50">發布許願</a>
+                            <a href="/events" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 whitespace-nowrap">參與活動</a>
+                            <a href="/wishes" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap">發布許願</a>
                           </>
                         );
                       case 'collaboration_openness':
                         return (
                           <>
-                            <a href="/meetings" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700">安排會議</a>
-                            <a href="/referrals" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border border-green-300 text-green-700 hover:bg-green-50">轉介系統</a>
+                            <a href="/meetings" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700 whitespace-nowrap">安排會議</a>
+                            <a href="/referrals" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium border border-green-300 text-green-700 hover:bg-green-50 whitespace-nowrap">轉介系統</a>
                           </>
                         );
                       default:
                         return (
-                          <a href="/smart-collaboration" className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700">智慧合作儀表板</a>
+                          <a href="/smart-collaboration" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 whitespace-nowrap">智慧合作儀表板</a>
                         );
                     }
                   })()}
@@ -372,7 +372,7 @@ const AIProfilePage = () => {
 
       {/* 標籤頁導航 */}
       <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex overflow-x-auto space-x-4 sm:space-x-8 scrollbar-hide">
           {[
             { id: 'overview', name: '總覽', icon: ChartBarIcon },
             { id: 'personality', name: '個性分析', icon: UserIcon },
@@ -388,10 +388,11 @@ const AIProfilePage = () => {
                 activeTab === tab.id
                   ? 'border-primary-500 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+              } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 flex-shrink-0`}
             >
-              <tab.icon className="h-4 w-4" />
-              <span>{tab.name}</span>
+              <tab.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">{tab.name}</span>
+              <span className="sm:hidden">{tab.name.length > 4 ? tab.name.substring(0, 4) : tab.name}</span>
             </button>
           ))}
         </nav>
@@ -474,16 +475,16 @@ const AIProfilePage = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">商業相容性評估</h3>
             <div className="space-y-4">
               {Object.entries(profile.profile.ai_insights.business_compatibility).map(([industry, score]) => (
-                <div key={industry} className="flex items-center justify-between">
-                  <span className="text-gray-700">{industry}</span>
+                <div key={industry} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 sm:justify-between">
+                  <span className="text-gray-700 font-medium">{industry}</span>
                   <div className="flex items-center space-x-3">
-                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                    <div className="flex-1 sm:w-32 bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-blue-500 h-2 rounded-full"
                         style={{ width: `${score}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 w-12">{score}%</span>
+                    <span className="text-sm font-medium text-gray-900 w-12 text-right">{score}%</span>
                   </div>
                 </div>
               ))}
