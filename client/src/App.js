@@ -192,7 +192,8 @@ function App() {
           
           {/* NFC 電子名片系統路由 */}
           {/* 公開名片頁面 - 無需登入 */}
-          <Route path="/nfc-card/:cardId" element={<PublicNFCCard />} />
+-          <Route path="/nfc-card/:cardId" element={<PublicNFCCard />} />
++          <Route path="/nfc-card/:slug" element={<PublicNFCCard />} />
           
           {/* NFC 名片編輯器 - 需要登入 */}
           <Route path="/nfc-card-editor" element={

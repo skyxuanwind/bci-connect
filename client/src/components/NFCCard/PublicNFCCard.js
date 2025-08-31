@@ -4,7 +4,7 @@ import axios from 'axios';
 import './PublicNFCCard.css';
 
 const PublicNFCCard = () => {
-  const { cardId } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const [cardData, setCardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ const PublicNFCCard = () => {
   const fetchCardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/nfc-cards/public/${cardId}`);
+      const response = await axios.get(`/api/nfc-cards/public/${slug}`);
       setCardData(response.data.card);
       
       // 已由後端在 /public/:identifier 內部自動記錄瀏覽與分析，這裡不再額外呼叫
@@ -78,7 +78,7 @@ const PublicNFCCard = () => {
   const handleDownloadVCard = async () => {
     try {
       const identifier = cardData.custom_url_slug || cardData.user_id;
-      const response = await axios.get(`/api/nfc-cards/vcard/${identifier}`, {
+      const response = await axios.get(`/api/nfc-cards/vcard/${slug}`, {
         responseType: 'blob'
       });
       
@@ -227,11 +227,21 @@ const PublicNFCCard = () => {
     return (
       <div className="public-nfc-card error">
         <div className="error-message">
-          <h2>找不到名片</h2>
-          <p>{error}</p>
-          <button onClick={() => navigate('/')} className="back-button">
-            返回首頁
-          </button>
+-          <h2>找不到名片</h2>
+-          <p>{error}</p>
+-          <button onClick={() => navigate('/')} className="back-button">
+-            返回首頁
+-          </button>
++          <h2>名片不存在或未公開</h2>
++          <p>{error || '這張名片可能已被設定為非公開，或網址有誤。'}</p>
++          <div className="actions">
++            <button onClick={() => navigate('/')} className="back-button">
++              返回首頁
++            </button>
++            <button onClick={() => window.history.back()} className="secondary-button" style={{ marginLeft: 12 }}>
++              返回上一頁
++            </button>
++          </div>
         </div>
       </div>
     );
