@@ -42,12 +42,9 @@ const MemberCardEditor = () => {
 
   // 模板數據
   const templates = [
-    { id: 'professional', name: '簡約專業版', category: 'business', color: '#1f2937' },
-    { id: 'dynamic', name: '活力動感版', category: 'creative', color: '#3b82f6' },
-    { id: 'elegant', name: '經典典雅版', category: 'modern', color: '#059669' },
-    { id: 'minimal-dark', name: '極簡暗色版', category: 'luxury', color: '#111827' },
-    { id: 'card', name: '卡片式風格', category: 'tech', color: '#2563eb' },
-    { id: 'neumorphism', name: '新擬物風格', category: 'nature', color: '#334155' }
+    { id: 'tech-professional', name: '科技專業版', category: 'tech', color: '#1e293b', description: '具備深色與淺色模式切換，資訊區塊採卡片式設計' },
+    { id: 'creative-vibrant', name: '活力創意版', category: 'creative', color: '#f59e0b', description: '色彩鮮明活潑，使用柔和的波浪形狀或有機曲線作為背景' },
+    { id: 'minimal-elegant', name: '簡約質感版', category: 'minimal', color: '#374151', description: '設計簡潔線條俐落，注重留白，極簡且具質感' }
   ];
 
   // 載入電子名片資料

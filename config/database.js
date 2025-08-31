@@ -399,6 +399,40 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create digital_cardholders table (數位名片夾用戶)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS digital_cardholders (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        phone VARCHAR(20),
+        company VARCHAR(200),
+        title VARCHAR(100),
+        is_verified BOOLEAN DEFAULT false,
+        verification_token VARCHAR(255),
+        reset_token VARCHAR(255),
+        reset_token_expiry TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create card_collections table (名片收藏)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS card_collections (
+        id SERIAL PRIMARY KEY,
+        cardholder_id INTEGER NOT NULL REFERENCES digital_cardholders(id) ON DELETE CASCADE,
+        member_card_id INTEGER NOT NULL REFERENCES member_cards(id) ON DELETE CASCADE,
+        notes TEXT,
+        tags TEXT[],
+        is_favorite BOOLEAN DEFAULT false,
+        collected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(cardholder_id, member_card_id)
+      )
+    `);
+
     // Create member_wishes table (會員許願版)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS member_wishes (
@@ -484,12 +518,9 @@ const initializeDatabase = async () => {
     // Insert default card templates
     await pool.query(`
       INSERT INTO card_templates (id, name, description, css_styles) VALUES 
-        ('professional', '簡約專業版', '適合商務與企業高層的簡潔設計', '{"primaryColor": "#1f2937", "secondaryColor": "#6b7280", "backgroundColor": "#ffffff", "fontFamily": "Inter, sans-serif"}'),
-        ('dynamic', '活力動感版', '適合創意與新創產業的活潑設計', '{"primaryColor": "#3b82f6", "secondaryColor": "#8b5cf6", "backgroundColor": "#f8fafc", "fontFamily": "Poppins, sans-serif"}'),
-        ('elegant', '經典典雅版', '適合重視質感與美學的優雅設計', '{"primaryColor": "#059669", "secondaryColor": "#d97706", "backgroundColor": "#fefefe", "fontFamily": "Playfair Display, serif"}'),
-        ('minimal-dark', '極簡暗色版', '深色背景，強調對比與易讀性', '{"primaryColor": "#111827", "secondaryColor": "#9CA3AF", "backgroundColor": "#0f172a", "fontFamily": "Inter, sans-serif"}'),
-        ('card', '卡片式風格', '內容以卡片形式呈現，明顯的陰影與邊框', '{"primaryColor": "#2563eb", "secondaryColor": "#64748b", "backgroundColor": "#f1f5f9", "fontFamily": "Inter, sans-serif"}'),
-        ('neumorphism', '新擬物風格', '柔和陰影與浮起效果，現代質感', '{"primaryColor": "#334155", "secondaryColor": "#64748b", "backgroundColor": "#f8fafc", "fontFamily": "Poppins, sans-serif"}')
+        ('tech-professional', '科技專業版', '具備深色與淺色模式切換，資訊區塊採卡片式設計，背景帶有科技或抽象的幾何漸變', '{"primaryColor": "#1e293b", "secondaryColor": "#64748b", "backgroundColor": "#0f172a", "accentColor": "#3b82f6", "gradientFrom": "#1e293b", "gradientTo": "#334155", "fontFamily": "Inter, sans-serif", "cardShadow": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "borderRadius": "16px", "hasLightMode": true, "hasDarkMode": true}'),
+        ('creative-vibrant', '活力創意版', '色彩鮮明活潑，使用柔和的波浪形狀或有機曲線作為背景，按鈕設計具備漸變或特殊陰影', '{"primaryColor": "#f59e0b", "secondaryColor": "#ec4899", "backgroundColor": "#fef3c7", "accentColor": "#8b5cf6", "gradientFrom": "#f59e0b", "gradientTo": "#ec4899", "fontFamily": "Poppins, sans-serif", "cardShadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", "borderRadius": "24px", "hasWaveBackground": true, "buttonGradient": true}'),
+        ('minimal-elegant', '簡約質感版', '設計簡潔線條俐落，注重留白，可選用單一或兩種自然色調，圖標和字體極簡且具質感', '{"primaryColor": "#374151", "secondaryColor": "#9ca3af", "backgroundColor": "#ffffff", "accentColor": "#059669", "naturalColor1": "#f3f4f6", "naturalColor2": "#e5e7eb", "fontFamily": "Inter, sans-serif", "cardShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)", "borderRadius": "8px", "minimalist": true, "spacing": "large"}')
       ON CONFLICT (id) DO NOTHING
     `);
 

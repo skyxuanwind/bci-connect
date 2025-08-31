@@ -7,8 +7,10 @@ import {
   GlobeAltIcon,
   PlayIcon,
   ShareIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  HeartIcon
 } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { FaFacebook, FaInstagram, FaLine, FaLinkedin, FaTwitter, FaYoutube, FaLink } from 'react-icons/fa';
 
 const getSocialMeta = (platform) => {
@@ -37,10 +39,30 @@ const PublicMemberCard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isCollected, setIsCollected] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [collectLoading, setCollectLoading] = useState(false);
 
   useEffect(() => {
     fetchCardData();
+    checkCollectionStatus();
   }, [userId]);
+
+  const checkCollectionStatus = async () => {
+    const token = localStorage.getItem('cardholderToken');
+    if (!token) return;
+
+    try {
+      const response = await axios.get(`/api/digital-cardholder/check-collection/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setIsCollected(response.data.isCollected);
+      }
+    } catch (error) {
+      console.error('Error checking collection status:', error);
+    }
+  };
 
   const fetchCardData = async () => {
     try {
@@ -95,6 +117,42 @@ const PublicMemberCard = () => {
       }
     } else {
       setShowShareModal(true);
+    }
+  };
+
+  const handleCollect = async () => {
+    const token = localStorage.getItem('cardholderToken');
+    if (!token) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    setCollectLoading(true);
+    try {
+      if (isCollected) {
+        // 取消收藏
+        const response = await axios.delete(`/api/digital-cardholder/collections/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.success) {
+          setIsCollected(false);
+        }
+      } else {
+        // 添加收藏
+        const response = await axios.post('/api/digital-cardholder/collections', {
+          cardId: userId
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.success) {
+          setIsCollected(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling collection:', error);
+      alert(isCollected ? '取消收藏失敗' : '收藏失敗');
+    } finally {
+      setCollectLoading(false);
     }
   };
 
@@ -403,6 +461,24 @@ const PublicMemberCard = () => {
                 <ShareIcon className="w-5 h-5 mr-2" />
                 分享名片
               </button>
+              <button
+                onClick={handleCollect}
+                disabled={collectLoading}
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+                  isCollected 
+                    ? 'bg-red-100 text-red-700 border border-red-300 hover:bg-red-200' 
+                    : currentStyle.secondaryButton
+                } ${collectLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {collectLoading ? (
+                  <div className="w-5 h-5 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : isCollected ? (
+                  <HeartSolidIcon className="w-5 h-5 mr-2 text-red-500" />
+                ) : (
+                  <HeartIcon className="w-5 h-5 mr-2" />
+                )}
+                {isCollected ? '已收藏' : '收藏名片'}
+              </button>
             </div>
           </div>
 
@@ -576,6 +652,44 @@ const PublicMemberCard = () => {
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
                 關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 認證模態框 */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">需要登入才能收藏</h3>
+            <p className="text-gray-600 mb-6">
+              請登入或註冊數位名片夾帳號，即可收藏此電子名片並在您的名片夾中管理。
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  window.location.href = '/cardholder/auth?mode=login';
+                }}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                登入帳號
+              </button>
+              <button
+                onClick={() => {
+                  window.location.href = '/cardholder/auth?mode=register';
+                }}
+                className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                註冊新帳號
+              </button>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                取消
               </button>
             </div>
           </div>

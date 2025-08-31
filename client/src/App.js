@@ -33,6 +33,7 @@ import ProspectVoting from './pages/ProspectVoting';
 import ProspectApplication from './pages/ProspectApplication';
 import PublicMemberCard from './components/MemberCard/PublicMemberCard';
 import MemberCardEditor from './components/MemberCard/MemberCardEditor';
+import CardholderRoutes from './components/DigitalCardHolder/CardholderRoutes';
 import ProspectDetail from './pages/ProspectDetail';
 import BlacklistManagement from './pages/BlacklistManagement';
 import FinancialStatement from './pages/FinancialStatement';
@@ -115,6 +116,9 @@ function App() {
           
           {/* Public Member Card Route - No authentication required */}
           <Route path="/member/:userId" element={<PublicMemberCard />} />
+          
+          {/* Digital Cardholder Routes - No authentication required for auth page */}
+          <Route path="/cardholder/*" element={<CardholderRoutes />} />
           
 
           
