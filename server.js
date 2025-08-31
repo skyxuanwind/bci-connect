@@ -25,7 +25,7 @@ const aiAnalysisRoutes = require('./routes/ai-analysis');
 
 const judgmentSyncRoutes = require('./routes/judgment-sync');
 const nfcCheckinRoutes = require('./routes/nfc-checkin');
-const memberCardRoutes = require('./routes/member-cards');
+const nfcCardRoutes = require('./routes/nfc-cards');
 const digitalCardholderRoutes = require('./routes/digital-cardholder');
 const wishesRoutes = require('./routes/wishes');
 const notificationsRoutes = require('./routes/notifications');
@@ -135,7 +135,7 @@ app.use('/api/ai-analysis', aiAnalysisRoutes);
 
 app.use('/api/judgment-sync', judgmentSyncRoutes);
 app.use('/api/nfc-checkin', nfcCheckinRoutes);
-app.use('/api/member-cards', memberCardRoutes);
+app.use('/api/nfc-cards', nfcCardRoutes);
 app.use('/api/digital-cardholder', digitalCardholderRoutes);
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/notifications', notificationsRoutes);
