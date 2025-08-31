@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import CardholderNavigation from './CardholderNavigation';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -167,6 +168,7 @@ const CardholderDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <CardholderNavigation />
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
