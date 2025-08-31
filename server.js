@@ -22,7 +22,7 @@ const contentRoutes = require('./routes/content');
 const attendanceRoutes = require('./routes/attendance');
 const companyLookupRoutes = require('./routes/company-lookup');
 const aiAnalysisRoutes = require('./routes/ai-analysis');
-const judicialLookupRoutes = require('./routes/judicial-lookup');
+
 const judgmentSyncRoutes = require('./routes/judgment-sync');
 const nfcCheckinRoutes = require('./routes/nfc-checkin');
 const memberCardRoutes = require('./routes/member-cards');
@@ -131,7 +131,7 @@ app.use('/api/content', contentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/company-lookup', companyLookupRoutes);
 app.use('/api/ai-analysis', aiAnalysisRoutes);
-app.use('/api/judicial-lookup', judicialLookupRoutes);
+
 app.use('/api/judgment-sync', judgmentSyncRoutes);
 app.use('/api/nfc-checkin', nfcCheckinRoutes);
 app.use('/api/member-cards', memberCardRoutes);

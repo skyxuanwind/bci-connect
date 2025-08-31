@@ -41,7 +41,7 @@ import FoundationInfo from './pages/FoundationInfo';
 import ContentManagement from './pages/admin/ContentManagement';
 import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
-import JudicialTest from './pages/JudicialTest';
+
 import JudgmentSync from './pages/JudgmentSync';
 import WishesPage from './pages/WishesPage';
 import NotificationsPage from './pages/NotificationsPage';
@@ -307,13 +307,7 @@ function App() {
             </Level1Route>
           } />
           
-          <Route path="/judicial-test" element={
-          <Level1Route>
-            <Layout>
-              <JudicialTest />
-            </Layout>
-          </Level1Route>
-        } />
+
 
         <Route path="/judgment-sync" element={
           <Level1Route>
