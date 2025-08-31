@@ -20,7 +20,7 @@ const PublicNFCCard = () => {
   useEffect(() => {
     fetchCardData();
     checkLoginStatus();
-  }, [cardId]);
+  }, [slug]);
 
   useEffect(() => {
     if (cardData && isLoggedIn) {
@@ -77,7 +77,6 @@ const PublicNFCCard = () => {
 
   const handleDownloadVCard = async () => {
     try {
-      const identifier = cardData.custom_url_slug || cardData.user_id;
       const response = await axios.get(`/api/nfc-cards/vcard/${slug}`, {
         responseType: 'blob'
       });
