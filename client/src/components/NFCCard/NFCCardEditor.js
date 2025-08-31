@@ -40,7 +40,8 @@ const NFCCardEditor = () => {
   const checkAuth = () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login');
+      // 未登入用戶可以瀏覽，但無法編輯
+      setUser(null);
       return;
     }
     
@@ -48,13 +49,13 @@ const NFCCardEditor = () => {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp < Date.now() / 1000) {
         localStorage.removeItem('token');
-        navigate('/login');
+        setUser(null);
         return;
       }
       setUser({ id: payload.id, email: payload.email });
     } catch (error) {
       localStorage.removeItem('token');
-      navigate('/login');
+      setUser(null);
     }
   };
 
@@ -70,6 +71,14 @@ const NFCCardEditor = () => {
   const fetchCardData = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        // 未登入用戶顯示空白編輯器
+        setCardData(null);
+        setContentBlocks([]);
+        setLoading(false);
+        return;
+      }
+      
       const response = await axios.get('/api/nfc-cards/my-card', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -617,7 +626,32 @@ const NFCCardEditor = () => {
     );
   }
 
-  if (!cardData) {
+  if (!cardData && !user) {
+    return (
+      <div className="nfc-card-editor login-required">
+        <div className="login-prompt">
+          <h2>歡迎使用 NFC 電子名片編輯器</h2>
+          <p>請先登入以建立和編輯您的專屬電子名片</p>
+          <div className="login-actions">
+            <button 
+              onClick={() => navigate('/login')}
+              className="login-btn"
+            >
+              會員登入
+            </button>
+            <button 
+              onClick={() => navigate('/register')}
+              className="register-btn"
+            >
+              註冊帳號
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!cardData && user) {
     return (
       <div className="nfc-card-editor error">
         <p>無法載入名片資料</p>

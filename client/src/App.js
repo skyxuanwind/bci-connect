@@ -194,13 +194,11 @@ function App() {
           {/* 公開名片頁面 - 無需登入 */}
           <Route path="/nfc-card/:slug" element={<PublicNFCCard />} />
           
-          {/* NFC 名片編輯器 - 需要登入 */}
+          {/* NFC 名片編輯器 - 無需登入 */}
           <Route path="/nfc-card-editor" element={
-            <ProtectedRoute>
-              <Layout>
-                <NFCCardEditor />
-              </Layout>
-            </ProtectedRoute>
+            <Layout>
+              <NFCCardEditor />
+            </Layout>
           } />
           
           {/* 數位名片夾認證頁面 - 無需登入 */}

@@ -39,6 +39,77 @@
   padding: 40px;
 }
 
+/* 登入提示 */
+.nfc-card-editor.login-required {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 40px;
+}
+
+.login-prompt {
+  background: white;
+  padding: 60px 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.login-prompt h2 {
+  color: #2c3e50;
+  margin-bottom: 16px;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.login-prompt p {
+  color: #6c757d;
+  margin-bottom: 32px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.login-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.login-btn, .register-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.login-btn {
+  background: #007bff;
+  color: white;
+}
+
+.login-btn:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.register-btn {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.register-btn:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+}
+
 /* 編輯器頭部 */
 .editor-header {
   background: white;
