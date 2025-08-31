@@ -89,7 +89,7 @@ const CardholderAuth = ({ mode = 'login' }) => {
       localStorage.setItem('cardholderToken', response.data.token);
       
       // 導向儀表板
-      navigate('/digital-cardholder/dashboard');
+      navigate('/cardholder-dashboard');
       
     } catch (error) {
       console.error('認證失敗:', error);
