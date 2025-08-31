@@ -230,7 +230,7 @@ const CardholderDashboard = () => {
   };
 
   const handleViewCard = (collection) => {
-    const url = `/nfc-member/${collection.custom_url_slug}`;
+    const url = `/nfc-card/${collection.custom_url_slug}`;
     window.open(url, '_blank');
   };
 

@@ -269,7 +269,7 @@ const NFCCardEditor = () => {
 
   const copyCardUrl = () => {
     if (cardData && cardData.custom_url_slug) {
-      const url = `${window.location.origin}/nfc-member/${cardData.custom_url_slug}`;
+      const url = `${window.location.origin}/nfc-card/${cardData.custom_url_slug}`;
       navigator.clipboard.writeText(url).then(() => {
         alert('名片網址已複製到剪貼板！');
       }).catch(() => {
@@ -734,7 +734,7 @@ const NFCCardEditor = () => {
           <div className="preview-container">
             <div className="preview-frame">
               <iframe
-                src={`/nfc-member/${cardData.custom_url_slug}?preview=true`}
+                src={`/nfc-card/${cardData.custom_url_slug}?preview=true`}
                 title="名片預覽"
                 className="preview-iframe"
               />
