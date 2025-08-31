@@ -33,6 +33,7 @@ const MemberCardEditor = () => {
   const { user } = useAuth();
   const [cardData, setCardData] = useState(null);
   const [contentBlocks, setContentBlocks] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState('template');
@@ -40,19 +41,13 @@ const MemberCardEditor = () => {
   const [localBlockData, setLocalBlockData] = useState({});
   const debounceTimers = useRef({});
 
-  // 模板數據
-  const templates = [
-    { id: 'tech-professional', name: '科技專業版', category: 'tech', color: '#1e293b', description: '具備深色與淺色模式切換，資訊區塊採卡片式設計' },
-    { id: 'creative-vibrant', name: '活力創意版', category: 'creative', color: '#f59e0b', description: '色彩鮮明活潑，使用柔和的波浪形狀或有機曲線作為背景' },
-    { id: 'minimal-elegant', name: '簡約質感版', category: 'minimal', color: '#374151', description: '設計簡潔線條俐落，注重留白，極簡且具質感' }
-  ];
-
   // 載入電子名片資料
   const loadCardData = useCallback(async () => {
     try {
       const response = await axios.get('/api/member-cards/my-card');
       setCardData(response.data.card);
-      setContentBlocks(response.data.blocks || []);
+      setContentBlocks(response.data.card?.contentBlocks || []);
+      setTemplates(response.data.templates || []);
     } catch (error) {
       console.error('載入電子名片資料失敗:', error);
     } finally {
@@ -209,19 +204,12 @@ const MemberCardEditor = () => {
     if (!template) return 'bg-gray-100';
     
     const classMap = {
-      business: 'bg-gradient-to-br from-blue-50 to-blue-100',
-      creative: 'bg-gradient-to-br from-purple-50 to-purple-100',
-      modern: 'bg-gradient-to-br from-emerald-50 to-emerald-100',
-      luxury: 'bg-gradient-to-br from-amber-50 to-amber-100',
-      tech: 'bg-gradient-to-br from-cyan-50 to-cyan-100',
-      nature: 'bg-gradient-to-br from-green-50 to-green-100',
-      warm: 'bg-gradient-to-br from-orange-50 to-orange-100',
-      minimal: 'bg-gradient-to-br from-gray-50 to-gray-100',
-      dark: 'bg-gradient-to-br from-gray-800 to-gray-900',
-      cool: 'bg-gradient-to-br from-sky-50 to-sky-100'
+      'tech-professional': 'bg-gradient-to-br from-slate-50 to-blue-100',
+      'creative-vibrant': 'bg-gradient-to-br from-purple-50 to-pink-100',
+      'minimal-elegant': 'bg-gradient-to-br from-gray-50 to-green-100'
     };
     
-    return classMap[template.category] || 'bg-gray-100';
+    return classMap[templateId] || 'bg-gray-100';
   };
 
   const getTemplateIcon = (templateId) => {
@@ -229,19 +217,12 @@ const MemberCardEditor = () => {
     if (!template) return <RectangleGroupIcon className="w-4 h-4" />;
     
     const iconMap = {
-      business: <BriefcaseIcon className="w-4 h-4" />,
-      creative: <SparklesIcon className="w-4 h-4" />,
-      modern: <Squares2X2Icon className="w-4 h-4" />,
-      luxury: <TrophyIcon className="w-4 h-4" />,
-      tech: <RectangleGroupIcon className="w-4 h-4" />,
-      nature: <MapPinIcon className="w-4 h-4" />,
-      warm: <CalendarIcon className="w-4 h-4" />,
-      minimal: <RectangleGroupIcon className="w-4 h-4" />,
-      dark: <MoonIcon className="w-4 h-4" />,
-      cool: <ClockIcon className="w-4 h-4" />
+      'tech-professional': <RectangleGroupIcon className="w-4 h-4" />,
+      'creative-vibrant': <SparklesIcon className="w-4 h-4" />,
+      'minimal-elegant': <Squares2X2Icon className="w-4 h-4" />
     };
     
-    return iconMap[template.category] || <RectangleGroupIcon className="w-4 h-4" />;
+    return iconMap[templateId] || <RectangleGroupIcon className="w-4 h-4" />;
   };
 
   // 自定義顏色處理
@@ -739,21 +720,8 @@ const MemberCardEditor = () => {
                           {template.name}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <span 
-                            className="inline-block w-3 h-3 rounded-full"
-                            style={{backgroundColor: template.color}}
-                          />
-                          <span className="text-xs text-gray-500 capitalize">
-                            {template.category === 'business' && '商務專業'}
-                            {template.category === 'creative' && '創意設計'}
-                            {template.category === 'modern' && '現代時尚'}
-                            {template.category === 'luxury' && '奢華典雅'}
-                            {template.category === 'tech' && '科技未來'}
-                            {template.category === 'nature' && '自然清新'}
-                            {template.category === 'warm' && '溫暖舒適'}
-                            {template.category === 'minimal' && '極簡風格'}
-                            {template.category === 'dark' && '暗黑模式'}
-                            {template.category === 'cool' && '清涼色調'}
+                          <span className="text-xs text-gray-500">
+                            {template.description}
                           </span>
                         </div>
                       </div>
