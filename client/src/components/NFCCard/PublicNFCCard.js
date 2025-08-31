@@ -4,7 +4,7 @@ import axios from 'axios';
 import './PublicNFCCard.css';
 
 const PublicNFCCard = () => {
-  const { userId } = useParams();
+  const { cardId } = useParams();
   const navigate = useNavigate();
   const [cardData, setCardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,7 @@ const PublicNFCCard = () => {
   useEffect(() => {
     fetchCardData();
     checkLoginStatus();
-  }, [userId]);
+  }, [cardId]);
 
   useEffect(() => {
     if (cardData && isLoggedIn) {
@@ -31,11 +31,10 @@ const PublicNFCCard = () => {
   const fetchCardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/nfc-cards/public/${userId}`);
+      const response = await axios.get(`/api/nfc-cards/public/${cardId}`);
       setCardData(response.data.card);
       
-      // 記錄瀏覽次數
-      await axios.post(`/api/nfc-cards/analytics/${response.data.card.id}/view`);
+      // 已由後端在 /public/:identifier 內部自動記錄瀏覽與分析，這裡不再額外呼叫
     } catch (error) {
       console.error('獲取名片資料失敗:', error);
       setError(error.response?.data?.error || '名片不存在或未公開');
@@ -78,7 +77,8 @@ const PublicNFCCard = () => {
 
   const handleDownloadVCard = async () => {
     try {
-      const response = await axios.get(`/api/nfc-cards/vcard/${cardData.id}`, {
+      const identifier = cardData.custom_url_slug || cardData.user_id;
+      const response = await axios.get(`/api/nfc-cards/vcard/${identifier}`, {
         responseType: 'blob'
       });
       
