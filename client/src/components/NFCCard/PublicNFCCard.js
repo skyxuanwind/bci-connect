@@ -226,21 +226,16 @@ const PublicNFCCard = () => {
     return (
       <div className="public-nfc-card error">
         <div className="error-message">
--          <h2>找不到名片</h2>
--          <p>{error}</p>
--          <button onClick={() => navigate('/')} className="back-button">
--            返回首頁
--          </button>
-+          <h2>名片不存在或未公開</h2>
-+          <p>{error || '這張名片可能已被設定為非公開，或網址有誤。'}</p>
-+          <div className="actions">
-+            <button onClick={() => navigate('/')} className="back-button">
-+              返回首頁
-+            </button>
-+            <button onClick={() => window.history.back()} className="secondary-button" style={{ marginLeft: 12 }}>
-+              返回上一頁
-+            </button>
-+          </div>
+          <h2>名片不存在或未公開</h2>
+          <p>{error || '這張名片可能已被設定為非公開，或網址有誤。'}</p>
+          <div className="actions">
+            <button onClick={() => navigate('/')} className="back-button">
+              返回首頁
+            </button>
+            <button onClick={() => window.history.back()} className="secondary-button" style={{ marginLeft: 12 }}>
+              返回上一頁
+            </button>
+          </div>
         </div>
       </div>
     );
