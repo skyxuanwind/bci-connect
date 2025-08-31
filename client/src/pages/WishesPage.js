@@ -269,8 +269,8 @@ const WishesPage = () => {
               />
             </Grid>
             <Grid item xs={12} md={3}>
-              <FormControl fullWidth sx={{ minWidth: 160 }}>
-                <InputLabel id="wish-filter-category-label" sx={{ whiteSpace: 'nowrap' }}>分類</InputLabel>
+              <FormControl fullWidth sx={{ minWidth: { xs: 'auto', sm: 160 } }}>
+                <InputLabel id="wish-filter-category-label" sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' } }}>分類</InputLabel>
                 <Select
                   value={filters.category}
                   onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
@@ -303,8 +303,8 @@ const WishesPage = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} md={3}>
-              <FormControl fullWidth sx={{ minWidth: 160 }}>
-                <InputLabel id="wish-filter-status-label" sx={{ whiteSpace: 'nowrap' }}>狀態</InputLabel>
+              <FormControl fullWidth sx={{ minWidth: { xs: 'auto', sm: 160 } }}>
+                <InputLabel id="wish-filter-status-label" sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' } }}>狀態</InputLabel>
                 <Select
                   value={filters.status}
                   onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
@@ -334,7 +334,7 @@ const WishesPage = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={1}>
+            <Grid item xs={6} md={1}>
               <Button 
                 fullWidth
                 variant="contained" 
@@ -344,7 +344,7 @@ const WishesPage = () => {
                 搜尋
               </Button>
             </Grid>
-            <Grid item xs={12} md={1}>
+            <Grid item xs={6} md={1}>
               <Button 
                 fullWidth
                 variant="outlined" 
@@ -355,8 +355,8 @@ const WishesPage = () => {
               </Button>
             </Grid>
           </Grid>
-        </CardContent>
-      </Card>
+         </CardContent>
+       </Card>
 
       {/* 許願列表 */}
       {loading ? (
@@ -422,21 +422,19 @@ const WishesPage = () => {
                     </Typography>
 
                     {/* 標籤 */}
-                    <Box sx={{ mb: 2 }}>
+                    <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                       {wish.category && (
                         <Chip 
                           size="small" 
                           label={getCategoryLabel(wish.category)}
                           color="primary"
                           variant="outlined"
-                          sx={{ mr: 1, mb: 1 }}
                         />
                       )}
                       <Chip 
                         size="small" 
                         label={`優先級 ${wish.priority}`}
                         color={getPriorityColor(wish.priority)}
-                        sx={{ mr: 1, mb: 1 }}
                       />
                       {wish.extractedIntents && wish.extractedIntents.collaborationType && (
                         <Chip 
@@ -444,7 +442,6 @@ const WishesPage = () => {
                           label={`🤖 ${wish.extractedIntents.collaborationType}`}
                           color="secondary"
                           variant="outlined"
-                          sx={{ mb: 1 }}
                         />
                       )}
                     </Box>
@@ -587,18 +584,16 @@ const WishesPage = () => {
                   </Typography>
                   
                   {/* 標籤 */}
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {selectedWish.category && (
                       <Chip 
                         label={getCategoryLabel(selectedWish.category)}
                         color="primary"
-                        sx={{ mr: 1, mb: 1 }}
                       />
                     )}
                     <Chip 
                       label={`優先級 ${selectedWish.priority}`}
                       color={getPriorityColor(selectedWish.priority)}
-                      sx={{ mr: 1, mb: 1 }}
                     />
                   </Box>
 

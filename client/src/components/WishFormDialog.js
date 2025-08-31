@@ -87,8 +87,8 @@ const WishFormDialog = ({
 
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth sx={{ mb: 2, minWidth: 200 }}>
-                <InputLabel id="wish-dialog-category-label" sx={{ whiteSpace: 'nowrap' }}>分類</InputLabel>
+                <FormControl fullWidth sx={{ mb: 2, minWidth: { xs: 'auto', sm: 200 } }}>
+                <InputLabel id="wish-dialog-category-label" sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' } }}>分類</InputLabel>
                  <Select
                    value={form.category}
                    onChange={handleChange('category')}
@@ -120,8 +120,8 @@ const WishFormDialog = ({
                </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth sx={{ mb: 2, minWidth: 180 }}>
-                <InputLabel id="wish-dialog-priority-label" sx={{ whiteSpace: 'nowrap' }}>優先級</InputLabel>
+                <FormControl fullWidth sx={{ mb: 2, minWidth: { xs: 'auto', sm: 180 } }}>
+                <InputLabel id="wish-dialog-priority-label" sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' } }}>優先級</InputLabel>
                  <Select
                    value={form.priority}
                    onChange={handleChange('priority')}
