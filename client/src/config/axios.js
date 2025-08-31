@@ -7,8 +7,8 @@ const getBaseURL = () => {
     return '';
   }
   
-  // 開發環境不設置 baseURL，讓請求通過 setupProxy.js 代理
-  return '';
+  // 開發環境直接指向後端伺服器
+  return 'http://localhost:8000';
 }
 
 // 設置axios默認配置

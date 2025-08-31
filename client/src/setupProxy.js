@@ -8,8 +8,8 @@ module.exports = function(app) {
       changeOrigin: true,
       secure: false,
       logLevel: 'debug',
-      timeout: 30000,
-      proxyTimeout: 30000,
+      timeout: 60000,
+      proxyTimeout: 60000,
       onError: (err, req, res) => {
         console.error('Proxy error:', err.message);
         res.status(500).send('Proxy error: ' + err.message);
