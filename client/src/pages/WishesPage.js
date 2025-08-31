@@ -257,7 +257,7 @@ const WishesPage = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <TextField
                 fullWidth
                 placeholder="搜尋許願內容..."
@@ -268,7 +268,7 @@ const WishesPage = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} md={3}>
               <FormControl fullWidth>
                 <InputLabel>分類</InputLabel>
                 <Select
@@ -301,7 +301,7 @@ const WishesPage = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} md={3}>
               <FormControl fullWidth>
                 <InputLabel>狀態</InputLabel>
                 <Select
@@ -332,7 +332,7 @@ const WishesPage = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} md={1.5}>
               <Button 
                 fullWidth
                 variant="contained" 
@@ -342,7 +342,7 @@ const WishesPage = () => {
                 搜尋
               </Button>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} md={1.5}>
               <Button 
                 fullWidth
                 variant="outlined" 
