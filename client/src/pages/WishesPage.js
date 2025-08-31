@@ -275,6 +275,22 @@ const WishesPage = () => {
                   value={filters.category}
                   onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
                   label="分類"
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                        zIndex: 1300
+                      }
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left'
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left'
+                    }
+                  }}
                 >
                   <MenuItem value="">全部</MenuItem>
                   {categories.map(cat => (
@@ -292,6 +308,22 @@ const WishesPage = () => {
                   value={filters.status}
                   onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
                   label="狀態"
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                        zIndex: 1300
+                      }
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left'
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left'
+                    }
+                  }}
                 >
                   <MenuItem value="active">進行中</MenuItem>
                   <MenuItem value="completed">已完成</MenuItem>

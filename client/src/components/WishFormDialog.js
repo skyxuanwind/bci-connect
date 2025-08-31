@@ -93,6 +93,22 @@ const WishFormDialog = ({
                   value={form.category}
                   onChange={handleChange('category')}
                   label="分類"
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                        zIndex: 1400
+                      }
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left'
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left'
+                    }
+                  }}
                 >
                   {categoryOptions.map((cat) => (
                     <MenuItem key={cat.value} value={cat.value}>
@@ -109,6 +125,22 @@ const WishFormDialog = ({
                   value={form.priority}
                   onChange={handleChange('priority')}
                   label="優先級"
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                        zIndex: 1400
+                      }
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left'
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left'
+                    }
+                  }}
                 >
                   <MenuItem value={1}>一般</MenuItem>
                   <MenuItem value={2}>重要</MenuItem>
