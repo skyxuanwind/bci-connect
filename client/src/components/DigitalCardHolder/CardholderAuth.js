@@ -1,302 +1,302 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import {
-  UserIcon,
-  EnvelopeIcon,
-  LockClosedIcon,
-  PhoneIcon,
-  BuildingOfficeIcon,
-  BriefcaseIcon,
-  EyeIcon,
-  EyeSlashIcon
-} from '@heroicons/react/24/outline';
+import './CardholderAuth.css';
 
-const CardholderAuth = () => {
+const CardholderAuth = ({ mode = 'login' }) => {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(mode === 'login');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
     phone: '',
     company: '',
     title: ''
   });
-  const [errors, setErrors] = useState({});
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // 清除該欄位的錯誤
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // 清除錯誤訊息
+    if (error) setError('');
   };
 
   const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.email) {
-      newErrors.email = '請輸入電子郵件';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = '請輸入有效的電子郵件地址';
-    }
-
-    if (!formData.password) {
-      newErrors.password = '請輸入密碼';
-    } else if (!isLogin && formData.password.length < 6) {
-      newErrors.password = '密碼長度至少需要6個字符';
+    if (!formData.email || !formData.password) {
+      setError('請輸入電子郵件和密碼');
+      return false;
     }
 
     if (!isLogin) {
       if (!formData.name) {
-        newErrors.name = '請輸入姓名';
+        setError('請輸入姓名');
+        return false;
+      }
+      
+      if (formData.password.length < 6) {
+        setError('密碼長度至少需要6個字符');
+        return false;
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        setError('密碼確認不一致');
+        return false;
       }
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('請輸入有效的電子郵件地址');
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
+    
     setLoading(true);
+    setError('');
     
     try {
       const endpoint = isLogin ? '/api/digital-cardholder/login' : '/api/digital-cardholder/register';
-      const response = await axios.post(endpoint, formData);
+      const payload = isLogin 
+        ? { email: formData.email, password: formData.password }
+        : {
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            phone: formData.phone,
+            company: formData.company,
+            title: formData.title
+          };
+      
+      const response = await axios.post(endpoint, payload);
       
       // 儲存 token
-      localStorage.setItem('cardholder_token', response.data.token);
-      localStorage.setItem('cardholder_user', JSON.stringify(response.data.user));
+      localStorage.setItem('cardholderToken', response.data.token);
       
-      // 導向數位名片夾
+      // 導向儀表板
       navigate('/digital-cardholder/dashboard');
       
     } catch (error) {
-      const errorMessage = error.response?.data?.error || (isLogin ? '登入失敗' : '註冊失敗');
-      setErrors({ submit: errorMessage });
+      console.error('認證失敗:', error);
+      setError(error.response?.data?.error || '操作失敗，請稍後再試');
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phone: '',
+      company: '',
+      title: ''
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
-            <UserIcon className="h-6 w-6 text-white" />
-          </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            {isLogin ? '登入數位名片夾' : '註冊數位名片夾'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isLogin ? '管理您收藏的電子名片' : '建立您的數位名片收藏'}
-          </p>
+    <div className="cardholder-auth">
+      <div className="auth-container">
+        <div className="auth-header">
+          <h1>數位名片夾</h1>
+          <p>{isLogin ? '登入您的帳戶' : '建立新帳戶'}</p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {!isLogin && (
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  姓名 *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.name ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="請輸入您的姓名"
-                  />
-                </div>
-                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                電子郵件 *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <EnvelopeIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="請輸入電子郵件地址"
-                />
-              </div>
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                密碼 *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <LockClosedIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`block w-full pl-10 pr-10 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder={isLogin ? '請輸入密碼' : '密碼至少6個字符'}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-            </div>
-
-            {!isLogin && (
-              <>
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    電話號碼
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <PhoneIcon className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="請輸入電話號碼（選填）"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
-                    公司名稱
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="company"
-                      name="company"
-                      type="text"
-                      value={formData.company}
-                      onChange={handleInputChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="請輸入公司名稱（選填）"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                    職稱
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <BriefcaseIcon className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="title"
-                      name="title"
-                      type="text"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="請輸入職稱（選填）"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {errors.submit && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-sm text-red-600">{errors.submit}</p>
+        <form onSubmit={handleSubmit} className="auth-form">
+          {error && (
+            <div className="error-message">
+              <i className="fas fa-exclamation-circle"></i>
+              {error}
             </div>
           )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {isLogin ? '登入中...' : '註冊中...'}
-                </div>
-              ) : (
-                isLogin ? '登入' : '註冊'
-              )}
-            </button>
+          {!isLogin && (
+            <div className="form-group">
+              <label htmlFor="name">姓名 *</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="請輸入您的姓名"
+                required={!isLogin}
+              />
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="email">電子郵件 *</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="請輸入電子郵件地址"
+              required
+            />
           </div>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setErrors({});
-                setFormData({
-                  name: '',
-                  email: '',
-                  password: '',
-                  phone: '',
-                  company: '',
-                  title: ''
-                });
-              }}
-              className="text-blue-600 hover:text-blue-500 text-sm font-medium"
-            >
-              {isLogin ? '還沒有帳號？立即註冊' : '已有帳號？立即登入'}
-            </button>
+          <div className="form-group">
+            <label htmlFor="password">密碼 *</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              placeholder={isLogin ? '請輸入密碼' : '密碼至少6個字符'}
+              required
+            />
           </div>
+
+          {!isLogin && (
+            <>
+              <div className="form-group">
+                <label htmlFor="confirmPassword">確認密碼 *</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  placeholder="請再次輸入密碼"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="phone">電話號碼</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="請輸入電話號碼"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="company">公司名稱</label>
+                <input
+                  type="text"
+                  id="company"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleInputChange}
+                  placeholder="請輸入公司名稱"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="title">職稱</label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  placeholder="請輸入職稱"
+                />
+              </div>
+            </>
+          )}
+
+          <button 
+            type="submit" 
+            className="submit-btn"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i>
+                {isLogin ? '登入中...' : '註冊中...'}
+              </>
+            ) : (
+              <>
+                <i className={`fas ${isLogin ? 'fa-sign-in-alt' : 'fa-user-plus'}`}></i>
+                {isLogin ? '登入' : '註冊'}
+              </>
+            )}
+          </button>
         </form>
+
+        <div className="auth-footer">
+          <p>
+            {isLogin ? '還沒有帳戶？' : '已經有帳戶了？'}
+            <button 
+              type="button" 
+              className="toggle-btn"
+              onClick={toggleMode}
+            >
+              {isLogin ? '立即註冊' : '立即登入'}
+            </button>
+          </p>
+          
+          <div className="back-to-home">
+            <Link to="/" className="home-link">
+              <i className="fas fa-home"></i>
+              返回首頁
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="auth-info">
+        <div className="info-content">
+          <h2>數位名片夾功能</h2>
+          <div className="feature-list">
+            <div className="feature-item">
+              <i className="fas fa-heart"></i>
+              <div>
+                <h3>收藏名片</h3>
+                <p>輕鬆收藏您感興趣的電子名片</p>
+              </div>
+            </div>
+            <div className="feature-item">
+              <i className="fas fa-folder"></i>
+              <div>
+                <h3>分類管理</h3>
+                <p>使用資料夾和標籤整理您的名片</p>
+              </div>
+            </div>
+            <div className="feature-item">
+              <i className="fas fa-search"></i>
+              <div>
+                <h3>快速搜尋</h3>
+                <p>快速找到您需要的聯絡人資訊</p>
+              </div>
+            </div>
+            <div className="feature-item">
+              <i className="fas fa-notes-medical"></i>
+              <div>
+                <h3>備註功能</h3>
+                <p>為每張名片添加個人備註</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

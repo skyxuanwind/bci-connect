@@ -5,30 +5,38 @@ const crypto = require('crypto');
 const { pool } = require('../config/database');
 const router = express.Router();
 
-// JWT 中間件
-const authenticateToken = (req, res, next) => {
+// JWT 驗證中間件 (專用於數位名片夾用戶)
+const authenticateCardholderToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ error: '需要登入權限' });
+    return res.status(401).json({ error: '需要登入才能使用此功能' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ error: '無效的登入權限' });
+      return res.status(403).json({ error: '無效的登入狀態' });
     }
+    
+    // 確保這是數位名片夾用戶的 token
+    if (user.type !== 'cardholder') {
+      return res.status(403).json({ error: '無效的用戶類型' });
+    }
+    
     req.user = user;
     next();
   });
 };
 
-// 用戶註冊
+// ========== 認證相關路由 ==========
+
+// 註冊數位名片夾用戶
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, phone, company, title } = req.body;
 
-    // 檢查必填欄位
+    // 驗證必填欄位
     if (!name || !email || !password) {
       return res.status(400).json({ error: '姓名、電子郵件和密碼為必填欄位' });
     }
@@ -46,8 +54,8 @@ router.post('/register', async (req, res) => {
 
     // 檢查電子郵件是否已存在
     const existingUser = await pool.query(
-      'SELECT id FROM digital_cardholders WHERE email = $1',
-      [email]
+      'SELECT id FROM digital_card_users WHERE email = $1',
+      [email.toLowerCase()]
     );
 
     if (existingUser.rows.length > 0) {
@@ -55,47 +63,46 @@ router.post('/register', async (req, res) => {
     }
 
     // 加密密碼
-    const saltRounds = 10;
+    const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // 生成驗證令牌
+    // 生成驗證 token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // 插入新用戶
+    // 創建用戶
     const result = await pool.query(
-      `INSERT INTO digital_cardholders 
+      `INSERT INTO digital_card_users 
        (name, email, password, phone, company, title, verification_token) 
        VALUES ($1, $2, $3, $4, $5, $6, $7) 
-       RETURNING id, name, email, phone, company, title, is_verified, created_at`,
-      [name, email, hashedPassword, phone, company, title, verificationToken]
+       RETURNING id, name, email, phone, company, title, is_verified`,
+      [name, email.toLowerCase(), hashedPassword, phone, company, title, verificationToken]
     );
 
-    const newUser = result.rows[0];
+    const user = result.rows[0];
 
-    // 生成 JWT
+    // 生成 JWT token
     const token = jwt.sign(
       { 
-        id: newUser.id, 
-        email: newUser.email, 
-        name: newUser.name 
+        id: user.id, 
+        email: user.email, 
+        type: 'cardholder' 
       },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     res.status(201).json({
       message: '註冊成功',
+      token: token,
       user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        phone: newUser.phone,
-        company: newUser.company,
-        title: newUser.title,
-        is_verified: newUser.is_verified,
-        created_at: newUser.created_at
-      },
-      token
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        company: user.company,
+        title: user.title,
+        is_verified: user.is_verified
+      }
     });
 
   } catch (error) {
@@ -104,7 +111,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// 用戶登入
+// 登入
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -115,8 +122,8 @@ router.post('/login', async (req, res) => {
 
     // 查找用戶
     const result = await pool.query(
-      'SELECT * FROM digital_cardholders WHERE email = $1',
-      [email]
+      'SELECT * FROM digital_card_users WHERE email = $1',
+      [email.toLowerCase()]
     );
 
     if (result.rows.length === 0) {
@@ -131,19 +138,20 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: '電子郵件或密碼錯誤' });
     }
 
-    // 生成 JWT
+    // 生成 JWT token
     const token = jwt.sign(
       { 
         id: user.id, 
         email: user.email, 
-        name: user.name 
+        type: 'cardholder' 
       },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     res.json({
       message: '登入成功',
+      token: token,
       user: {
         id: user.id,
         name: user.name,
@@ -151,10 +159,9 @@ router.post('/login', async (req, res) => {
         phone: user.phone,
         company: user.company,
         title: user.title,
-        is_verified: user.is_verified,
-        created_at: user.created_at
-      },
-      token
+        avatar_url: user.avatar_url,
+        is_verified: user.is_verified
+      }
     });
 
   } catch (error) {
@@ -164,10 +171,10 @@ router.post('/login', async (req, res) => {
 });
 
 // 獲取用戶資料
-router.get('/profile', authenticateToken, async (req, res) => {
+router.get('/profile', authenticateCardholderToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, email, phone, company, title, is_verified, created_at, updated_at FROM digital_cardholders WHERE id = $1',
+      'SELECT id, name, email, phone, company, title, avatar_url, is_verified, preferences FROM digital_card_users WHERE id = $1',
       [req.user.id]
     );
 
@@ -184,20 +191,16 @@ router.get('/profile', authenticateToken, async (req, res) => {
 });
 
 // 更新用戶資料
-router.put('/profile', authenticateToken, async (req, res) => {
+router.put('/profile', authenticateCardholderToken, async (req, res) => {
   try {
-    const { name, phone, company, title } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ error: '姓名為必填欄位' });
-    }
+    const { name, phone, company, title, preferences } = req.body;
 
     const result = await pool.query(
-      `UPDATE digital_cardholders 
-       SET name = $1, phone = $2, company = $3, title = $4, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $5 
-       RETURNING id, name, email, phone, company, title, is_verified, created_at, updated_at`,
-      [name, phone, company, title, req.user.id]
+      `UPDATE digital_card_users 
+       SET name = $1, phone = $2, company = $3, title = $4, preferences = $5, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6 
+       RETURNING id, name, email, phone, company, title, avatar_url, is_verified, preferences`,
+      [name, phone, company, title, preferences, req.user.id]
     );
 
     if (result.rows.length === 0) {
@@ -205,39 +208,41 @@ router.put('/profile', authenticateToken, async (req, res) => {
     }
 
     res.json({
-      message: '用戶資料更新成功',
+      message: '資料更新成功',
       user: result.rows[0]
     });
 
   } catch (error) {
     console.error('更新用戶資料錯誤:', error);
-    res.status(500).json({ error: '更新用戶資料失敗' });
+    res.status(500).json({ error: '更新資料失敗' });
   }
 });
 
-// 收藏名片
-router.post('/collections', authenticateToken, async (req, res) => {
-  try {
-    const { member_card_id, notes, tags } = req.body;
+// ========== 名片收藏功能 ==========
 
-    if (!member_card_id) {
+// 收藏名片
+router.post('/collections', authenticateCardholderToken, async (req, res) => {
+  try {
+    const { card_id, notes, tags, folder_name } = req.body;
+
+    if (!card_id) {
       return res.status(400).json({ error: '名片ID為必填欄位' });
     }
 
-    // 檢查名片是否存在
+    // 檢查名片是否存在且為公開狀態
     const cardCheck = await pool.query(
-      'SELECT id FROM member_cards WHERE id = $1',
-      [member_card_id]
+      'SELECT id FROM nfc_member_cards WHERE id = $1 AND is_active = true AND is_public = true',
+      [card_id]
     );
 
     if (cardCheck.rows.length === 0) {
-      return res.status(404).json({ error: '名片不存在' });
+      return res.status(404).json({ error: '名片不存在或未公開' });
     }
 
     // 檢查是否已收藏
     const existingCollection = await pool.query(
-      'SELECT id FROM card_collections WHERE cardholder_id = $1 AND member_card_id = $2',
-      [req.user.id, member_card_id]
+      'SELECT id FROM nfc_card_collections WHERE user_id = $1 AND card_id = $2',
+      [req.user.id, card_id]
     );
 
     if (existingCollection.rows.length > 0) {
@@ -246,10 +251,10 @@ router.post('/collections', authenticateToken, async (req, res) => {
 
     // 新增收藏
     const result = await pool.query(
-      `INSERT INTO card_collections (cardholder_id, member_card_id, notes, tags) 
-       VALUES ($1, $2, $3, $4) 
+      `INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name) 
+       VALUES ($1, $2, $3, $4, $5) 
        RETURNING *`,
-      [req.user.id, member_card_id, notes, tags]
+      [req.user.id, card_id, notes, tags, folder_name]
     );
 
     res.status(201).json({
@@ -264,25 +269,28 @@ router.post('/collections', authenticateToken, async (req, res) => {
 });
 
 // 獲取收藏列表
-router.get('/collections', authenticateToken, async (req, res) => {
+router.get('/collections', authenticateCardholderToken, async (req, res) => {
   try {
-    const { page = 1, limit = 20, search, tags } = req.query;
+    const { page = 1, limit = 20, search, tags, folder, is_favorite } = req.query;
     const offset = (page - 1) * limit;
 
     let query = `
       SELECT 
-        cc.*,
-        mc.name as card_name,
-        mc.title as card_title,
-        mc.company as card_company,
-        mc.email as card_email,
-        mc.phone as card_phone,
-        mc.template_id,
-        u.name as member_name
-      FROM card_collections cc
-      JOIN member_cards mc ON cc.member_card_id = mc.id
-      JOIN users u ON mc.user_id = u.id
-      WHERE cc.cardholder_id = $1
+        ncc.*,
+        nmc.custom_url_slug,
+        nmc.view_count,
+        nct.name as template_name,
+        nct.category as template_category,
+        u.name as member_name,
+        u.email as member_email,
+        u.company as member_company,
+        u.title as member_title,
+        u.profile_picture_url
+      FROM nfc_card_collections ncc
+      JOIN nfc_member_cards nmc ON ncc.card_id = nmc.id
+      JOIN nfc_card_templates nct ON nmc.template_id = nct.id
+      JOIN users u ON nmc.user_id = u.id
+      WHERE ncc.user_id = $1 AND nmc.is_active = true AND nmc.is_public = true
     `;
 
     const queryParams = [req.user.id];
@@ -290,7 +298,7 @@ router.get('/collections', authenticateToken, async (req, res) => {
 
     // 搜尋功能
     if (search) {
-      query += ` AND (mc.name ILIKE $${paramIndex} OR mc.company ILIKE $${paramIndex} OR u.name ILIKE $${paramIndex})`;
+      query += ` AND (u.name ILIKE $${paramIndex} OR u.company ILIKE $${paramIndex} OR ncc.notes ILIKE $${paramIndex})`;
       queryParams.push(`%${search}%`);
       paramIndex++;
     }
@@ -298,12 +306,24 @@ router.get('/collections', authenticateToken, async (req, res) => {
     // 標籤篩選
     if (tags) {
       const tagArray = tags.split(',').map(tag => tag.trim());
-      query += ` AND cc.tags && $${paramIndex}`;
+      query += ` AND ncc.tags && $${paramIndex}`;
       queryParams.push(tagArray);
       paramIndex++;
     }
 
-    query += ` ORDER BY cc.collected_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    // 資料夾篩選
+    if (folder) {
+      query += ` AND ncc.folder_name = $${paramIndex}`;
+      queryParams.push(folder);
+      paramIndex++;
+    }
+
+    // 我的最愛篩選
+    if (is_favorite === 'true') {
+      query += ` AND ncc.is_favorite = true`;
+    }
+
+    query += ` ORDER BY ncc.collected_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     queryParams.push(limit, offset);
 
     const result = await pool.query(query, queryParams);
@@ -311,24 +331,35 @@ router.get('/collections', authenticateToken, async (req, res) => {
     // 獲取總數
     let countQuery = `
       SELECT COUNT(*) 
-      FROM card_collections cc
-      JOIN member_cards mc ON cc.member_card_id = mc.id
-      JOIN users u ON mc.user_id = u.id
-      WHERE cc.cardholder_id = $1
+      FROM nfc_card_collections ncc
+      JOIN nfc_member_cards nmc ON ncc.card_id = nmc.id
+      JOIN users u ON nmc.user_id = u.id
+      WHERE ncc.user_id = $1 AND nmc.is_active = true AND nmc.is_public = true
     `;
     const countParams = [req.user.id];
     let countParamIndex = 2;
 
     if (search) {
-      countQuery += ` AND (mc.name ILIKE $${countParamIndex} OR mc.company ILIKE $${countParamIndex} OR u.name ILIKE $${countParamIndex})`;
+      countQuery += ` AND (u.name ILIKE $${countParamIndex} OR u.company ILIKE $${countParamIndex} OR ncc.notes ILIKE $${countParamIndex})`;
       countParams.push(`%${search}%`);
       countParamIndex++;
     }
 
     if (tags) {
       const tagArray = tags.split(',').map(tag => tag.trim());
-      countQuery += ` AND cc.tags && $${countParamIndex}`;
+      countQuery += ` AND ncc.tags && $${countParamIndex}`;
       countParams.push(tagArray);
+      countParamIndex++;
+    }
+
+    if (folder) {
+      countQuery += ` AND ncc.folder_name = $${countParamIndex}`;
+      countParams.push(folder);
+      countParamIndex++;
+    }
+
+    if (is_favorite === 'true') {
+      countQuery += ` AND ncc.is_favorite = true`;
     }
 
     const countResult = await pool.query(countQuery, countParams);
@@ -337,10 +368,11 @@ router.get('/collections', authenticateToken, async (req, res) => {
     res.json({
       collections: result.rows,
       pagination: {
-        current_page: parseInt(page),
-        total_pages: Math.ceil(totalCount / limit),
-        total_count: totalCount,
-        per_page: parseInt(limit)
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount: totalCount,
+        hasNextPage: (page * limit) < totalCount,
+        hasPrevPage: page > 1
       }
     });
 
@@ -350,47 +382,47 @@ router.get('/collections', authenticateToken, async (req, res) => {
   }
 });
 
-// 更新收藏備註和標籤
-router.put('/collections/:id', authenticateToken, async (req, res) => {
+// 更新收藏資料
+router.put('/collections/:id', authenticateCardholderToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { notes, tags, is_favorite } = req.body;
+    const { notes, tags, is_favorite, folder_name } = req.body;
 
     const result = await pool.query(
-      `UPDATE card_collections 
-       SET notes = $1, tags = $2, is_favorite = $3, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $4 AND cardholder_id = $5 
+      `UPDATE nfc_card_collections 
+       SET notes = $1, tags = $2, is_favorite = $3, folder_name = $4, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5 AND user_id = $6 
        RETURNING *`,
-      [notes, tags, is_favorite, id, req.user.id]
+      [notes, tags, is_favorite, folder_name, id, req.user.id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: '收藏記錄不存在' });
+      return res.status(404).json({ error: '找不到此收藏記錄' });
     }
 
     res.json({
-      message: '收藏更新成功',
+      message: '收藏資料更新成功',
       collection: result.rows[0]
     });
 
   } catch (error) {
-    console.error('更新收藏錯誤:', error);
-    res.status(500).json({ error: '更新收藏失敗' });
+    console.error('更新收藏資料錯誤:', error);
+    res.status(500).json({ error: '更新收藏資料失敗' });
   }
 });
 
 // 刪除收藏
-router.delete('/collections/:id', authenticateToken, async (req, res) => {
+router.delete('/collections/:id', authenticateCardholderToken, async (req, res) => {
   try {
     const { id } = req.params;
 
     const result = await pool.query(
-      'DELETE FROM card_collections WHERE id = $1 AND cardholder_id = $2 RETURNING *',
+      'DELETE FROM nfc_card_collections WHERE id = $1 AND user_id = $2 RETURNING id',
       [id, req.user.id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: '收藏記錄不存在' });
+      return res.status(404).json({ error: '找不到此收藏記錄' });
     }
 
     res.json({ message: '收藏刪除成功' });
@@ -402,20 +434,92 @@ router.delete('/collections/:id', authenticateToken, async (req, res) => {
 });
 
 // 檢查名片是否已收藏
-router.get('/collections/check/:member_card_id', authenticateToken, async (req, res) => {
+router.get('/collections/check/:card_id', authenticateCardholderToken, async (req, res) => {
   try {
-    const { member_card_id } = req.params;
+    const { card_id } = req.params;
 
     const result = await pool.query(
-      'SELECT id FROM card_collections WHERE cardholder_id = $1 AND member_card_id = $2',
-      [req.user.id, member_card_id]
+      'SELECT id, is_favorite FROM nfc_card_collections WHERE user_id = $1 AND card_id = $2',
+      [req.user.id, card_id]
     );
 
-    res.json({ is_collected: result.rows.length > 0 });
+    res.json({
+      isCollected: result.rows.length > 0,
+      collectionData: result.rows[0] || null
+    });
 
   } catch (error) {
     console.error('檢查收藏狀態錯誤:', error);
     res.status(500).json({ error: '檢查收藏狀態失敗' });
+  }
+});
+
+// 獲取資料夾列表
+router.get('/folders', authenticateCardholderToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT folder_name, COUNT(*) as card_count
+       FROM nfc_card_collections 
+       WHERE user_id = $1 AND folder_name IS NOT NULL
+       GROUP BY folder_name
+       ORDER BY folder_name ASC`,
+      [req.user.id]
+    );
+
+    res.json({ folders: result.rows });
+
+  } catch (error) {
+    console.error('獲取資料夾列表錯誤:', error);
+    res.status(500).json({ error: '獲取資料夾列表失敗' });
+  }
+});
+
+// 獲取統計數據
+router.get('/stats', authenticateCardholderToken, async (req, res) => {
+  try {
+    // 總收藏數
+    const totalCollections = await pool.query(
+      'SELECT COUNT(*) as count FROM nfc_card_collections WHERE user_id = $1',
+      [req.user.id]
+    );
+
+    // 我的最愛數
+    const favoriteCount = await pool.query(
+      'SELECT COUNT(*) as count FROM nfc_card_collections WHERE user_id = $1 AND is_favorite = true',
+      [req.user.id]
+    );
+
+    // 資料夾數
+    const folderCount = await pool.query(
+      'SELECT COUNT(DISTINCT folder_name) as count FROM nfc_card_collections WHERE user_id = $1 AND folder_name IS NOT NULL',
+      [req.user.id]
+    );
+
+    // 最近收藏的名片
+    const recentCollections = await pool.query(
+      `SELECT 
+         ncc.collected_at,
+         u.name as member_name,
+         u.company as member_company
+       FROM nfc_card_collections ncc
+       JOIN nfc_member_cards nmc ON ncc.card_id = nmc.id
+       JOIN users u ON nmc.user_id = u.id
+       WHERE ncc.user_id = $1
+       ORDER BY ncc.collected_at DESC
+       LIMIT 5`,
+      [req.user.id]
+    );
+
+    res.json({
+      totalCollections: parseInt(totalCollections.rows[0].count),
+      favoriteCount: parseInt(favoriteCount.rows[0].count),
+      folderCount: parseInt(folderCount.rows[0].count),
+      recentCollections: recentCollections.rows
+    });
+
+  } catch (error) {
+    console.error('獲取統計數據錯誤:', error);
+    res.status(500).json({ error: '獲取統計數據失敗' });
   }
 });
 

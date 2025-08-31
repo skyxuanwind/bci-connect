@@ -31,9 +31,8 @@ import GuestRegistration from './pages/GuestRegistration';
 
 import ProspectVoting from './pages/ProspectVoting';
 import ProspectApplication from './pages/ProspectApplication';
-import PublicMemberCard from './components/MemberCard/PublicMemberCard';
-import MemberCardEditor from './components/MemberCard/MemberCardEditor';
-import CardholderRoutes from './components/DigitalCardHolder/CardholderRoutes';
+
+
 import ProspectDetail from './pages/ProspectDetail';
 import BlacklistManagement from './pages/BlacklistManagement';
 import FinancialStatement from './pages/FinancialStatement';
@@ -49,7 +48,12 @@ import NotificationsPage from './pages/NotificationsPage';
 
 import AIProfilePage from './pages/AIProfilePage';
 import AINotificationTestPage from './pages/AINotificationTestPage';
-// NFC 功能已整合到 CheckInScanner 中
+
+// NFC 電子名片系統組件
+import PublicNFCCard from './components/NFCCard/PublicNFCCard';
+import NFCCardEditor from './components/NFCCard/NFCCardEditor';
+import CardholderAuth from './components/DigitalCardHolder/CardholderAuth';
+import CardholderDashboard from './components/DigitalCardHolder/CardholderDashboard';
 
 
 function App() {
@@ -106,19 +110,9 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/member-card-editor" element={
-            <ProtectedRoute>
-              <Layout>
-                <MemberCardEditor />
-              </Layout>
-            </ProtectedRoute>
-          } />
+
           
-          {/* Public Member Card Route - No authentication required */}
-          <Route path="/member/:userId" element={<PublicMemberCard />} />
-          
-          {/* Digital Cardholder Routes - No authentication required for auth page */}
-          <Route path="/cardholder/*" element={<CardholderRoutes />} />
+
           
 
           
@@ -195,6 +189,25 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } />
+          
+          {/* NFC 電子名片系統路由 */}
+          {/* 公開名片頁面 - 無需登入 */}
+          <Route path="/nfc-card/:cardId" element={<PublicNFCCard />} />
+          
+          {/* NFC 名片編輯器 - 需要登入 */}
+          <Route path="/nfc-card-editor" element={
+            <ProtectedRoute>
+              <Layout>
+                <NFCCardEditor />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          {/* 數位名片夾認證頁面 - 無需登入 */}
+          <Route path="/cardholder-auth" element={<CardholderAuth />} />
+          
+          {/* 數位名片夾儀表板 - 需要數位名片夾登入 */}
+          <Route path="/cardholder-dashboard" element={<CardholderDashboard />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={

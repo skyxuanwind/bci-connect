@@ -343,65 +343,91 @@ const initializeDatabase = async () => {
       )
     `);
 
-    // Create member_cards table (NFC電子名片主表)
+
+
+
+
+
+
+    // ========== NFC 電子名片系統 ==========
+    
+    // Create nfc_card_templates table (電子名片視覺模板)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS member_cards (
+      CREATE TABLE IF NOT EXISTS nfc_card_templates (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        category VARCHAR(50) NOT NULL CHECK (category IN ('tech-professional', 'creative-vibrant', 'minimal-elegant')),
+        css_config JSONB NOT NULL,
+        preview_image_url VARCHAR(500),
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create nfc_member_cards table (會員電子名片主表)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS nfc_member_cards (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        template_id VARCHAR(50) DEFAULT 'professional',
+        template_id INTEGER NOT NULL REFERENCES nfc_card_templates(id),
         is_active BOOLEAN DEFAULT true,
+        is_public BOOLEAN DEFAULT true,
         view_count INTEGER DEFAULT 0,
+        share_count INTEGER DEFAULT 0,
+        vcard_download_count INTEGER DEFAULT 0,
+        custom_url_slug VARCHAR(100) UNIQUE,
+        seo_title VARCHAR(200),
+        seo_description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id)
       )
     `);
 
-    // Create card_content_blocks table (電子名片內容區塊)
+    // Create nfc_content_blocks table (內容區塊)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS card_content_blocks (
+      CREATE TABLE IF NOT EXISTS nfc_content_blocks (
         id SERIAL PRIMARY KEY,
-        card_id INTEGER NOT NULL REFERENCES member_cards(id) ON DELETE CASCADE,
-        block_type VARCHAR(20) NOT NULL CHECK (block_type IN ('text', 'link', 'video', 'image', 'social', 'contact', 'location', 'skills', 'experience', 'education', 'portfolio', 'testimonial', 'achievement', 'service', 'pricing', 'calendar', 'qrcode', 'gallery', 'map', 'countdown')),
+        card_id INTEGER NOT NULL REFERENCES nfc_member_cards(id) ON DELETE CASCADE,
+        block_type VARCHAR(20) NOT NULL CHECK (block_type IN ('text', 'link', 'video', 'image', 'social', 'map')),
         title VARCHAR(200),
         content TEXT,
-        url VARCHAR(500),
+        url VARCHAR(1000),
         image_url VARCHAR(500),
         social_platform VARCHAR(50),
+        map_address TEXT,
+        map_coordinates JSONB,
         display_order INTEGER DEFAULT 0,
         is_visible BOOLEAN DEFAULT true,
+        custom_styles JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Create card_templates table (視覺模板)
+    // Create nfc_card_analytics table (名片分析數據)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS card_templates (
-        id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        description TEXT,
-        css_styles JSONB,
-        is_active BOOLEAN DEFAULT true,
+      CREATE TABLE IF NOT EXISTS nfc_card_analytics (
+        id SERIAL PRIMARY KEY,
+        card_id INTEGER NOT NULL REFERENCES nfc_member_cards(id) ON DELETE CASCADE,
+        event_type VARCHAR(50) NOT NULL CHECK (event_type IN ('view', 'share', 'vcard_download', 'contact_click')),
+        visitor_ip VARCHAR(45),
+        visitor_user_agent TEXT,
+        referrer VARCHAR(500),
+        device_type VARCHAR(50),
+        browser VARCHAR(50),
+        location_country VARCHAR(100),
+        location_city VARCHAR(100),
+        additional_data JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Create card_visits table (名片瀏覽記錄)
+    // Create digital_card_users table (數位名片夾用戶系統)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS card_visits (
-        id SERIAL PRIMARY KEY,
-        card_id INTEGER NOT NULL REFERENCES member_cards(id) ON DELETE CASCADE,
-        visitor_ip VARCHAR(45),
-        visitor_user_agent TEXT,
-        referrer VARCHAR(500),
-        visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create digital_cardholders table (數位名片夾用戶)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS digital_cardholders (
+      CREATE TABLE IF NOT EXISTS digital_card_users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
@@ -409,28 +435,43 @@ const initializeDatabase = async () => {
         phone VARCHAR(20),
         company VARCHAR(200),
         title VARCHAR(100),
+        avatar_url VARCHAR(500),
         is_verified BOOLEAN DEFAULT false,
         verification_token VARCHAR(255),
         reset_token VARCHAR(255),
         reset_token_expiry TIMESTAMP,
+        preferences JSONB DEFAULT '{}',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Create card_collections table (名片收藏)
+    // Create nfc_card_collections table (名片收藏)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS card_collections (
+      CREATE TABLE IF NOT EXISTS nfc_card_collections (
         id SERIAL PRIMARY KEY,
-        cardholder_id INTEGER NOT NULL REFERENCES digital_cardholders(id) ON DELETE CASCADE,
-        member_card_id INTEGER NOT NULL REFERENCES member_cards(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES digital_card_users(id) ON DELETE CASCADE,
+        card_id INTEGER NOT NULL REFERENCES nfc_member_cards(id) ON DELETE CASCADE,
         notes TEXT,
         tags TEXT[],
         is_favorite BOOLEAN DEFAULT false,
+        folder_name VARCHAR(100),
         collected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(cardholder_id, member_card_id)
+        UNIQUE(user_id, card_id)
       )
+    `);
+
+    // Insert default card templates
+    await pool.query(`
+      INSERT INTO nfc_card_templates (name, description, category, css_config) VALUES 
+        ('科技專業版', '具備深色與淺色模式切換，資訊區塊採卡片式設計，背景帶有科技或抽象的幾何漸變，圖標現代且線條感強', 'tech-professional', 
+         '{"primaryColor": "#1e293b", "secondaryColor": "#64748b", "backgroundColor": "#0f172a", "accentColor": "#3b82f6", "gradientFrom": "#1e293b", "gradientTo": "#334155", "fontFamily": "Inter, sans-serif", "cardShadow": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "borderRadius": "16px", "hasLightMode": true, "hasDarkMode": true, "iconStyle": "modern-line"}'),
+        ('活力創意版', '色彩鮮明活潑，使用柔和的波浪形狀或有機曲線作為背景，按鈕設計具備漸變或特殊陰影，排版靈活', 'creative-vibrant', 
+         '{"primaryColor": "#f59e0b", "secondaryColor": "#ec4899", "backgroundColor": "#fef3c7", "accentColor": "#8b5cf6", "gradientFrom": "#f59e0b", "gradientTo": "#ec4899", "fontFamily": "Poppins, sans-serif", "cardShadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", "borderRadius": "24px", "hasWaveBackground": true, "buttonGradient": true, "layoutStyle": "flexible"}'),
+        ('簡約質感版', '設計簡潔線條俐落，注重留白，選用自然色調，圖標和字體極簡且具質感，排版整齊對稱', 'minimal-elegant', 
+         '{"primaryColor": "#374151", "secondaryColor": "#9ca3af", "backgroundColor": "#ffffff", "accentColor": "#059669", "naturalColor1": "#f3f4f6", "naturalColor2": "#e5e7eb", "fontFamily": "Inter, sans-serif", "cardShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)", "borderRadius": "8px", "minimalist": true, "spacing": "large", "layoutStyle": "symmetric"}')
+      ON CONFLICT DO NOTHING
     `);
 
     // Create member_wishes table (會員許願版)
@@ -515,26 +556,7 @@ const initializeDatabase = async () => {
       )
     `);
 
-    // Insert default card templates
-    await pool.query(`
-      INSERT INTO card_templates (id, name, description, css_styles) VALUES 
-        ('tech-professional', '科技專業版', '具備深色與淺色模式切換，資訊區塊採卡片式設計，背景帶有科技或抽象的幾何漸變', '{"primaryColor": "#1e293b", "secondaryColor": "#64748b", "backgroundColor": "#0f172a", "accentColor": "#3b82f6", "gradientFrom": "#1e293b", "gradientTo": "#334155", "fontFamily": "Inter, sans-serif", "cardShadow": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "borderRadius": "16px", "hasLightMode": true, "hasDarkMode": true}'),
-        ('creative-vibrant', '活力創意版', '色彩鮮明活潑，使用柔和的波浪形狀或有機曲線作為背景，按鈕設計具備漸變或特殊陰影', '{"primaryColor": "#f59e0b", "secondaryColor": "#ec4899", "backgroundColor": "#fef3c7", "accentColor": "#8b5cf6", "gradientFrom": "#f59e0b", "gradientTo": "#ec4899", "fontFamily": "Poppins, sans-serif", "cardShadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", "borderRadius": "24px", "hasWaveBackground": true, "buttonGradient": true}'),
-        ('minimal-elegant', '簡約質感版', '設計簡潔線條俐落，注重留白，可選用單一或兩種自然色調，圖標和字體極簡且具質感', '{"primaryColor": "#374151", "secondaryColor": "#9ca3af", "backgroundColor": "#ffffff", "accentColor": "#059669", "naturalColor1": "#f3f4f6", "naturalColor2": "#e5e7eb", "fontFamily": "Inter, sans-serif", "cardShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)", "borderRadius": "8px", "minimalist": true, "spacing": "large"}')
-      ON CONFLICT (id) DO NOTHING
-    `);
 
-    // Update card_content_blocks block_type constraint to support more types
-    await pool.query(`
-      ALTER TABLE card_content_blocks 
-      DROP CONSTRAINT IF EXISTS card_content_blocks_block_type_check
-    `);
-    
-    await pool.query(`
-      ALTER TABLE card_content_blocks 
-      ADD CONSTRAINT card_content_blocks_block_type_check 
-      CHECK (block_type IN ('text', 'link', 'video', 'image', 'social', 'contact', 'location', 'skills', 'experience', 'education', 'portfolio', 'testimonial', 'achievement', 'service', 'pricing', 'calendar', 'qrcode', 'gallery', 'map', 'countdown'))
-    `);
 
     // Create indexes for better performance
     await pool.query(`
@@ -543,9 +565,21 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_judgments_case_type ON judgments(case_type);
       CREATE INDEX IF NOT EXISTS idx_judgments_content_search ON judgments USING gin(to_tsvector('english', judgment_content));
       CREATE INDEX IF NOT EXISTS idx_sync_logs_date ON judgment_sync_logs(sync_date);
-      CREATE INDEX IF NOT EXISTS idx_card_content_blocks_card_id ON card_content_blocks(card_id);
-      CREATE INDEX IF NOT EXISTS idx_card_visits_card_id ON card_visits(card_id);
-      CREATE INDEX IF NOT EXISTS idx_member_cards_user_id ON member_cards(user_id);
+      
+      -- NFC 電子名片系統索引
+      CREATE INDEX IF NOT EXISTS idx_nfc_member_cards_user_id ON nfc_member_cards(user_id);
+      CREATE INDEX IF NOT EXISTS idx_nfc_member_cards_custom_url_slug ON nfc_member_cards(custom_url_slug);
+      CREATE INDEX IF NOT EXISTS idx_nfc_member_cards_is_active ON nfc_member_cards(is_active);
+      CREATE INDEX IF NOT EXISTS idx_nfc_content_blocks_card_id ON nfc_content_blocks(card_id);
+      CREATE INDEX IF NOT EXISTS idx_nfc_content_blocks_display_order ON nfc_content_blocks(display_order);
+      CREATE INDEX IF NOT EXISTS idx_nfc_card_analytics_card_id ON nfc_card_analytics(card_id);
+      CREATE INDEX IF NOT EXISTS idx_nfc_card_analytics_event_type ON nfc_card_analytics(event_type);
+      CREATE INDEX IF NOT EXISTS idx_nfc_card_analytics_created_at ON nfc_card_analytics(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_nfc_card_collections_user_id ON nfc_card_collections(user_id);
+      CREATE INDEX IF NOT EXISTS idx_nfc_card_collections_card_id ON nfc_card_collections(card_id);
+      CREATE INDEX IF NOT EXISTS idx_nfc_card_templates_category ON nfc_card_templates(category);
+      CREATE INDEX IF NOT EXISTS idx_nfc_card_templates_is_active ON nfc_card_templates(is_active);
+      
       CREATE INDEX IF NOT EXISTS idx_member_wishes_user_id ON member_wishes(user_id);
       CREATE INDEX IF NOT EXISTS idx_member_wishes_status ON member_wishes(status);
       CREATE INDEX IF NOT EXISTS idx_member_wishes_category ON member_wishes(category);
