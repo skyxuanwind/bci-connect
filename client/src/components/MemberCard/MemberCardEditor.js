@@ -42,16 +42,12 @@ const MemberCardEditor = () => {
 
   // 模板數據
   const templates = [
-    { id: 1, name: '商務專業', category: 'business', color: '#1E40AF' },
-    { id: 2, name: '創意設計', category: 'creative', color: '#7C3AED' },
-    { id: 3, name: '現代時尚', category: 'modern', color: '#059669' },
-    { id: 4, name: '奢華典雅', category: 'luxury', color: '#B45309' },
-    { id: 5, name: '科技未來', category: 'tech', color: '#0891B2' },
-    { id: 6, name: '自然清新', category: 'nature', color: '#16A34A' },
-    { id: 7, name: '溫暖舒適', category: 'warm', color: '#EA580C' },
-    { id: 8, name: '極簡風格', category: 'minimal', color: '#6B7280' },
-    { id: 9, name: '暗黑模式', category: 'dark', color: '#1F2937' },
-    { id: 10, name: '清涼色調', category: 'cool', color: '#0284C7' }
+    { id: 'professional', name: '簡約專業版', category: 'business', color: '#1f2937' },
+    { id: 'dynamic', name: '活力動感版', category: 'creative', color: '#3b82f6' },
+    { id: 'elegant', name: '經典典雅版', category: 'modern', color: '#059669' },
+    { id: 'minimal-dark', name: '極簡暗色版', category: 'luxury', color: '#111827' },
+    { id: 'card', name: '卡片式風格', category: 'tech', color: '#2563eb' },
+    { id: 'neumorphism', name: '新擬物風格', category: 'nature', color: '#334155' }
   ];
 
   // 載入電子名片資料
@@ -82,7 +78,7 @@ const MemberCardEditor = () => {
     
     debounceTimers.current[blockId] = setTimeout(async () => {
       try {
-        await axios.put(`/api/member-cards/blocks/${blockId}`, data);
+        await axios.put(`/api/member-cards/content-block/${blockId}`, data);
       } catch (error) {
         console.error('更新內容區塊失敗:', error);
       }
@@ -108,10 +104,11 @@ const MemberCardEditor = () => {
   // 新增內容區塊
   const addContentBlock = async (type) => {
     try {
-      const response = await axios.post('/api/member-cards/blocks', {
-        type,
-        content: getDefaultContent(type),
-        order_index: contentBlocks.length
+      const response = await axios.post('/api/member-cards/content-block', {
+        block_type: type,
+        title: '',
+        content: JSON.stringify(getDefaultContent(type)),
+        display_order: contentBlocks.length
       });
       
       setContentBlocks(prev => [...prev, response.data.block]);
@@ -123,7 +120,7 @@ const MemberCardEditor = () => {
   // 刪除內容區塊
   const deleteContentBlock = async (blockId) => {
     try {
-      await axios.delete(`/api/member-cards/blocks/${blockId}`);
+      await axios.delete(`/api/member-cards/content-block/${blockId}`);
       setContentBlocks(prev => prev.filter(block => block.id !== blockId));
     } catch (error) {
       console.error('刪除內容區塊失敗:', error);
@@ -133,7 +130,7 @@ const MemberCardEditor = () => {
   // 重新排序區塊
   const reorderBlocks = async (newOrder) => {
     try {
-      await axios.put('/api/member-cards/blocks/reorder', { blocks: newOrder });
+      await axios.put('/api/member-cards/reorder-blocks', { blocks: newOrder });
       setContentBlocks(newOrder);
     } catch (error) {
       console.error('重新排序失敗:', error);
@@ -151,10 +148,10 @@ const MemberCardEditor = () => {
     const newBlocks = [...contentBlocks];
     [newBlocks[currentIndex], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[currentIndex]];
     
-    // 更新 order_index
+    // 更新 display_order
     const updatedBlocks = newBlocks.map((block, index) => ({
       ...block,
-      order_index: index
+      display_order: index
     }));
     
     reorderBlocks(updatedBlocks);
@@ -203,7 +200,7 @@ const MemberCardEditor = () => {
   // 模板相關函數
   const handleTemplateChange = async (templateId) => {
     try {
-      await axios.put('/api/member-cards/template', { template_id: templateId });
+      await axios.put('/api/member-cards/template', { templateId: templateId });
       setCardData(prev => ({ ...prev, template_id: templateId }));
     } catch (error) {
       console.error('更新模板失敗:', error);
