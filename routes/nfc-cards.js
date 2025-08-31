@@ -3,7 +3,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { pool } = require('../config/database');
-const authenticateToken = require('../middleware/auth');
+- const authenticateToken = require('../middleware/auth');
++ const { authenticateToken } = require('../middleware/auth');
 const vCard = require('vcards-js');
 const router = express.Router();
 
