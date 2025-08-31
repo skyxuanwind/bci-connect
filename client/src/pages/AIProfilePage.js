@@ -322,7 +322,7 @@ const AIProfilePage = () => {
                         );
                       default:
                         return (
-                          <a href="/smart-collaboration" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 whitespace-nowrap">智慧合作儀表板</a>
+                          <a href="/notifications" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 whitespace-nowrap">AI 智慧通知</a>
                         );
                     }
                   })()}
@@ -354,8 +354,8 @@ const AIProfilePage = () => {
         <h3 className="text-lg font-medium text-gray-900 mt-6 mb-3">如何使用 AI 智慧合作網絡</h3>
         <ul className="list-disc pl-6 space-y-2 text-gray-700">
           <li>
-            在「智慧合作儀表板」查看個人化洞察與動態建議。
-            <a href="/smart-collaboration" className="ml-2 text-primary-600 hover:underline">前往儀表板</a>
+            透過「AI 智慧通知」接收個人化洞察與動態建議。
+            <a href="/notifications" className="ml-2 text-primary-600 hover:underline">查看通知</a>
           </li>
           <li>
             使用「轉介系統」與「會議排程」快速建立合作：
