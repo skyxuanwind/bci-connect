@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Container,
   Grid,
@@ -17,7 +17,6 @@ import {
   IconButton,
   Badge,
   Alert,
-  Divider,
   LinearProgress,
   Paper,
   Stack,
@@ -33,8 +32,6 @@ import {
   Notifications as NotificationsIcon,
   NotificationsActive as NotificationsActiveIcon,
   Psychology as PsychologyIcon,
-  Business as BusinessIcon,
-  Group as GroupIcon,
   TrendingUp as TrendingUpIcon,
   Star as StarIcon,
   CheckCircle as CheckCircleIcon,
@@ -57,7 +54,7 @@ const AINotificationTestPage = () => {
   const [animationKey, setAnimationKey] = useState(0);
 
   // 模擬通知數據
-  const mockNotifications = [
+  const mockNotifications = useMemo(() => [
     {
       id: 1,
       type: 'collaboration_opportunity',
@@ -135,7 +132,7 @@ const AINotificationTestPage = () => {
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1天前
       readAt: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString()
     }
-  ];
+  ], []);
 
   // 通知類型配置
   const notificationTypes = {
@@ -173,14 +170,14 @@ const AINotificationTestPage = () => {
   };
 
   // 載入模擬數據
-  const loadMockData = () => {
+  const loadMockData = useCallback(() => {
     setLoading(true);
     setTimeout(() => {
       setNotifications(mockNotifications);
       setLoading(false);
       setAnimationKey(prev => prev + 1);
     }, 1000);
-  };
+  }, [mockNotifications]);
 
   // 標記通知為已讀
   const markAsRead = (notificationId) => {
@@ -228,7 +225,7 @@ const AINotificationTestPage = () => {
 
   useEffect(() => {
     loadMockData();
-  }, []);
+  }, [loadMockData]);
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>

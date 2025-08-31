@@ -98,15 +98,24 @@ const WishesPage = () => {
         }
       });
       if (response.data.success) {
-        setWishes(response.data.data.items);
+        const items = response.data?.data?.items;
+        setWishes(Array.isArray(items) ? items : []);
+        const pageData = response.data?.data || {};
         setPagination({
-          page: response.data.data.page,
-          totalPages: response.data.data.totalPages,
-          total: response.data.data.total
+          page: pageData.page || 1,
+          totalPages: pageData.totalPages || 1,
+          total: pageData.total || 0
         });
+      } else {
+        // 如果後端回應 success=false，保守處理為空清單，避免渲染錯誤
+        setWishes([]);
+        setPagination(prev => ({ ...prev, page: 1, totalPages: 1, total: 0 }));
       }
     } catch (error) {
       console.error('載入願望失敗:', error);
+      // 發生錯誤時也保守設為空陣列，避免 wishes 為 undefined 造成渲染錯誤
+      setWishes([]);
+      setPagination(prev => ({ ...prev, page: 1, totalPages: 1, total: 0 }));
     } finally {
       setLoading(false);
     }
@@ -331,7 +340,7 @@ const WishesPage = () => {
             </Grid>
           ))}
         </Grid>
-      ) : wishes.length === 0 ? (
+      ) : !Array.isArray(wishes) || wishes.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <PsychologyIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -372,9 +381,9 @@ const WishesPage = () => {
 
                     {/* 描述 */}
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {wish.description.length > 150 
-                        ? `${wish.description.substring(0, 150)}...` 
-                        : wish.description
+                      {(wish.description || '').length > 150 
+                        ? `${(wish.description || '').substring(0, 150)}...` 
+                        : (wish.description || '')
                       }
                     </Typography>
 
@@ -605,27 +614,31 @@ const WishesPage = () => {
                   {/* 發布者信息 */}
                   <Card variant="outlined" sx={{ mb: 2 }}>
                     <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar 
-                          src={selectedWish.user.profilePicture} 
-                          sx={{ width: 48, height: 48, mr: 2 }}
-                        >
-                          {selectedWish.user.name.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="h6">
-                            {selectedWish.user.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {selectedWish.user.company}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {selectedWish.user.industry}
-                          </Typography>
+                      {selectedWish && selectedWish.user ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                          <Avatar 
+                            src={selectedWish.user.profilePicture} 
+                            sx={{ width: 48, height: 48, mr: 2 }}
+                          >
+                            {selectedWish.user.name?.charAt(0) || ''}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="h6">
+                              {selectedWish.user.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {selectedWish.user.company}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {selectedWish.user.industry}
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">無可顯示的用戶資訊</Typography>
+                      )}
                       
-                      {selectedWish.user.id !== user.id && (
+                      {selectedWish && selectedWish.user && selectedWish.user.id !== user.id && (
                         <Button fullWidth variant="contained">
                           發起面談
                         </Button>
@@ -634,7 +647,7 @@ const WishesPage = () => {
                   </Card>
 
                   {/* 匹配結果（僅許願發布者可見） */}
-                  {selectedWish.user.id === user.id && matchingResults.length > 0 && (
+                  {selectedWish && selectedWish.user && selectedWish.user.id === user.id && Array.isArray(matchingResults) && matchingResults.length > 0 && (
                     <Card variant="outlined">
                       <CardContent>
                         <Typography variant="h6" gutterBottom>
