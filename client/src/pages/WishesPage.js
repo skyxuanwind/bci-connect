@@ -270,11 +270,12 @@ const WishesPage = () => {
             </Grid>
             <Grid item xs={12} md={3}>
               <FormControl fullWidth sx={{ minWidth: 160 }}>
-                <InputLabel>分類</InputLabel>
+                <InputLabel id="wish-filter-category-label" sx={{ whiteSpace: 'nowrap' }}>分類</InputLabel>
                 <Select
                   value={filters.category}
                   onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
                   label="分類"
+                  labelId="wish-filter-category-label"
                   MenuProps={{
                     PaperProps: {
                       style: {
@@ -303,11 +304,12 @@ const WishesPage = () => {
             </Grid>
             <Grid item xs={12} md={3}>
               <FormControl fullWidth sx={{ minWidth: 160 }}>
-                <InputLabel>狀態</InputLabel>
+                <InputLabel id="wish-filter-status-label" sx={{ whiteSpace: 'nowrap' }}>狀態</InputLabel>
                 <Select
                   value={filters.status}
                   onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
                   label="狀態"
+                  labelId="wish-filter-status-label"
                   MenuProps={{
                     PaperProps: {
                       style: {

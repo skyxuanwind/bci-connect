@@ -87,66 +87,68 @@ const WishFormDialog = ({
 
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>分類</InputLabel>
-                <Select
-                  value={form.category}
-                  onChange={handleChange('category')}
-                  label="分類"
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        maxHeight: 300,
-                        zIndex: 1400
-                      }
-                    },
-                    anchorOrigin: {
-                      vertical: 'bottom',
-                      horizontal: 'left'
-                    },
-                    transformOrigin: {
-                      vertical: 'top',
-                      horizontal: 'left'
-                    }
-                  }}
-                >
-                  {categoryOptions.map((cat) => (
-                    <MenuItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <FormControl fullWidth sx={{ mb: 2, minWidth: 200 }}>
+                <InputLabel id="wish-dialog-category-label" sx={{ whiteSpace: 'nowrap' }}>分類</InputLabel>
+                 <Select
+                   value={form.category}
+                   onChange={handleChange('category')}
+                   label="分類"
+                   labelId="wish-dialog-category-label"
+                   MenuProps={{
+                     PaperProps: {
+                       style: {
+                         maxHeight: 300,
+                         zIndex: 1400
+                       }
+                     },
+                     anchorOrigin: {
+                       vertical: 'bottom',
+                       horizontal: 'left'
+                     },
+                     transformOrigin: {
+                       vertical: 'top',
+                       horizontal: 'left'
+                     }
+                   }}
+                 >
+                   {categoryOptions.map((cat) => (
+                     <MenuItem key={cat.value} value={cat.value}>
+                       {cat.label}
+                     </MenuItem>
+                   ))}
+                 </Select>
+               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>優先級</InputLabel>
-                <Select
-                  value={form.priority}
-                  onChange={handleChange('priority')}
-                  label="優先級"
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        maxHeight: 300,
-                        zIndex: 1400
-                      }
-                    },
-                    anchorOrigin: {
-                      vertical: 'bottom',
-                      horizontal: 'left'
-                    },
-                    transformOrigin: {
-                      vertical: 'top',
-                      horizontal: 'left'
-                    }
-                  }}
-                >
-                  <MenuItem value={1}>一般</MenuItem>
-                  <MenuItem value={2}>重要</MenuItem>
-                  <MenuItem value={3}>緊急</MenuItem>
-                </Select>
-              </FormControl>
+              <FormControl fullWidth sx={{ mb: 2, minWidth: 180 }}>
+                <InputLabel id="wish-dialog-priority-label" sx={{ whiteSpace: 'nowrap' }}>優先級</InputLabel>
+                 <Select
+                   value={form.priority}
+                   onChange={handleChange('priority')}
+                   label="優先級"
+                   labelId="wish-dialog-priority-label"
+                   MenuProps={{
+                     PaperProps: {
+                       style: {
+                         maxHeight: 300,
+                         zIndex: 1400
+                       }
+                     },
+                     anchorOrigin: {
+                       vertical: 'bottom',
+                       horizontal: 'left'
+                     },
+                     transformOrigin: {
+                       vertical: 'top',
+                       horizontal: 'left'
+                     }
+                   }}
+                 >
+                   <MenuItem value={1}>一般</MenuItem>
+                   <MenuItem value={2}>重要</MenuItem>
+                   <MenuItem value={3}>緊急</MenuItem>
+                 </Select>
+               </FormControl>
             </Grid>
           </Grid>
 
