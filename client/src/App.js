@@ -47,6 +47,7 @@ import WishesPage from './pages/WishesPage';
 import NotificationsPage from './pages/NotificationsPage';
 import SmartCollaborationDashboard from './components/SmartCollaborationDashboard';
 import AIProfilePage from './pages/AIProfilePage';
+import AINotificationTestPage from './pages/AINotificationTestPage';
 // NFC 功能已整合到 CheckInScanner 中
 
 
@@ -185,6 +186,14 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <AIProfilePage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/ai-notification-test" element={
+            <ProtectedRoute>
+              <Layout>
+                <AINotificationTestPage />
               </Layout>
             </ProtectedRoute>
           } />
