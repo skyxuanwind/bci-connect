@@ -19,36 +19,29 @@ import {
   DialogContent,
   DialogActions,
   Pagination,
-  Alert,
   Skeleton,
   Fab,
   IconButton,
-  Tooltip,
   Menu,
   ListItemIcon,
   ListItemText,
-  Divider,
   Tab,
   Tabs
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
-  FilterList as FilterListIcon,
   Visibility as VisibilityIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   MoreVert as MoreVertIcon,
-  Psychology as PsychologyIcon,
-  TrendingUp as TrendingUpIcon,
-  Schedule as ScheduleIcon,
-  Business as BusinessIcon,
-  Star as StarIcon
+  Psychology as PsychologyIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import WishFormDialog, { defaultWishCategories } from '../components/WishFormDialog';
 
 const WishesPage = () => {
   const { user } = useAuth();
@@ -56,6 +49,13 @@ const WishesPage = () => {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    status: 'active',
+    userId: ''
+  });
+  // 實際用於查詢的已套用篩選（只有按下「搜尋」或切換分頁標籤時才更新）
+  const [appliedFilters, setAppliedFilters] = useState({
     search: '',
     category: '',
     status: 'active',
@@ -81,91 +81,65 @@ const WishesPage = () => {
   });
   const [submittingWish, setSubmittingWish] = useState(false);
 
-  // 分類選項
-  const categories = [
-    { value: 'marketing', label: '行銷合作' },
-    { value: 'technology', label: '技術合作' },
-    { value: 'supply_chain', label: '供應鏈合作' },
-    { value: 'investment', label: '投資機會' },
-    { value: 'partnership', label: '策略夥伴' },
-    { value: 'other', label: '其他' }
-  ];
+  // 分類選項（改用共用預設）
+  const categories = defaultWishCategories;
 
-  // 載入許願列表
-  const loadWishes = async (page = 1) => {
+  // 載入願望列表（useCallback 以精準依賴）
+  const loadWishes = React.useCallback(async (page = 1) => {
     try {
       setLoading(true);
-      
-      const params = {
-        page,
-        limit: 12,
-        ...filters
-      };
-
-      // 根據標籤頁調整篩選
-      if (tabValue === 1) {
-        params.userId = user.id; // 我的許願
-      } else if (tabValue === 0) {
-        delete params.userId; // 全部許願
-      }
-
-      const response = await api.get('/api/wishes', { params });
-      
-      if (response.data.success) {
-        setWishes(response.data.data.wishes);
-        setPagination(response.data.data.pagination);
-      }
-    } catch (error) {
-      console.error('載入許願失敗:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 搜尋許願
-  const handleSearch = async () => {
-    if (!filters.search.trim()) {
-      loadWishes(1);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      const response = await api.post('/api/wishes/search', {
-        query: filters.search,
-        filters: {
-          category: filters.category,
-          limit: 12
+      const response = await api.get('/api/wishes', {
+        params: {
+          page,
+          search: appliedFilters.search,
+          category: appliedFilters.category,
+          status: appliedFilters.status,
+          userId: tabValue === 1 ? user?.id : ''
         }
       });
-      
       if (response.data.success) {
-        setWishes(response.data.data.wishes);
-        setPagination({ page: 1, totalPages: 1, total: response.data.data.totalResults });
+        setWishes(response.data.data.items);
+        setPagination({
+          page: response.data.data.page,
+          totalPages: response.data.data.totalPages,
+          total: response.data.data.total
+        });
       }
     } catch (error) {
-      console.error('搜尋許願失敗:', error);
+      console.error('載入願望失敗:', error);
     } finally {
       setLoading(false);
     }
+  }, [appliedFilters.search, appliedFilters.category, appliedFilters.status, tabValue, user?.id]);
+
+  // 初次載入與依賴變更時觸發
+  useEffect(() => {
+    loadWishes(1);
+  }, [loadWishes]);
+
+  // 僅在按下「搜尋」或按 Enter 時套用篩選
+  const handleSearch = () => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+    setAppliedFilters({
+      search: filters.search,
+      category: filters.category,
+      status: filters.status,
+      userId: ''
+    });
   };
 
-  // 創建或更新許願
-  const handleSubmitWish = async () => {
+  // 創建或更新許願（改為接收表單資料）
+  const handleSubmitWish = async (form) => {
     try {
       setSubmittingWish(true);
-      
       const url = editingWish ? `/api/wishes/${editingWish.id}` : '/api/wishes';
       const method = editingWish ? 'put' : 'post';
-      
-      const response = await api[method](url, wishForm);
-      
+      const response = await api[method](url, form);
       if (response.data.success) {
         setOpenWishDialog(false);
         setEditingWish(null);
         setWishForm({ title: '', description: '', category: '', tags: [], priority: 1, expiresAt: '' });
-        loadWishes(pagination.page);
+        loadWishes(1);
       }
     } catch (error) {
       console.error('提交許願失敗:', error);
@@ -224,7 +198,7 @@ const WishesPage = () => {
     setAnchorEl(null);
   };
 
-  // 處理選單
+  // 操作選單處理
   const handleMenuClick = (event, wishId) => {
     setAnchorEl(event.currentTarget);
     setMenuWishId(wishId);
@@ -235,12 +209,12 @@ const WishesPage = () => {
     setMenuWishId(null);
   };
 
-  // 獲取優先級顏色
+  // 取得分類顏色
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 3: return 'error';
       case 2: return 'warning';
-      default: return 'info';
+      default: return 'default';
     }
   };
 
@@ -249,10 +223,6 @@ const WishesPage = () => {
     const cat = categories.find(c => c.value === category);
     return cat ? cat.label : category;
   };
-
-  useEffect(() => {
-    loadWishes();
-  }, [tabValue, filters.category, filters.status]);
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
@@ -284,7 +254,6 @@ const WishesPage = () => {
                 placeholder="搜尋許願內容..."
                 value={filters.search}
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 InputProps={{
                   startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
                 }}
@@ -535,104 +504,20 @@ const WishesPage = () => {
         </MenuItem>
       </Menu>
 
-      {/* 許願表單對話框 */}
-      <Dialog 
-        open={openWishDialog} 
+      {/* 許願表單對話框（使用共用組件） */}
+      <WishFormDialog 
+        open={openWishDialog}
         onClose={() => {
           setOpenWishDialog(false);
           setEditingWish(null);
           setWishForm({ title: '', description: '', category: '', tags: [], priority: 1, expiresAt: '' });
         }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          {editingWish ? '✏️ 編輯許願' : '💡 發布新許願'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <TextField
-              fullWidth
-              label="許願標題"
-              value={wishForm.title}
-              onChange={(e) => setWishForm(prev => ({ ...prev, title: e.target.value }))}
-              sx={{ mb: 2 }}
-              placeholder="例如：尋找電商行銷合作夥伴"
-            />
-            
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="詳細描述"
-              value={wishForm.description}
-              onChange={(e) => setWishForm(prev => ({ ...prev, description: e.target.value }))}
-              sx={{ mb: 2 }}
-              placeholder="詳細描述您的需求、目標客群、合作方式等..."
-              helperText="AI 將分析您的描述來找到最佳匹配的合作夥伴"
-            />
-            
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>分類</InputLabel>
-                  <Select
-                    value={wishForm.category}
-                    onChange={(e) => setWishForm(prev => ({ ...prev, category: e.target.value }))}
-                    label="分類"
-                  >
-                    {categories.map(cat => (
-                      <MenuItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>優先級</InputLabel>
-                  <Select
-                    value={wishForm.priority}
-                    onChange={(e) => setWishForm(prev => ({ ...prev, priority: e.target.value }))}
-                    label="優先級"
-                  >
-                    <MenuItem value={1}>一般</MenuItem>
-                    <MenuItem value={2}>重要</MenuItem>
-                    <MenuItem value={3}>緊急</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-            
-            <TextField
-              fullWidth
-              type="date"
-              label="到期日期（可選）"
-              value={wishForm.expiresAt}
-              onChange={(e) => setWishForm(prev => ({ ...prev, expiresAt: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
-              helperText="設定許願的有效期限"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            setOpenWishDialog(false);
-            setEditingWish(null);
-            setWishForm({ title: '', description: '', category: '', tags: [], priority: 1, expiresAt: '' });
-          }}>
-            取消
-          </Button>
-          <Button 
-            onClick={handleSubmitWish}
-            variant="contained"
-            disabled={!wishForm.title || !wishForm.description || submittingWish}
-          >
-            {submittingWish ? (editingWish ? '更新中...' : '發布中...') : (editingWish ? '更新許願' : '發布許願')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={handleSubmitWish}
+        submitting={submittingWish}
+        isEdit={Boolean(editingWish)}
+        initialValues={wishForm}
+        categories={categories}
+      />
 
       {/* 許願詳情對話框 */}
       <Dialog 

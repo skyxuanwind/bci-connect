@@ -12,12 +12,6 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
   Alert,
   CircularProgress,
   Fab,
@@ -34,6 +28,7 @@ import {
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import api from '../services/api';
+import WishFormDialog, { defaultWishCategories } from './WishFormDialog';
 
 const SmartCollaborationDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -45,24 +40,8 @@ const SmartCollaborationDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [showCreateWish, setShowCreateWish] = useState(false);
-  const [newWish, setNewWish] = useState({
-    title: '',
-    description: '',
-    category: '',
-    collaboration_type: '',
-    urgency_level: 1
-  });
   const [refreshing, setRefreshing] = useState(false);
-
-  const categories = [
-    '技術合作', '商業夥伴', '資源共享', '知識交流', 
-    '投資機會', '市場拓展', '人才招募', '其他'
-  ];
-
-  const collaborationTypes = [
-    '短期項目', '長期合作', '一次性服務', '持續合作',
-    '技術支援', '商業諮詢', '資源交換', '策略聯盟'
-  ];
+  const categories = defaultWishCategories;
 
   useEffect(() => {
     loadDashboardData();
@@ -117,17 +96,10 @@ const SmartCollaborationDashboard = () => {
     }
   };
 
-  const createWish = async () => {
+  const createWish = async (formData) => {
     try {
-      await api.post('/api/wishes', newWish);
+      await api.post('/api/wishes', formData);
       setShowCreateWish(false);
-      setNewWish({
-        title: '',
-        description: '',
-        category: '',
-        collaboration_type: '',
-        urgency_level: 1
-      });
       loadDashboardData();
     } catch (error) {
       console.error('創建願望失敗:', error);
@@ -358,79 +330,14 @@ const SmartCollaborationDashboard = () => {
       </Grid>
 
       {/* 創建願望對話框 */}
-      <Dialog open={showCreateWish} onClose={() => setShowCreateWish(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>創建新願望</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <TextField
-              fullWidth
-              label="願望標題"
-              value={newWish.title}
-              onChange={(e) => setNewWish(prev => ({ ...prev, title: e.target.value }))}
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="詳細描述"
-              multiline
-              rows={3}
-              value={newWish.description}
-              onChange={(e) => setNewWish(prev => ({ ...prev, description: e.target.value }))}
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              select
-              label="類別"
-              value={newWish.category}
-              onChange={(e) => setNewWish(prev => ({ ...prev, category: e.target.value }))}
-              margin="normal"
-            >
-              {categories.map((category) => (
-                <MenuItem key={category} value={category}>
-                  {category}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              fullWidth
-              select
-              label="合作類型"
-              value={newWish.collaboration_type}
-              onChange={(e) => setNewWish(prev => ({ ...prev, collaboration_type: e.target.value }))}
-              margin="normal"
-            >
-              {collaborationTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              fullWidth
-              select
-              label="緊急程度"
-              value={newWish.urgency_level}
-              onChange={(e) => setNewWish(prev => ({ ...prev, urgency_level: parseInt(e.target.value) }))}
-              margin="normal"
-            >
-              <MenuItem value={1}>低</MenuItem>
-              <MenuItem value={2}>中</MenuItem>
-              <MenuItem value={3}>高</MenuItem>
-            </TextField>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowCreateWish(false)}>取消</Button>
-          <Button 
-            onClick={createWish} 
-            variant="contained"
-            disabled={!newWish.title || !newWish.description || !newWish.category}
-          >
-            創建
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <WishFormDialog
+        open={showCreateWish}
+        onClose={() => setShowCreateWish(false)}
+        onSubmit={createWish}
+        submitting={false}
+        isEdit={false}
+        categories={categories}
+      />
 
       {/* 浮動操作按鈕 */}
       <Fab
