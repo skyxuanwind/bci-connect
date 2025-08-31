@@ -99,7 +99,7 @@ const PublicNFCCard = () => {
   const handleCollectCard = () => {
     if (!isLoggedIn) {
       alert('請先登入數位名片夾才能收藏名片');
-      navigate('/digital-cardholder/login');
+      navigate('/cardholder-auth');
       return;
     }
     

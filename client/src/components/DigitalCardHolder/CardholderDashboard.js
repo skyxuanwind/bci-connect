@@ -45,7 +45,7 @@ const CardholderDashboard = () => {
   const checkAuth = () => {
     const token = localStorage.getItem('cardholderToken');
     if (!token) {
-      navigate('/digital-cardholder/login');
+      navigate('/cardholder-auth');
       return;
     }
     
@@ -53,12 +53,12 @@ const CardholderDashboard = () => {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp < Date.now() / 1000) {
         localStorage.removeItem('cardholderToken');
-        navigate('/digital-cardholder/login');
+        navigate('/cardholder-auth');
         return;
       }
     } catch (error) {
       localStorage.removeItem('cardholderToken');
-      navigate('/digital-cardholder/login');
+      navigate('/cardholder-auth');
     }
   };
 
@@ -134,7 +134,7 @@ const CardholderDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('cardholderToken');
-    navigate('/digital-cardholder/login');
+    navigate('/cardholder-auth');
   };
 
   const handleSearch = (e) => {
