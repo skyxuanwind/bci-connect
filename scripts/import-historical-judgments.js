@@ -46,29 +46,38 @@ class HistoricalJudgmentImporter {
    * @param {number} options.batchSize 每批處理數量
    * @param {number} options.maxBatches 最大批次數
    * @param {number} options.delayMs 批次間延遲時間(毫秒)
+   * @param {boolean} options.force 是否強制忽略 API 服務時間限制
    */
   async startImport(options = {}) {
     const {
       batchSize = 50,
       maxBatches = 20,
-      delayMs = 3000
+      delayMs = 3000,
+      force = false,
     } = options;
+
+    // 記錄強制模式狀態，供後續請求使用
+    this.forceFlag = !!force;
 
     if (this.isRunning) {
       console.log('⚠️ 歷史資料導入已在進行中');
       return;
     }
 
-    // 檢查API服務時間
-    if (!this.isApiAvailable()) {
+    // 檢查API服務時間（可被 force 覆寫）
+    if (!this.isApiAvailable() && !force) {
       console.log('⚠️ 司法院 API 服務時間為凌晨 0-6 點，當前時間不可用');
-      console.log('💡 如需強制執行，請設置環境變量 JUDICIAL_DEV_FORCE=true');
+      console.log('💡 如需強制執行，請設置環境變量 JUDICIAL_DEV_FORCE=true 或在啟動時傳入 { force: true }');
       return;
+    }
+
+    if (force && !this.isApiAvailable()) {
+      console.warn('⚠️ 已啟用強制導入：忽略 API 服務時間限制');
     }
 
     this.isRunning = true;
     console.log('🚀 開始歷史判決書批量導入');
-    console.log(`📋 導入參數: 批次大小=${batchSize}, 最大批次=${maxBatches}, 延遲=${delayMs}ms`);
+    console.log(`📋 導入參數: 批次大小=${batchSize}, 最大批次=${maxBatches}, 延遲=${delayMs}ms, 強制=${force}`);
 
     try {
       // 重置統計
@@ -84,8 +93,8 @@ class HistoricalJudgmentImporter {
         this.importStats.currentBatchProcessed = 0;
         
         try {
-          // 獲取判決書清單
-          const jidListResult = await judicialService.getRecentJudgmentsList();
+          // 獲取判決書清單（傳遞強制模式）
+          const jidListResult = await judicialService.getRecentJudgmentsList({ force: this.forceFlag });
           
           if (!jidListResult.success) {
             console.warn(`⚠️ 批次 ${batchIndex + 1} 獲取清單失敗: ${jidListResult.message}`);
@@ -192,9 +201,9 @@ class HistoricalJudgmentImporter {
         return 'skipped';
       }
 
-      // 從 API 獲取判決書內容
+      // 從 API 獲取判決書內容（傳遞強制模式）
       console.log(`📥 正在獲取判決書 ${jid}...`);
-      const judgmentData = await this.withRetry(() => judicialService.getJudgmentByJid(jid));
+      const judgmentData = await this.withRetry(() => judicialService.getJudgmentByJid(jid, { force: this.forceFlag }));
       
       if (!judgmentData || !judgmentData.judgment_content) {
         console.log(`⚠️  判決書 ${jid} 無內容或已被移除`);
@@ -345,14 +354,22 @@ class HistoricalJudgmentImporter {
     
     const {
       maxRecords = 100,
-      delayMs = 2000
+      delayMs = 2000,
+      force = false,
     } = options;
 
-    // 檢查API服務時間
-    if (!this.isApiAvailable()) {
+    // 記錄強制模式狀態，供後續請求使用
+    this.forceFlag = !!force;
+
+    // 檢查API服務時間（可被 force 覆寫）
+    if (!this.isApiAvailable() && !force) {
       console.log('⚠️ 司法院 API 服務時間為凌晨 0-6 點，當前時間不可用');
-      console.log('💡 如需強制執行，請設置環境變量 JUDICIAL_DEV_FORCE=true');
+      console.log('💡 如需強制執行，請設置環境變量 JUDICIAL_DEV_FORCE=true 或在啟動時傳入 { force: true }');
       return;
+    }
+
+    if (force && !this.isApiAvailable()) {
+      console.warn('⚠️ 已啟用強制導入：忽略 API 服務時間限制');
     }
 
     this.isRunning = true;
@@ -363,8 +380,8 @@ class HistoricalJudgmentImporter {
       this.importStats.totalBatches = 1;
       this.importStats.currentBatch = 1;
 
-      // 先從API搜尋相關判決書
-      const searchResult = await judicialService.searchJudgments(companyName, { top: maxRecords });
+      // 先從API搜尋相關判決書（傳遞強制模式）
+      const searchResult = await judicialService.searchJudgments(companyName, { top: maxRecords, force: this.forceFlag });
       
       if (!searchResult.success || !searchResult.data || searchResult.data.length === 0) {
         console.log(`📭 未找到公司 "${companyName}" 相關的判決書`);

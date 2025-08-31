@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { pool } = require('../config/database');
+const judgmentSyncService = require('./judgmentSyncService');
 
 // 司法院開放資料 API 基礎 URL（根據官方文件）
 const JUDICIAL_API_BASE = 'https://data.judicial.gov.tw/jdg/api';
@@ -119,7 +120,8 @@ class JudicialService {
       const {
         top = 10,
         skip = 0,
-        format = 'json'
+        format = 'json',
+        force = false
       } = options;
 
       console.log(`開始搜尋公司 ${companyName} 的判決書資料...`);
@@ -146,7 +148,7 @@ class JudicialService {
       }
       
       // 如果本地系統沒有資料，嘗試從司法院 API 取得最近的判決書清單
-      const recentJudgmentsResult = await this.getRecentJudgmentsList();
+      const recentJudgmentsResult = await this.getRecentJudgmentsList({ force });
       
       if (!recentJudgmentsResult.success) {
         console.log('司法院 API 不在服務時間內，提供風險評估分析');
@@ -163,7 +165,7 @@ class JudicialService {
       }
       
       // 搜尋包含公司名稱的判決書
-      const matchingJudgments = await this.searchJudgmentsByCompanyName(companyName, recentJudgmentsResult.data, top);
+      const matchingJudgments = await this.searchJudgmentsByCompanyName(companyName, recentJudgmentsResult.data, top, { force });
       
       if (matchingJudgments.length > 0) {
         console.log(`找到 ${matchingJudgments.length} 筆相關判決書`);
@@ -177,7 +179,7 @@ class JudicialService {
           source: 'judicial_api'
         };
       } else {
-        console.log(`未找到包含 ${companyName} 的判決書，提供風險評估分析`);
+        console.log(`未找到包含 ${公司Name} 的判決書，提供風險評估分析`);
         // 如果沒有找到真實資料，提供基於公司特徵的風險分析
         const riskAnalysis = this.generateRiskAnalysis(companyName);
         return {
@@ -212,16 +214,21 @@ class JudicialService {
     console.log('=== 開始查詢司法院判決書異動清單 ===');
     console.log('查詢參數:', JSON.stringify(params, null, 2));
     console.log('查詢時間:', new Date().toISOString());
+    const { force = false } = params;
     
     try {
       // 檢查 API 服務時間（僅於每日 00:00-06:00 提供服務）
-      if (!this.isJudicialApiAvailable()) {
+      if (!this.isJudicialApiAvailable() && !force) {
         return {
           success: false,
           message: '司法院 API 僅於每日凌晨 0 點至 6 點提供服務，請於服務時間內重試',
           data: [],
           serviceHours: '00:00-06:00'
         };
+      }
+
+      if (force && !this.isJudicialApiAvailable()) {
+        console.warn('⚠️ 已啟用強制模式：忽略司法院 API 服務時間限制');
       }
 
       // 步驟 1: 取得 token
@@ -415,14 +422,15 @@ class JudicialService {
   }
 
   // 根據公司名稱搜尋判決書
-  async searchJudgmentsByCompanyName(companyName, jidList, limit = 10) {
+  async searchJudgmentsByCompanyName(companyName, jidList, limit = 10, options = {}) {
     const matchingJudgments = [];
     const maxRequests = Math.min(jidList.length, 20); // 限制請求數量
+    const { force = false } = options;
     
     for (let i = 0; i < maxRequests && matchingJudgments.length < limit; i++) {
       try {
         const jid = jidList[i];
-        const judgmentContent = await this.getJudgmentByJid(jid);
+        const judgmentContent = await this.getJudgmentByJid(jid, { force });
         
         if (judgmentContent && this.containsCompanyName(judgmentContent, companyName)) {
           matchingJudgments.push({
@@ -447,10 +455,11 @@ class JudicialService {
   }
 
   // 根據 JID 取得判決書內容（使用正確的 JDoc API）
-  async getJudgmentByJid(jid) {
+  async getJudgmentByJid(jid, options = {}) {
     const startTime = Date.now();
     console.log('=== 開始取得判決書內容 ===');
     console.log('查詢時間:', new Date().toISOString());
+    const { force = false } = options;
     
     try {
       if (!jid) {
@@ -460,13 +469,17 @@ class JudicialService {
       console.log(`目標 JID: ${jid}`);
       
       // 檢查 API 服務時間（僅於每日 00:00-06:00 提供服務）
-      if (!this.isJudicialApiAvailable()) {
+      if (!this.isJudicialApiAvailable() && !force) {
         return {
           success: false,
           message: '司法院 API 僅於每日凌晨 0 點至 6 點提供服務，請於服務時間內重試',
           data: null,
           serviceHours: '00:00-06:00'
         };
+      }
+
+      if (force && !this.isJudicialApiAvailable()) {
+        console.warn('⚠️ 已啟用強制模式：忽略司法院 API 服務時間限制');
       }
 
       // 步驟 1: 取得 token

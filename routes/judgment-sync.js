@@ -326,7 +326,7 @@ router.post('/import-historical', authenticateToken, requireAdminOrLevel1, async
         });
       }
       
-      importer.importByCompany(companyName, { maxRecords }).catch(error => {
+      importer.importByCompany(companyName, { maxRecords, force: forceImport }).catch(error => {
         console.error('公司歷史判決書導入失敗:', error);
       });
       
@@ -335,11 +335,12 @@ router.post('/import-historical', authenticateToken, requireAdminOrLevel1, async
         message: `公司 "${companyName}" 的歷史判決書導入作業已開始，請稍後查看統計資訊`,
         mode: 'company',
         companyName: companyName,
-        maxRecords: maxRecords
+        maxRecords: maxRecords,
+        forceImport: !!forceImport,
       });
     } else {
       // 批量導入模式
-      importer.startImport({ batchSize, maxBatches }).catch(error => {
+      importer.startImport({ batchSize, maxBatches, force: forceImport }).catch(error => {
         console.error('批量歷史判決書導入失敗:', error);
       });
       
@@ -349,7 +350,8 @@ router.post('/import-historical', authenticateToken, requireAdminOrLevel1, async
         mode: 'batch',
         batchSize: batchSize,
         maxBatches: maxBatches,
-        estimatedTotal: batchSize * maxBatches
+        estimatedTotal: batchSize * maxBatches,
+        forceImport: !!forceImport,
       });
     }
 
