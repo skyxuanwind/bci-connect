@@ -58,7 +58,7 @@ router.get('/member/:memberId', async (req, res) => {
     // 獲取會員的電子名片配置
     const cardResult = await pool.query(
       `SELECT nc.*, nt.name as template_name, nt.css_config
-       FROM nfc_member_cards nc
+       FROM nfc_cards nc
        LEFT JOIN nfc_card_templates nt ON nc.template_id = nt.id
        WHERE nc.user_id = $1 AND nc.is_active = true
        ORDER BY nc.updated_at DESC
@@ -298,7 +298,7 @@ router.get('/member/:memberId/vcard', async (req, res) => {
     
     // 記錄下載分析
     const cardResult = await pool.query(
-      'SELECT id FROM nfc_member_cards WHERE user_id = $1 AND is_active = true',
+      'SELECT id FROM nfc_cards WHERE user_id = $1 AND is_active = true',
       [memberId]
     );
     
@@ -326,7 +326,7 @@ router.get('/my-card/analytics', authenticateToken, async (req, res) => {
     
     // 獲取名片ID
     const cardResult = await pool.query(
-      'SELECT id FROM nfc_member_cards WHERE user_id = $1 AND is_active = true',
+      'SELECT id FROM nfc_cards WHERE user_id = $1 AND is_active = true',
       [userId]
     );
     

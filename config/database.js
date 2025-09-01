@@ -387,7 +387,7 @@ const initializeDatabase = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS nfc_content_blocks (
         id SERIAL PRIMARY KEY,
-        card_id INTEGER NOT NULL REFERENCES nfc_member_cards(id) ON DELETE CASCADE,
+        card_id INTEGER NOT NULL REFERENCES nfc_cards(id) ON DELETE CASCADE,
         block_type VARCHAR(20) NOT NULL CHECK (block_type IN ('text', 'link', 'video', 'image', 'social', 'map')),
         title VARCHAR(200),
         content TEXT,
@@ -408,7 +408,7 @@ const initializeDatabase = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS nfc_card_analytics (
         id SERIAL PRIMARY KEY,
-        card_id INTEGER NOT NULL REFERENCES nfc_member_cards(id) ON DELETE CASCADE,
+        card_id INTEGER NOT NULL REFERENCES nfc_cards(id) ON DELETE CASCADE,
         event_type VARCHAR(50) NOT NULL CHECK (event_type IN ('view', 'share', 'vcard_download', 'contact_click')),
         visitor_ip VARCHAR(45),
         visitor_user_agent TEXT,
@@ -448,7 +448,7 @@ const initializeDatabase = async () => {
       CREATE TABLE IF NOT EXISTS nfc_card_collections (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES digital_card_users(id) ON DELETE CASCADE,
-        card_id INTEGER NOT NULL REFERENCES nfc_member_cards(id) ON DELETE CASCADE,
+        card_id INTEGER NOT NULL REFERENCES nfc_cards(id) ON DELETE CASCADE,
         notes TEXT,
         tags TEXT[],
         is_favorite BOOLEAN DEFAULT false,
@@ -564,9 +564,8 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_sync_logs_date ON judgment_sync_logs(sync_date);
       
       -- NFC 電子名片系統索引
-      CREATE INDEX IF NOT EXISTS idx_nfc_member_cards_user_id ON nfc_member_cards(user_id);
-      CREATE INDEX IF NOT EXISTS idx_nfc_member_cards_custom_url_slug ON nfc_member_cards(custom_url_slug);
-      CREATE INDEX IF NOT EXISTS idx_nfc_member_cards_is_active ON nfc_member_cards(is_active);
+      CREATE INDEX IF NOT EXISTS idx_nfc_cards_user_id ON nfc_cards(user_id);
+    CREATE INDEX IF NOT EXISTS idx_nfc_cards_is_active ON nfc_cards(is_active);
       CREATE INDEX IF NOT EXISTS idx_nfc_content_blocks_card_id ON nfc_content_blocks(card_id);
       CREATE INDEX IF NOT EXISTS idx_nfc_content_blocks_display_order ON nfc_content_blocks(display_order);
       CREATE INDEX IF NOT EXISTS idx_nfc_card_analytics_card_id ON nfc_card_analytics(card_id);
