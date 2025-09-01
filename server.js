@@ -24,7 +24,7 @@ const companyLookupRoutes = require('./routes/company-lookup');
 const aiAnalysisRoutes = require('./routes/ai-analysis');
 
 const judgmentSyncRoutes = require('./routes/judgment-sync');
-const nfcCheckinRoutes = require('./routes/nfc-checkin');
+const nfcCardsRoutes = require('./routes/nfc-cards');
 
 const wishesRoutes = require('./routes/wishes');
 const notificationsRoutes = require('./routes/notifications');
@@ -133,7 +133,7 @@ app.use('/api/company-lookup', companyLookupRoutes);
 app.use('/api/ai-analysis', aiAnalysisRoutes);
 
 app.use('/api/judgment-sync', judgmentSyncRoutes);
-app.use('/api/nfc-checkin', nfcCheckinRoutes);
+app.use('/api/nfc-cards', nfcCardsRoutes);
 
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/notifications', notificationsRoutes);
