@@ -8,7 +8,6 @@
     "dev": "nodemon server.js",
     "client": "cd client && PORT=3001 npm start",
     "server": "nodemon server.js",
-
     "build": "cd client && npm run build",
     "heroku-postbuild": "cd client && npm install && npm run build"
   },
@@ -44,7 +43,6 @@
     "nodemailer": "^7.0.5",
     "pg": "^8.11.3",
     "qrcode": "^1.5.4",
-    "react-beautiful-dnd": "^13.1.1",
     "react-chartjs-2": "^5.3.0",
     "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7",
