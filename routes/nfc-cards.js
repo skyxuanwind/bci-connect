@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -101,7 +101,7 @@ router.get('/member/:memberId', async (req, res) => {
 });
 
 // 獲取當前用戶的電子名片配置（需要登入）
-router.get('/my-card', auth, async (req, res) => {
+router.get('/my-card', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -169,7 +169,7 @@ router.get('/my-card', auth, async (req, res) => {
 });
 
 // 更新電子名片基本信息
-router.put('/my-card', auth, async (req, res) => {
+router.put('/my-card', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { card_title, card_subtitle, template_id, custom_css } = req.body;
@@ -224,7 +224,7 @@ router.get('/templates', async (req, res) => {
 });
 
 // 添加/更新內容區塊
-router.post('/my-card/content', auth, async (req, res) => {
+router.post('/my-card/content', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { content_blocks } = req.body;
@@ -320,7 +320,7 @@ router.get('/member/:memberId/vcard', async (req, res) => {
 });
 
 // 獲取名片分析數據（需要登入）
-router.get('/my-card/analytics', auth, async (req, res) => {
+router.get('/my-card/analytics', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
