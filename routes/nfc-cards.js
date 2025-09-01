@@ -108,7 +108,7 @@ router.get('/my-card', authenticateToken, async (req, res) => {
     // 獲取用戶的電子名片
     const cardResult = await pool.query(
       `SELECT nc.*, nt.name as template_name, nt.css_config
-       FROM nfc_member_cards nc
+       FROM nfc_cards nc
        LEFT JOIN nfc_card_templates nt ON nc.template_id = nt.id
        WHERE nc.user_id = $1
        ORDER BY nc.updated_at DESC
@@ -126,7 +126,7 @@ router.get('/my-card', authenticateToken, async (req, res) => {
       const templateId = defaultTemplateResult.rows[0]?.id || 1;
       
       const newCardResult = await pool.query(
-        `INSERT INTO nfc_member_cards (user_id, template_id, card_title, card_subtitle, is_active)
+        `INSERT INTO nfc_cards (user_id, template_id, card_title, card_subtitle, is_active)
          VALUES ($1, $2, $3, $4, true)
          RETURNING *`,
         [userId, templateId, req.user.name, req.user.title || req.user.company]
@@ -176,7 +176,7 @@ router.put('/my-card', authenticateToken, async (req, res) => {
     
     // 檢查是否已有名片
     const existingCard = await pool.query(
-      'SELECT id FROM nfc_member_cards WHERE user_id = $1',
+      'SELECT id FROM nfc_cards WHERE user_id = $1',
       [userId]
     );
     
@@ -185,7 +185,7 @@ router.put('/my-card', authenticateToken, async (req, res) => {
     if (existingCard.rows.length === 0) {
       // 創建新名片
       const newCardResult = await pool.query(
-        `INSERT INTO nfc_member_cards (user_id, template_id, card_title, card_subtitle, custom_css, is_active)
+        `INSERT INTO nfc_cards (user_id, template_id, card_title, card_subtitle, custom_css, is_active)
          VALUES ($1, $2, $3, $4, $5, true)
          RETURNING id`,
         [userId, template_id, card_title, card_subtitle, custom_css]
@@ -195,7 +195,7 @@ router.put('/my-card', authenticateToken, async (req, res) => {
       // 更新現有名片
       cardId = existingCard.rows[0].id;
       await pool.query(
-        `UPDATE nfc_member_cards 
+        `UPDATE nfc_cards 
          SET template_id = $1, card_title = $2, card_subtitle = $3, custom_css = $4, updated_at = CURRENT_TIMESTAMP
          WHERE id = $5`,
         [template_id, card_title, card_subtitle, custom_css, cardId]
@@ -231,7 +231,7 @@ router.post('/my-card/content', authenticateToken, async (req, res) => {
     
     // 獲取用戶的名片ID
     const cardResult = await pool.query(
-      'SELECT id FROM nfc_member_cards WHERE user_id = $1',
+      'SELECT id FROM nfc_cards WHERE user_id = $1',
       [userId]
     );
     

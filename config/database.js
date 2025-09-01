@@ -366,20 +366,17 @@ const initializeDatabase = async () => {
       )
     `);
 
-    // Create nfc_member_cards table (會員電子名片主表)
+    // Create nfc_cards table (會員電子名片主表)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS nfc_member_cards (
+      CREATE TABLE IF NOT EXISTS nfc_cards (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        template_id INTEGER NOT NULL REFERENCES nfc_card_templates(id),
+        template_id INTEGER REFERENCES nfc_card_templates(id) ON DELETE SET NULL,
+        card_title VARCHAR(200) NOT NULL,
+        card_subtitle VARCHAR(300),
+        custom_css TEXT,
         is_active BOOLEAN DEFAULT true,
-        is_public BOOLEAN DEFAULT true,
         view_count INTEGER DEFAULT 0,
-        share_count INTEGER DEFAULT 0,
-        vcard_download_count INTEGER DEFAULT 0,
-        custom_url_slug VARCHAR(100) UNIQUE,
-        seo_title VARCHAR(200),
-        seo_description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id)
