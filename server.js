@@ -143,9 +143,7 @@ app.use('/api/ai-profiles', aiProfilesRoutes);
 const nfcMongodbRoutes = require('./routes/nfc-mongodb');
 app.use('/api/nfc-checkin-mongo', nfcMongodbRoutes);
 
-// NFC電子名片路由
-const nfcCardsRoutes = require('./routes/nfc-cards');
-app.use('/api/nfc-cards', nfcCardsRoutes);
+
 
 // Health check endpoint - critical for Render deployment
 app.get('/health', (req, res) => {
