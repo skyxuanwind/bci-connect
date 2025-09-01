@@ -72,7 +72,7 @@ router.get('/member/:memberId', async (req, res) => {
       
       // 獲取名片內容區塊
       const contentResult = await pool.query(
-        `SELECT * FROM nfc_card_content 
+        `SELECT * FROM nfc_content_blocks 
          WHERE card_id = $1 AND is_visible = true 
          ORDER BY display_order ASC`,
         [cardConfig.id]
@@ -153,7 +153,7 @@ router.get('/my-card', authenticateToken, async (req, res) => {
     
     // 獲取內容區塊
     const contentResult = await pool.query(
-      `SELECT * FROM nfc_card_content 
+      `SELECT * FROM nfc_content_blocks 
        WHERE card_id = $1 
        ORDER BY display_order ASC`,
       [cardConfig.id]
@@ -242,16 +242,16 @@ router.post('/my-card/content', authenticateToken, async (req, res) => {
     const cardId = cardResult.rows[0].id;
     
     // 刪除現有內容區塊
-    await pool.query('DELETE FROM nfc_card_content WHERE card_id = $1', [cardId]);
+    await pool.query('DELETE FROM nfc_content_blocks WHERE card_id = $1', [cardId]);
     
     // 添加新的內容區塊
     for (let i = 0; i < content_blocks.length; i++) {
       const block = content_blocks[i];
       await pool.query(
-        `INSERT INTO nfc_card_content 
-         (card_id, content_type, content_data, display_order, is_visible, custom_styles)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [cardId, block.content_type, block.content_data, i, block.is_visible !== false, block.custom_styles || {}]
+        `INSERT INTO nfc_content_blocks 
+         (card_id, block_type, title, content, url, image_url, social_platform, map_address, map_coordinates, display_order, is_visible, custom_styles)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [cardId, block.block_type, block.title, block.content, block.url, block.image_url, block.social_platform, block.map_address, block.map_coordinates, i, block.is_visible !== false, block.custom_styles || {}]
       );
     }
     

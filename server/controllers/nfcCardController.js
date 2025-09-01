@@ -78,7 +78,7 @@ const getMyCard = async (req, res) => {
     // 獲取內容區塊
     const contentQuery = `
       SELECT *
-      FROM nfc_card_content
+      FROM nfc_content_blocks
       WHERE card_id = $1
       ORDER BY display_order ASC
     `;
@@ -175,21 +175,27 @@ const updateMyCardContent = async (req, res) => {
     const cardId = cardResult.rows[0].id;
     
     // 刪除現有內容區塊
-    await client.query('DELETE FROM nfc_card_content WHERE card_id = $1', [cardId]);
+    await client.query('DELETE FROM nfc_content_blocks WHERE card_id = $1', [cardId]);
     
     // 插入新的內容區塊
     if (content_blocks && content_blocks.length > 0) {
       const insertQuery = `
-        INSERT INTO nfc_card_content 
-        (card_id, content_type, content_data, display_order, is_visible, custom_styles)
-        VALUES ($1, $2, $3, $4, $5, $6)
-      `;
+         INSERT INTO nfc_content_blocks 
+         (card_id, block_type, title, content, url, image_url, social_platform, map_address, map_coordinates, display_order, is_visible, custom_styles)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        `;
       
       for (const block of content_blocks) {
         await client.query(insertQuery, [
           cardId,
-          block.content_type,
-          JSON.stringify(block.content_data),
+          block.block_type,
+          block.title,
+          block.content,
+          block.url,
+          block.image_url,
+          block.social_platform,
+          block.map_address,
+          block.map_coordinates,
           block.display_order,
           block.is_visible !== false, // 默認為 true
           JSON.stringify(block.custom_styles || {})
@@ -253,7 +259,7 @@ const getMemberCard = async (req, res) => {
     // 獲取內容區塊
     const contentQuery = `
       SELECT *
-      FROM nfc_card_content
+      FROM nfc_content_blocks
       WHERE card_id = $1 AND is_visible = true
       ORDER BY display_order ASC
     `;

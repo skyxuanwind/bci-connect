@@ -119,7 +119,7 @@ router.get('/member/:userId', logVisit, async (req, res) => {
     
     // 獲取名片內容區塊
     const contentResult = await db.query(`
-      SELECT * FROM nfc_card_content 
+      SELECT * FROM nfc_content_blocks 
       WHERE card_id = $1 AND is_visible = true 
       ORDER BY display_order
     `, [card.id]);
@@ -164,7 +164,7 @@ router.get('/my-card', auth, async (req, res) => {
       
       // 獲取名片內容區塊
       const contentResult = await db.query(`
-        SELECT * FROM nfc_card_content 
+        SELECT * FROM nfc_content_blocks 
         WHERE card_id = $1 
         ORDER BY display_order
       `, [card.id]);
@@ -226,16 +226,16 @@ router.post('/my-card', auth, async (req, res) => {
     }
     
     // 刪除舊的內容區塊
-    await client.query('DELETE FROM nfc_card_content WHERE card_id = $1', [cardId]);
+    await client.query('DELETE FROM nfc_content_blocks WHERE card_id = $1', [cardId]);
     
     // 插入新的內容區塊
     if (content && content.length > 0) {
       for (let i = 0; i < content.length; i++) {
         const item = content[i];
         await client.query(`
-          INSERT INTO nfc_card_content (card_id, content_type, content_data, display_order, is_visible, custom_styles)
-          VALUES ($1, $2, $3, $4, $5, $6)
-        `, [cardId, item.content_type, JSON.stringify(item.content_data), i, item.is_visible !== false, JSON.stringify(item.custom_styles || {})]);
+           INSERT INTO nfc_content_blocks (card_id, block_type, title, content, url, image_url, social_platform, map_address, map_coordinates, display_order, is_visible, custom_styles)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         `, [cardId, item.block_type, item.title, item.content, item.url, item.image_url, item.social_platform, item.map_address, item.map_coordinates, i, item.is_visible !== false, JSON.stringify(item.custom_styles || {})]);
       }
     }
     
@@ -425,7 +425,7 @@ router.delete('/my-card', auth, async (req, res) => {
     
     // 刪除名片內容
     await client.query(`
-      DELETE FROM nfc_card_content 
+      DELETE FROM nfc_content_blocks 
       WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)
     `, [userId]);
     
