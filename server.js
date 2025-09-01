@@ -25,8 +25,7 @@ const aiAnalysisRoutes = require('./routes/ai-analysis');
 
 const judgmentSyncRoutes = require('./routes/judgment-sync');
 const nfcCheckinRoutes = require('./routes/nfc-checkin');
-const nfcCardRoutes = require('./routes/nfc-cards');
-const digitalCardholderRoutes = require('./routes/digital-cardholder');
+
 const wishesRoutes = require('./routes/wishes');
 const notificationsRoutes = require('./routes/notifications');
 const aiProfilesRoutes = require('./routes/ai-profiles');
@@ -135,8 +134,7 @@ app.use('/api/ai-analysis', aiAnalysisRoutes);
 
 app.use('/api/judgment-sync', judgmentSyncRoutes);
 app.use('/api/nfc-checkin', nfcCheckinRoutes);
-app.use('/api/nfc-cards', nfcCardRoutes);
-app.use('/api/digital-cardholder', digitalCardholderRoutes);
+
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/ai-profiles', aiProfilesRoutes);
@@ -144,6 +142,10 @@ app.use('/api/ai-profiles', aiProfilesRoutes);
 // 添加MongoDB NFC報到路由
 const nfcMongodbRoutes = require('./routes/nfc-mongodb');
 app.use('/api/nfc-checkin-mongo', nfcMongodbRoutes);
+
+// NFC電子名片路由
+const nfcCardsRoutes = require('./routes/nfc-cards');
+app.use('/api/nfc-cards', nfcCardsRoutes);
 
 // Health check endpoint - critical for Render deployment
 app.get('/health', (req, res) => {

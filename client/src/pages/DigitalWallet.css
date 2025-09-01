@@ -1,0 +1,40 @@
+/* 數位名片夾頁面樣式 */
+.digital-wallet-page {
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* 確保頁面在不同設備上的響應式表現 */
+@media (max-width: 768px) {
+  .digital-wallet-page {
+    padding: 0;
+  }
+}
+
+/* 確保頁面內容不會被導航欄遮擋 */
+.digital-wallet-page {
+  padding-top: 0;
+}
+
+/* 如果有固定導航欄，可以調整這個值 */
+.has-navbar .digital-wallet-page {
+  padding-top: 70px;
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+  .digital-wallet-page {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  }
+}
+
+/* 高對比模式支援 */
+@media (prefers-contrast: high) {
+  .digital-wallet-page {
+    background: #ffffff;
+    color: #000000;
+  }
+}

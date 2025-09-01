@@ -5,204 +5,31 @@ import axios from 'axios';
 import api from '../services/api';
 
 const CheckInScanner = () => {
-  const { user, isAdmin, updateProfile } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState('');
-  const [scannerActive, setScannerActive] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [recentCheckIns, setRecentCheckIns] = useState([]);
   const [debugInfo, setDebugInfo] = useState([]);
-  const [nfcSupported, setNfcSupported] = useState(false);
-  const [nfcReading, setNfcReading] = useState(false);
-  const [nfcResult, setNfcResult] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalData, setSuccessModalData] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannerError, setScannerError] = useState('');
   
-  // Gateway Service 相關狀態
-  const [gatewayStatus, setGatewayStatus] = useState(null);
-  const [gatewayError, setGatewayError] = useState('');
-  const [lastNfcCheckin, setLastNfcCheckin] = useState(null);
-  const [nfcCheckinRecords, setNfcCheckinRecords] = useState([]);
-  
-  // Gateway Service URL - 在生產環境使用當前域名，開發環境使用localhost:8000
-  const GATEWAY_URL = process.env.NODE_ENV === 'production' 
-    ? window.location.origin 
-    : 'http://localhost:3002';
   const html5QrcodeScannerRef = useRef(null);
   const processedSseCheckinsRef = useRef(new Set());
   const modalTimeoutRef = useRef(null);
-  const nfcScanControllerRef = useRef(null);
-
-  // 平台自動偵測與最新版本下載連結（GitHub Releases）
-  const GITHUB_OWNER = 'skyxuanwind';
-  const GITHUB_REPO = 'bci-connect';
-  const MAC_ASSET = 'BCI-NFC-Gateway-Launcher-macOS.zip';
-  const WIN_ASSET = 'BCI-NFC-Gateway-Launcher-Windows.exe';
-  const latestReleaseBase = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download`;
-  const macReleaseUrl = `${latestReleaseBase}/${MAC_ASSET}`;
-  const winReleaseUrl = `${latestReleaseBase}/${WIN_ASSET}`;
-  const isMac = typeof navigator !== 'undefined' && (/Mac|Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.platform) || /Mac OS X/i.test(navigator.userAgent));
-  const isWindows = typeof navigator !== 'undefined' && (/Win/i.test(navigator.platform) || /Windows/i.test(navigator.userAgent));
-  
-  // 添加調試訊息
-  const addDebugInfo = (message) => {
-    const timestamp = new Date().toLocaleTimeString('zh-TW');
-    setDebugInfo(prev => [`[${timestamp}] ${message}`, ...prev.slice(0, 9)]);
-  };
-
-
 
   useEffect(() => {
     fetchEvents();
-    checkNFCSupport();
-    checkGatewayStatus();
-    fetchLastNfcCheckin();
-    fetchNfcCheckinRecords();
-    
-    // 每 3 秒檢查一次 Gateway 狀態和最後 NFC 報到紀錄
-    const interval = setInterval(() => {
-      checkGatewayStatus();
-      fetchLastNfcCheckin();
-      if (user) {
-        fetchNfcCheckinRecords();
-      }
-    }, 3000);
     
     return () => {
       if (html5QrcodeScannerRef.current) {
         html5QrcodeScannerRef.current.clear();
       }
-      clearInterval(interval);
     };
   }, [user]);
-
-  // 透過 SSE 即時接收新的 NFC 報到
-  useEffect(() => {
-    let es;
-    try {
-      const base = process.env.REACT_APP_API_URL || '';
-      es = new EventSource(`${base}/api/nfc-checkin-mongo/events`);
-
-      es.addEventListener('nfc-checkin', async (event) => {
-        try {
-          const payload = JSON.parse(event.data || '{}');
-
-          // 去重處理，避免同一筆事件重複處理導致彈窗閃爍
-          if (payload?.id) {
-            if (processedSseCheckinsRef.current.has(payload.id)) {
-              return;
-            }
-            processedSseCheckinsRef.current.add(payload.id);
-          }
-
-          const normalized = normalizeCheckinRecord({
-            id: payload.id,
-            cardUid: payload.cardUid,
-            checkinTime: payload.checkinTime,
-            readerName: payload.readerName,
-            source: payload.source,
-            timestamp: payload.timestamp,
-            member: payload.member,
-          });
-          if (normalized) {
-            setLastNfcCheckin(normalized);
-            setNfcCheckinRecords(prev => [normalized, ...prev].slice(0, 10));
-          }
-
-          // 顯示 NFC 報到成功彈窗（只要辨識到會員就顯示，不再依賴是否選擇活動）
-          if (payload?.member && payload?.isRegisteredMember) {
-            const selectedEventTitle = selectedEvent ? (events.find(e => e.id.toString() === selectedEvent.toString())?.title) : null;
-            setSuccessModalData({
-              user: {
-                name: payload.member.name,
-                company: payload.member.company || '未設定'
-              },
-              event: {
-                title: payload.event?.title || selectedEventTitle || '未選擇活動'
-              },
-              method: 'NFC',
-              checkinTime: payload.checkinTime
-            });
-            // 僅在目前未顯示時才開啟，避免重覆開關造成閃爍
-            setShowSuccessModal(prev => {
-              if (!prev) return true;
-              return prev;
-            });
-
-            // 重設計時器為 1 秒，避免閃爍（多筆事件快速到達時只會延長/重置，不會關閉再打開）
-            if (modalTimeoutRef.current) {
-              clearTimeout(modalTimeoutRef.current);
-            }
-            modalTimeoutRef.current = setTimeout(() => {
-              setShowSuccessModal(false);
-              setSuccessModalData(null);
-              modalTimeoutRef.current = null;
-            }, 1000);
-
-            // 若有選擇活動，將此 NFC 報到同步到對應活動的出席管理
-            if (selectedEvent) {
-              try {
-                await api.post('/api/attendance/nfc-checkin', {
-                  nfcCardId: payload.cardUid,
-                  eventId: selectedEvent,
-                });
-                addDebugInfo(`已同步到出席管理：${payload.member.name} -> 活動ID ${selectedEvent}`);
-              } catch (syncErr) {
-                // 忽略重複報到錯誤（HTTP 400）
-                const status = syncErr?.response?.status;
-                if (status === 400) {
-                  addDebugInfo('此會員已在該活動完成報到（略過重複）');
-                } else {
-                  addDebugInfo(`同步出席管理失敗：${syncErr?.response?.data?.message || syncErr?.message || '未知錯誤'}`);
-                }
-              }
-            }
-          }
-          
-          // 注意：同步邏輯主要在後端 nfc-mongodb.js，但此處在有選擇活動時會顯式同步以確保顯示在對應活動
-        } catch (e) {
-          console.warn('解析 SSE 資料失敗:', e);
-        }
-      });
-
-      es.onerror = (e) => {
-        console.warn('SSE 連線錯誤，使用輪詢備援', e);
-      };
-    } catch (e) {
-      console.warn('建立 SSE 連線失敗:', e);
-    }
-
-    return () => {
-      try { es && es.close(); } catch (_) {}
-      if (modalTimeoutRef.current) {
-        clearTimeout(modalTimeoutRef.current);
-        modalTimeoutRef.current = null;
-      }
-    };
-  }, [selectedEvent]);
-
-  const checkNFCSupport = () => {
-    if (typeof window !== 'undefined' && 'NDEFReader' in window) {
-      setNfcSupported(true);
-    } else {
-      console.log('NFC not supported on this device/browser');
-    }
-  };
-
-  // 在元件卸載時中止任何進行中的 Web NFC 掃描
-  useEffect(() => {
-    return () => {
-      try {
-        if (nfcScanControllerRef.current) {
-          nfcScanControllerRef.current.abort();
-          nfcScanControllerRef.current = null;
-        }
-      } catch (e) {
-        // ignore
-      }
-    };
-  }, []);
 
   // 檢查權限 - 僅限核心和管理員
   if (!user || (user.membershipLevel !== 1 && !isAdmin())) {
@@ -230,958 +57,307 @@ const CheckInScanner = () => {
           return eventDate >= today;
         });
         setEvents(upcomingEvents);
-      }
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    }
-  };
-
-  // 檢查相機權限 - 更寬鬆的檢查方式
-  const checkCameraPermission = () => {
-    return new Promise((resolve) => {
-      // 檢查是否支援 getUserMedia (包含舊版瀏覽器的前綴)
-      const getUserMedia = navigator.mediaDevices?.getUserMedia ||
-                          navigator.getUserMedia ||
-                          navigator.webkitGetUserMedia ||
-                          navigator.mozGetUserMedia ||
-                          navigator.msGetUserMedia;
-
-      if (!getUserMedia) {
-        // 如果完全不支援，直接跳過檢查，讓 html5-qrcode 自己處理
-        console.warn('Browser does not support getUserMedia, skipping permission check');
-        resolve(true);
-        return;
-      }
-
-      // 對於支援的瀏覽器，嘗試簡單的權限檢查
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        // 現代瀏覽器 - 使用更寬鬆的檢查
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => {
-            // 立即停止串流
-            stream.getTracks().forEach(track => track.stop());
-            resolve(true);
-          })
-          .catch(error => {
-            console.warn('Camera permission check failed, but continuing:', error);
-            
-            // 只在明確的權限拒絕時才阻止
-            if (error.name === 'NotAllowedError') {
-              alert('相機權限被拒絕。請在瀏覽器設定中允許此網站使用相機，然後重新整理頁面。');
-              resolve(false);
-            } else {
-              // 對於其他所有錯誤（包括 NotFoundError），讓 html5-qrcode 自己處理
-              console.warn('Skipping permission check, letting html5-qrcode handle camera access');
-              resolve(true);
-            }
-          });
-      } else {
-        // 舊版瀏覽器，跳過檢查
-        console.warn('Using legacy browser, skipping permission check');
-        resolve(true);
-      }
-    });
-  };
-
-  const startScanner = async () => {
-    if (!selectedEvent) {
-      alert('請先選擇活動');
-      return;
-    }
-
-    try {
-      // 標記掃描器啟動（用於 UI 切換）
-      setScannerActive(true);
-      setScanResult(null);
-      
-      // 清理之前的掃描器實例
-      if (html5QrcodeScannerRef.current) {
-        try {
-          html5QrcodeScannerRef.current.clear();
-        } catch (clearError) {
-          console.warn('清理舊掃描器時發生錯誤:', clearError);
+        
+        // 自動選擇今天的活動
+        const todayEvent = upcomingEvents.find(event => {
+          const eventDate = new Date(event.event_date);
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate.getTime() === today.getTime();
+        });
+        
+        if (todayEvent) {
+          setSelectedEvent(todayEvent.id.toString());
         }
-        html5QrcodeScannerRef.current = null;
       }
-      
-      // 等待一小段時間確保相機資源釋放
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // 創建新的 QR Code 掃描器 - 針對手機優化
-      const html5QrcodeScanner = new Html5QrcodeScanner(
-        "qr-reader",
-        {
-          fps: 10,
-          qrbox: function(viewfinderWidth, viewfinderHeight) {
-            // 動態計算 QR 掃描框大小，適應不同螢幕尺寸
-            let minEdgePercentage = 0.7; // 70% of the smaller edge
-            let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-            let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-            return {
-              width: qrboxSize,
-              height: qrboxSize
-            };
-          },
-          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-          showTorchButtonIfSupported: true,
-          showZoomSliderIfSupported: true,
-          defaultZoomValueIfSupported: 2,
-          // 手機優化設定
-          aspectRatio: 1.0,
-          disableFlip: false,
-          videoConstraints: {
-            facingMode: "environment" // 使用後置相機
-          }
-        },
-        false
-      );
-      
-      html5QrcodeScannerRef.current = html5QrcodeScanner;
-      
-      // 開始掃描 - 添加額外的錯誤處理
-      try {
-        await html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        console.log('QR Code 掃描器已成功啟動');
-        addDebugInfo('QR Code 掃描器啟動成功');
-      } catch (renderError) {
-        console.error('掃描器渲染失敗:', renderError);
-        addDebugInfo(`掃描器渲染失敗: ${renderError?.message || renderError}`);
-        throw renderError;
-      }
-      
     } catch (error) {
-      console.error('QR Code 掃描器啟動失敗:', error);
-      const errorMessage = error?.message || error?.toString() || '未知錯誤';
-      setScanResult({
-        success: false,
-        message: 'QR Code 掃描器啟動失敗: ' + errorMessage
-      });
-      setScannerActive(false);
+      console.error('獲取活動列表失敗:', error);
     }
   };
 
-  const handleNFCReading = async (nfcCardId) => {
+  const addDebugInfo = (message) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setDebugInfo(prev => [`[${timestamp}] ${message}`, ...prev].slice(0, 10));
+  };
+
+  const handleQRCodeScan = async (decodedText) => {
+    if (loading) return;
+    
     setLoading(true);
+    setScanResult(null);
+    addDebugInfo(`掃描到 QR Code: ${decodedText}`);
     
     try {
-      const response = await api.post('/api/attendance/nfc-checkin', {
-         nfcCardId: nfcCardId,
-         eventId: selectedEvent
-       });
-       
-       setNfcResult({
-         success: true,
-         message: `${response.data.user.name} 報到成功！`
-       });
-       
-       // 更新最近報到記錄
-       const newRecord = {
-         id: Date.now(),
-         user: response.data.user,
-         checkInTime: new Date().toLocaleString('zh-TW')
-       };
-       setRecentCheckIns(prev => [newRecord, ...prev.slice(0, 4)]);
-      
-    } catch (error) {
-      console.error('NFC 報到失敗:', error);
-      setNfcResult({
-        success: false,
-        message: error.response?.data?.message || 'NFC 報到失敗，請稍後再試'
-      });
-    } finally {
-      setLoading(false);
-      setNfcReading(false);
-      
-      // 3秒後清除結果
-      setTimeout(() => {
-        setNfcResult(null);
-      }, 3000);
-    }
-  };
-
-  const stopNFCReading = () => {
-    setNfcReading(false);
-    setNfcResult(null);
-  };
-
-  // 使用 Web NFC（免安裝）直接從瀏覽器讀取卡號（僅支援特定裝置/瀏覽器）
-  const startWebNFCReading = async () => {
-    if (!selectedEvent) {
-      alert('請先選擇活動');
-      return;
-    }
-    if (!('NDEFReader' in window)) {
-      alert('此裝置或瀏覽器不支援 Web NFC。建議使用 Android 手機的 Chrome 瀏覽器，或改用下方 Gateway 方案。');
-      return;
-    }
-
-    try {
-      setNfcReading(true);
-      setNfcResult(null);
-
-      const controller = new AbortController();
-      nfcScanControllerRef.current = controller;
-
-      const ndef = new window.NDEFReader();
-      await ndef.scan({ signal: controller.signal });
-      addDebugInfo('Web NFC 掃描已啟動，請將 NFC 卡片靠近裝置');
-
-      ndef.addEventListener('reading', async ({ message, serialNumber }) => {
-        try {
-          addDebugInfo(`偵測到 NFC 卡片：${serialNumber || '(無序號)'}`);
-          const uid = (serialNumber || '').toUpperCase();
-          if (uid) {
-            await handleNFCReading(uid);
-          } else {
-            setNfcResult({ success: false, message: '未能取得卡片序號，請再試一次' });
-          }
-        } catch (err) {
-          console.error('Web NFC 報到處理失敗:', err);
-          setNfcResult({ success: false, message: err?.response?.data?.message || err?.message || 'Web NFC 報到失敗' });
-        } finally {
-          // 單次讀取後即停止（避免重複觸發）
-          try {
-            if (nfcScanControllerRef.current) {
-              nfcScanControllerRef.current.abort();
-              nfcScanControllerRef.current = null;
-            }
-          } catch (_) {}
-          setNfcReading(false);
-        }
-      });
-
-      ndef.addEventListener('readingerror', () => {
-        setNfcResult({ success: false, message: '讀取失敗，請將卡片更靠近或穩定放置再試一次' });
-      });
-    } catch (error) {
-      console.error('啟動 Web NFC 失敗:', error);
-      let msg = error?.message || '請確認使用支援 Web NFC 的裝置/瀏覽器，並在 HTTPS 頁面下使用';
-      if (error?.name === 'NotAllowedError') {
-        msg = '瀏覽器未授權使用 NFC，請允許權限後重試';
-      }
-      setNfcResult({ success: false, message: 'Web NFC 啟動失敗：' + msg });
-      setNfcReading(false);
-    }
-  };
-
-  const stopWebNFCReading = () => {
-    try {
-      if (nfcScanControllerRef.current) {
-        nfcScanControllerRef.current.abort();
-        nfcScanControllerRef.current = null;
-      }
-    } catch (_) {}
-    setNfcReading(false);
-  };
-
-  // QR Code 掃描成功處理
-  const onScanSuccess = async (decodedText, decodedResult) => {
-    console.log('QR Code 掃描成功:', decodedText);
-    
-    try {
-      // 停止掃描器
-      if (html5QrcodeScannerRef.current) {
-        html5QrcodeScannerRef.current.clear();
-        html5QrcodeScannerRef.current = null;
-      }
-      setScannerActive(false);
-      setLoading(true);
-      
-      // 解析 QR Code 內容
-      let userId;
-      try {
-        // 嘗試解析 JSON 格式的 QR Code
-        const qrData = JSON.parse(decodedText);
-        userId = qrData.userId || qrData.id;
-      } catch (parseError) {
-        // 如果不是 JSON，嘗試直接作為用戶 ID
-        const numericId = parseInt(decodedText);
-        if (!isNaN(numericId) && numericId > 0) {
-          userId = numericId;
-        } else {
-          throw new Error('無效的 QR Code 格式');
-        }
-      }
-      
-      if (!userId) {
-        throw new Error('QR Code 中未找到有效的用戶 ID');
-      }
-      
-      // 處理 QR Code 報到
-      const response = await api.post('/api/attendance/checkin', {
-        userId: userId,
-        eventId: selectedEvent
+      const response = await api.post('/api/attendance/qr-checkin', {
+        qrData: decodedText,
+        eventId: selectedEvent || null
       });
       
       setScanResult({
         success: true,
-        message: `${response.data.user.name} 報到成功！`
+        message: response.data.message,
+        user: response.data.user,
+        event: response.data.event
       });
       
-      // 更新最近報到記錄
-      const newRecord = {
-        id: Date.now(),
+      // 顯示成功彈窗
+      setSuccessModalData({
         user: response.data.user,
-        checkInTime: new Date().toLocaleString('zh-TW')
-      };
-      setRecentCheckIns(prev => [newRecord, ...prev.slice(0, 4)]);
+        event: response.data.event,
+        method: 'QR Code',
+        timestamp: new Date().toLocaleString('zh-TW')
+      });
+      setShowSuccessModal(true);
+      
+      // 3秒後自動關閉彈窗
+      if (modalTimeoutRef.current) {
+        clearTimeout(modalTimeoutRef.current);
+      }
+      modalTimeoutRef.current = setTimeout(() => {
+        setShowSuccessModal(false);
+        setSuccessModalData(null);
+      }, 3000);
+      
+      addDebugInfo(`✅ 報到成功: ${response.data.user?.name}`);
       
     } catch (error) {
       console.error('QR Code 報到失敗:', error);
       setScanResult({
         success: false,
-        message: error.response?.data?.message || error.message || 'QR Code 報到失敗，請稍後再試'
+        message: error.response?.data?.message || 'QR Code 報到失敗，請稍後再試'
       });
+      addDebugInfo(`❌ 報到失敗: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
-      
-      // 3秒後清除結果並允許重新掃描
+      // 清除結果顯示
       setTimeout(() => {
         setScanResult(null);
       }, 3000);
     }
   };
-  
-  // QR Code 掃描失敗處理
-  const onScanFailure = (error) => {
-    // 這裡不需要處理，因為掃描失敗是正常的（當沒有檢測到 QR Code 時）
-    // console.warn('QR Code 掃描失敗:', error);
-  };
 
-  // 停止掃描（供按鈕使用）
-  const stopScanner = () => {
-    try {
-      // 若有 QR 掃描器實例，進行清理
-      if (html5QrcodeScannerRef.current) {
-        html5QrcodeScannerRef.current.clear();
-        html5QrcodeScannerRef.current = null;
-      }
-    } catch (e) {
-      console.error('停止掃描器時出錯:', e);
-    } finally {
-      setScannerActive(false);
-      setScanResult(null);
+  const startQRScanner = () => {
+    if (html5QrcodeScannerRef.current) {
+      html5QrcodeScannerRef.current.clear();
     }
-  };
-
-  // Gateway Service 相關函數
-  const checkGatewayStatus = async () => {
-    try {
-      const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
-      const data = await response.json();
-      setGatewayStatus(data);
-      setGatewayError('');
-    } catch (error) {
-      console.error('檢查 Gateway 狀態失敗:', error);
-      setGatewayStatus(null);
-      setGatewayError('無法連接到本地 NFC Gateway Service，請確認服務已啟動');
-    }
-  };
-
-  const startGatewayNFCReader = async () => {
-    if (!selectedEvent) {
-      setNfcResult({
-        success: false,
-        message: '請先選擇活動'
-      });
-      return;
-    }
-
-    setLoading(true);
-    setGatewayError('');
+    
+    setScannerError('');
+    setIsScanning(true);
     
     try {
-      const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/start-reader`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+      const scanner = new Html5QrcodeScanner(
+        "qr-reader",
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+        },
+        false
+      );
+      
+      scanner.render(
+        (decodedText) => {
+          handleQRCodeScan(decodedText);
+          scanner.clear();
+          setIsScanning(false);
+        },
+        (error) => {
+          // 忽略持續的掃描錯誤
         }
-      });
+      );
       
-      const data = await response.json();
+      html5QrcodeScannerRef.current = scanner;
+      addDebugInfo('QR Code 掃描器已啟動');
       
-      if (response.status === 503) {
-        setNfcResult({
-          success: false,
-          message: 'NFC 模組不可用：請先在本機啟動 Gateway 並安裝 nfc-pcsc。建議點擊下方「下載 Gateway 啟動器」後按兩下執行，再按一次「開始 NFC 報到」。'
-        });
-        return;
-      }
-      
-      if (data.success) {
-        setNfcResult({
-          success: true,
-          message: 'NFC 讀卡機啟動成功！請將 NFC 卡片靠近讀卡機'
-        });
-        // 重新檢查狀態
-        await checkGatewayStatus();
-      } else {
-        setNfcResult({
-          success: false,
-          message: data.message || 'NFC 讀卡機啟動失敗'
-        });
-      }
     } catch (error) {
-      console.error('啟動 NFC 讀卡機失敗:', error);
-      setNfcResult({
-        success: false,
-        message: '無法啟動 NFC 讀卡機，請檢查本地 Gateway Service 是否啟動。若尚未安裝，請點擊下方「下載 Gateway 啟動器」後執行。'
-      });
-    } finally {
-      setLoading(false);
-      
-      // 3秒後清除結果
-      setTimeout(() => {
-        setNfcResult(null);
-      }, 3000);
+      console.error('啟動 QR 掃描器失敗:', error);
+      setScannerError('無法啟動相機，請檢查權限設定');
+      setIsScanning(false);
     }
   };
 
-  // 將舊 SQLite 與新 Mongo 兩種回傳統一成前端可用格式
-  const normalizeCheckinRecord = (raw) => {
-    if (!raw) return null;
-    return {
-      id: raw.id || raw._id || raw.lastID || null,
-      cardUid: raw.cardUid || raw.card_uid || raw.cardUID || null,
-      checkinTime: raw.checkinTime || raw.checkin_time || raw.formattedCheckinTime || raw.createdAt || raw.timestamp || null,
-      readerName: raw.readerName || raw.reader_name || null,
-      source: raw.source || null,
-      timestamp: raw.timestamp || raw.createdAt || null,
-      // 新增：若後端有回傳會員/活動資訊，保留以利顯示
-      member: raw.member || null,
-      event: raw.event || null,
-    };
+  const stopQRScanner = () => {
+    if (html5QrcodeScannerRef.current) {
+      html5QrcodeScannerRef.current.clear();
+      html5QrcodeScannerRef.current = null;
+    }
+    setIsScanning(false);
+    addDebugInfo('QR Code 掃描器已停止');
   };
 
-  const fetchLastNfcCheckin = async () => {
-    try {
-      // 使用共用 api 實例確保 baseURL 與認證頭一致
-      const response = await api.get('/api/nfc-checkin-mongo/last-checkin');
-      // 兼容處理：同時支援 {success, data} 與直接物件兩種格式
-      const payload = response?.data;
-      const raw = (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) ? payload.data : payload;
-      const normalized = normalizeCheckinRecord(raw);
-      if (normalized) {
-        setLastNfcCheckin(normalized);
-      } else {
-        console.warn('last-checkin 回應非預期:', response?.data);
-      }
-    } catch (error) {
-      console.error('獲取最後 NFC 報到紀錄失敗:', error?.response?.data || error.message || error);
-    }
-  };
-
-  const fetchNfcCheckinRecords = async () => {
-    if (!user) return;
-    
-    try {
-      const response = await api.get('/api/nfc-checkin-mongo/records?limit=10');
-      const payload = response?.data;
-      let list = [];
-      if (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) {
-        list = payload.data || [];
-      } else if (Array.isArray(payload)) {
-        list = payload;
-      }
-      setNfcCheckinRecords((list || []).map(normalizeCheckinRecord).filter(Boolean));
-    } catch (error) {
-      console.error('獲取 NFC 報到紀錄失敗:', error);
-    }
-  };
-
-  // 設定 NFC 卡片 UID 到個人資料
-  const handleSetNfcCardId = async (cardUid) => {
-    if (!user || !cardUid) return;
-    
-    const confirmed = window.confirm(
-      `確定要將卡片 UID "${cardUid}" 設定為您的 NFC 卡片嗎？\n\n設定後您就可以使用此卡片進行 NFC 報到。`
-    );
-    
-    if (!confirmed) return;
-    
-    try {
-      // 使用 AuthContext 的 updateProfile，確保本地使用者狀態即時更新
-      const payload = {
-        name: user.name,
-        company: user.company || '',
-        industry: user.industry || '',
-        title: user.title || '',
-        contactNumber: user.contactNumber || '',
-        nfcCardId: cardUid
-      };
-      const { success } = await updateProfile(payload);
-      
-      if (success) {
-        alert(`✅ NFC 卡片設定成功！\n\n卡片 UID: ${cardUid}\n現在您可以使用此卡片進行 NFC 報到了。`);
-        
-        // 若已選擇活動，綁定完成後立即為該活動進行一次 NFC 報到
-        if (selectedEvent) {
-          try {
-            const response = await api.post('/api/attendance/nfc-checkin', {
-              nfcCardId: cardUid,
-              eventId: selectedEvent
-            });
-            setNfcResult({
-              success: true,
-              message: `${response.data.user.name} 報到成功！`
-            });
-            const newRecord = {
-              id: Date.now(),
-              user: response.data.user,
-              checkInTime: new Date().toLocaleString('zh-TW')
-            };
-            setRecentCheckIns(prev => [newRecord, ...prev.slice(0, 4)]);
-          } catch (checkinErr) {
-            console.error('綁定後自動報到失敗:', checkinErr);
-          }
-        }
-        
-        // 重新獲取最後報到記錄以更新顯示
-        await fetchLastNfcCheckin();
-      }
-    } catch (error) {
-      console.error('設定 NFC 卡片失敗:', error);
-      alert('❌ 設定失敗：' + (error.response?.data?.message || '請稍後再試'));
-    }
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      weekday: 'short'
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 頁面標題 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">報到系統</h1>
-          <p className="mt-2 text-gray-600">使用手機鏡頭掃描會員 QR Code 進行報到</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8">
+        {/* 標題區域 */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">📱 活動報到系統</h1>
+          <p className="text-lg text-gray-600">
+            使用 QR Code 掃描進行活動報到
+          </p>
         </div>
 
-        {/* 活動選擇 */}
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">選擇活動</h2>
-          <select
-            value={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={scannerActive}
-          >
-            <option value="">請選擇活動</option>
-            {events.map(event => (
-              <option key={event.id} value={event.id}>
-                {event.title} - {new Date(event.event_date).toLocaleDateString('zh-TW')}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* QR Code 掃描區域 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">QR Code 掃描</h2>
-            
-            {!scannerActive && !scanResult && (
-              <div className="text-center">
-                <div className="mb-4">
-                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 13h2v2h-2zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM17 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2zM19 19h2v2h-2z"/>
-                    <rect x="4" y="4" width="2" height="2" fill="white"/>
-                    <rect x="4" y="16" width="2" height="2" fill="white"/>
-                    <rect x="16" y="4" width="2" height="2" fill="white"/>
-                  </svg>
-                  <p className="text-gray-500 mb-4">點擊開始掃描按鈕啟動相機</p>
-                </div>
-                <button
-                  onClick={startScanner}
-                  disabled={!selectedEvent || loading}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? '啟動中...' : '開始掃描'}
-                </button>
-              </div>
-            )}
-
-            {scannerActive && !scanResult && (
-              <div>
-                <div id="qr-reader" className="mb-4"></div>
-                <div className="text-center">
-                  <button
-                    onClick={stopScanner}
-                    className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    停止掃描
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {scanResult && (
-              <div className={`p-4 rounded-lg ${scanResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                <div className="flex items-center">
-                  <svg className={`w-6 h-6 ${scanResult.success ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {scanResult.success ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    )}
-                  </svg>
-                  <p className={`ml-3 text-sm ${scanResult.success ? 'text-green-700' : 'text-red-700'}`}>{scanResult.message}</p>
-                </div>
-                <div className="mt-3 text-center">
-                  <button
-                    onClick={() => {
-                      setScanResult(null);
-                      // 可以選擇重新開始掃描
-                      // startScanner();
-                    }}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                  >
-                    重新掃描
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* NFC 名片報到區域 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">NFC 名片報到</h2>
-            
-            {/* Web NFC（免安裝）區塊 */}
-            {nfcSupported ? (
-              <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                <h3 className="text-sm font-medium text-green-800 mb-1">行動裝置 Web NFC（免安裝）</h3>
-                <p className="text-xs text-green-700 mb-3">使用支援 NFC 的 Android Chrome 裝置，直接在瀏覽器讀卡完成報到</p>
-                <div className="flex gap-2">
-                  {!nfcReading ? (
-                    <button
-                      onClick={startWebNFCReading}
-                      disabled={loading || !selectedEvent}
-                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                    >
-                      🚀 手機直接讀取（Web NFC）
-                    </button>
-                  ) : (
-                    <button
-                      onClick={stopWebNFCReading}
-                      className="flex-1 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors"
-                    >
-                      ⏹️ 停止 Web NFC
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-800 text-sm">
-                此裝置或瀏覽器不支援 Web NFC。建議使用 Android 手機的 Chrome 瀏覽器開啟此網站（HTTPS），或使用下方 Gateway 方案。
-              </div>
-            )}
-
-            {/* Gateway 狀態 */}
-            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-sm font-medium text-gray-800 mb-2">Gateway Service 狀態</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">服務狀態：</span>
-                  <span className={`font-medium ${gatewayStatus?.nfcActive ? 'text-green-600' : 'text-red-600'}`}>
-                    {gatewayStatus?.nfcActive ? '運行中' : '未啟動'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">NFC 讀卡機：</span>
-                  <span className={`font-medium ${gatewayStatus?.readerConnected ? 'text-green-600' : 'text-red-600'}`}>
-                    {gatewayStatus?.readerConnected ? '已啟動' : '未連接'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">讀卡機名稱：</span>
-                  <span className="font-medium">{gatewayStatus?.readerName || '未知'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">卡片 UID：</span>
-                  <span className="font-mono">{gatewayStatus?.lastCardUid || '-'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <button
-                onClick={startGatewayNFCReader}
-                disabled={loading || !selectedEvent}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 左側：掃描控制 */}
+          <div className="space-y-6">
+            {/* 活動選擇 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">選擇活動</h2>
+              <select
+                value={selectedEvent}
+                onChange={(e) => setSelectedEvent(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {loading ? '啟動中...' : '🚀 開始 NFC 報到'}
-              </button>
-
-              {/* Gateway 一鍵啟動器下載與連線檢查 */}
-              {(gatewayError || gatewayStatus?.nfcModuleAvailable === false) && (
-                <div className="mt-4 p-3 rounded-lg border border-red-200 bg-red-50 text-left">
-                  <p className="text-sm text-red-700 font-medium mb-2">
-                    {gatewayStatus?.message || '無法連接到本地 NFC Gateway Service'}
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {isMac && (
-                      <>
-                        <a
-                          href="/BCI-NFC-Gateway-Launcher-macOS.zip"
-                          download
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-green-600 text-white text-sm hover:bg-green-700"
-                        >
-                          ✅ 下載已簽名版本（推薦）
-                        </a>
-                        <a
-                          href="/BCI-NFC-Gateway-Launcher.command"
-                          download
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
-                        >
-                          🚀 下載 Gateway 啟動器（macOS）
-                        </a>
-                        <a
-                          href={macReleaseUrl}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-600 text-white text-sm hover:bg-gray-700"
-                        >
-                          備用：App 版本（需修復）
-                        </a>
-                      </>
-                    )}
-                    {isWindows && (
-                      <>
-                        <a
-                          href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
-                          download
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
-                        >
-                          🚀 下載 Gateway 啟動器（Windows）
-                        </a>
-                        <a
-                          href={winReleaseUrl}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-600 text-white text-sm hover:bg-gray-700"
-                        >
-                          備用：EXE 版本（需修復）
-                        </a>
-                      </>
-                    )}
-                    {!isMac && !isWindows && (
-                      <>
-                        <a
-                          href="/BCI-NFC-Gateway-Launcher.command"
-                          download
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
-                        >
-                          下載 macOS 啟動器
-                        </a>
-                        <a
-                          href="/BCI-NFC-Gateway-Launcher-Windows.vbs"
-                          download
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
-                        >
-                          下載 Windows 啟動器
-                        </a>
-                      </>
-                    )}
-                  </div>
-                  <div className="mt-3 p-2 bg-blue-50 rounded-md">
-                    <p className="text-xs text-blue-700">
-                      💡 <strong>使用說明：</strong>
-                      {isMac && '下載 .command 文件後，右鍵選擇「打開」，首次可能需要到「系統設定 > 隱私權與安全性」允許執行。'}
-                      {isWindows && '下載 .vbs 文件後，雙擊執行即可自動安裝並啟動 Gateway 服務。'}
-                      {!isMac && !isWindows && 'macOS 用戶下載 .command 文件，Windows 用戶下載 .vbs 文件。'}
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                    <button
-                      onClick={checkGatewayStatus}
-                      className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-white border text-sm hover:bg-gray-50"
-                    >
-                      重新檢查連線
-                    </button>
-                  </div>
-                  <ul className="mt-2 text-xs text-red-700 list-disc pl-5 space-y-1">
-                    <li>下載後，在「下載」資料夾按兩下執行；若被阻擋，請右鍵 → 開啟</li>
-                    <li>首次執行會自動安裝套件（含 nfc-pcsc），請保持讀卡機已插上</li>
-                    <li>啟動完成後回到本頁再按一次「開始 NFC 報到」</li>
-                  </ul>
-                </div>
-              )}
+                <option value="">請選擇活動（或留空進行一般報到）</option>
+                {events.map(event => (
+                  <option key={event.id} value={event.id}>
+                    {event.title} - {formatDate(event.event_date)}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* 報到結果提示 */}
-            {nfcResult && (
-              <div className={`mt-4 p-3 rounded-lg border ${nfcResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                <div className="flex items-center">
-                  <svg className={`w-5 h-5 ${nfcResult.success ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {nfcResult.success ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    )}
-                  </svg>
-                </div>
-                <p className={`text-sm font-medium ${
-                  nfcResult.success ? 'text-green-700' : 'text-red-700'
-                }`}>
-                  {nfcResult.message}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* 最近報到記錄 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">最近報到記錄</h2>
-            
-            {/* 最後 NFC 報到記錄 */}
-            {lastNfcCheckin && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="text-sm font-medium text-blue-800 mb-2">📱 最後 NFC 報到</h3>
-                {lastNfcCheckin.member ? (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-blue-700">會員:</span>
-                      <span className="font-medium text-blue-900">{lastNfcCheckin.member.name}</span>
+            {/* QR Code 掃描區域 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">📱 QR Code 掃描</h2>
+              
+              <div className="text-center">
+                {!isScanning ? (
+                  <div>
+                    <div className="mb-4">
+                      <svg className="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m-2 0h-2m3-4h2m-6 0h2v-4m0 0V9a2 2 0 012-2h2a2 2 0 012 2v2m-6 4V9a2 2 0 012-2h2a2 2 0 012 2v2m-6 4h2m6-4h2" />
+                      </svg>
+                      <p className="text-gray-600 mb-4">點擊開始掃描 QR Code</p>
                     </div>
-                    {lastNfcCheckin.member.company && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">公司:</span>
-                        <span className="text-blue-800">{lastNfcCheckin.member.company}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-blue-700">卡號:</span>
-                      <span className="font-mono text-blue-900">{lastNfcCheckin.cardUid}</span>
-                    </div>
-                    {lastNfcCheckin.event?.title && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">活動:</span>
-                        <span className="text-blue-900">{lastNfcCheckin.event.title}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-blue-700">時間:</span>
-                      <span className="text-blue-900">{lastNfcCheckin.checkinTime}</span>
-                    </div>
+                    <button
+                      onClick={startQRScanner}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      🚀 開始 QR 掃描
+                    </button>
                   </div>
                 ) : (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-blue-700">卡號:</span>
-                      <span className="font-mono text-blue-900">{lastNfcCheckin.cardUid}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-blue-700">時間:</span>
-                      <span className="text-blue-900">{lastNfcCheckin.checkinTime}</span>
-                    </div>
-                    {lastNfcCheckin.readerName && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">讀卡機:</span>
-                        <span className="text-blue-900">{lastNfcCheckin.readerName}</span>
-                      </div>
-                    )}
+                  <div>
+                    <div id="qr-reader" className="mb-4"></div>
+                    <button
+                      onClick={stopQRScanner}
+                      className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                    >
+                      ⏹️ 停止掃描
+                    </button>
                   </div>
                 )}
-
-                {/* 綁定卡片到我的帳號 */}
-                {user && lastNfcCheckin.cardUid && (
-                  <div className="mt-3 text-right">
-                    {user.nfcCardId === lastNfcCheckin.cardUid ? (
-                      <span className="text-xs text-green-700">這是您已綁定的卡片</span>
-                    ) : (
-                      <button
-                        onClick={() => handleSetNfcCardId(lastNfcCheckin.cardUid)}
-                        className="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
-                      >
-                        設為我的卡片
-                      </button>
-                    )}
+                
+                {scannerError && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700 text-sm">{scannerError}</p>
                   </div>
                 )}
               </div>
-            )}
+            </div>
 
-            {/* 來自雲端（MongoDB）的 NFC 報到紀錄 */}
-            {nfcCheckinRecords.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-green-800 mb-2">🧾 最近 NFC 報到（雲端）</h3>
-                <div className="space-y-2">
-                  {nfcCheckinRecords.slice(0, 5).map((record) => (
-                    <div key={record.id} className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                          <span className="text-sm font-medium text-green-700">
-                            {record.cardUid?.slice(-2)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">{record.member?.name || record.cardUid}</p>
-                        {record.event?.title && (
-                          <p className="text-xs text-gray-700">活動：{record.event.title}</p>
-                        )}
-                        <p className="text-xs text-gray-500">{record.checkinTime}</p>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          NFC 報到
-                        </span>
-                      </div>
+            {/* 掃描結果 */}
+            {scanResult && (
+              <div className={`p-4 rounded-lg border ${
+                scanResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+              }`}>
+                <div className="flex items-center">
+                  <svg className={`w-5 h-5 mr-2 ${
+                    scanResult.success ? 'text-green-500' : 'text-red-500'
+                  }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {scanResult.success ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    )}
+                  </svg>
+                  <p className={`font-medium ${
+                    scanResult.success ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    {scanResult.message}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 右側：系統資訊 */}
+          <div className="space-y-6">
+            {/* 使用說明 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-blue-900 mb-3">📋 使用說明</h3>
+              <div className="space-y-2 text-sm text-gray-700">
+                <div className="font-medium text-blue-800 mb-2">QR Code 掃描步驟：</div>
+                <ul className="space-y-1 ml-4">
+                  <li>• 選擇對應的活動（可選）</li>
+                  <li>• 點擊「開始 QR 掃描」</li>
+                  <li>• 允許瀏覽器使用相機權限</li>
+                  <li>• 將會員的 QR Code 對準鏡頭</li>
+                  <li>• 系統自動識別並完成報到</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* 除錯資訊 */}
+            {debugInfo.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">🔍 系統日誌</h3>
+                <div className="bg-gray-50 rounded p-3 max-h-40 overflow-y-auto">
+                  {debugInfo.map((info, index) => (
+                    <div key={index} className="text-xs text-gray-600 font-mono mb-1">
+                      {info}
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* 本機 QR 報到（本頁面掃描產生） */}
-            {recentCheckIns.length > 0 && (
-              <div className="mt-2">
-                <h3 className="text-sm font-medium text-gray-800 mb-2">📷 最近 QR 報到（本機）</h3>
-                {recentCheckIns.map((record) => (
-                  <div key={record.id} className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                        <span className="text-sm font-medium text-green-700">
-                          {record.user.name.charAt(0)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <p className="text-sm font-medium text-gray-900">{record.user.name}</p>
-                      <p className="text-xs text-gray-500">{record.checkInTime}</p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        QR 報到
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {nfcCheckinRecords.length === 0 && recentCheckIns.length === 0 && (
-              <div className="text-center text-gray-500">
-                尚無報到記錄
-              </div>
-            )}
           </div>
         </div>
       </div>
-      
-      {/* NFC 報到成功彈窗 */}
+
+      {/* 報到成功彈窗 */}
       {showSuccessModal && successModalData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl transform animate-pulse">
-            <div className="text-center">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
+            <div className="mb-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">🎉 報到成功！</h3>
-              <div className="space-y-2 text-gray-700">
-                <p className="text-lg font-semibold text-green-600">{successModalData.user?.name || successModalData.userName}</p>
-                <p className="text-sm">{successModalData.event?.title || successModalData.eventTitle}</p>
-                <p className="text-xs text-gray-500">{successModalData.checkinTime}</p>
-                <p className="text-xs text-blue-600 font-medium">{successModalData.method} 報到</p>
-              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">報到成功！</h3>
+              <p className="text-lg text-gray-700 mb-1">{successModalData.user?.name}</p>
+              {successModalData.user?.company && (
+                <p className="text-sm text-gray-500 mb-2">{successModalData.user.company}</p>
+              )}
+              {successModalData.event && (
+                <p className="text-sm text-blue-600 mb-2">活動：{successModalData.event.title}</p>
+              )}
+              <p className="text-xs text-gray-400">
+                {successModalData.method} • {successModalData.timestamp}
+              </p>
             </div>
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                setSuccessModalData(null);
+                if (modalTimeoutRef.current) {
+                  clearTimeout(modalTimeoutRef.current);
+                }
+              }}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              確定
+            </button>
           </div>
         </div>
       )}

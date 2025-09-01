@@ -72,7 +72,6 @@ const Layout = ({ children }) => {
     { name: '活動報名', href: '/events', icon: CalendarIcon },
     { name: '商會地基', href: '/foundation', icon: InformationCircleIcon },
     { name: '個人資料', href: '/profile', icon: UserIcon },
-    { name: '電子名片', href: '/nfc-card-editor', icon: IdentificationIcon },
   ];
 
   // AI 智慧合作網絡功能

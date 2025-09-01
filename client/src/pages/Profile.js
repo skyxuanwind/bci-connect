@@ -50,8 +50,7 @@ const Profile = () => {
       company: user?.company || '',
       industry: user?.industry || '',
       title: user?.title || '',
-      contactNumber: user?.contactNumber || '',
-      nfcCardId: user?.nfcCardId || ''
+      contactNumber: user?.contactNumber || ''
     }
   });
 
@@ -98,8 +97,7 @@ const Profile = () => {
       company: user.company || '',
       industry: user.industry || '',
       title: user.title || '',
-      contactNumber: user.contactNumber || '',
-      nfcCardId: user.nfcCardId || ''
+      contactNumber: user.contactNumber || ''
     });
   }, [user, resetProfile]);
 
@@ -418,30 +416,7 @@ const Profile = () => {
                 )}
               </div>
 
-              {/* NFC Card ID */}
-              <div className="md:col-span-2">
-                <label className="label">
-                  <CreditCardIcon className="h-4 w-4 mr-2" />
-                  NFC 卡片 UID
-                </label>
-                <input
-                  type="text"
-                  className={`input w-full ${profileErrors.nfcCardId ? 'input-error' : ''}`}
-                  placeholder="請輸入 NFC 卡片 UID（選填）"
-                  {...registerProfile('nfcCardId', {
-                    pattern: {
-                      value: /^[A-Fa-f0-9]{8}$/,
-                      message: '請輸入有效的 8 位十六進制 UID（如：A1B2C3D4）'
-                    }
-                  })}
-                />
-                {profileErrors.nfcCardId && (
-                  <p className="error-message">{profileErrors.nfcCardId.message}</p>
-                )}
-                <p className="text-xs text-gray-500 mt-1">
-                  用於 NFC 名片報到功能，可透過報到系統自動獲取
-                </p>
-              </div>
+
             </div>
 
             {/* Additional Info (Read-only) */}
@@ -474,18 +449,7 @@ const Profile = () => {
                   </p>
                 </div>
                 
-                <div className="space-y-2">
-                  <label className="label">NFC 卡片 UID</label>
-                  <p className="mt-2 text-sm text-gray-900">
-                    {user?.nfcCardId ? (
-                      <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
-                        {user.nfcCardId}
-                      </span>
-                    ) : (
-                      <span className="text-gray-500">未設定</span>
-                    )}
-                  </p>
-                </div>
+
               </div>
             </div>
 

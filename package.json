@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "client": "cd client && PORT=3001 npm start",
     "server": "nodemon server.js",
-    "nfc-server": "node nfc-server.js",
+
     "build": "cd client && npm run build",
     "heroku-postbuild": "cd client && npm install && npm run build"
   },
@@ -54,8 +54,5 @@
   "devDependencies": {
     "http-proxy-middleware": "^3.0.5",
     "nodemon": "^3.0.1"
-  },
-  "optionalDependencies": {
-    "nfc-pcsc": "^0.8.1"
   }
 }

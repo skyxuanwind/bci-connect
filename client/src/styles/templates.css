@@ -1,0 +1,682 @@
+/* ==============================================
+   NFC 電子名片模板樣式
+   ============================================== */
+
+/* 共用基礎樣式 */
+.nfc-card-container {
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.6;
+}
+
+.card-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.card-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.card-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.card-subtitle {
+  font-size: 1.25rem;
+  opacity: 0.8;
+  margin-bottom: 2rem;
+}
+
+.content-block {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.content-block:hover {
+  transform: translateY(-2px);
+}
+
+.block-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.save-contact-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.save-contact-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.add-to-wallet-btn {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  padding: 1rem;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.add-to-wallet-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* ==============================================
+   模板一：科技專業版
+   風格：柔和漸變色、半透明材質、卡片式區塊
+   ============================================== */
+
+.template-tech {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  position: relative;
+}
+
+.template-tech::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.template-tech .card-content {
+  position: relative;
+  z-index: 1;
+}
+
+.template-tech .content-block {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.template-tech .content-block:hover {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.template-tech .card-title {
+  background: linear-gradient(45deg, #ffffff, #e0e7ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.template-tech .save-contact-btn {
+  background: linear-gradient(45deg, #4f46e5, #7c3aed);
+  color: white;
+}
+
+.template-tech .save-contact-btn:hover {
+  background: linear-gradient(45deg, #4338ca, #6d28d9);
+}
+
+.template-tech .add-to-wallet-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.template-tech .add-to-wallet-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 深色模式支持 */
+.template-tech.dark-mode {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.template-tech.dark-mode .content-block {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 社群連結樣式 */
+.template-tech .social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.template-tech .social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: white;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.template-tech .social-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ==============================================
+   模板二：活力創意版
+   風格：高飽和度對比色、大膽圓角、有機曲線
+   ============================================== */
+
+.template-creative {
+  background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+  color: #2d3436;
+  position: relative;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.template-creative::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.2) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.template-creative .card-content {
+  position: relative;
+  z-index: 1;
+}
+
+.template-creative .content-block {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 25px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+
+.template-creative .content-block::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+  border-radius: 28px;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.template-creative .content-block:hover::before {
+  opacity: 1;
+}
+
+.template-creative .content-block:hover {
+  transform: translateY(-5px) rotate(1deg);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.template-creative .card-title {
+  background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transform: rotate(-2deg);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.template-creative .card-subtitle {
+  transform: rotate(1deg);
+  color: #636e72;
+}
+
+.template-creative .save-contact-btn {
+  background: linear-gradient(45deg, #ff6b6b, #feca57);
+  color: white;
+  border-radius: 50px;
+  transform: rotate(-2deg);
+}
+
+.template-creative .save-contact-btn:hover {
+  background: linear-gradient(45deg, #e55656, #feb145);
+  transform: rotate(-2deg) scale(1.05);
+}
+
+.template-creative .add-to-wallet-btn {
+  background: linear-gradient(45deg, #48dbfb, #ff9ff3);
+  color: white;
+  border-radius: 50%;
+  transform: rotate(5deg);
+}
+
+.template-creative .add-to-wallet-btn:hover {
+  transform: rotate(5deg) scale(1.1);
+}
+
+.template-creative .social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.template-creative .social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(45deg, #ff6b6b, #feca57);
+  border-radius: 50%;
+  color: white;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.template-creative .social-link:hover {
+  transform: translateY(-3px) rotate(10deg) scale(1.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.template-creative .social-link:nth-child(even) {
+  background: linear-gradient(45deg, #48dbfb, #ff9ff3);
+  transform: rotate(-5deg);
+}
+
+.template-creative .social-link:nth-child(even):hover {
+  transform: translateY(-3px) rotate(-15deg) scale(1.1);
+}
+
+/* ==============================================
+   模板三：簡約質感版
+   風格：極簡、線條俐落、大量留白、圓潤造型
+   ============================================== */
+
+.template-minimal {
+  background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
+  color: #334155;
+  min-height: 100vh;
+}
+
+.template-minimal .card-content {
+  padding: 4rem 2rem;
+}
+
+.template-minimal .content-block {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 3rem;
+  padding: 2.5rem;
+  transition: all 0.4s ease;
+}
+
+.template-minimal .content-block:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+  border-color: #cbd5e1;
+}
+
+.template-minimal .card-title {
+  color: #1e293b;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.template-minimal .card-subtitle {
+  color: #64748b;
+  font-weight: 400;
+  margin-bottom: 3rem;
+}
+
+.template-minimal .block-title {
+  color: #475569;
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.template-minimal .save-contact-btn {
+  background: #1e293b;
+  color: white;
+  border-radius: 50px;
+  padding: 1.2rem 2.5rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.template-minimal .save-contact-btn:hover {
+  background: #334155;
+  box-shadow: 0 12px 40px rgba(30, 41, 59, 0.3);
+}
+
+.template-minimal .add-to-wallet-btn {
+  background: #ffffff;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+}
+
+.template-minimal .add-to-wallet-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.template-minimal .social-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.template-minimal .social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.template-minimal .social-link:hover {
+  background: #f8fafc;
+  border-color: #1e293b;
+  color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* 文字內容樣式 */
+.template-minimal .text-content {
+  line-height: 1.8;
+  color: #475569;
+}
+
+.template-minimal .text-content h3 {
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+/* 連結樣式 */
+.template-minimal .link-item {
+  display: block;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  color: #1e293b;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.template-minimal .link-item:hover {
+  background: #e2e8f0;
+  transform: translateX(4px);
+}
+
+/* 地圖樣式 */
+.template-minimal .map-container {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .card-content {
+    padding: 1rem;
+  }
+  
+  .card-title {
+    font-size: 2rem;
+  }
+  
+  .content-block {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .save-contact-btn {
+    bottom: 1rem;
+    right: 1rem;
+    padding: 0.8rem 1.5rem;
+  }
+  
+  .add-to-wallet-btn {
+    bottom: 1rem;
+    left: 1rem;
+  }
+  
+  .social-links {
+    gap: 1rem;
+  }
+  
+  .template-creative .social-link,
+  .template-minimal .social-link {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .template-tech .social-link {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* 深色模式切換按鈕 */
+.dark-mode-toggle {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  z-index: 1001;
+}
+
+.dark-mode-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* 載入動畫 */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 成功提示動畫 */
+.success-message {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #10b981;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+  z-index: 1002;
+  animation: slideInDown 0.5s ease;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* 內容區塊特定樣式 */
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 比例 */
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.image-container {
+  text-align: center;
+}
+
+.image-container img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.contact-info {
+  display: grid;
+  gap: 1rem;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.contact-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.contact-icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+}
+
+/* 無障礙設計 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 高對比模式 */
+@media (prefers-contrast: high) {
+  .template-tech .content-block {
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+  
+  .template-minimal .content-block {
+    border: 2px solid #334155;
+  }
+}
+
+/* 打印樣式 */
+@media print {
+  .save-contact-btn,
+  .add-to-wallet-btn,
+  .dark-mode-toggle {
+    display: none;
+  }
+  
+  .nfc-card-container {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .content-block {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}

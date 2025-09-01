@@ -50,10 +50,10 @@ import AIProfilePage from './pages/AIProfilePage';
 import AINotificationTestPage from './pages/AINotificationTestPage';
 
 // NFC 電子名片系統組件
-import PublicNFCCard from './components/NFCCard/PublicNFCCard';
-import NFCCardEditor from './components/NFCCard/NFCCardEditor';
-import CardholderAuth from './components/DigitalCardHolder/CardholderAuth';
-import CardholderDashboard from './components/DigitalCardHolder/CardholderDashboard';
+import NFCCardEditor from './pages/NFCCardEditor';
+import MemberCard from './pages/MemberCard';
+import DigitalWallet from './pages/DigitalWallet';
+
 
 
 function App() {
@@ -190,22 +190,7 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* NFC 電子名片系統路由 */}
-          {/* 公開名片頁面 - 無需登入 */}
-          <Route path="/nfc-card/:slug" element={<PublicNFCCard />} />
-          
-          {/* NFC 名片編輯器 - 無需登入 */}
-          <Route path="/nfc-card-editor" element={
-            <Layout>
-              <NFCCardEditor />
-            </Layout>
-          } />
-          
-          {/* 數位名片夾認證頁面 - 無需登入 */}
-          <Route path="/cardholder-auth" element={<CardholderAuth />} />
-          
-          {/* 數位名片夾儀表板 - 需要數位名片夾登入 */}
-          <Route path="/cardholder-dashboard" element={<CardholderDashboard />} />
+
           
           {/* Admin Routes */}
           <Route path="/admin" element={
@@ -332,7 +317,19 @@ function App() {
           </Level1Route>
         } />
         
-        {/* NFC 功能已整合到 /checkin-scanner 中 */}
+        {/* NFC 電子名片路由 */}
+        <Route path="/nfc-card-editor" element={
+          <ProtectedRoute>
+            <Layout>
+              <NFCCardEditor />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/digital-wallet" element={<DigitalWallet />} />
+        
+        {/* 公開的會員名片頁面 - 無需登入 */}
+        <Route path="/member/:memberId" element={<MemberCard />} />
           
           {/* Catch all route */}
           <Route path="/404" element={<NotFound />} />

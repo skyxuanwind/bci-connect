@@ -1,0 +1,914 @@
+/* 會員名片頁面樣式 */
+.member-card-page {
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 模板樣式 - 科技專業版 */
+.template-tech {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+}
+
+.template-tech.dark-mode {
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  color: #ecf0f1;
+}
+
+/* 模板樣式 - 活力創意版 */
+.template-creative {
+  background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
+  color: #2c2c2c;
+}
+
+.template-creative.dark-mode {
+  background: linear-gradient(135deg, #c0392b 0%, #f39c12 50%, #3498db 100%);
+  color: #ecf0f1;
+}
+
+/* 模板樣式 - 簡約質感版 */
+.template-minimal {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #495057;
+}
+
+.template-minimal.dark-mode {
+  background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+  color: #f8f9fa;
+}
+
+/* 載入狀態 */
+.member-card-page.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.loading-spinner {
+  text-align: center;
+  color: white;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 錯誤狀態 */
+.member-card-page.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.error-message {
+  text-align: center;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.7;
+}
+
+.error-message h2 {
+  margin-bottom: 10px;
+  font-size: 1.8rem;
+}
+
+.error-message p {
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* 成功提示 */
+.bookmark-success {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4CAF50;
+  color: white;
+  padding: 15px 25px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
+}
+
+.success-icon {
+  font-size: 1.2rem;
+}
+
+/* 頂部工具欄 */
+.top-toolbar {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.toolbar-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.dark-mode .toolbar-btn {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+}
+
+.view-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #666;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .view-count {
+  background: rgba(0, 0, 0, 0.7);
+  color: #ccc;
+}
+
+.view-icon {
+  font-size: 0.8rem;
+}
+
+.template-selector {
+  display: flex;
+  gap: 5px;
+}
+
+.template-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.template-btn.active {
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+}
+
+.template-btn:hover {
+  transform: scale(1.1);
+}
+
+/* QR碼彈窗 */
+.qr-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.qr-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 300px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .qr-modal {
+  background: #2c3e50;
+  color: white;
+}
+
+.qr-modal h3 {
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 12px;
+}
+
+.qr-modal p {
+  margin-bottom: 20px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.dark-mode .qr-modal p {
+  color: #bdc3c7;
+}
+
+.close-qr-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.close-qr-btn:hover {
+  background: #5a6fd8;
+  transform: translateY(-2px);
+}
+
+/* 主要內容容器 */
+.card-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 100px 20px 40px;
+}
+
+/* 個人資訊區域 */
+.personal-info-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 40px;
+  margin-bottom: 30px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .personal-info-section {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar-container {
+  margin-bottom: 25px;
+}
+
+.user-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 3rem;
+  margin: 0 auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.user-name {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.template-creative .user-name {
+  background: linear-gradient(135deg, #ff6b6b, #feca57);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.template-minimal .user-name {
+  color: #495057;
+}
+
+.dark-mode.template-minimal .user-name {
+  color: #f8f9fa;
+}
+
+.user-position,
+.user-company {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.dark-mode .user-position,
+.dark-mode .user-company {
+  color: #bdc3c7;
+}
+
+.info-icon {
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.user-bio {
+  margin-top: 20px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #555;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dark-mode .user-bio {
+  color: #bdc3c7;
+}
+
+/* 聯絡資訊區域 */
+.contact-info-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .contact-info-section {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contact-info-section h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 20px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.contact-item:hover {
+  background: rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+}
+
+.contact-icon {
+  font-size: 1.3rem;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.contact-item.phone .contact-icon {
+  color: #4CAF50;
+}
+
+.contact-item.email .contact-icon {
+  color: #2196F3;
+}
+
+.contact-item.website .contact-icon {
+  color: #FF9800;
+}
+
+/* 內容區塊 */
+.content-blocks-section {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.content-block {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .content-block {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.content-block h3 {
+  margin-bottom: 15px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.dark-mode .content-block h3 {
+  color: #ecf0f1;
+}
+
+.content-block p {
+  line-height: 1.6;
+  color: #555;
+}
+
+.dark-mode .content-block p {
+  color: #bdc3c7;
+}
+
+/* 連結區塊 */
+.link-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.link-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.link-icon {
+  font-size: 1.1rem;
+}
+
+/* 圖片區塊 */
+.content-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.image-description {
+  font-style: italic;
+  color: #777;
+  text-align: center;
+}
+
+.dark-mode .image-description {
+  color: #95a5a6;
+}
+
+/* 影片區塊 */
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 比例 */
+  margin-bottom: 10px;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.video-description {
+  font-style: italic;
+  color: #777;
+  text-align: center;
+}
+
+.dark-mode .video-description {
+  color: #95a5a6;
+}
+
+/* 社群媒體區塊 */
+.social-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.social-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.social-link.linkedin {
+  background: #0077B5;
+}
+
+.social-link.facebook {
+  background: #1877F2;
+}
+
+.social-link.twitter {
+  background: #1DA1F2;
+}
+
+.social-link.instagram {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+.social-link.youtube {
+  background: #FF0000;
+}
+
+/* 地圖區塊 */
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.map-container iframe {
+  width: 100%;
+  height: 100%;
+}
+
+.map-address {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #666;
+  font-weight: 500;
+}
+
+.dark-mode .map-address {
+  color: #bdc3c7;
+}
+
+.map-icon {
+  color: #e74c3c;
+  font-size: 1.1rem;
+}
+
+/* 操作按鈕 */
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.action-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.bookmark-btn {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+}
+
+.bookmark-btn.bookmarked {
+  background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+}
+
+.download-btn {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+}
+
+.share-btn {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+}
+
+/* 底部資訊 */
+.card-footer {
+  text-align: center;
+  padding: 30px 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.card-footer p {
+  margin-bottom: 10px;
+}
+
+.wallet-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.wallet-link:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .top-toolbar {
+    left: 10px;
+    right: 10px;
+  }
+  
+  .toolbar-left,
+  .toolbar-right {
+    flex-wrap: wrap;
+  }
+  
+  .template-selector {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  
+  .card-container {
+    padding: 120px 15px 40px;
+  }
+  
+  .personal-info-section {
+    padding: 30px 20px;
+  }
+  
+  .user-name {
+    font-size: 2rem;
+  }
+  
+  .user-avatar,
+  .avatar-placeholder {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .avatar-placeholder {
+    font-size: 2.5rem;
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .social-links {
+    grid-template-columns: 1fr;
+  }
+  
+  .qr-modal {
+    margin: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .template-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .user-name {
+    font-size: 1.8rem;
+  }
+  
+  .user-position,
+  .user-company {
+    font-size: 1rem;
+  }
+  
+  .content-block {
+    padding: 20px;
+  }
+  
+  .action-btn {
+    padding: 14px 20px;
+  }
+}
+
+/* 動畫效果 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-block {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* 滾動條樣式 */
+.member-card-page ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.member-card-page ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.member-card-page ::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.5);
+  border-radius: 4px;
+}
+
+.member-card-page ::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.7);
+}
+
+/* 高對比模式支援 */
+@media (prefers-contrast: high) {
+  .content-block,
+  .personal-info-section,
+  .contact-info-section {
+    border: 2px solid #333;
+  }
+  
+  .action-btn {
+    border: 1px solid #333;
+  }
+}
+
+/* 減少動畫模式 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 焦點樣式 */
+button:focus,
+a:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* 打印樣式 */
+@media print {
+  .top-toolbar,
+  .action-buttons,
+  .card-footer {
+    display: none;
+  }
+  
+  .member-card-page {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .personal-info-section,
+  .contact-info-section,
+  .content-block {
+    background: white !important;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
