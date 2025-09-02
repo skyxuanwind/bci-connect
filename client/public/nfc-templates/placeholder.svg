@@ -1,0 +1,25 @@
+<svg width="200" height="140" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dots" patternUnits="userSpaceOnUse" width="20" height="20">
+      <circle cx="10" cy="10" r="1" fill="#e5e7eb" opacity="0.5"/>
+    </pattern>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="140" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="5,5" rx="8"/>
+  <rect x="10" y="10" width="180" height="120" fill="url(#dots)"/>
+  
+  <!-- Placeholder Icon -->
+  <g transform="translate(100, 70)">
+    <!-- Card Icon -->
+    <rect x="-20" y="-12" width="40" height="24" fill="none" stroke="#9ca3af" stroke-width="2" rx="4"/>
+    <line x1="-12" y1="-6" x2="12" y2="-6" stroke="#9ca3af" stroke-width="1.5"/>
+    <line x1="-12" y1="-2" x2="8" y2="-2" stroke="#9ca3af" stroke-width="1"/>
+    <line x1="-12" y1="2" x2="12" y2="2" stroke="#9ca3af" stroke-width="1"/>
+    <line x1="-12" y1="6" x2="6" y2="6" stroke="#9ca3af" stroke-width="1"/>
+  </g>
+  
+  <!-- Placeholder Text -->
+  <text x="100" y="100" font-family="Inter, sans-serif" font-size="10" fill="#9ca3af" text-anchor="middle">模板預覽</text>
+  <text x="100" y="115" font-family="Inter, sans-serif" font-size="8" fill="#d1d5db" text-anchor="middle">請選擇模板</text>
+</svg>

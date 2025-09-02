@@ -350,7 +350,7 @@ const NFCCardEditor = () => {
   }
 
   const selectedTemplate = templates.find(t => t.id === cardConfig?.template_id);
-  const selectedPreview = selectedTemplate?.preview_image_url || selectedTemplate?.preview_image || '/nfc-templates/placeholder.svg';
+  const selectedPreview = selectedTemplate?.preview_image_url || '/nfc-templates/placeholder.svg';
 
   return (
     <div className="min-h-screen bg-gray-50">

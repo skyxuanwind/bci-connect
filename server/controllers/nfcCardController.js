@@ -5,7 +5,7 @@ const vCard = require('vcards-js');
 const getTemplates = async (req, res) => {
   try {
     const query = `
-      SELECT id, name, description, css_config, preview_image
+      SELECT id, name, description, css_config, preview_image_url
       FROM nfc_card_templates 
       WHERE is_active = true 
       ORDER BY display_order ASC

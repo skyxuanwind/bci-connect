@@ -1,0 +1,41 @@
+<svg width="200" height="140" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="subtleShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="140" fill="#ffffff" rx="8"/>
+  
+  <!-- Header Section -->
+  <rect x="24" y="24" width="152" height="32" fill="#f3f4f6" rx="4" filter="url(#subtleShadow)"/>
+  <rect x="32" y="32" width="32" height="3" fill="#059669" rx="1.5"/>
+  <rect x="32" y="40" width="80" height="2" fill="#374151" rx="1"/>
+  <rect x="32" y="46" width="60" height="2" fill="#9ca3af" rx="1"/>
+  
+  <!-- Content Grid -->
+  <rect x="24" y="68" width="70" height="24" fill="#f3f4f6" rx="4" filter="url(#subtleShadow)"/>
+  <rect x="30" y="74" width="12" height="2" fill="#059669" rx="1"/>
+  <rect x="30" y="78" width="40" height="1.5" fill="#374151" rx="0.75"/>
+  <rect x="30" y="82" width="30" height="1.5" fill="#9ca3af" rx="0.75"/>
+  
+  <rect x="106" y="68" width="70" height="24" fill="#f3f4f6" rx="4" filter="url(#subtleShadow)"/>
+  <rect x="112" y="74" width="12" height="2" fill="#059669" rx="1"/>
+  <rect x="112" y="78" width="40" height="1.5" fill="#374151" rx="0.75"/>
+  <rect x="112" y="82" width="30" height="1.5" fill="#9ca3af" rx="0.75"/>
+  
+  <!-- Bottom Section -->
+  <rect x="24" y="104" width="152" height="16" fill="#f3f4f6" rx="4" filter="url(#subtleShadow)"/>
+  <rect x="32" y="108" width="100" height="1.5" fill="#374151" rx="0.75"/>
+  <rect x="32" y="112" width="80" height="1.5" fill="#9ca3af" rx="0.75"/>
+  <rect x="32" y="116" width="60" height="1.5" fill="#9ca3af" rx="0.75"/>
+  
+  <!-- Minimal Accent Elements -->
+  <rect x="160" y="32" width="8" height="1" fill="#059669" rx="0.5"/>
+  <rect x="160" y="36" width="12" height="1" fill="#e5e7eb" rx="0.5"/>
+  <rect x="160" y="40" width="6" height="1" fill="#e5e7eb" rx="0.5"/>
+  
+  <!-- Clean Typography -->
+  <text x="100" y="135" font-family="Inter, sans-serif" font-size="8" fill="#374151" text-anchor="middle" font-weight="400">簡約質感版</text>
+</svg>
