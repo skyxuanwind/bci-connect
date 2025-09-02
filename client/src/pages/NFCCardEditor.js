@@ -134,15 +134,26 @@ const NFCCardEditor = () => {
     try {
       const response = await axios.get('/api/nfc-cards/templates');
       const list = response.data?.templates || response.data?.data || [];
-      // 去重（按名稱）
-      const seen = new Set();
+      // 去重（按名稱），但保留完整的模板數據
+      const seen = new Map();
       const unique = [];
       for (const t of list) {
         if (!seen.has(t.name)) {
-          seen.add(t.name);
+          seen.set(t.name, t);
           unique.push(t);
+        } else {
+          // 如果已存在同名模板，但當前模板有preview_image_url而已存在的沒有，則替換
+          const existing = seen.get(t.name);
+          if (t.preview_image_url && !existing.preview_image_url) {
+            const index = unique.findIndex(item => item.name === t.name);
+            if (index !== -1) {
+              unique[index] = t;
+              seen.set(t.name, t);
+            }
+          }
         }
       }
+      
       setTemplates(unique);
     } catch (error) {
       console.error('獲取模板失敗:', error);
