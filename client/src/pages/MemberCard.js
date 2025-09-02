@@ -38,11 +38,91 @@ const MemberCard = () => {
     setDarkMode(prefersDark);
   }, [memberId]);
 
+  // 從資料列轉換為前端需要的內容區塊格式
+  const mapRowToBlock = (row) => {
+    const type = row.content_type || row.block_type;
+    let data = {};
+    try {
+      switch (type) {
+        case 'text':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            content: row.content || row.content_data?.content || ''
+          };
+          break;
+        case 'link':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            url: row.url || row.content_data?.url || ''
+          };
+          break;
+        case 'video':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            url: row.url || row.content_data?.url || ''
+          };
+          break;
+        case 'image':
+          data = {
+            url: row.image_url || row.url || row.content_data?.url || '',
+            alt: row.title || row.content_data?.alt || '',
+            caption: row.content_data?.caption || ''
+          };
+          break;
+        case 'social': {
+          const parsed = typeof row.content === 'string' ? (() => { try { return JSON.parse(row.content); } catch { return {}; } })() : (row.content || row.content_data || {});
+          data = parsed || {};
+          break;
+        }
+        case 'map':
+          data = {
+            address: row.map_address || row.content_data?.address || '',
+            map_url: row.url || row.content_data?.map_url || '',
+            coordinates: row.map_coordinates || row.content_data?.coordinates || null
+          };
+          break;
+        default:
+          data = row.content_data || {};
+      }
+    } catch (e) {
+      data = row.content_data || {};
+    }
+
+    return {
+      id: row.id,
+      content_type: type,
+      content_data: data,
+      display_order: row.display_order ?? 0,
+      is_visible: row.is_visible ?? true,
+      custom_styles: row.custom_styles || {}
+    };
+  };
+
   const fetchCardData = async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/nfc-cards/member/${memberId}`);
-      setCardData(response.data);
+      const payload = response.data?.data || response.data;
+      if (!payload) throw new Error('無效的名片資料');
+
+      // 服務端字段轉換為前端需要格式
+      const contentRows = payload.content || payload.content_blocks || [];
+      const transformed = {
+        id: payload.id,
+        card_title: payload.card_title,
+        card_subtitle: payload.card_subtitle,
+        template_name: payload.template_name,
+        contact_info: {
+          phone: payload.user_phone,
+          email: payload.user_email,
+          website: payload.user_website,
+          company: payload.user_company,
+          address: payload.user_address
+        },
+        content_blocks: Array.isArray(contentRows) ? contentRows.map(mapRowToBlock) : []
+      };
+
+      setCardData(transformed);
       
       // 更新最後查看時間（如果已在名片夾中）
       updateLastViewed();
@@ -132,7 +212,7 @@ const MemberCard = () => {
   const downloadVCard = async () => {
     try {
       setDownloadingVCard(true);
-      const response = await axios.get(`/api/nfc-cards/${memberId}/vcard`, {
+      const response = await axios.get(`/api/nfc-cards/vcard/${memberId}`, {
         responseType: 'blob'
       });
       

@@ -34,10 +34,95 @@ const NFCCardEditor = () => {
     fetchTemplates();
   }, []);
 
+  // 將後端內容列轉換為前端需要的內容區塊結構
+  const mapRowToBlock = (row) => {
+    const type = row.content_type || row.block_type;
+    let data = {};
+    try {
+      switch (type) {
+        case 'text':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            content: row.content || row.content_data?.content || ''
+          };
+          break;
+        case 'link':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            url: row.url || row.content_data?.url || ''
+          };
+          break;
+        case 'video':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            url: row.url || row.content_data?.url || ''
+          };
+          break;
+        case 'image':
+          data = {
+            url: row.image_url || row.url || row.content_data?.url || '',
+            alt: row.title || row.content_data?.alt || '',
+            caption: row.content_data?.caption || ''
+          };
+          break;
+        case 'social': {
+          const parsed = typeof row.content === 'string' ? (() => { try { return JSON.parse(row.content); } catch { return {}; } })() : (row.content || row.content_data || {});
+          data = parsed || {};
+          break;
+        }
+        case 'map':
+          data = {
+            address: row.map_address || row.content_data?.address || '',
+            map_url: row.url || row.content_data?.map_url || '',
+            coordinates: row.map_coordinates || row.content_data?.coordinates || null
+          };
+          break;
+        default:
+          data = row.content_data || {};
+      }
+    } catch (e) {
+      data = row.content_data || {};
+    }
+
+    return {
+      id: row.id,
+      content_type: type,
+      content_data: data,
+      display_order: row.display_order ?? 0,
+      is_visible: row.is_visible ?? true,
+      custom_styles: row.custom_styles || {}
+    };
+  };
+
   const fetchCardData = async () => {
     try {
       const response = await axios.get('/api/nfc-cards/my-card');
-      setCardConfig(response.data.cardConfig);
+      const payload = response.data?.data || response.data;
+
+      if (payload && (payload.card || payload.cardConfig)) {
+        // 兼容不同返回結構
+        const card = payload.card || payload.cardConfig;
+        const content = payload.content || payload.content_blocks || [];
+
+        const mappedBlocks = Array.isArray(content) ? content.map(mapRowToBlock) : [];
+        setCardConfig({
+          card_title: card.card_title || '',
+          card_subtitle: card.card_subtitle || '',
+          template_id: card.template_id || null,
+          template_name: card.template_name || '',
+          custom_css: card.custom_css || '',
+          content_blocks: mappedBlocks
+        });
+      } else {
+        setCardConfig({
+          card_title: '',
+          card_subtitle: '',
+          template_id: null,
+          template_name: '',
+          custom_css: '',
+          content_blocks: []
+        });
+      }
     } catch (error) {
       console.error('獲取名片配置失敗:', error);
     } finally {
@@ -48,7 +133,17 @@ const NFCCardEditor = () => {
   const fetchTemplates = async () => {
     try {
       const response = await axios.get('/api/nfc-cards/templates');
-      setTemplates(response.data.templates);
+      const list = response.data?.templates || response.data?.data || [];
+      // 去重（按名稱）
+      const seen = new Set();
+      const unique = [];
+      for (const t of list) {
+        if (!seen.has(t.name)) {
+          seen.add(t.name);
+          unique.push(t);
+        }
+      }
+      setTemplates(unique);
     } catch (error) {
       console.error('獲取模板失敗:', error);
     }
@@ -254,6 +349,9 @@ const NFCCardEditor = () => {
     );
   }
 
+  const selectedTemplate = templates.find(t => t.id === cardConfig?.template_id);
+  const selectedPreview = selectedTemplate?.preview_image_url || selectedTemplate?.preview_image || '/nfc-templates/placeholder.svg';
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 頂部操作欄 */}
@@ -390,6 +488,17 @@ const NFCCardEditor = () => {
                         </option>
                       ))}
                     </select>
+                    {/* 模板預覽 */}
+                    <div className="mt-3">
+                      <div className="text-sm text-gray-600 mb-2">模板預覽</div>
+                      <div className="border border-gray-200 rounded-lg p-3 flex items-center space-x-3">
+                        <img src={selectedPreview} alt="模板預覽" className="w-20 h-14 object-cover rounded" />
+                        <div>
+                          <div className="font-medium text-gray-900">{selectedTemplate?.name || '未選擇模板'}</div>
+                          <div className="text-xs text-gray-500 line-clamp-2">{selectedTemplate?.description || '請選擇一個模板以查看預覽'}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   
                   <button
