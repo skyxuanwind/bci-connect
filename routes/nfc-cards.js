@@ -159,7 +159,47 @@ router.get('/my-card', authenticateToken, async (req, res) => {
       [cardConfig.id]
     );
     
-    cardConfig.content_blocks = contentResult.rows;
+    // 將資料表結構轉換為前端需要的結構
+    const contentBlocks = contentResult.rows.map(row => {
+      let content_data = {};
+      switch (row.block_type) {
+        case 'text':
+          content_data = { title: row.title || '', content: row.content || '' };
+          break;
+        case 'link':
+          content_data = { title: row.title || '', url: row.url || '' };
+          break;
+        case 'image':
+          content_data = { url: row.image_url || '', alt: row.title || '', caption: row.content || '' };
+          break;
+        case 'video':
+          content_data = { title: row.title || '', url: row.url || '' };
+          break;
+        case 'social':
+          try {
+            content_data = row.content ? JSON.parse(row.content) : {};
+          } catch (e) {
+            content_data = {};
+          }
+          break;
+        case 'map':
+          content_data = { address: row.map_address || '', map_url: row.url || '', coordinates: row.map_coordinates || null };
+          break;
+        default:
+          content_data = {};
+      }
+
+      return {
+        id: row.id,
+        content_type: row.block_type,
+        content_data,
+        display_order: row.display_order,
+        is_visible: row.is_visible,
+        custom_styles: row.custom_styles || {}
+      };
+    });
+    
+    cardConfig.content_blocks = contentBlocks;
 
     res.json({ cardConfig });
   } catch (error) {
@@ -244,14 +284,47 @@ router.post('/my-card/content', authenticateToken, async (req, res) => {
     // 刪除現有內容區塊
     await pool.query('DELETE FROM nfc_content_blocks WHERE card_id = $1', [cardId]);
     
-    // 添加新的內容區塊
+    // 添加新的內容區塊（兼容前端結構 content_type + content_data）
     for (let i = 0; i < content_blocks.length; i++) {
-      const block = content_blocks[i];
+      const block = content_blocks[i] || {};
+      const blockType = block.block_type || block.content_type;
+      const data = block.content_data || {};
+
+      const title = block.title ?? data.title ?? null;
+      let content = block.content ?? data.content ?? null;
+      const url = block.url ?? data.url ?? null;
+      const image_url = block.image_url ?? data.image_url ?? null;
+      const social_platform = block.social_platform ?? data.social_platform ?? null;
+      const map_address = block.map_address ?? data.address ?? data.map_address ?? null;
+      const map_coordinates = block.map_coordinates ?? data.coordinates ?? null;
+
+      // 將社群類型的複雜資料以 JSON 字串保存於 content 欄位中
+      if (blockType === 'social' && !content) {
+        try {
+          content = JSON.stringify(data);
+        } catch (e) {
+          content = null;
+        }
+      }
+
       await pool.query(
         `INSERT INTO nfc_content_blocks 
          (card_id, block_type, title, content, url, image_url, social_platform, map_address, map_coordinates, display_order, is_visible, custom_styles)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [cardId, block.block_type, block.title, block.content, block.url, block.image_url, block.social_platform, block.map_address, block.map_coordinates, i, block.is_visible !== false, block.custom_styles || {}]
+        [
+          cardId,
+          blockType,
+          title,
+          content,
+          url,
+          image_url,
+          social_platform,
+          map_address,
+          map_coordinates,
+          block.display_order ?? i,
+          block.is_visible !== false,
+          block.custom_styles || {}
+        ]
       );
     }
     
