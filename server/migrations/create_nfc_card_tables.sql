@@ -53,34 +53,7 @@ CREATE TABLE IF NOT EXISTS nfc_card_visits (
     session_id VARCHAR(100)
 );
 
--- 5. 插入默認模板數據
-INSERT INTO nfc_card_templates (name, description, css_config, display_order) VALUES 
-('科技專業版', '採用柔和漸變色與半透明材質，搭配簡潔的卡片式區塊，營造科技感和沉穩氛圍。支援深色/淺色模式切換。', 
- '{
-   "primary_color": "#667eea",
-   "secondary_color": "#764ba2",
-   "background_type": "gradient",
-   "card_style": "glass",
-   "supports_dark_mode": true
- }', 1),
-('活力創意版', '使用高飽和度對比色，搭配大膽圓角和有機曲線。排版設計活潑，營造動態感。', 
- '{
-   "primary_color": "#ff6b6b",
-   "secondary_color": "#feca57",
-   "accent_colors": ["#48dbfb", "#ff9ff3"],
-   "background_type": "animated_gradient",
-   "card_style": "creative",
-   "supports_dark_mode": false
- }', 2),
-('簡約質感版', '極簡設計、線條俐落，大量使用留白。採用沉穩色調，所有元素都使用圓潤造型。', 
- '{
-   "primary_color": "#1e293b",
-   "secondary_color": "#64748b",
-   "background_type": "solid",
-   "card_style": "minimal",
-   "supports_dark_mode": false
- }', 3)
-ON CONFLICT (name) DO NOTHING;
+-- 5. 默認模板數據由 config/database.js 統一管理，避免重複插入
 
 -- 6. 創建索引以提升查詢性能
 CREATE INDEX IF NOT EXISTS idx_nfc_cards_user_id ON nfc_cards(user_id);

@@ -291,11 +291,48 @@ const NFCCardEditor = () => {
         {previewMode ? (
           // 預覽模式
           <div className="max-w-2xl mx-auto">
-            <iframe
-              src={`/member/${user.id}`}
-              className="w-full h-screen border border-gray-300 rounded-lg"
-              title="名片預覽"
-            />
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">名片預覽</h2>
+              <div className="border border-gray-200 rounded-lg p-6 min-h-96">
+                {/* 預覽內容 */}
+                <div className="text-center mb-6">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                    {cardConfig?.card_title || '未設定標題'}
+                  </h1>
+                  <p className="text-gray-600">
+                    {cardConfig?.card_subtitle || '未設定副標題'}
+                  </p>
+                </div>
+                
+                {/* 內容區塊預覽 */}
+                <div className="space-y-4">
+                  {cardConfig?.content_blocks?.length > 0 ? (
+                    cardConfig.content_blocks.map((block, index) => (
+                      <div key={index} className="border border-gray-100 rounded-lg p-4">
+                        <BlockPreview block={block} />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-500 py-8">
+                      <p>尚未添加任何內容區塊</p>
+                      <p className="text-sm mt-1">請在編輯模式中添加內容</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+                  <a 
+                    href={`/member/${user.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <EyeIcon className="h-4 w-4 mr-2" />
+                    查看完整版本
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           // 編輯模式
