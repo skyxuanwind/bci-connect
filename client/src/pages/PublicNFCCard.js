@@ -145,51 +145,91 @@ const PublicNFCCard = () => {
       case 'video':
         return (
           <div className="mb-4">
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-center">
-              <PlayIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-600 dark:text-gray-300">{block.content_data.title}</p>
-              <a 
-                href={block.content_data.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                觀看影片
-              </a>
-            </div>
+            <h3 className="font-semibold text-lg mb-2">{block.content_data.title}</h3>
+            {block.content_data.type === 'youtube' && block.content_data.url ? (
+              <div className="video-container">
+                <iframe
+                  src={`https://www.youtube.com/embed/${block.content_data.url.split('v=')[1] || block.content_data.url.split('/').pop()}`}
+                  title={block.content_data.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-64 rounded-lg"
+                />
+              </div>
+            ) : (
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-center">
+                <PlayIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-600 dark:text-gray-300">{block.content_data.title}</p>
+                {block.content_data.url && (
+                  <a 
+                    href={block.content_data.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    觀看影片
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         );
       
       case 'image':
         return (
           <div className="mb-4">
-            <img 
-              src={block.content_data.url}
-              alt={block.content_data.alt || '圖片'}
-              className="w-full rounded-lg shadow-md"
-            />
-            {block.content_data.caption && (
-              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 text-center">
-                {block.content_data.caption}
+            {block.content_data.title && (
+              <h3 className="font-semibold text-lg mb-2">{block.content_data.title}</h3>
+            )}
+            {block.content_data.url ? (
+              <img 
+                src={block.content_data.url}
+                alt={block.content_data.alt || '圖片'}
+                className="w-full rounded-lg shadow-md object-cover"
+                style={{ maxHeight: '400px' }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-32 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <PhotoIcon className="h-12 w-12 text-gray-400" />
+              </div>
+            )}
+            {block.content_data.alt && (
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 text-center italic">
+                {block.content_data.alt}
               </p>
             )}
           </div>
         );
       
       case 'social':
+        const socialPlatforms = [
+          { key: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'bg-blue-600 hover:bg-blue-700' },
+          { key: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-500 hover:bg-blue-600' },
+          { key: 'instagram', name: 'Instagram', icon: '📷', color: 'bg-pink-500 hover:bg-pink-600' },
+          { key: 'twitter', name: 'Twitter', icon: '🐦', color: 'bg-blue-400 hover:bg-blue-500' },
+          { key: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-500 hover:bg-red-600' },
+          { key: 'tiktok', name: 'TikTok', icon: '🎵', color: 'bg-black hover:bg-gray-800' }
+        ];
+        
+        const activePlatforms = socialPlatforms.filter(platform => block.content_data[platform.key]);
+        
+        if (activePlatforms.length === 0) return null;
+        
         return (
           <div className="mb-4">
             <h3 className="font-semibold text-lg mb-3">社群媒體</h3>
             <div className="grid grid-cols-2 gap-3">
-              {Object.entries(block.content_data).map(([platform, url]) => (
+              {activePlatforms.map(platform => (
                 <a
-                  key={platform}
-                  href={url}
+                  key={platform.key}
+                  href={block.content_data[platform.key]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className={`flex items-center justify-center gap-2 p-3 rounded-lg text-white font-medium transition-colors ${platform.color}`}
                 >
-                  <span className="capitalize font-medium">{platform}</span>
+                  <span className="text-lg">{platform.icon}</span>
+                  <span>{platform.name}</span>
                 </a>
               ))}
             </div>
@@ -201,18 +241,31 @@ const PublicNFCCard = () => {
           <div className="mb-4">
             <div className="flex items-center mb-2">
               <MapPinIcon className="h-5 w-5 text-gray-600 dark:text-gray-300 mr-2" />
-              <h3 className="font-semibold text-lg">位置</h3>
+              <h3 className="font-semibold text-lg">{block.content_data.title || '地圖位置'}</h3>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-3">{block.content_data.address}</p>
-            {block.content_data.map_url && (
-              <a
-                href={block.content_data.map_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                查看地圖
-              </a>
+            {block.content_data.address ? (
+              <>
+                <div className="mb-3">
+                  <iframe
+                    src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWTgHz-TK7VFC&q=${encodeURIComponent(block.content_data.address)}`}
+                    width="100%"
+                    height="250"
+                    style={{ border: 0 }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title={block.content_data.title || '地圖位置'}
+                    className="rounded-lg"
+                  />
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 text-center">
+                  📍 {block.content_data.address}
+                </p>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-32 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <p className="text-gray-500">尚未設定地址</p>
+              </div>
             )}
           </div>
         );

@@ -307,7 +307,7 @@ const MemberCard = () => {
           <div key={block.id} className="content-block">
             <h3 className="block-title">{block.content_data.title}</h3>
             <div className="video-container">
-              {block.content_data.url.includes('youtube.com') || block.content_data.url.includes('youtu.be') ? (
+              {block.content_data.type === 'youtube' && block.content_data.url ? (
                 <iframe
                   src={getYouTubeEmbedUrl(block.content_data.url)}
                   title={block.content_data.title}
@@ -315,11 +315,15 @@ const MemberCard = () => {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
-              ) : (
+              ) : block.content_data.file ? (
                 <video controls className="w-full rounded-lg">
-                  <source src={block.content_data.url} type="video/mp4" />
+                  <source src={block.content_data.file} type="video/mp4" />
                   您的瀏覽器不支援影片播放。
                 </video>
+              ) : (
+                <div className="flex items-center justify-center h-32 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">尚未設定影片內容</p>
+                </div>
               )}
             </div>
           </div>
@@ -328,15 +332,25 @@ const MemberCard = () => {
       case 'image':
         return (
           <div key={block.id} className="content-block">
+            {block.content_data.title && (
+              <h3 className="block-title">{block.content_data.title}</h3>
+            )}
             <div className="image-container">
-              <img 
-                src={block.content_data.url} 
-                alt={block.content_data.alt || '圖片'}
-                className="rounded-lg"
-              />
-              {block.content_data.caption && (
-                <p className="mt-2 text-sm text-gray-600 italic">
-                  {block.content_data.caption}
+              {block.content_data.url ? (
+                <img 
+                  src={block.content_data.url} 
+                  alt={block.content_data.alt || '圖片'}
+                  className="rounded-lg w-full object-cover"
+                  style={{ maxHeight: '400px' }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-32 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">尚未上傳圖片</p>
+                </div>
+              )}
+              {block.content_data.alt && (
+                <p className="mt-2 text-sm text-gray-600 italic text-center">
+                  {block.content_data.alt}
                 </p>
               )}
             </div>
@@ -344,30 +358,35 @@ const MemberCard = () => {
         );
 
       case 'social':
+        const socialPlatforms = [
+          { key: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'bg-blue-600 hover:bg-blue-700' },
+          { key: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-500 hover:bg-blue-600' },
+          { key: 'instagram', name: 'Instagram', icon: '📷', color: 'bg-pink-500 hover:bg-pink-600' },
+          { key: 'twitter', name: 'Twitter', icon: '🐦', color: 'bg-blue-400 hover:bg-blue-500' },
+          { key: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-500 hover:bg-red-600' },
+          { key: 'tiktok', name: 'TikTok', icon: '🎵', color: 'bg-black hover:bg-gray-800' }
+        ];
+        
+        const activePlatforms = socialPlatforms.filter(platform => block.content_data[platform.key]);
+        
+        if (activePlatforms.length === 0) return null;
+        
         return (
           <div key={block.id} className="content-block">
             <h3 className="block-title">社群媒體</h3>
-            <div className="social-links">
-              {block.content_data.linkedin && (
-                <a href={block.content_data.linkedin} target="_blank" rel="noopener noreferrer" className="social-link">
-                  <span>Li</span>
+            <div className="grid grid-cols-2 gap-3">
+              {activePlatforms.map(platform => (
+                <a 
+                  key={platform.key}
+                  href={block.content_data[platform.key]} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className={`flex items-center justify-center gap-2 p-3 rounded-lg text-white font-medium transition-colors ${platform.color}`}
+                >
+                  <span className="text-lg">{platform.icon}</span>
+                  <span>{platform.name}</span>
                 </a>
-              )}
-              {block.content_data.facebook && (
-                <a href={block.content_data.facebook} target="_blank" rel="noopener noreferrer" className="social-link">
-                  <span>Fb</span>
-                </a>
-              )}
-              {block.content_data.instagram && (
-                <a href={block.content_data.instagram} target="_blank" rel="noopener noreferrer" className="social-link">
-                  <span>Ig</span>
-                </a>
-              )}
-              {block.content_data.twitter && (
-                <a href={block.content_data.twitter} target="_blank" rel="noopener noreferrer" className="social-link">
-                  <span>Tw</span>
-                </a>
-              )}
+              ))}
             </div>
           </div>
         );
@@ -375,25 +394,29 @@ const MemberCard = () => {
       case 'map':
         return (
           <div key={block.id} className="content-block">
-            <h3 className="block-title">位置</h3>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <MapPinIcon className="h-5 w-5 mr-3" />
-                <span>{block.content_data.address}</span>
-              </div>
-              {block.content_data.map_url && (
-                <div className="map-container">
-                  <iframe
-                    src={block.content_data.map_url}
-                    width="100%"
-                    height="300"
-                    style={{ border: 0 }}
-                    allowFullScreen=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="地圖位置"
-                  />
+            <h3 className="block-title">{block.content_data.title || '地圖位置'}</h3>
+            <div className="map-container">
+              {block.content_data.address ? (
+                <iframe
+                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWTgHz-TK7VFC&q=${encodeURIComponent(block.content_data.address)}`}
+                  width="100%"
+                  height="300"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title={block.content_data.title || '地圖位置'}
+                  className="rounded-lg"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">尚未設定地址</p>
                 </div>
+              )}
+              {block.content_data.address && (
+                <p className="mt-2 text-sm text-gray-600 text-center">
+                  📍 {block.content_data.address}
+                </p>
               )}
             </div>
           </div>

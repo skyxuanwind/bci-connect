@@ -233,13 +233,13 @@ const NFCCardEditor = () => {
       case 'link':
         return { title: '連結標題', url: 'https://example.com' };
       case 'video':
-        return { title: '影片標題', url: 'https://youtube.com/watch?v=...' };
+        return { title: '影片標題', type: 'youtube', url: '', file: '' };
       case 'image':
-        return { url: '', alt: '圖片描述', caption: '' };
+        return { title: '圖片標題', url: '', alt: '圖片描述' };
       case 'social':
-        return { linkedin: '', facebook: '', instagram: '', twitter: '' };
+        return { linkedin: '', facebook: '', instagram: '', twitter: '', youtube: '', tiktok: '' };
       case 'map':
-        return { address: '地址', map_url: '', coordinates: null };
+        return { title: '地點名稱', address: '完整地址', map_url: '', coordinates: null };
       default:
         return {};
     }
@@ -625,19 +625,179 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
           </div>
         );
       
+      case 'video':
+        return (
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={data.title || ''}
+              onChange={(e) => setData({ ...data, title: e.target.value })}
+              placeholder="影片標題"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <select
+              value={data.type || 'youtube'}
+              onChange={(e) => setData({ ...data, type: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="youtube">YouTube</option>
+              <option value="upload">上傳影片</option>
+            </select>
+            {data.type === 'youtube' ? (
+              <input
+                type="text"
+                value={data.url || ''}
+                onChange={(e) => setData({ ...data, url: e.target.value })}
+                placeholder="YouTube 網址 (例如: https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      // 這裡可以實現文件上傳邏輯
+                      setData({ ...data, file: file.name });
+                    }
+                  }}
+                  className="hidden"
+                  id={`video-upload-${block.id}`}
+                />
+                <label htmlFor={`video-upload-${block.id}`} className="cursor-pointer">
+                  <PlayIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-600">點擊上傳影片文件</p>
+                  {data.file && <p className="text-xs text-green-600 mt-1">已選擇: {data.file}</p>}
+                </label>
+              </div>
+            )}
+          </div>
+        );
+      
+      case 'image':
+        return (
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={data.title || ''}
+              onChange={(e) => setData({ ...data, title: e.target.value })}
+              placeholder="圖片標題"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      setData({ ...data, url: e.target.result, alt: file.name });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="hidden"
+                id={`image-upload-${block.id}`}
+              />
+              <label htmlFor={`image-upload-${block.id}`} className="cursor-pointer">
+                {data.url ? (
+                  <div>
+                    <img src={data.url} alt={data.alt} className="max-w-full h-32 object-cover mx-auto rounded" />
+                    <p className="text-xs text-green-600 mt-2">點擊更換圖片</p>
+                  </div>
+                ) : (
+                  <div>
+                    <PhotoIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">點擊上傳圖片</p>
+                  </div>
+                )}
+              </label>
+            </div>
+            <input
+              type="text"
+              value={data.alt || ''}
+              onChange={(e) => setData({ ...data, alt: e.target.value })}
+              placeholder="圖片描述"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        );
+      
       case 'social':
         return (
           <div className="space-y-3">
-            {['linkedin', 'facebook', 'instagram', 'twitter'].map(platform => (
-              <input
-                key={platform}
-                type="url"
-                value={data[platform] || ''}
-                onChange={(e) => setData({ ...data, [platform]: e.target.value })}
-                placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-              />
+            <h4 className="font-medium text-gray-700 mb-3">社群媒體連結</h4>
+            {[
+              { key: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'bg-blue-600' },
+              { key: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-500' },
+              { key: 'instagram', name: 'Instagram', icon: '📷', color: 'bg-pink-500' },
+              { key: 'twitter', name: 'Twitter', icon: '🐦', color: 'bg-blue-400' },
+              { key: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-500' },
+              { key: 'tiktok', name: 'TikTok', icon: '🎵', color: 'bg-black' }
+            ].map(platform => (
+              <div key={platform.key} className="flex items-center space-x-3">
+                <div className={`w-8 h-8 ${platform.color} rounded flex items-center justify-center text-white text-sm`}>
+                  {platform.icon}
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="url"
+                    value={data[platform.key] || ''}
+                    onChange={(e) => setData({ ...data, [platform.key]: e.target.value })}
+                    placeholder={`${platform.name} 網址`}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
             ))}
+          </div>
+        );
+      
+      case 'map':
+        return (
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={data.title || ''}
+              onChange={(e) => setData({ ...data, title: e.target.value })}
+              placeholder="地點名稱"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <textarea
+              value={data.address || ''}
+              onChange={(e) => setData({ ...data, address: e.target.value })}
+              placeholder="完整地址"
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="text"
+              value={data.map_url || ''}
+              onChange={(e) => setData({ ...data, map_url: e.target.value })}
+              placeholder="Google Maps 網址 (可選)"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            {data.address && (
+              <div className="bg-gray-50 p-3 rounded border">
+                <p className="text-sm text-gray-600 mb-2">地圖預覽:</p>
+                <iframe
+                  src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(data.address)}`}
+                  width="100%"
+                  height="200"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="rounded"
+                  title="地圖預覽"
+                ></iframe>
+                <p className="text-xs text-gray-500 mt-1">注意：需要設定 Google Maps API Key 才能正常顯示地圖</p>
+              </div>
+            )}
           </div>
         );
       
@@ -766,7 +926,25 @@ const BlockPreview = ({ block }) => {
             {content_data?.title || '影片標題'}
           </div>
           <div className="text-gray-500 text-xs">
-            影片內容
+            {content_data?.type === 'youtube' ? (
+              content_data?.url ? (
+                <div className="flex items-center gap-1">
+                  <span>📺</span>
+                  <span>YouTube 影片</span>
+                </div>
+              ) : (
+                '請輸入 YouTube 網址'
+              )
+            ) : (
+              content_data?.file ? (
+                <div className="flex items-center gap-1">
+                  <span>🎬</span>
+                  <span>{content_data.file}</span>
+                </div>
+              ) : (
+                '請上傳影片文件'
+              )
+            )}
           </div>
         </div>
       );
@@ -777,9 +955,25 @@ const BlockPreview = ({ block }) => {
           <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             {content_data?.title || '圖片標題'}
           </div>
-          <div className="text-gray-500 text-xs">
-            圖片內容
-          </div>
+          {content_data?.url ? (
+            <div className="mb-2">
+              <img 
+                src={content_data.url} 
+                alt={content_data.alt} 
+                className="max-w-full h-16 object-cover rounded" 
+                style={{ maxHeight: '64px' }}
+              />
+            </div>
+          ) : (
+            <div className="text-gray-500 text-xs mb-2">
+              <span>🖼️ 請上傳圖片</span>
+            </div>
+          )}
+          {content_data?.alt && (
+            <div className="text-gray-400 text-xs">
+              {content_data.alt}
+            </div>
+          )}
         </div>
       );
     
@@ -790,11 +984,22 @@ const BlockPreview = ({ block }) => {
             社群媒體
           </div>
           <div className="flex flex-wrap gap-1">
-            {Object.entries(content_data).filter(([_, url]) => url).map(([platform, url]) => (
-              <span key={platform} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                {platform}
+            {[
+              { key: 'linkedin', name: 'LinkedIn', icon: '💼' },
+              { key: 'facebook', name: 'Facebook', icon: '📘' },
+              { key: 'instagram', name: 'Instagram', icon: '📷' },
+              { key: 'twitter', name: 'Twitter', icon: '🐦' },
+              { key: 'youtube', name: 'YouTube', icon: '📺' },
+              { key: 'tiktok', name: 'TikTok', icon: '🎵' }
+            ].filter(platform => content_data?.[platform.key]).map(platform => (
+              <span key={platform.key} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded flex items-center gap-1">
+                <span>{platform.icon}</span>
+                <span>{platform.name}</span>
               </span>
             ))}
+            {!Object.values(content_data || {}).some(url => url) && (
+              <span className="text-gray-500 text-xs">請添加社群媒體連結</span>
+            )}
           </div>
         </div>
       );
@@ -803,11 +1008,16 @@ const BlockPreview = ({ block }) => {
       return (
         <div>
           <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-            {content_data?.address || '地圖位置'}
+            {content_data?.title || '地點名稱'}
           </div>
-          <div className="text-gray-500 text-xs">
-            地圖內容
+          <div className="text-gray-600 text-xs mb-1">
+            📍 {content_data?.address || '請輸入地址'}
           </div>
+          {content_data?.address && (
+            <div className="bg-gray-100 rounded text-xs p-2 text-gray-500">
+              🗺️ Google Maps 地圖
+            </div>
+          )}
         </div>
       );
     

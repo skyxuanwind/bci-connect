@@ -212,9 +212,28 @@ const MemberCard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            {block.title && <h3>{block.title}</h3>}
-            <img src={block.url} alt={block.title || '圖片'} className="content-image" />
-            {block.description && <p className="image-description">{block.description}</p>}
+            {block.title && (
+              <h3 className="block-title">{block.title}</h3>
+            )}
+            <div className="image-container">
+              {block.url ? (
+                <img 
+                  src={block.url} 
+                  alt={block.alt || '圖片'} 
+                  className="rounded-lg w-full object-cover"
+                  style={{ maxHeight: '400px' }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-32 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">尚未上傳圖片</p>
+                </div>
+              )}
+              {block.alt && (
+                <p className="mt-2 text-sm text-gray-600 italic text-center">
+                  {block.alt}
+                </p>
+              )}
+            </div>
           </motion.div>
         );
       
@@ -229,18 +248,43 @@ const MemberCard = () => {
           >
             {block.title && <h3>{block.title}</h3>}
             <div className="video-container">
-              <iframe
-                src={block.url}
-                title={block.title || '影片'}
-                frameBorder="0"
-                allowFullScreen
-              ></iframe>
+              {block.type === 'youtube' && block.videoId ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${block.videoId}`}
+                  title={block.title || '影片'}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : block.file ? (
+                <video controls className="w-full rounded-lg">
+                  <source src={block.file} type="video/mp4" />
+                  您的瀏覽器不支援影片播放。
+                </video>
+              ) : (
+                <div className="flex items-center justify-center h-32 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">尚未設定影片內容</p>
+                </div>
+              )}
             </div>
             {block.description && <p className="video-description">{block.description}</p>}
           </motion.div>
         );
       
       case 'social':
+        const socialPlatforms = [
+          { key: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin />, color: 'bg-blue-600 hover:bg-blue-700' },
+          { key: 'facebook', name: 'Facebook', icon: <FaFacebook />, color: 'bg-blue-500 hover:bg-blue-600' },
+          { key: 'instagram', name: 'Instagram', icon: <FaInstagram />, color: 'bg-pink-500 hover:bg-pink-600' },
+          { key: 'twitter', name: 'Twitter', icon: <FaTwitter />, color: 'bg-blue-400 hover:bg-blue-500' },
+          { key: 'youtube', name: 'YouTube', icon: <FaYoutube />, color: 'bg-red-500 hover:bg-red-600' },
+          { key: 'tiktok', name: 'TikTok', icon: <FaLink />, color: 'bg-black hover:bg-gray-800' }
+        ];
+        
+        const activePlatforms = socialPlatforms.filter(platform => block[platform.key]);
+        
+        if (activePlatforms.length === 0) return null;
+        
         return (
           <motion.div 
             key={index}
@@ -250,32 +294,19 @@ const MemberCard = () => {
             transition={{ delay: index * 0.1 }}
           >
             <h3>社群媒體</h3>
-            <div className="social-links">
-              {block.links?.map((link, linkIndex) => {
-                const getSocialIcon = (platform) => {
-                  switch (platform.toLowerCase()) {
-                    case 'linkedin': return <FaLinkedin />;
-                    case 'facebook': return <FaFacebook />;
-                    case 'twitter': return <FaTwitter />;
-                    case 'instagram': return <FaInstagram />;
-                    case 'youtube': return <FaYoutube />;
-                    default: return <FaLink />;
-                  }
-                };
-                
-                return (
-                  <a
-                    key={linkIndex}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`social-link ${link.platform.toLowerCase()}`}
-                  >
-                    {getSocialIcon(link.platform)}
-                    <span>{link.platform}</span>
-                  </a>
-                );
-              })}
+            <div className="grid grid-cols-2 gap-3">
+              {activePlatforms.map(platform => (
+                <a 
+                  key={platform.key}
+                  href={block[platform.key]} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className={`flex items-center justify-center gap-2 p-3 rounded-lg text-white font-medium transition-colors ${platform.color}`}
+                >
+                  <span className="text-lg">{platform.icon}</span>
+                  <span>{platform.name}</span>
+                </a>
+              ))}
             </div>
           </motion.div>
         );
@@ -289,19 +320,31 @@ const MemberCard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <h3>{block.title || '位置'}</h3>
+            <h3>{block.title || '地圖位置'}</h3>
             <div className="map-container">
-              <iframe
-                src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(block.address)}`}
-                title="地圖"
-                frameBorder="0"
-                allowFullScreen
-              ></iframe>
+              {block.address ? (
+                <iframe
+                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWTgHz-TK7VFC&q=${encodeURIComponent(block.address)}`}
+                  width="100%"
+                  height="300"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title={block.title || '地圖位置'}
+                  className="rounded-lg"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">尚未設定地址</p>
+                </div>
+              )}
+              {block.address && (
+                <p className="mt-2 text-sm text-gray-600 text-center">
+                  📍 {block.address}
+                </p>
+              )}
             </div>
-            <p className="map-address">
-              <FaMapMarkerAlt className="map-icon" />
-              {block.address}
-            </p>
           </motion.div>
         );
       
