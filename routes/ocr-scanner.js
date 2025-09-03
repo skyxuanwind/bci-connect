@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const FormData = require('form-data');
+const sharp = require('sharp');
 
 // 配置multer用於圖片上傳
 const storage = multer.diskStorage({
@@ -33,6 +34,30 @@ const upload = multer({
   }
 });
 
+// 將上傳的原始圖片正規化為適合 OCR 的 JPEG（自動旋轉、縮放、壓縮、處理 HEIC）
+async function normalizeImageForOCR(originalPath) {
+  const normalizedPath = originalPath + '.normalized.jpg';
+  try {
+    const image = sharp(originalPath, { failOn: 'none' }).rotate(); // 依 EXIF 自動旋轉
+    const meta = await image.metadata();
+
+    const maxDim = 2000; // 限制最大邊，避免超高解析度影響 OCR
+    const needResize = (meta.width && meta.width > maxDim) || (meta.height && meta.height > maxDim);
+
+    let pipeline = sharp(originalPath, { failOn: 'none' }).rotate();
+    if (needResize) {
+      pipeline = pipeline.resize({ width: maxDim, height: maxDim, fit: 'inside', withoutEnlargement: true });
+    }
+
+    await pipeline.jpeg({ quality: 85, mozjpeg: true }).toFile(normalizedPath);
+
+    return { path: normalizedPath, created: true };
+  } catch (err) {
+    console.warn('影像正規化失敗，改用原始檔處理:', err.message);
+    return { path: originalPath, created: false };
+  }
+}
+
 // OCR名片掃描API
 router.post('/scan-business-card', upload.single('cardImage'), async (req, res) => {
   try {
@@ -43,7 +68,15 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
       });
     }
 
-    const imagePath = req.file.path;
+    const originalImagePath = req.file.path;
+
+    // 先對圖片進行正規化（處理 HEIC、旋轉、縮圖、壓縮）
+    const normalized = await normalizeImageForOCR(originalImagePath);
+    const imagePath = normalized.path;
+    const tempFiles = [originalImagePath];
+    if (normalized.created && normalized.path !== originalImagePath) {
+      tempFiles.push(normalized.path);
+    }
     
     // 使用多種OCR服務進行識別
     let ocrResult = null;
@@ -75,7 +108,13 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
     const enhancedResult = await enhanceWithAI(ocrResult.rawText);
     
     // 清理上傳的臨時文件
-    fs.unlinkSync(imagePath);
+    try {
+      tempFiles.forEach(p => {
+        if (p && fs.existsSync(p)) fs.unlinkSync(p);
+      });
+    } catch (cleanupErr) {
+      console.warn('清理臨時檔案失敗:', cleanupErr.message);
+    }
     
     res.json({
       success: true,
@@ -90,8 +129,16 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
     console.error('OCR掃描錯誤:', error);
     
     // 清理臨時文件
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    try {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      const normalizedPath = req.file?.path ? req.file.path + '.normalized.jpg' : null;
+      if (normalizedPath && fs.existsSync(normalizedPath)) {
+        fs.unlinkSync(normalizedPath);
+      }
+    } catch (cleanupErr) {
+      console.warn('清理臨時檔案失敗:', cleanupErr.message);
     }
     
     res.status(500).json({
