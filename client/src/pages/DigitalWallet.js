@@ -91,6 +91,8 @@ const DigitalWallet = () => {
   const saveToLocalStorage = (cards) => {
     try {
       localStorage.setItem('digitalWallet', JSON.stringify(cards));
+      // 通知其他元件（如同步面板）本地名片已更新
+      window.dispatchEvent(new CustomEvent('digitalWallet:localUpdated'));
     } catch (error) {
       console.error('保存名片夾失敗:', error);
     }
@@ -101,10 +103,17 @@ const DigitalWallet = () => {
       const token = Cookies.get('token');
       if (!token) return;
       
-      await axios.post('/api/digital-wallet/sync', 
+      const resp = await axios.post('/api/digital-wallet/sync', 
         { cards },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      if (resp?.data?.success) {
+        // 通知同步面板刷新雲端資料
+        window.dispatchEvent(new CustomEvent('digitalWallet:syncCompleted'));
+      } else {
+        console.warn('同步到雲端回應非成功:', resp?.data);
+      }
     } catch (error) {
       console.warn('同步到雲端失敗:', error);
     }
@@ -350,10 +359,18 @@ const DigitalWallet = () => {
 
   // 處理掃描完成
   const handleScanComplete = (extractedInfo) => {
+    const nowIso = new Date().toISOString();
+    const contactInfo = {
+      phone: extractedInfo.phone || extractedInfo.mobile || '',
+      email: extractedInfo.email || '',
+      company: extractedInfo.company || ''
+    };
     const newCard = {
       id: `scanned_${Date.now()}`,
       card_title: extractedInfo.name || '掃描名片',
       card_subtitle: extractedInfo.title || '',
+      contact_info: contactInfo,
+      // 兼容舊結構（頂層欄位）
       company: extractedInfo.company || '',
       phone: extractedInfo.phone || extractedInfo.mobile || '',
       email: extractedInfo.email || '',
@@ -361,14 +378,23 @@ const DigitalWallet = () => {
       address: extractedInfo.address || '',
       tags: extractedInfo.tags || [],
       personal_note: '',
-      date_added: new Date().toISOString(),
-      last_viewed: new Date().toISOString(),
-      is_scanned: true
+      date_added: nowIso,
+      last_viewed: nowIso,
+      is_scanned: true,
+      scanned_data: { ...extractedInfo }
     };
     
     const updatedCards = [newCard, ...savedCards];
     setSavedCards(updatedCards);
     saveToLocalStorage(updatedCards);
+
+    // 若已登入，立即觸發雲端同步
+    const token = Cookies.get('token');
+    if (token) {
+      // 不 await，避免阻塞 UI
+      syncToCloud(updatedCards).catch((err) => console.warn('掃描後自動同步失敗：', err));
+    }
+
     setShowScanner(false);
     alert('名片已成功添加到數位名片夾！');
   };
@@ -378,7 +404,7 @@ const DigitalWallet = () => {
     navigate('/nfc-analytics');
   };
 
-  // 過濾和排序邏輯
+  // 過濫和排序邏輯
   const filteredAndSortedCards = savedCards
     .filter(card => {
       const matchesSearch = !searchTerm || 

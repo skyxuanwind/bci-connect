@@ -485,6 +485,22 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS last_viewed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     `);
 
+    // NEW: Support scanned contacts stored directly in collections (no nfc_cards reference)
+    try {
+      // 允許 card_id 為 NULL 以便儲存掃描/手動名片
+      await pool.query(`
+        ALTER TABLE nfc_card_collections
+        ALTER COLUMN card_id DROP NOT NULL
+      `);
+    } catch (e) {
+      console.warn('⚠️ Skip dropping NOT NULL on nfc_card_collections.card_id:', e.message);
+    }
+    await pool.query(`
+      ALTER TABLE nfc_card_collections
+      ADD COLUMN IF NOT EXISTS scanned_data JSONB DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS is_scanned BOOLEAN DEFAULT false
+    `);
+
     // Ensure foreign key references users(id) instead of digital_card_users(id)
     try {
       await pool.query(`

@@ -8,7 +8,7 @@ router.get('/cards', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // 獲取用戶收藏的名片
+    // 獲取用戶收藏的名片（含掃描名片，使用 LEFT JOIN）
     const result = await pool.query(`
       SELECT 
         ncc.id as collection_id,
@@ -18,6 +18,8 @@ router.get('/cards', authenticateToken, async (req, res) => {
         ncc.folder_name,
         ncc.collected_at,
         ncc.last_viewed,
+        ncc.scanned_data,
+        ncc.is_scanned,
         nc.id as card_id,
         nc.card_title,
         nc.card_subtitle,
@@ -28,30 +30,54 @@ router.get('/cards', authenticateToken, async (req, res) => {
         u.company as card_owner_company,
         u.title as card_owner_title
       FROM nfc_card_collections ncc
-      JOIN nfc_cards nc ON ncc.card_id = nc.id
-      JOIN users u ON nc.user_id = u.id
+      LEFT JOIN nfc_cards nc ON ncc.card_id = nc.id
+      LEFT JOIN users u ON nc.user_id = u.id
       WHERE ncc.user_id = $1
       ORDER BY ncc.collected_at DESC
     `, [userId]);
     
-    // 轉換為前端需要的格式
-    const cards = result.rows.map(row => ({
-      id: row.card_id,
-      collection_id: row.collection_id,
-      card_title: row.card_title,
-      card_subtitle: row.card_subtitle,
-      contact_info: {
-        phone: row.card_owner_phone || '',
-        email: row.card_owner_email || '',
-        company: row.card_owner_company || ''
-      },
-      date_added: row.collected_at,
-      last_viewed: row.last_viewed,
-      personal_note: row.notes || '',
-      tags: row.tags || [],
-      is_favorite: row.is_favorite,
-      folder_name: row.folder_name
-    }));
+    // 轉換為前端需要的格式，含掃描名片
+    const cards = result.rows.map(row => {
+      if (row.is_scanned || !row.card_id) {
+        const data = row.scanned_data || {};
+        return {
+          id: `scanned_${row.collection_id}`,
+          collection_id: row.collection_id,
+          card_title: data.name || '掃描名片',
+          card_subtitle: data.title || '',
+          contact_info: {
+            phone: data.phone || data.mobile || '',
+            email: data.email || '',
+            company: data.company || ''
+          },
+          date_added: row.collected_at,
+          last_viewed: row.last_viewed,
+          personal_note: row.notes || '',
+          tags: row.tags || [],
+          is_favorite: row.is_favorite,
+          folder_name: row.folder_name,
+          is_scanned: true,
+          scanned_data: data
+        };
+      }
+      return ({
+        id: row.card_id,
+        collection_id: row.collection_id,
+        card_title: row.card_title,
+        card_subtitle: row.card_subtitle,
+        contact_info: {
+          phone: row.card_owner_phone || '',
+          email: row.card_owner_email || '',
+          company: row.card_owner_company || ''
+        },
+        date_added: row.collected_at,
+        last_viewed: row.last_viewed,
+        personal_note: row.notes || '',
+        tags: row.tags || [],
+        is_favorite: row.is_favorite,
+        folder_name: row.folder_name
+      });
+    });
     
     res.json({ success: true, cards });
   } catch (error) {
@@ -162,7 +188,6 @@ router.post('/sync', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { cards } = req.body; // 本地的名片數據
 
-    // 調試日誌：觀察請求是否到達與負載規模
     try {
       console.log('[DigitalWallet] /sync called', {
         userId,
@@ -175,14 +200,12 @@ router.post('/sync', authenticateToken, async (req, res) => {
       return res.status(400).json({ success: false, message: '無效的數據格式' });
     }
 
-    // 在交易內確認使用者存在，避免外鍵錯誤造成交易中止
     const userCheck = await client.query('SELECT id FROM users WHERE id = $1', [userId]);
     if (userCheck.rowCount === 0) {
       await client.query('ROLLBACK');
       return res.status(401).json({ success: false, message: '用戶不存在或未授權' });
     }
 
-    // 內部安全轉換工具
     const toSafeDate = (input, fallback = new Date()) => {
       if (!input) return fallback;
       const d = new Date(input);
@@ -192,7 +215,6 @@ router.post('/sync', authenticateToken, async (req, res) => {
     const toSafeFolder = (name) => name ? String(name).slice(0, 100) : null;
     const toSafeNote = (note) => typeof note === 'string' ? note : (note == null ? '' : String(note));
     
-    // 獲取現有的收藏記錄
     const existingCollections = await client.query(
       'SELECT card_id FROM nfc_card_collections WHERE user_id = $1',
       [userId]
@@ -201,42 +223,99 @@ router.post('/sync', authenticateToken, async (req, res) => {
     const existingCardIds = new Set(existingCollections.rows.map(row => Number(row.card_id)));
     const seenInPayload = new Set();
     
-    // 處理每張名片
     for (const card of cards) {
-      // 為每筆卡片操作建立 SAVEPOINT，避免單筆失敗導致整個交易中止
       await client.query('SAVEPOINT sp_sync');
       try {
-        // 決定卡片 ID（兼容不同欄位名稱），並統一轉為整數
         const rawId = card && (card.id ?? card.card_id ?? card.memberId);
-        const cardId = Number.parseInt(rawId, 10);
+        const parsedId = Number.parseInt(rawId, 10);
 
-        // 跳過無效資料或在本次 payload 中重複的卡片
-        if (!card || !Number.isFinite(cardId)) {
+        // 先處理掃描/手動名片（沒有有效的 nfc_cards.id）
+        if (card?.is_scanned || !Number.isFinite(parsedId)) {
+          const notes = toSafeNote(card.personal_note);
+          const tags = toSafeTags(card.tags);
+          const folderName = toSafeFolder(card.folder_name);
+          const collectedAt = toSafeDate(card.date_added);
+          const lastViewed = toSafeDate(card.last_viewed);
+          const data = card.scanned_data || {
+            name: card.card_title || null,
+            title: card.card_subtitle || null,
+            phone: (card.contact_info && (card.contact_info.phone)) || card.phone || card.mobile || null,
+            email: (card.contact_info && (card.contact_info.email)) || card.email || null,
+            company: (card.contact_info && (card.contact_info.company)) || card.company || null,
+            website: card.website || null,
+            address: card.address || null,
+            tags: tags
+          };
+
+          // 嘗試用 name+email+phone 去重，以避免重複插入
+          const nameKey = data.name || '';
+          const emailKey = data.email || '';
+          const phoneKey = data.phone || data.mobile || '';
+          const exist = await client.query(`
+            SELECT id FROM nfc_card_collections 
+            WHERE user_id = $1 AND is_scanned = true
+              AND COALESCE(scanned_data->>'name','') = $2
+              AND COALESCE(scanned_data->>'email','') = $3
+              AND COALESCE(scanned_data->>'phone','') = $4
+            LIMIT 1
+          `, [userId, nameKey, emailKey, phoneKey]);
+
+          if (exist.rowCount > 0) {
+            const cid = exist.rows[0].id;
+            await client.query(`
+              UPDATE nfc_card_collections 
+              SET notes = $2, tags = $3, folder_name = $4, last_viewed = $5, scanned_data = $6
+              WHERE id = $1 AND user_id = $7
+            `, [
+              cid,
+              notes,
+              tags,
+              folderName,
+              lastViewed,
+              data,
+              userId
+            ]);
+          } else {
+            await client.query(`
+              INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed, is_scanned, scanned_data)
+              VALUES ($1, NULL, $2, $3, $4, $5, $6, true, $7)
+            `, [
+              userId,
+              notes,
+              tags,
+              folderName,
+              collectedAt,
+              lastViewed,
+              data
+            ]);
+          }
+          await client.query('RELEASE SAVEPOINT sp_sync');
+          continue; // 處理下一張
+        }
+
+        // 常規名片（存在於 nfc_cards ）
+        if (!card || !Number.isFinite(parsedId)) {
           console.warn('[DigitalWallet] 跳過無效名片資料，缺少可用的 id:', card && { id: card && card.id, card_id: card && card.card_id, memberId: card && card.memberId });
           await client.query('RELEASE SAVEPOINT sp_sync');
           continue;
         }
-        if (seenInPayload.has(cardId)) {
-          // 已在本次請求中處理過，避免重複插入
+        if (seenInPayload.has(parsedId)) {
           await client.query('RELEASE SAVEPOINT sp_sync');
           continue;
         }
-        seenInPayload.add(cardId);
+        seenInPayload.add(parsedId);
   
-        // 檢查名片是否存在於 nfc_cards 表中
         const cardExists = await client.query(
           'SELECT id FROM nfc_cards WHERE id = $1',
-          [cardId]
+          [parsedId]
         );
         
         if (cardExists.rows.length === 0) {
-          // 名片不存在則略過（可能是本地舊資料）
-          console.warn('[DigitalWallet] skip non-existent card id in nfc_cards:', cardId);
+          console.warn('[DigitalWallet] skip non-existent card id in nfc_cards:', parsedId);
           await client.query('RELEASE SAVEPOINT sp_sync');
           continue;
         }
 
-        // 正規化資料型別
         const notes = toSafeNote(card.personal_note);
         const tags = toSafeTags(card.tags);
         const folderName = toSafeFolder(card.folder_name);
@@ -244,31 +323,28 @@ router.post('/sync', authenticateToken, async (req, res) => {
         const lastViewed = toSafeDate(card.last_viewed);
   
         try {
-          if (!existingCardIds.has(cardId)) {
-            // 添加新的收藏記錄
+          if (!existingCardIds.has(parsedId)) {
             await client.query(`
               INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed)
               VALUES ($1, $2, $3, $4, $5, $6, $7)
             `, [
               userId, 
-              cardId, 
+              parsedId, 
               notes, 
               tags, 
               folderName,
               collectedAt,
               lastViewed
             ]);
-            // 更新集合，避免同一個 payload 再次插入同一張卡片導致唯一性衝突
-            existingCardIds.add(cardId);
+            existingCardIds.add(parsedId);
           } else {
-            // 更新現有記錄
             await client.query(`
               UPDATE nfc_card_collections 
               SET notes = $3, tags = $4, folder_name = $5, last_viewed = $6
               WHERE user_id = $1 AND card_id = $2
             `, [
               userId, 
-              cardId, 
+              parsedId, 
               notes, 
               tags, 
               folderName,
@@ -276,7 +352,6 @@ router.post('/sync', authenticateToken, async (req, res) => {
             ]);
           }
         } catch (err) {
-          // 23505: unique_violation (例如 payload 內同一張卡片重複，或別處已插入)
           if (err && err.code === '23505') {
             await client.query(`
               UPDATE nfc_card_collections 
@@ -284,14 +359,13 @@ router.post('/sync', authenticateToken, async (req, res) => {
               WHERE user_id = $1 AND card_id = $2
             `, [
               userId, 
-              cardId, 
+              parsedId, 
               notes, 
               tags, 
               folderName,
               lastViewed
             ]);
           } else if (err && err.code === '22001') {
-            // value too long for type character varying(100) 等情況，再次以截斷後資料更新
             const safeFolder = toSafeFolder(folderName);
             await client.query(`
               UPDATE nfc_card_collections 
@@ -299,7 +373,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
               WHERE user_id = $1 AND card_id = $2
             `, [
               userId, 
-              cardId, 
+              parsedId, 
               notes, 
               tags, 
               safeFolder,
@@ -308,7 +382,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
           } else {
             console.error('同步數位名片夾單筆處理失敗', {
               userId,
-              cardId,
+              cardId: parsedId,
               code: err && err.code,
               detail: err && err.detail,
               constraint: err && err.constraint,
@@ -317,13 +391,10 @@ router.post('/sync', authenticateToken, async (req, res) => {
             throw err;
           }
         }
-        // 單筆流程成功，釋放 SAVEPOINT
         await client.query('RELEASE SAVEPOINT sp_sync');
       } catch (perCardErr) {
-        // 單筆錯誤回滾至 SAVEPOINT，避免交易中止
         await client.query('ROLLBACK TO SAVEPOINT sp_sync');
         await client.query('RELEASE SAVEPOINT sp_sync');
-        // 單筆錯誤紀錄後繼續處理其他卡，避免整批失敗
         console.error('同步數位名片夾單筆錯誤，已略過該卡片', {
           userId,
           cardId: (card && (card.id ?? card.card_id ?? card.memberId)),

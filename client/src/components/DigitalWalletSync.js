@@ -27,6 +27,27 @@ const DigitalWalletSync = () => {
   }, [isLoggedIn]);
 
   useEffect(() => {
+    // 監聽來自其他元件的同步/本地更新事件
+    const onLocalUpdated = () => {
+      loadLocalCards();
+      // 允許再次觸發一次自動同步
+      setAutoSyncAttempted(false);
+    };
+    const onSyncCompleted = () => {
+      if (isLoggedIn) {
+        setSyncStatus('synced');
+        loadCloudCards();
+      }
+    };
+    window.addEventListener('digitalWallet:localUpdated', onLocalUpdated);
+    window.addEventListener('digitalWallet:syncCompleted', onSyncCompleted);
+    return () => {
+      window.removeEventListener('digitalWallet:localUpdated', onLocalUpdated);
+      window.removeEventListener('digitalWallet:syncCompleted', onSyncCompleted);
+    };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
     // 自動同步條件：
     // 1) 已登入 2) 本地有資料 3) 雲端數量小於本地 4) 目前不在同步中 5) 尚未自動嘗試過
     if (
