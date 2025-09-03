@@ -450,10 +450,10 @@ const NFCCardEditor = () => {
             </div>
           </div>
         ) : (
-          // 編輯模式
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          // 編輯模式 - 三欄布局：基本設定、內容編輯、即時預覽
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* 左側：基本設定 */}
-            <div className="lg:col-span-1">
+            <div className="xl:col-span-3">
               <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">基本設定</h2>
                 
@@ -554,8 +554,8 @@ const NFCCardEditor = () => {
               </div>
             </div>
             
-            {/* 右側：內容編輯 */}
-            <div className="lg:col-span-2">
+            {/* 中間：內容編輯 */}
+            <div className="xl:col-span-5">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">內容區塊</h2>
@@ -591,6 +591,61 @@ const NFCCardEditor = () => {
                     <p className="text-sm">點擊左側按鈕開始添加內容</p>
                   </div>
                 )}
+              </div>
+            </div>
+            
+            {/* 右側：即時預覽 */}
+            <div className="xl:col-span-4">
+              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <EyeIcon className="h-5 w-5 mr-2 text-blue-600" />
+                  即時預覽
+                </h2>
+                
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 min-h-96 max-h-96 overflow-y-auto">
+                  {/* 預覽內容 */}
+                  <div className="text-center mb-4">
+                    <h1 className="text-xl font-bold text-gray-900 mb-1">
+                      {cardConfig?.card_title || '未設定標題'}
+                    </h1>
+                    <p className="text-gray-600 text-sm">
+                      {cardConfig?.card_subtitle || '未設定副標題'}
+                    </p>
+                  </div>
+                  
+                  {/* 內容區塊預覽 */}
+                  <div className="space-y-3">
+                    {cardConfig?.content_blocks?.length > 0 ? (
+                      cardConfig.content_blocks.map((block, index) => (
+                        <div key={index} className="bg-white border border-gray-100 rounded-lg p-3 text-sm">
+                          <BlockPreview block={block} />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-gray-500 py-8">
+                        <PhotoIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">尚未添加內容</p>
+                        <p className="text-xs mt-1">在左側添加內容區塊</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-4 pt-3 border-t border-gray-200 text-center">
+                    <a 
+                      href={`/member/${user.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <EyeIcon className="h-3 w-3 mr-1" />
+                      完整版本
+                    </a>
+                  </div>
+                </div>
+                
+                <div className="mt-4 text-xs text-gray-500 text-center">
+                  💡 修改會即時反映在預覽中
+                </div>
               </div>
             </div>
           </div>
