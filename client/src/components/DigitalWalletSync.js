@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from '../config/axios';
 import Cookies from 'js-cookie';
 
@@ -7,7 +7,6 @@ const DigitalWalletSync = () => {
   const [localCards, setLocalCards] = useState([]);
   const [cloudCards, setCloudCards] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const autoSyncAttempted = useRef(false);
 
   useEffect(() => {
     const loggedIn = checkLoginStatus();
@@ -26,15 +25,14 @@ const DigitalWalletSync = () => {
   }, [isLoggedIn]);
 
   useEffect(() => {
-    // 自動同步：已登入、且本地有資料、雲端數量小於本地、且尚未嘗試自動同步
+    // 自動同步條件：
+    // 1) 已登入 2) 本地有資料 3) 雲端數量小於本地 4) 目前不在同步中
     if (
       isLoggedIn &&
       localCards.length > 0 &&
       cloudCards.length < localCards.length &&
-      !autoSyncAttempted.current &&
       syncStatus !== 'syncing'
     ) {
-      autoSyncAttempted.current = true;
       syncToCloud();
     }
   }, [isLoggedIn, localCards, cloudCards, syncStatus]);
@@ -62,17 +60,19 @@ const DigitalWalletSync = () => {
 
   const loadCloudCards = async () => {
     if (!isLoggedIn) return;
-    
+
     try {
       setSyncStatus('loading');
       const token = Cookies.get('token');
       const response = await axios.get('/api/digital-wallet/cards', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data.success) {
         setCloudCards(response.data.cards);
         setSyncStatus('success');
+      } else {
+        setSyncStatus('error');
       }
     } catch (error) {
       console.error('載入雲端名片失敗:', error);
@@ -82,15 +82,15 @@ const DigitalWalletSync = () => {
 
   const syncToCloud = async () => {
     if (!isLoggedIn || localCards.length === 0) return;
-    
+
     try {
       setSyncStatus('syncing');
       const token = Cookies.get('token');
-      const response = await axios.post('/api/digital-wallet/sync', 
+      const response = await axios.post('/api/digital-wallet/sync',
         { cards: localCards },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       if (response.data.success) {
         setSyncStatus('synced');
         await loadCloudCards(); // 重新載入雲端數據
@@ -155,7 +155,7 @@ const DigitalWalletSync = () => {
           {getStatusText()}
         </span>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className="text-center p-4 bg-gray-50 rounded-lg">
           <div className="text-2xl font-bold text-gray-900">{localCards.length}</div>
@@ -174,7 +174,7 @@ const DigitalWalletSync = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="flex space-x-3">
         <button
           onClick={loadCloudCards}
@@ -191,7 +191,7 @@ const DigitalWalletSync = () => {
           同步到雲端
         </button>
       </div>
-      
+
       {localCards.length !== cloudCards.length && (
         <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
