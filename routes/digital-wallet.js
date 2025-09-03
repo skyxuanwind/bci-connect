@@ -173,9 +173,21 @@ router.post('/sync', authenticateToken, async (req, res) => {
     );
     
     const existingCardIds = new Set(existingCollections.rows.map(row => row.card_id));
+    const seenInPayload = new Set();
     
     // 處理每張名片
     for (const card of cards) {
+      // 跳過無效資料或在本次 payload 中重複的卡片
+      if (!card || !card.id) {
+        console.warn('跳過無效名片資料，缺少 id:', card);
+        continue;
+      }
+      if (seenInPayload.has(card.id)) {
+        // 已在本次請求中處理過，避免重複插入
+        continue;
+      }
+      seenInPayload.add(card.id);
+
       // 檢查名片是否存在於 nfc_cards 表中
       const cardExists = await client.query(
         'SELECT id FROM nfc_cards WHERE id = $1',
@@ -183,34 +195,63 @@ router.post('/sync', authenticateToken, async (req, res) => {
       );
       
       if (cardExists.rows.length > 0) {
-        if (!existingCardIds.has(card.id)) {
-          // 添加新的收藏記錄
-          await client.query(`
-            INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-          `, [
-            userId, 
-            card.id, 
-            card.personal_note || '', 
-            card.tags || [], 
-            card.folder_name || null,
-            card.date_added || new Date(),
-            card.last_viewed || new Date()
-          ]);
-        } else {
-          // 更新現有記錄
-          await client.query(`
-            UPDATE nfc_card_collections 
-            SET notes = $3, tags = $4, folder_name = $5, last_viewed = $6
-            WHERE user_id = $1 AND card_id = $2
-          `, [
-            userId, 
-            card.id, 
-            card.personal_note || '', 
-            card.tags || [], 
-            card.folder_name || null,
-            card.last_viewed || new Date()
-          ]);
+        // 正規化資料型別
+        const notes = card.personal_note || '';
+        const tags = Array.isArray(card.tags) ? card.tags.map(String) : [];
+        const folderName = card.folder_name || null;
+        const collectedAt = card.date_added ? new Date(card.date_added) : new Date();
+        const lastViewed = card.last_viewed ? new Date(card.last_viewed) : new Date();
+
+        try {
+          if (!existingCardIds.has(card.id)) {
+            // 添加新的收藏記錄
+            await client.query(`
+              INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed)
+              VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `, [
+              userId, 
+              card.id, 
+              notes, 
+              tags, 
+              folderName,
+              collectedAt,
+              lastViewed
+            ]);
+            // 更新集合，避免同一個 payload 再次插入同一張卡片導致唯一性衝突
+            existingCardIds.add(card.id);
+          } else {
+            // 更新現有記錄
+            await client.query(`
+              UPDATE nfc_card_collections 
+              SET notes = $3, tags = $4, folder_name = $5, last_viewed = $6
+              WHERE user_id = $1 AND card_id = $2
+            `, [
+              userId, 
+              card.id, 
+              notes, 
+              tags, 
+              folderName,
+              lastViewed
+            ]);
+          }
+        } catch (err) {
+          // 23505: unique_violation (例如 payload 內同一張卡片重複，或別處已插入)
+          if (err && err.code === '23505') {
+            await client.query(`
+              UPDATE nfc_card_collections 
+              SET notes = $3, tags = $4, folder_name = $5, last_viewed = $6
+              WHERE user_id = $1 AND card_id = $2
+            `, [
+              userId, 
+              card.id, 
+              notes, 
+              tags, 
+              folderName,
+              lastViewed
+            ]);
+          } else {
+            throw err;
+          }
         }
       }
     }
