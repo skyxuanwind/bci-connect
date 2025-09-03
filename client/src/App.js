@@ -326,7 +326,13 @@ function App() {
           </ProtectedRoute>
         } />
         
-        <Route path="/digital-wallet" element={<DigitalWallet />} />
+        <Route path="/digital-wallet" element={
+          <ProtectedRoute>
+            <Layout>
+              <DigitalWallet />
+            </Layout>
+          </ProtectedRoute>
+        } />
         
         {/* 公開的會員名片頁面 - 無需登入 */}
         <Route path="/member/:memberId" element={<MemberCard />} />
