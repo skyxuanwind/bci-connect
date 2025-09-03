@@ -469,8 +469,54 @@ const initializeDatabase = async () => {
         is_favorite BOOLEAN DEFAULT false,
         folder_name VARCHAR(100),
         collected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_viewed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, card_id)
+      )
+    `);
+
+    // Create nfc_card_content_analytics table (內容區塊點擊分析)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS nfc_card_content_analytics (
+        id SERIAL PRIMARY KEY,
+        card_id INTEGER NOT NULL REFERENCES nfc_cards(id) ON DELETE CASCADE,
+        content_block_id INTEGER,
+        content_type VARCHAR(50) NOT NULL,
+        content_title VARCHAR(200),
+        click_count INTEGER DEFAULT 0,
+        visitor_ip VARCHAR(45),
+        visitor_user_agent TEXT,
+        referrer VARCHAR(500),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create nfc_card_visit_sources table (訪問來源分析)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS nfc_card_visit_sources (
+        id SERIAL PRIMARY KEY,
+        card_id INTEGER NOT NULL REFERENCES nfc_cards(id) ON DELETE CASCADE,
+        source_type VARCHAR(50) NOT NULL CHECK (source_type IN ('nfc', 'qr_code', 'direct_link', 'social_media', 'email', 'other')),
+        source_detail VARCHAR(200),
+        visitor_count INTEGER DEFAULT 1,
+        last_visit TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create scanned_business_cards table (掃描的紙本名片)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS scanned_business_cards (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        original_image_path VARCHAR(500),
+        extracted_data JSONB,
+        confidence_score DECIMAL(3,2),
+        manual_corrections JSONB,
+        is_verified BOOLEAN DEFAULT false,
+        tags TEXT[],
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 

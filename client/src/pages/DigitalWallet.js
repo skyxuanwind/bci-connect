@@ -10,9 +10,13 @@ import {
   BuildingOfficeIcon,
   TagIcon,
   FunnelIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  CameraIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import BusinessCardScanner from '../components/BusinessCardScanner';
+import { useNavigate } from 'react-router-dom';
 
 const DigitalWallet = () => {
   const [savedCards, setSavedCards] = useState([]);
@@ -22,6 +26,8 @@ const DigitalWallet = () => {
   const [editingNote, setEditingNote] = useState(null);
   const [tempNote, setTempNote] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSavedCards();
@@ -149,6 +155,36 @@ const DigitalWallet = () => {
     reader.readAsText(file);
   };
 
+  // 處理掃描完成
+  const handleScanComplete = (extractedInfo) => {
+    const newCard = {
+      id: `scanned_${Date.now()}`,
+      card_title: extractedInfo.name || '掃描名片',
+      card_subtitle: extractedInfo.title || '',
+      company: extractedInfo.company || '',
+      phone: extractedInfo.phone || extractedInfo.mobile || '',
+      email: extractedInfo.email || '',
+      website: extractedInfo.website || '',
+      address: extractedInfo.address || '',
+      tags: extractedInfo.tags || [],
+      personal_note: '',
+      date_added: new Date().toISOString(),
+      last_viewed: new Date().toISOString(),
+      is_scanned: true
+    };
+    
+    const updatedCards = [newCard, ...savedCards];
+    setSavedCards(updatedCards);
+    saveToLocalStorage(updatedCards);
+    setShowScanner(false);
+    alert('名片已成功添加到數位名片夾！');
+  };
+
+  // 導航到數據分析頁面
+  const goToAnalytics = () => {
+    navigate('/nfc-analytics');
+  };
+
   // 過濾和排序邏輯
   const filteredAndSortedCards = savedCards
     .filter(card => {
@@ -209,6 +245,22 @@ const DigitalWallet = () => {
             </div>
             
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowScanner(true)}
+                className="flex items-center px-4 py-2 text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+              >
+                <CameraIcon className="h-4 w-4 mr-2" />
+                掃描名片
+              </button>
+              
+              <button
+                onClick={goToAnalytics}
+                className="flex items-center px-4 py-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+              >
+                <ChartBarIcon className="h-4 w-4 mr-2" />
+                數據分析
+              </button>
+              
               <button
                 onClick={exportAllCards}
                 className="flex items-center px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -476,6 +528,14 @@ const DigitalWallet = () => {
           </div>
         )}
       </div>
+      
+      {/* 名片掃描器 */}
+      {showScanner && (
+        <BusinessCardScanner
+          onScanComplete={handleScanComplete}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 };

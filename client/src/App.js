@@ -53,6 +53,7 @@ import AINotificationTestPage from './pages/AINotificationTestPage';
 import NFCCardEditor from './pages/NFCCardEditor';
 import MemberCard from './pages/MemberCard';
 import DigitalWallet from './pages/DigitalWallet';
+import NFCAnalytics from './pages/NFCAnalytics';
 
 
 
@@ -330,6 +331,14 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <DigitalWallet />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/nfc-analytics" element={
+          <ProtectedRoute>
+            <Layout>
+              <NFCAnalytics />
             </Layout>
           </ProtectedRoute>
         } />
