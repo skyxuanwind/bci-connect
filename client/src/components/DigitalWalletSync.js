@@ -7,6 +7,8 @@ const DigitalWalletSync = () => {
   const [localCards, setLocalCards] = useState([]);
   const [cloudCards, setCloudCards] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // 新增：避免自動同步在錯誤時無限重試，只自動嘗試一次
+  const [autoSyncAttempted, setAutoSyncAttempted] = useState(false);
 
   useEffect(() => {
     const loggedIn = checkLoginStatus();
@@ -26,16 +28,19 @@ const DigitalWalletSync = () => {
 
   useEffect(() => {
     // 自動同步條件：
-    // 1) 已登入 2) 本地有資料 3) 雲端數量小於本地 4) 目前不在同步中
+    // 1) 已登入 2) 本地有資料 3) 雲端數量小於本地 4) 目前不在同步中 5) 尚未自動嘗試過
     if (
       isLoggedIn &&
       localCards.length > 0 &&
       cloudCards.length < localCards.length &&
-      syncStatus !== 'syncing'
+      syncStatus !== 'syncing' &&
+      !autoSyncAttempted
     ) {
+      // 標記已自動嘗試，避免錯誤時無限重試
+      setAutoSyncAttempted(true);
       syncToCloud();
     }
-  }, [isLoggedIn, localCards, cloudCards, syncStatus]);
+  }, [isLoggedIn, localCards, cloudCards, syncStatus, autoSyncAttempted]);
 
   const checkLoginStatus = () => {
     const token = Cookies.get('token');
@@ -99,6 +104,7 @@ const DigitalWalletSync = () => {
       }
     } catch (error) {
       console.error('同步到雲端失敗:', error);
+      // 出錯時標記為 error，不再自動重試（避免 429 無限迴圈）
       setSyncStatus('error');
     }
   };
