@@ -259,6 +259,12 @@ const MemberCard = () => {
         return 'template-creative';
       case '簡約質感版':
         return 'template-minimal';
+      case '商務專業版':
+        return 'template-business';
+      case '現代簡約版':
+        return 'template-modern';
+      case '環保綠意版':
+        return 'template-eco';
       default:
         return 'template-minimal';
     }

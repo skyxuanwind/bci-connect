@@ -412,6 +412,27 @@ const MemberCard = () => {
             >
               <FaPalette />
             </button>
+            <button 
+              onClick={() => setSelectedTemplate('business')}
+              className={`template-btn ${selectedTemplate === 'business' ? 'active' : ''}`}
+              title="商務專業版"
+            >
+              <FaPalette />
+            </button>
+            <button 
+              onClick={() => setSelectedTemplate('modern')}
+              className={`template-btn ${selectedTemplate === 'modern' ? 'active' : ''}`}
+              title="現代簡約版"
+            >
+              <FaPalette />
+            </button>
+            <button 
+              onClick={() => setSelectedTemplate('eco')}
+              className={`template-btn ${selectedTemplate === 'eco' ? 'active' : ''}`}
+              title="環保綠意版"
+            >
+              <FaPalette />
+            </button>
           </div>
         </div>
       </div>
