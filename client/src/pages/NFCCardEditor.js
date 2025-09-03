@@ -454,7 +454,7 @@ const NFCCardEditor = () => {
                         <img src={selectedPreview} alt="模板預覽" className="w-20 h-14 object-cover rounded" />
                         <div>
                           <div className="font-medium text-gray-900">{selectedTemplate?.name || '未選擇模板'}</div>
-                          <div className="text-xs text-gray-500 line-clamp-2">{selectedTemplate?.description || '請選擇一個模板以查看預覽'}</div>
+                          <div className="text-xs text-gray-500">{selectedTemplate?.description || '請選擇一個模板以查看預覽'}</div>
                         </div>
                       </div>
                     </div>
@@ -544,7 +544,7 @@ const NFCCardEditor = () => {
                   即時預覽
                 </h2>
                 
-                <div className="border border-gray-200 rounded-lg overflow-hidden min-h-96 max-h-96 overflow-y-auto">
+                <div className="border border-gray-200 rounded-lg overflow-hidden min-h-[32rem] max-h-[32rem] overflow-y-auto">
                   {/* 套用模板樣式的預覽 */}
                   <TemplatePreview 
                     template={selectedTemplate}
