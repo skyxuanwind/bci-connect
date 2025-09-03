@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from '../config/axios';
 import Cookies from 'js-cookie';
 
@@ -7,15 +7,43 @@ const DigitalWalletSync = () => {
   const [localCards, setLocalCards] = useState([]);
   const [cloudCards, setCloudCards] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const autoSyncAttempted = useRef(false);
 
   useEffect(() => {
-    checkLoginStatus();
+    const loggedIn = checkLoginStatus();
     loadLocalCards();
+    if (loggedIn) {
+      // 初次進入頁面時就嘗試載入雲端資料
+      loadCloudCards();
+    }
   }, []);
+
+  useEffect(() => {
+    // 當登入狀態改變時，自動載入雲端資料
+    if (isLoggedIn && cloudCards.length === 0 && syncStatus === 'idle') {
+      loadCloudCards();
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    // 自動同步：已登入、且本地有資料、雲端數量小於本地、且尚未嘗試自動同步
+    if (
+      isLoggedIn &&
+      localCards.length > 0 &&
+      cloudCards.length < localCards.length &&
+      !autoSyncAttempted.current &&
+      syncStatus !== 'syncing'
+    ) {
+      autoSyncAttempted.current = true;
+      syncToCloud();
+    }
+  }, [isLoggedIn, localCards, cloudCards, syncStatus]);
 
   const checkLoginStatus = () => {
     const token = Cookies.get('token');
-    setIsLoggedIn(!!token);
+    const loggedIn = !!token;
+    setIsLoggedIn(loggedIn);
+    return loggedIn;
   };
 
   const loadLocalCards = () => {
@@ -24,6 +52,8 @@ const DigitalWalletSync = () => {
       if (saved) {
         const cards = JSON.parse(saved);
         setLocalCards(cards);
+      } else {
+        setLocalCards([]);
       }
     } catch (error) {
       console.error('載入本地名片失敗:', error);
@@ -64,6 +94,8 @@ const DigitalWalletSync = () => {
       if (response.data.success) {
         setSyncStatus('synced');
         await loadCloudCards(); // 重新載入雲端數據
+      } else {
+        setSyncStatus('error');
       }
     } catch (error) {
       console.error('同步到雲端失敗:', error);
