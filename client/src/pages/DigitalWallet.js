@@ -150,34 +150,127 @@ const DigitalWallet = () => {
     }
   };
 
-  const addTag = (cardId, tag) => {
+  const addTag = async (cardId, tag) => {
     if (!tag.trim()) return;
     
-    const updatedCards = savedCards.map(card => {
-      if (card.id === cardId) {
-        const currentTags = card.tags || [];
-        if (!currentTags.includes(tag.trim())) {
-          return { ...card, tags: [...currentTags, tag.trim()] };
+    const cardToUpdate = savedCards.find(card => card.id === cardId);
+    const currentTags = cardToUpdate?.tags || [];
+    
+    if (currentTags.includes(tag.trim())) return;
+    
+    const newTags = [...currentTags, tag.trim()];
+    
+    try {
+      const token = Cookies.get('token');
+      
+      // 如果有登入且有 collection_id，更新雲端
+      if (token && cardToUpdate?.collection_id) {
+        try {
+          await axios.put(`/api/digital-wallet/cards/${cardToUpdate.collection_id}`, {
+            notes: cardToUpdate.personal_note,
+            tags: newTags,
+            is_favorite: cardToUpdate.is_favorite,
+            folder_name: cardToUpdate.folder_name
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (error) {
+          console.warn('更新雲端標籤失敗:', error);
         }
       }
-      return card;
-    });
-    setSavedCards(updatedCards);
-    saveToLocalStorage(updatedCards);
+      
+      // 更新本地
+      const updatedCards = savedCards.map(card => {
+        if (card.id === cardId) {
+          return { ...card, tags: newTags };
+        }
+        return card;
+      });
+      setSavedCards(updatedCards);
+      saveToLocalStorage(updatedCards);
+    } catch (error) {
+      console.error('新增標籤失敗:', error);
+    }
   };
 
-  const removeTag = (cardId, tagToRemove) => {
-    const updatedCards = savedCards.map(card => {
-      if (card.id === cardId) {
-        return { 
-          ...card, 
-          tags: (card.tags || []).filter(tag => tag !== tagToRemove) 
-        };
+  const removeTag = async (cardId, tagToRemove) => {
+    const cardToUpdate = savedCards.find(card => card.id === cardId);
+    const newTags = (cardToUpdate?.tags || []).filter(tag => tag !== tagToRemove);
+    
+    try {
+      const token = Cookies.get('token');
+      
+      // 如果有登入且有 collection_id，更新雲端
+      if (token && cardToUpdate?.collection_id) {
+        try {
+          await axios.put(`/api/digital-wallet/cards/${cardToUpdate.collection_id}`, {
+            notes: cardToUpdate.personal_note,
+            tags: newTags,
+            is_favorite: cardToUpdate.is_favorite,
+            folder_name: cardToUpdate.folder_name
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (error) {
+          console.warn('更新雲端標籤失敗:', error);
+        }
       }
-      return card;
-    });
-    setSavedCards(updatedCards);
-    saveToLocalStorage(updatedCards);
+      
+      // 更新本地
+      const updatedCards = savedCards.map(card => {
+        if (card.id === cardId) {
+          return { 
+            ...card, 
+            tags: newTags
+          };
+        }
+        return card;
+      });
+      setSavedCards(updatedCards);
+      saveToLocalStorage(updatedCards);
+    } catch (error) {
+      console.error('移除標籤失敗:', error);
+    }
+  };
+
+  const toggleFavorite = async (cardId) => {
+    const cardToUpdate = savedCards.find(card => card.id === cardId);
+    const newFavoriteStatus = !cardToUpdate?.is_favorite;
+    
+    try {
+      const token = Cookies.get('token');
+      
+      // 如果有登入且有 collection_id，更新雲端
+      if (token && cardToUpdate?.collection_id) {
+        try {
+          await axios.put(`/api/digital-wallet/cards/${cardToUpdate.collection_id}`, {
+            notes: cardToUpdate.personal_note,
+            tags: cardToUpdate.tags,
+            is_favorite: newFavoriteStatus,
+            folder_name: cardToUpdate.folder_name
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (error) {
+          console.warn('更新雲端收藏狀態失敗:', error);
+        }
+      }
+      
+      // 更新本地
+      const updatedCards = savedCards.map(card => {
+        if (card.id === cardId) {
+          return { 
+            ...card, 
+            is_favorite: newFavoriteStatus
+          };
+        }
+        return card;
+      });
+      setSavedCards(updatedCards);
+      saveToLocalStorage(updatedCards);
+    } catch (error) {
+      console.error('切換收藏狀態失敗:', error);
+    }
   };
 
   const downloadVCard = async (card) => {
@@ -591,6 +684,22 @@ const DigitalWallet = () => {
                           }
                         }}
                       />
+                      
+                      <button
+                        onClick={() => toggleFavorite(card.id)}
+                        className={`p-1 rounded transition-colors ${
+                          card.is_favorite 
+                            ? 'text-red-500 hover:bg-red-50' 
+                            : 'text-gray-400 hover:bg-gray-50 hover:text-red-500'
+                        }`}
+                        title={card.is_favorite ? '取消收藏' : '加入收藏'}
+                      >
+                        {card.is_favorite ? (
+                          <HeartSolidIcon className="h-4 w-4" />
+                        ) : (
+                          <HeartIcon className="h-4 w-4" />
+                        )}
+                      </button>
                       
                       <button
                         onClick={() => downloadVCard(card)}
