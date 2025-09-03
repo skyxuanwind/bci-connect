@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
+import Cookies from 'js-cookie';
 import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/templates.css';
 import {
@@ -200,7 +201,7 @@ const MemberCard = () => {
       }
 
       // 嘗試添加到雲端
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('token');
       if (token) {
         try {
           const response = await axios.post('/api/digital-wallet/cards', {

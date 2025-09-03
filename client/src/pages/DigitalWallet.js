@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../config/axios';
+import Cookies from 'js-cookie';
 import {
   HeartIcon,
   MagnifyingGlassIcon,
@@ -38,7 +39,7 @@ const DigitalWallet = () => {
   const loadSavedCards = async () => {
     try {
       // 首先嘗試從雲端載入
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('token');
       if (token) {
         try {
           const response = await axios.get('/api/digital-wallet/cards', {
@@ -80,7 +81,7 @@ const DigitalWallet = () => {
 
   const syncToCloud = async (cards) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('token');
       if (!token) return;
       
       await axios.post('/api/digital-wallet/sync', 
@@ -94,7 +95,7 @@ const DigitalWallet = () => {
 
   const removeCard = async (cardId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('token');
       const cardToRemove = savedCards.find(card => card.id === cardId);
       
       // 如果有登入且有 collection_id，從雲端刪除
@@ -119,7 +120,7 @@ const DigitalWallet = () => {
 
   const updateCard = async (cardId, updates) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('token');
       const cardToUpdate = savedCards.find(card => card.id === cardId);
       
       // 如果有登入且有 collection_id，更新雲端

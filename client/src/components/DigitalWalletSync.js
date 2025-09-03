@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../config/axios';
+import Cookies from 'js-cookie';
 
 const DigitalWalletSync = () => {
   const [syncStatus, setSyncStatus] = useState('idle');
@@ -13,7 +14,7 @@ const DigitalWalletSync = () => {
   }, []);
 
   const checkLoginStatus = () => {
-    const token = localStorage.getItem('token');
+    const token = Cookies.get('token');
     setIsLoggedIn(!!token);
   };
 
@@ -34,7 +35,7 @@ const DigitalWalletSync = () => {
     
     try {
       setSyncStatus('loading');
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('token');
       const response = await axios.get('/api/digital-wallet/cards', {
         headers: { Authorization: `Bearer ${token}` }
       });
