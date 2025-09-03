@@ -404,6 +404,21 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create nfc_card_content table (NFC 名片內容區塊表)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS nfc_card_content (
+        id SERIAL PRIMARY KEY,
+        card_id INTEGER NOT NULL REFERENCES nfc_cards(id) ON DELETE CASCADE,
+        content_type VARCHAR(50) NOT NULL,
+        content_data JSONB NOT NULL DEFAULT '{}',
+        display_order INTEGER DEFAULT 0,
+        is_visible BOOLEAN DEFAULT true,
+        custom_styles JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Create nfc_card_analytics table (名片分析數據)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS nfc_card_analytics (
