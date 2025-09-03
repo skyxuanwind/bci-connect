@@ -55,7 +55,7 @@ const DigitalWalletSync = () => {
     
     try {
       setSyncStatus('syncing');
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('token');
       const response = await axios.post('/api/digital-wallet/sync', 
         { cards: localCards },
         { headers: { Authorization: `Bearer ${token}` } }

@@ -38,33 +38,50 @@ const DigitalWallet = () => {
 
   const loadSavedCards = async () => {
     try {
-      // 首先嘗試從雲端載入
       const token = Cookies.get('token');
+
+      let cloudCards = null;
       if (token) {
         try {
           const response = await axios.get('/api/digital-wallet/cards', {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (response.data.success) {
-            setSavedCards(response.data.cards);
-            // 同步到本地存儲作為備份
-            localStorage.setItem('digitalWallet', JSON.stringify(response.data.cards));
-            return;
+            cloudCards = response.data.cards || [];
           }
         } catch (error) {
           console.warn('從雲端載入失敗，嘗試本地載入:', error);
         }
       }
-      
-      // 如果雲端載入失敗，從本地載入
+
+      // 讀取本地備份
       const saved = localStorage.getItem('digitalWallet');
-      if (saved) {
-        const cards = JSON.parse(saved);
-        setSavedCards(cards);
-        // 如果有登入，嘗試同步到雲端
-        if (token) {
-          syncToCloud(cards);
+      const localCards = saved ? JSON.parse(saved) : [];
+
+      if (Array.isArray(cloudCards)) {
+        if (cloudCards.length > 0) {
+          // 雲端有資料 -> 採用雲端，並覆寫本地備份
+          setSavedCards(cloudCards);
+          try { localStorage.setItem('digitalWallet', JSON.stringify(cloudCards)); } catch {}
+          return;
         }
+        // 雲端空陣列 -> 若本地有資料，不要覆蓋，改採用本地並嘗試同步上雲
+        if (localCards.length > 0) {
+          setSavedCards(localCards);
+          if (token) { await syncToCloud(localCards); }
+          return;
+        }
+        // 雲端與本地都沒有資料
+        setSavedCards([]);
+        return;
+      }
+
+      // 沒登入或雲端取得失敗，使用本地
+      if (localCards.length > 0) {
+        setSavedCards(localCards);
+        if (token) { await syncToCloud(localCards); }
+      } else {
+        setSavedCards([]);
       }
     } catch (error) {
       console.error('載入名片夾失敗:', error);
