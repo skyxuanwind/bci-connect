@@ -25,7 +25,7 @@ const NFCCardEditor = () => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
+  // 移除預覽模式狀態
   const [editingBlock, setEditingBlock] = useState(null);
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
 
@@ -385,72 +385,13 @@ const NFCCardEditor = () => {
                 <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
                 複製名片網址
               </button>
-              
-              <button
-                onClick={() => setPreviewMode(!previewMode)}
-                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
-                  previewMode 
-                    ? 'bg-gray-600 text-white hover:bg-gray-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <EyeIcon className="h-4 w-4 mr-2" />
-                {previewMode ? '編輯模式' : '預覽模式'}
-              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {previewMode ? (
-          // 預覽模式
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">名片預覽</h2>
-              <div className="border border-gray-200 rounded-lg p-6 min-h-96">
-                {/* 預覽內容 */}
-                <div className="text-center mb-6">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                    {cardConfig?.card_title || '未設定標題'}
-                  </h1>
-                  <p className="text-gray-600">
-                    {cardConfig?.card_subtitle || '未設定副標題'}
-                  </p>
-                </div>
-                
-                {/* 內容區塊預覽 */}
-                <div className="space-y-4">
-                  {cardConfig?.content_blocks?.length > 0 ? (
-                    cardConfig.content_blocks.map((block, index) => (
-                      <div key={index} className="border border-gray-100 rounded-lg p-4">
-                        <BlockPreview block={block} />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <p>尚未添加任何內容區塊</p>
-                      <p className="text-sm mt-1">請在編輯模式中添加內容</p>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-6 pt-4 border-t border-gray-200 text-center">
-                  <a 
-                    href={`/member/${user.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <EyeIcon className="h-4 w-4 mr-2" />
-                    查看完整版本
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          // 編輯模式 - 三欄布局：基本設定、內容編輯、即時預覽
+        {/* 編輯模式 - 三欄布局：基本設定、內容編輯、即時預覽 */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* 左側：基本設定 */}
             <div className="xl:col-span-3">
@@ -603,6 +544,20 @@ const NFCCardEditor = () => {
                 </h2>
                 
                 <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 min-h-96 max-h-96 overflow-y-auto">
+                  {/* 模板預覽圖片 */}
+                  {selectedTemplate && (
+                    <div className="mb-4 text-center">
+                      <img 
+                        src={selectedPreview} 
+                        alt={selectedTemplate.name}
+                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        模板：{selectedTemplate.name}
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* 預覽內容 */}
                   <div className="text-center mb-4">
                     <h1 className="text-xl font-bold text-gray-900 mb-1">
@@ -649,7 +604,6 @@ const NFCCardEditor = () => {
               </div>
             </div>
           </div>
-        )}
       </div>
     </div>
   );
