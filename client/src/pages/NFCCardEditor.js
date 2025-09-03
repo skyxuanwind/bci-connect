@@ -97,13 +97,13 @@ const NFCCardEditor = () => {
   const fetchCardData = async () => {
     try {
       const response = await axios.get('/api/nfc-cards/my-card');
-      const payload = response.data?.data || response.data;
+      const data = response.data || {};
 
-      if (payload && (payload.card || payload.cardConfig)) {
-        // 兼容不同返回結構
-        const card = payload.card || payload.cardConfig;
-        const content = payload.content || payload.content_blocks || [];
+      // 兼容不同返回結構：優先使用 cardConfig，其次使用 card 或直接使用根對象
+      const card = data.cardConfig || data.card || data;
+      const content = (card && (card.content_blocks || card.content)) || [];
 
+      if (card && (card.template_id !== undefined || card.card_title !== undefined)) {
         const mappedBlocks = Array.isArray(content) ? content.map(mapRowToBlock) : [];
         setCardConfig({
           card_title: card.card_title || '',
@@ -182,7 +182,10 @@ const NFCCardEditor = () => {
     try {
       setSaving(true);
       await axios.post('/api/nfc-cards/my-card/content', {
-        content_blocks: cardConfig.content_blocks || []
+        content_blocks: (cardConfig.content_blocks || []).map((b, i) => ({
+          ...b,
+          display_order: i
+        }))
       });
       alert('內容保存成功！');
     } catch (error) {
@@ -199,7 +202,8 @@ const NFCCardEditor = () => {
       ...cardConfig,
       template_id: templateId,
       template_name: template?.name,
-      css_config: template?.css_config
+      css_config: template?.css_config || '',
+      custom_css: cardConfig?.custom_css || ''
     });
   };
 
@@ -241,7 +245,9 @@ const NFCCardEditor = () => {
   };
 
   const handleDeleteBlock = (blockIndex) => {
-    const updatedBlocks = cardConfig.content_blocks.filter((_, index) => index !== blockIndex);
+    const updatedBlocks = cardConfig.content_blocks
+      .filter((_, index) => index !== blockIndex)
+      .map((b, i) => ({ ...b, display_order: i }));
     setCardConfig({
       ...cardConfig,
       content_blocks: updatedBlocks

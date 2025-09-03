@@ -185,18 +185,39 @@ const updateMyCardContent = async (req, res) => {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `;
       
-      for (const block of content_blocks) {
+      for (let i = 0; i < content_blocks.length; i++) {
+        const block = content_blocks[i] || {};
+        const blockType = block.block_type || block.content_type;
+        const data = block.content_data || {};
+
+        const title = block.title ?? data.title ?? null;
+        let content = block.content ?? data.content ?? null;
+        const url = block.url ?? data.url ?? null;
+        const image_url = block.image_url ?? data.image_url ?? null;
+        const social_platform = block.social_platform ?? data.social_platform ?? null;
+        const map_address = block.map_address ?? data.address ?? data.map_address ?? null;
+        const map_coordinates = block.map_coordinates ?? data.coordinates ?? null;
+
+        // 社群類型：將複雜資料以 JSON 字串保存到 content 欄位
+        if (blockType === 'social' && !content) {
+          try {
+            content = JSON.stringify(data);
+          } catch (e) {
+            content = null;
+          }
+        }
+
         await client.query(insertQuery, [
           cardId,
-          block.block_type,
-          block.title,
-          block.content,
-          block.url,
-          block.image_url,
-          block.social_platform,
-          block.map_address,
-          block.map_coordinates,
-          block.display_order,
+          blockType,
+          title,
+          content,
+          url,
+          image_url,
+          social_platform,
+          map_address,
+          map_coordinates,
+          Number.isInteger(block.display_order) ? block.display_order : i,
           block.is_visible !== false, // 默認為 true
           JSON.stringify(block.custom_styles || {})
         ]);

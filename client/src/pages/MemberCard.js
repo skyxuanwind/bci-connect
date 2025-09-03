@@ -102,28 +102,33 @@ const MemberCard = () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/nfc-cards/member/${memberId}`);
-      const payload = response.data?.data || response.data;
-      if (!payload) throw new Error('無效的名片資料');
+      const data = response.data || {};
 
-      // 服務端字段轉換為前端需要格式
-      const contentRows = payload.content || payload.content_blocks || [];
+      const member = data.member;
+      const card = data.cardConfig;
+
+      if (!card) {
+        throw new Error('名片不存在');
+      }
+
+      // 從服務端資料轉換為前端需要的格式
+      const contentRows = Array.isArray(card.content_blocks) ? card.content_blocks : [];
       const transformed = {
-        id: payload.id,
-        card_title: payload.card_title,
-        card_subtitle: payload.card_subtitle,
-        template_name: payload.template_name,
+        id: card.id,
+        card_title: card.card_title,
+        card_subtitle: card.card_subtitle,
+        template_name: card.template_name,
         contact_info: {
-          phone: payload.user_phone,
-          email: payload.user_email,
-          website: payload.user_website,
-          company: payload.user_company,
-          address: payload.user_address
+          phone: member?.contact_number || card.user_phone || '',
+          email: member?.email || card.user_email || '',
+          website: member?.website || card.user_website || '',
+          company: member?.company || card.user_company || '',
+          address: member?.address || card.user_address || ''
         },
-        content_blocks: Array.isArray(contentRows) ? contentRows.map(mapRowToBlock) : []
+        content_blocks: contentRows.map(mapRowToBlock)
       };
 
       setCardData(transformed);
-      
       // 更新最後查看時間（如果已在名片夾中）
       updateLastViewed();
     } catch (error) {
