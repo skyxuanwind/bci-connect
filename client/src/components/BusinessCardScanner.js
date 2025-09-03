@@ -119,6 +119,21 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
     }));
   };
 
+  // 特殊處理：標籤輸入（以逗號分隔 -> 陣列）
+  const handleEditTags = (value) => {
+    const arr = value
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    setScanResult(prev => ({
+      ...prev,
+      extractedInfo: {
+        ...prev.extractedInfo,
+        tags: arr
+      }
+    }));
+  };
+
   return (
     <div className="business-card-scanner-overlay">
       <div className="business-card-scanner">
@@ -223,7 +238,75 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
                   />
                 </div>
 
-                {/* 其餘內容保持不變 */}
+                <div className="info-field">
+                  <label>手機</label>
+                  <input
+                    type="text"
+                    value={scanResult.extractedInfo.mobile || ''}
+                    onChange={(e) => handleEdit('mobile', e.target.value)}
+                    placeholder="請輸入手機"
+                  />
+                </div>
+
+                <div className="info-field">
+                  <label>電子郵件</label>
+                  <input
+                    type="email"
+                    value={scanResult.extractedInfo.email || ''}
+                    onChange={(e) => handleEdit('email', e.target.value)}
+                    placeholder="請輸入電子郵件"
+                  />
+                </div>
+
+                <div className="info-field">
+                  <label>網站</label>
+                  <input
+                    type="url"
+                    value={scanResult.extractedInfo.website || ''}
+                    onChange={(e) => handleEdit('website', e.target.value)}
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                <div className="info-field info-field-full">
+                  <label>地址</label>
+                  <input
+                    type="text"
+                    value={scanResult.extractedInfo.address || ''}
+                    onChange={(e) => handleEdit('address', e.target.value)}
+                    placeholder="請輸入地址"
+                  />
+                </div>
+
+                <div className="info-field">
+                  <label>傳真</label>
+                  <input
+                    type="text"
+                    value={scanResult.extractedInfo.fax || ''}
+                    onChange={(e) => handleEdit('fax', e.target.value)}
+                    placeholder="請輸入傳真"
+                  />
+                </div>
+
+                <div className="info-field">
+                  <label>部門</label>
+                  <input
+                    type="text"
+                    value={scanResult.extractedInfo.department || ''}
+                    onChange={(e) => handleEdit('department', e.target.value)}
+                    placeholder="請輸入部門"
+                  />
+                </div>
+
+                <div className="info-field info-field-full">
+                  <label>標籤（以逗號分隔）</label>
+                  <input
+                    type="text"
+                    value={(scanResult.extractedInfo.tags || []).join(', ')}
+                    onChange={(e) => handleEditTags(e.target.value)}
+                    placeholder="例如：人資, 顧問, 企業訓練"
+                  />
+                </div>
               </div>
             </div>
 

@@ -39,6 +39,10 @@ const MemberCard = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [downloadingVCard, setDownloadingVCard] = useState(false);
 
+  // 輔助：是否為掃描名片 ID
+  const isScannedId = (id) => String(id || '').split(':')[0].startsWith('scanned_');
+  const baseId = String(memberId || '').split(':')[0];
+
   useEffect(() => {
     fetchCardData();
     checkIfInWallet();
@@ -107,7 +111,67 @@ const MemberCard = () => {
     };
   };
 
+  const fetchScannedCardData = async () => {
+    try {
+      setLoading(true);
+
+      // 1) 先找本地錢包
+      const saved = localStorage.getItem('digitalWallet');
+      const localCards = saved ? JSON.parse(saved) : [];
+      let found = localCards.find(c => String(c.id) === baseId);
+
+      // 2) 本地沒有 -> 若登入，嘗試雲端錢包列表
+      if (!found) {
+        const token = Cookies.get('token');
+        if (token) {
+          try {
+            const resp = await axios.get('/api/digital-wallet/cards', {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const cloudCards = resp?.data?.cards || [];
+            found = cloudCards.find(c => String(c.id) === baseId);
+          } catch (e) {
+            console.warn('讀取雲端錢包失敗:', e);
+          }
+        }
+      }
+
+      if (!found) {
+        throw new Error('此掃描名片不存在於本機或雲端錢包');
+      }
+
+      const scanned = found.scanned_data || {};
+
+      const transformed = {
+        id: String(found.id),
+        card_title: found.card_title || scanned.name || '掃描名片',
+        card_subtitle: found.card_subtitle || scanned.title || '',
+        template_name: found.template_name || '簡約質感版',
+        contact_info: {
+          phone: found.contact_info?.phone || scanned.phone || scanned.mobile || '',
+          email: found.contact_info?.email || scanned.email || '',
+          website: found.contact_info?.website || scanned.website || '',
+          company: found.contact_info?.company || scanned.company || '',
+          address: found.contact_info?.address || scanned.address || ''
+        },
+        content_blocks: []
+      };
+
+      setCardData(transformed);
+      updateLastViewed();
+    } catch (error) {
+      console.error('讀取掃描名片失敗:', error);
+      setError('載入失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchCardData = async () => {
+    if (isScannedId(memberId)) {
+      return fetchScannedCardData();
+    }
+
     try {
       setLoading(true);
       const response = await axios.get(`/api/nfc-cards/member/${memberId}`);
@@ -153,7 +217,7 @@ const MemberCard = () => {
       const saved = localStorage.getItem('digitalWallet');
       if (saved) {
         const cards = JSON.parse(saved);
-        const exists = cards.some(card => card.id === parseInt(memberId));
+        const exists = cards.some(card => String(card.id) === baseId);
         setIsInWallet(exists);
       }
     } catch (error) {
@@ -167,7 +231,7 @@ const MemberCard = () => {
       if (saved) {
         const cards = JSON.parse(saved);
         const updatedCards = cards.map(card => 
-          card.id === parseInt(memberId) 
+          String(card.id) === baseId
             ? { ...card, last_viewed: new Date().toISOString() }
             : card
         );
@@ -195,7 +259,7 @@ const MemberCard = () => {
       const existingCards = saved ? JSON.parse(saved) : [];
       
       // 檢查是否已存在
-      if (existingCards.some(card => card.id === cardData.id)) {
+      if (existingCards.some(card => String(card.id) === String(cardData.id))) {
         showSuccess('名片已在數位名片夾中！');
         return;
       }
@@ -242,7 +306,7 @@ const MemberCard = () => {
       const saved = localStorage.getItem('digitalWallet');
       if (saved) {
         const cards = JSON.parse(saved);
-        const updatedCards = cards.filter(card => card.id !== cardData.id);
+        const updatedCards = cards.filter(card => String(card.id) !== String(cardData.id));
         localStorage.setItem('digitalWallet', JSON.stringify(updatedCards));
         setIsInWallet(false);
         showSuccess('已從數位名片夾移除');
@@ -256,6 +320,43 @@ const MemberCard = () => {
   const downloadVCard = async () => {
     try {
       setDownloadingVCard(true);
+
+      // 掃描名片：改為本地生成 vCard
+      if (isScannedId(memberId)) {
+        const saved = localStorage.getItem('digitalWallet');
+        const cards = saved ? JSON.parse(saved) : [];
+        const local = cards.find(c => String(c.id) === baseId);
+        const scanned = local?.scanned_data || {};
+        const info = cardData?.contact_info || {};
+
+        const lines = [
+          'BEGIN:VCARD',
+          'VERSION:3.0',
+          `FN:${scanned.name || cardData.card_title || ''}`,
+          `ORG:${info.company || ''}`,
+          `TITLE:${scanned.title || cardData.card_subtitle || ''}`,
+          `EMAIL:${info.email || ''}`,
+          info.phone ? `TEL;TYPE=CELL:${info.phone}` : '',
+          scanned.mobile && scanned.mobile !== info.phone ? `TEL;TYPE=CELL:${scanned.mobile}` : '',
+          `URL:${info.website || ''}`,
+          info.address ? `ADR;TYPE=WORK:;;${info.address};;;;` : '',
+          'END:VCARD'
+        ].filter(Boolean);
+
+        const blob = new Blob([lines.join('\r\n')], { type: 'text/vcard' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${cardData.card_title || 'contact'}.vcf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showSuccess('聯絡人已下載！');
+        return;
+      }
+
+      // 一般名片：沿用後端下載
       const response = await axios.get(`/api/nfc-cards/vcard/${memberId}`, {
         responseType: 'blob'
       });
