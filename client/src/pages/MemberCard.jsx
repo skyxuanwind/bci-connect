@@ -18,6 +18,7 @@ import {
   FaTwitter,
   FaInstagram,
   FaYoutube,
+  FaTiktok,
   FaLink,
   FaImage,
   FaVideo,
@@ -278,7 +279,7 @@ const MemberCard = () => {
           { key: 'instagram', name: 'Instagram', icon: <FaInstagram />, color: 'bg-pink-500 hover:bg-pink-600' },
           { key: 'twitter', name: 'Twitter', icon: <FaTwitter />, color: 'bg-blue-400 hover:bg-blue-500' },
           { key: 'youtube', name: 'YouTube', icon: <FaYoutube />, color: 'bg-red-500 hover:bg-red-600' },
-          { key: 'tiktok', name: 'TikTok', icon: <FaLink />, color: 'bg-black hover:bg-gray-800' }
+          { key: 'tiktok', name: 'TikTok', icon: <FaTiktok />, color: 'bg-black hover:bg-gray-800' }
         ];
         
         const activePlatforms = socialPlatforms.filter(platform => block[platform.key]);

@@ -359,7 +359,7 @@ const MemberCard = () => {
 
       case 'social':
         const socialPlatforms = [
-          { key: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'bg-blue-600 hover:bg-blue-700' },
+          { key: 'linkedin', name: 'LinkedIn', icon: '🔗', color: 'bg-blue-600 hover:bg-blue-700' },
           { key: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-500 hover:bg-blue-600' },
           { key: 'instagram', name: 'Instagram', icon: '📷', color: 'bg-pink-500 hover:bg-pink-600' },
           { key: 'twitter', name: 'Twitter', icon: '🐦', color: 'bg-blue-400 hover:bg-blue-500' },

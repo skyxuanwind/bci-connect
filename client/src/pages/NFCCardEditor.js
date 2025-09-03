@@ -732,7 +732,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
           <div className="space-y-3">
             <h4 className="font-medium text-gray-700 mb-3">社群媒體連結</h4>
             {[
-              { key: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'bg-blue-600' },
+              { key: 'linkedin', name: 'LinkedIn', icon: '🔗', color: 'bg-blue-600' },
               { key: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-500' },
               { key: 'instagram', name: 'Instagram', icon: '📷', color: 'bg-pink-500' },
               { key: 'twitter', name: 'Twitter', icon: '🐦', color: 'bg-blue-400' },
@@ -985,7 +985,7 @@ const BlockPreview = ({ block }) => {
           </div>
           <div className="flex flex-wrap gap-1">
             {[
-              { key: 'linkedin', name: 'LinkedIn', icon: '💼' },
+              { key: 'linkedin', name: 'LinkedIn', icon: '🔗' },
               { key: 'facebook', name: 'Facebook', icon: '📘' },
               { key: 'instagram', name: 'Instagram', icon: '📷' },
               { key: 'twitter', name: 'Twitter', icon: '🐦' },
