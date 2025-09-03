@@ -680,8 +680,10 @@ const TemplatePreview = ({ template, cardConfig }) => {
     const templateClassMap = {
       '科技專業版': 'template-tech',
       '活力創意版': 'template-creative', 
-      '簡約商務版': 'template-minimal',
-      '時尚潮流版': 'template-fashion'
+      '簡約質感版': 'template-minimal',
+      '商務專業版': 'template-business',
+      '現代簡約版': 'template-modern',
+      '環保綠意版': 'template-eco'
     };
     
     return templateClassMap[template.name] || 'template-default';

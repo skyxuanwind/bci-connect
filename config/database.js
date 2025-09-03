@@ -467,7 +467,13 @@ const initializeDatabase = async () => {
         ('活力創意版', '色彩鮮明活潑，使用柔和的波浪形狀或有機曲線作為背景，按鈕設計具備漸變或特殊陰影，排版靈活', 'creative-vibrant', 
          '{"primaryColor": "#f59e0b", "secondaryColor": "#ec4899", "backgroundColor": "#fef3c7", "accentColor": "#8b5cf6", "gradientFrom": "#f59e0b", "gradientTo": "#ec4899", "fontFamily": "Poppins, sans-serif", "cardShadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", "borderRadius": "24px", "hasWaveBackground": true, "buttonGradient": true, "layoutStyle": "flexible"}'),
         ('簡約質感版', '設計簡潔線條俐落，注重留白，選用自然色調，圖標和字體極簡且具質感，排版整齊對稱', 'minimal-elegant', 
-         '{"primaryColor": "#374151", "secondaryColor": "#9ca3af", "backgroundColor": "#ffffff", "accentColor": "#059669", "naturalColor1": "#f3f4f6", "naturalColor2": "#e5e7eb", "fontFamily": "Inter, sans-serif", "cardShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)", "borderRadius": "8px", "minimalist": true, "spacing": "large", "layoutStyle": "symmetric"}')
+         '{"primaryColor": "#374151", "secondaryColor": "#9ca3af", "backgroundColor": "#ffffff", "accentColor": "#059669", "naturalColor1": "#f3f4f6", "naturalColor2": "#e5e7eb", "fontFamily": "Inter, sans-serif", "cardShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)", "borderRadius": "8px", "minimalist": true, "spacing": "large", "layoutStyle": "symmetric"}'),
+        ('商務專業版', '參考SpiderCard風格，簡潔卡片設計，專業配色方案，清晰的資訊層次結構', 'tech-professional', 
+         '{"primaryColor": "#1f2937", "secondaryColor": "#6b7280", "backgroundColor": "#f9fafb", "accentColor": "#3b82f6", "cardBackground": "#ffffff", "fontFamily": "Inter, sans-serif", "cardShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)", "borderRadius": "12px", "layoutStyle": "card-based", "spacing": "comfortable"}'),
+        ('現代簡約版', '參考SpiderCard風格，大膽留白設計，現代化排版，優雅的過渡效果', 'minimal-elegant', 
+         '{"primaryColor": "#111827", "secondaryColor": "#9ca3af", "backgroundColor": "#ffffff", "accentColor": "#10b981", "lightGray": "#f3f4f6", "fontFamily": "Inter, sans-serif", "cardShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1)", "borderRadius": "8px", "layoutStyle": "modern-minimal", "spacing": "generous", "transitions": "elegant"}'),
+        ('環保綠意版', '參考SpiderCard風格，自然綠色主題，環保理念設計，溫暖質感體驗', 'creative-vibrant', 
+         '{"primaryColor": "#065f46", "secondaryColor": "#6b7280", "backgroundColor": "#f0fdf4", "accentColor": "#10b981", "greenLight": "#d1fae5", "greenDark": "#047857", "fontFamily": "Inter, sans-serif", "cardShadow": "0 4px 6px -1px rgba(16, 185, 129, 0.1)", "borderRadius": "16px", "layoutStyle": "nature-inspired", "theme": "eco-friendly"}')
       ON CONFLICT DO NOTHING
     `);
 
