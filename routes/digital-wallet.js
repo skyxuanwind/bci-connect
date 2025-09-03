@@ -24,11 +24,9 @@ router.get('/cards', authenticateToken, async (req, res) => {
         nc.user_id as card_owner_id,
         u.name as card_owner_name,
         u.email as card_owner_email,
-        u.phone as card_owner_phone,
+        u.contact_number as card_owner_phone,
         u.company as card_owner_company,
-        u.title as card_owner_title,
-        u.website as card_owner_website,
-        u.address as card_owner_address
+        u.title as card_owner_title
       FROM nfc_card_collections ncc
       JOIN nfc_cards nc ON ncc.card_id = nc.id
       JOIN users u ON nc.user_id = u.id
@@ -45,9 +43,7 @@ router.get('/cards', authenticateToken, async (req, res) => {
       contact_info: {
         phone: row.card_owner_phone || '',
         email: row.card_owner_email || '',
-        website: row.card_owner_website || '',
-        company: row.card_owner_company || '',
-        address: row.card_owner_address || ''
+        company: row.card_owner_company || ''
       },
       date_added: row.collected_at,
       last_viewed: row.last_viewed,
