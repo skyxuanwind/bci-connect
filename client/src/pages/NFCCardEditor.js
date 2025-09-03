@@ -17,6 +17,14 @@ import {
   CheckIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import {
+  FaLinkedin,
+  FaFacebook,
+  FaTwitter,
+  FaInstagram,
+  FaYoutube,
+  FaTiktok
+} from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../styles/templates.css';
 
@@ -732,12 +740,12 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
           <div className="space-y-3">
             <h4 className="font-medium text-gray-700 mb-3">社群媒體連結</h4>
             {[
-              { key: 'linkedin', name: 'LinkedIn', icon: '🔗', color: 'bg-blue-600' },
-              { key: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-500' },
-              { key: 'instagram', name: 'Instagram', icon: '📷', color: 'bg-pink-500' },
-              { key: 'twitter', name: 'Twitter', icon: '🐦', color: 'bg-blue-400' },
-              { key: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-500' },
-              { key: 'tiktok', name: 'TikTok', icon: '🎵', color: 'bg-black' }
+              { key: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin />, color: 'bg-blue-600' },
+              { key: 'facebook', name: 'Facebook', icon: <FaFacebook />, color: 'bg-blue-500' },
+              { key: 'instagram', name: 'Instagram', icon: <FaInstagram />, color: 'bg-pink-500' },
+              { key: 'twitter', name: 'Twitter', icon: <FaTwitter />, color: 'bg-blue-400' },
+              { key: 'youtube', name: 'YouTube', icon: <FaYoutube />, color: 'bg-red-500' },
+              { key: 'tiktok', name: 'TikTok', icon: <FaTiktok />, color: 'bg-black' }
             ].map(platform => (
               <div key={platform.key} className="flex items-center space-x-3">
                 <div className={`w-8 h-8 ${platform.color} rounded flex items-center justify-center text-white text-sm`}>
@@ -985,12 +993,12 @@ const BlockPreview = ({ block }) => {
           </div>
           <div className="flex flex-wrap gap-1">
             {[
-              { key: 'linkedin', name: 'LinkedIn', icon: '🔗' },
-              { key: 'facebook', name: 'Facebook', icon: '📘' },
-              { key: 'instagram', name: 'Instagram', icon: '📷' },
-              { key: 'twitter', name: 'Twitter', icon: '🐦' },
-              { key: 'youtube', name: 'YouTube', icon: '📺' },
-              { key: 'tiktok', name: 'TikTok', icon: '🎵' }
+              { key: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin /> },
+              { key: 'facebook', name: 'Facebook', icon: <FaFacebook /> },
+              { key: 'instagram', name: 'Instagram', icon: <FaInstagram /> },
+              { key: 'twitter', name: 'Twitter', icon: <FaTwitter /> },
+              { key: 'youtube', name: 'YouTube', icon: <FaYoutube /> },
+              { key: 'tiktok', name: 'TikTok', icon: <FaTiktok /> }
             ].filter(platform => content_data?.[platform.key]).map(platform => (
               <span key={platform.key} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded flex items-center gap-1">
                 <span>{platform.icon}</span>

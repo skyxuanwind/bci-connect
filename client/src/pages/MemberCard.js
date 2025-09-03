@@ -19,6 +19,14 @@ import {
   PhotoIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import {
+  FaLinkedin,
+  FaFacebook,
+  FaTwitter,
+  FaInstagram,
+  FaYoutube,
+  FaTiktok
+} from 'react-icons/fa';
 
 const MemberCard = () => {
   const { memberId } = useParams();
@@ -359,12 +367,12 @@ const MemberCard = () => {
 
       case 'social':
         const socialPlatforms = [
-          { key: 'linkedin', name: 'LinkedIn', icon: '🔗', color: 'bg-blue-600 hover:bg-blue-700' },
-          { key: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-500 hover:bg-blue-600' },
-          { key: 'instagram', name: 'Instagram', icon: '📷', color: 'bg-pink-500 hover:bg-pink-600' },
-          { key: 'twitter', name: 'Twitter', icon: '🐦', color: 'bg-blue-400 hover:bg-blue-500' },
-          { key: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-500 hover:bg-red-600' },
-          { key: 'tiktok', name: 'TikTok', icon: '🎵', color: 'bg-black hover:bg-gray-800' }
+          { key: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin />, color: 'bg-blue-600 hover:bg-blue-700' },
+          { key: 'facebook', name: 'Facebook', icon: <FaFacebook />, color: 'bg-blue-500 hover:bg-blue-600' },
+          { key: 'instagram', name: 'Instagram', icon: <FaInstagram />, color: 'bg-pink-500 hover:bg-pink-600' },
+          { key: 'twitter', name: 'Twitter', icon: <FaTwitter />, color: 'bg-blue-400 hover:bg-blue-500' },
+          { key: 'youtube', name: 'YouTube', icon: <FaYoutube />, color: 'bg-red-500 hover:bg-red-600' },
+          { key: 'tiktok', name: 'TikTok', icon: <FaTiktok />, color: 'bg-black hover:bg-gray-800' }
         ];
         
         const activePlatforms = socialPlatforms.filter(platform => block.content_data[platform.key]);
