@@ -176,23 +176,18 @@ router.post('/sync', authenticateToken, async (req, res) => {
     
     // 處理每張名片
     for (const card of cards) {
-      if (!existingCardIds.has(card.id)) {
-        // 檢查名片是否存在
-        const cardExists = await client.query(
-          'SELECT id FROM nfc_cards WHERE id = $1',
-          [card.id]
-        );
-        
-        if (cardExists.rows.length > 0) {
-          // 添加到收藏
+      // 檢查名片是否存在於 nfc_cards 表中
+      const cardExists = await client.query(
+        'SELECT id FROM nfc_cards WHERE id = $1',
+        [card.id]
+      );
+      
+      if (cardExists.rows.length > 0) {
+        if (!existingCardIds.has(card.id)) {
+          // 添加新的收藏記錄
           await client.query(`
             INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (user_id, card_id) DO UPDATE SET
-            notes = EXCLUDED.notes,
-            tags = EXCLUDED.tags,
-            folder_name = EXCLUDED.folder_name,
-            last_viewed = EXCLUDED.last_viewed
           `, [
             userId, 
             card.id, 
@@ -200,6 +195,20 @@ router.post('/sync', authenticateToken, async (req, res) => {
             card.tags || [], 
             card.folder_name || null,
             card.date_added || new Date(),
+            card.last_viewed || new Date()
+          ]);
+        } else {
+          // 更新現有記錄
+          await client.query(`
+            UPDATE nfc_card_collections 
+            SET notes = $3, tags = $4, folder_name = $5, last_viewed = $6
+            WHERE user_id = $1 AND card_id = $2
+          `, [
+            userId, 
+            card.id, 
+            card.personal_note || '', 
+            card.tags || [], 
+            card.folder_name || null,
             card.last_viewed || new Date()
           ]);
         }
