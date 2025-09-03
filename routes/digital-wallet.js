@@ -198,7 +198,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
       [userId]
     );
     
-    const existingCardIds = new Set(existingCollections.rows.map(row => row.card_id));
+    const existingCardIds = new Set(existingCollections.rows.map(row => Number(row.card_id)));
     const seenInPayload = new Set();
     
     // 處理每張名片
@@ -206,28 +206,32 @@ router.post('/sync', authenticateToken, async (req, res) => {
       // 為每筆卡片操作建立 SAVEPOINT，避免單筆失敗導致整個交易中止
       await client.query('SAVEPOINT sp_sync');
       try {
+        // 決定卡片 ID（兼容不同欄位名稱），並統一轉為整數
+        const rawId = card && (card.id ?? card.card_id ?? card.memberId);
+        const cardId = Number.parseInt(rawId, 10);
+
         // 跳過無效資料或在本次 payload 中重複的卡片
-        if (!card || !card.id) {
-          console.warn('跳過無效名片資料，缺少 id:', card);
+        if (!card || !Number.isFinite(cardId)) {
+          console.warn('[DigitalWallet] 跳過無效名片資料，缺少可用的 id:', card && { id: card && card.id, card_id: card && card.card_id, memberId: card && card.memberId });
           await client.query('RELEASE SAVEPOINT sp_sync');
           continue;
         }
-        if (seenInPayload.has(card.id)) {
+        if (seenInPayload.has(cardId)) {
           // 已在本次請求中處理過，避免重複插入
           await client.query('RELEASE SAVEPOINT sp_sync');
           continue;
         }
-        seenInPayload.add(card.id);
+        seenInPayload.add(cardId);
   
         // 檢查名片是否存在於 nfc_cards 表中
         const cardExists = await client.query(
           'SELECT id FROM nfc_cards WHERE id = $1',
-          [card.id]
+          [cardId]
         );
         
         if (cardExists.rows.length === 0) {
           // 名片不存在則略過（可能是本地舊資料）
-          console.warn('[DigitalWallet] skip non-existent card id in nfc_cards:', card.id);
+          console.warn('[DigitalWallet] skip non-existent card id in nfc_cards:', cardId);
           await client.query('RELEASE SAVEPOINT sp_sync');
           continue;
         }
@@ -240,14 +244,14 @@ router.post('/sync', authenticateToken, async (req, res) => {
         const lastViewed = toSafeDate(card.last_viewed);
   
         try {
-          if (!existingCardIds.has(card.id)) {
+          if (!existingCardIds.has(cardId)) {
             // 添加新的收藏記錄
             await client.query(`
               INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed)
               VALUES ($1, $2, $3, $4, $5, $6, $7)
             `, [
               userId, 
-              card.id, 
+              cardId, 
               notes, 
               tags, 
               folderName,
@@ -255,7 +259,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
               lastViewed
             ]);
             // 更新集合，避免同一個 payload 再次插入同一張卡片導致唯一性衝突
-            existingCardIds.add(card.id);
+            existingCardIds.add(cardId);
           } else {
             // 更新現有記錄
             await client.query(`
@@ -264,7 +268,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
               WHERE user_id = $1 AND card_id = $2
             `, [
               userId, 
-              card.id, 
+              cardId, 
               notes, 
               tags, 
               folderName,
@@ -280,7 +284,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
               WHERE user_id = $1 AND card_id = $2
             `, [
               userId, 
-              card.id, 
+              cardId, 
               notes, 
               tags, 
               folderName,
@@ -295,7 +299,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
               WHERE user_id = $1 AND card_id = $2
             `, [
               userId, 
-              card.id, 
+              cardId, 
               notes, 
               tags, 
               safeFolder,
@@ -304,7 +308,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
           } else {
             console.error('同步數位名片夾單筆處理失敗', {
               userId,
-              cardId: card.id,
+              cardId,
               code: err && err.code,
               detail: err && err.detail,
               constraint: err && err.constraint,
@@ -322,7 +326,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
         // 單筆錯誤紀錄後繼續處理其他卡，避免整批失敗
         console.error('同步數位名片夾單筆錯誤，已略過該卡片', {
           userId,
-          cardId: card && card.id,
+          cardId: (card && (card.id ?? card.card_id ?? card.memberId)),
           error: perCardErr && perCardErr.message,
           code: perCardErr && perCardErr.code
         });
