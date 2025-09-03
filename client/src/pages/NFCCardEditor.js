@@ -18,6 +18,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import '../styles/templates.css';
 
 const NFCCardEditor = () => {
   const { user } = useAuth();
@@ -543,49 +544,14 @@ const NFCCardEditor = () => {
                   即時預覽
                 </h2>
                 
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 min-h-96 max-h-96 overflow-y-auto">
-                  {/* 模板預覽圖片 */}
-                  {selectedTemplate && (
-                    <div className="mb-4 text-center">
-                      <img 
-                        src={selectedPreview} 
-                        alt={selectedTemplate.name}
-                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                      />
-                      <div className="text-xs text-gray-500 mt-1">
-                        模板：{selectedTemplate.name}
-                      </div>
-                    </div>
-                  )}
+                <div className="border border-gray-200 rounded-lg overflow-hidden min-h-96 max-h-96 overflow-y-auto">
+                  {/* 套用模板樣式的預覽 */}
+                  <TemplatePreview 
+                    template={selectedTemplate}
+                    cardConfig={cardConfig}
+                  />
                   
-                  {/* 預覽內容 */}
-                  <div className="text-center mb-4">
-                    <h1 className="text-xl font-bold text-gray-900 mb-1">
-                      {cardConfig?.card_title || '未設定標題'}
-                    </h1>
-                    <p className="text-gray-600 text-sm">
-                      {cardConfig?.card_subtitle || '未設定副標題'}
-                    </p>
-                  </div>
-                  
-                  {/* 內容區塊預覽 */}
-                  <div className="space-y-3">
-                    {cardConfig?.content_blocks?.length > 0 ? (
-                      cardConfig.content_blocks.map((block, index) => (
-                        <div key={index} className="bg-white border border-gray-100 rounded-lg p-3 text-sm">
-                          <BlockPreview block={block} />
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center text-gray-500 py-8">
-                        <PhotoIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                        <p className="text-sm">尚未添加內容</p>
-                        <p className="text-xs mt-1">在左側添加內容區塊</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-4 pt-3 border-t border-gray-200 text-center">
+                  <div className="p-4 bg-gray-50 border-t border-gray-200 text-center">
                     <a 
                       href={`/member/${user.id}`}
                       target="_blank"
@@ -705,41 +671,147 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
   );
 };
 
+// 模板預覽組件
+const TemplatePreview = ({ template, cardConfig }) => {
+  const getTemplateClassName = () => {
+    if (!template) return 'template-default';
+    
+    // 根據模板名稱映射到對應的 CSS 類名
+    const templateClassMap = {
+      '科技專業版': 'template-tech',
+      '活力創意版': 'template-creative', 
+      '簡約商務版': 'template-minimal',
+      '時尚潮流版': 'template-fashion'
+    };
+    
+    return templateClassMap[template.name] || 'template-default';
+  };
+
+  const templateClass = getTemplateClassName();
+
+  return (
+    <div className={`nfc-card-container ${templateClass}`} style={{ minHeight: 'auto', padding: '1rem' }}>
+      <div className="card-content" style={{ maxWidth: 'none', padding: '0' }}>
+        {/* 名片標題區域 */}
+        <div className="card-header" style={{ marginBottom: '1.5rem' }}>
+          <h1 className="card-title" style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>
+            {cardConfig?.card_title || '未設定標題'}
+          </h1>
+          <p className="card-subtitle" style={{ fontSize: '0.875rem' }}>
+            {cardConfig?.card_subtitle || '未設定副標題'}
+          </p>
+        </div>
+        
+        {/* 內容區塊 */}
+        <div className="content-blocks" style={{ padding: '0' }}>
+          {cardConfig?.content_blocks?.length > 0 ? (
+            cardConfig.content_blocks.map((block, index) => (
+              <div key={index} className="content-block" style={{ 
+                marginBottom: '1rem', 
+                padding: '0.75rem',
+                fontSize: '0.75rem'
+              }}>
+                <BlockPreview block={block} />
+              </div>
+            ))
+          ) : (
+            <div className="text-center text-gray-500 py-8">
+              <PhotoIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">尚未添加內容</p>
+              <p className="text-xs mt-1">在左側添加內容區塊</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 區塊預覽組件
 const BlockPreview = ({ block }) => {
+  if (!block) return null;
   const { content_data } = block;
   
   switch (block.content_type) {
     case 'text':
       return (
         <div>
-          <h4 className="font-medium text-gray-900">{content_data.title}</h4>
-          <p className="text-gray-600 text-sm mt-1">{content_data.content}</p>
+          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {content_data?.title || '文字區塊'}
+          </div>
+          <div className="text-gray-600 text-xs">
+            {content_data?.content || '內容文字'}
+          </div>
         </div>
       );
     
     case 'link':
       return (
-        <div className="flex items-center">
-          <LinkIcon className="h-4 w-4 text-blue-600 mr-2" />
-          <span className="text-blue-600">{content_data.title}</span>
+        <div>
+          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {content_data?.title || '連結標題'}
+          </div>
+          <div className="text-blue-600 text-xs">
+            {content_data?.url || 'https://example.com'}
+          </div>
+        </div>
+      );
+    
+    case 'video':
+      return (
+        <div>
+          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {content_data?.title || '影片標題'}
+          </div>
+          <div className="text-gray-500 text-xs">
+            影片內容
+          </div>
+        </div>
+      );
+    
+    case 'image':
+      return (
+        <div>
+          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {content_data?.title || '圖片標題'}
+          </div>
+          <div className="text-gray-500 text-xs">
+            圖片內容
+          </div>
         </div>
       );
     
     case 'social':
       return (
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(content_data).filter(([_, url]) => url).map(([platform, url]) => (
-            <span key={platform} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-              {platform}
-            </span>
-          ))}
+        <div>
+          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            社群媒體
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(content_data).filter(([_, url]) => url).map(([platform, url]) => (
+              <span key={platform} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                {platform}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    
+    case 'map':
+      return (
+        <div>
+          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {content_data?.address || '地圖位置'}
+          </div>
+          <div className="text-gray-500 text-xs">
+            地圖內容
+          </div>
         </div>
       );
     
     default:
       return (
-        <div className="text-gray-500 text-sm">
+        <div className="text-gray-500 text-xs">
           {getBlockTypeLabel(block.content_type)} 內容
         </div>
       );
