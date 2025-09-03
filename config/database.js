@@ -462,8 +462,7 @@ const initializeDatabase = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS nfc_card_collections (
         id SERIAL PRIMARY KEY,
--        user_id INTEGER NOT NULL REFERENCES digital_card_users(id) ON DELETE CASCADE,
-+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         card_id INTEGER NOT NULL REFERENCES nfc_cards(id) ON DELETE CASCADE,
         notes TEXT,
         tags TEXT[],
@@ -486,19 +485,20 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS last_viewed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     `);
 
-+    // Ensure foreign key references users(id) instead of digital_card_users(id)
-+    try {
-+      await pool.query(`
-+        ALTER TABLE nfc_card_collections
-+        DROP CONSTRAINT IF EXISTS nfc_card_collections_user_id_fkey
-+      `);
-+      await pool.query(`
-+        ALTER TABLE nfc_card_collections
-+        ADD CONSTRAINT nfc_card_collections_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-+      `);
-+    } catch (fkErr) {
-+      console.warn('⚠️ Unable to update FK for nfc_card_collections.user_id:', fkErr.message);
-+    }
+    // Ensure foreign key references users(id) instead of digital_card_users(id)
+    try {
+      await pool.query(`
+        ALTER TABLE nfc_card_collections
+        DROP CONSTRAINT IF EXISTS nfc_card_collections_user_id_fkey
+      `);
+      await pool.query(`
+        ALTER TABLE nfc_card_collections
+        ADD CONSTRAINT nfc_card_collections_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      `);
+    } catch (fkErr) {
+      console.warn('⚠️ Unable to update FK for nfc_card_collections.user_id:', fkErr.message);
+    }
+
     // Create nfc_card_content_analytics table (內容區塊點擊分析)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS nfc_card_content_analytics (
