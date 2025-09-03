@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from '../config/axios';
 import {
   HeartIcon,
   MagnifyingGlassIcon,
@@ -16,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import BusinessCardScanner from '../components/BusinessCardScanner';
+import DigitalWalletSync from '../components/DigitalWalletSync';
 import { useNavigate } from 'react-router-dom';
 
 const DigitalWallet = () => {
@@ -33,12 +35,35 @@ const DigitalWallet = () => {
     loadSavedCards();
   }, []);
 
-  const loadSavedCards = () => {
+  const loadSavedCards = async () => {
     try {
+      // 首先嘗試從雲端載入
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await axios.get('/api/digital-wallet/cards', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (response.data.success) {
+            setSavedCards(response.data.cards);
+            // 同步到本地存儲作為備份
+            localStorage.setItem('digitalWallet', JSON.stringify(response.data.cards));
+            return;
+          }
+        } catch (error) {
+          console.warn('從雲端載入失敗，嘗試本地載入:', error);
+        }
+      }
+      
+      // 如果雲端載入失敗，從本地載入
       const saved = localStorage.getItem('digitalWallet');
       if (saved) {
         const cards = JSON.parse(saved);
         setSavedCards(cards);
+        // 如果有登入，嘗試同步到雲端
+        if (token) {
+          syncToCloud(cards);
+        }
       }
     } catch (error) {
       console.error('載入名片夾失敗:', error);
@@ -53,18 +78,75 @@ const DigitalWallet = () => {
     }
   };
 
-  const removeCard = (cardId) => {
-    const updatedCards = savedCards.filter(card => card.id !== cardId);
-    setSavedCards(updatedCards);
-    saveToLocalStorage(updatedCards);
+  const syncToCloud = async (cards) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      await axios.post('/api/digital-wallet/sync', 
+        { cards },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      console.warn('同步到雲端失敗:', error);
+    }
   };
 
-  const updateCardNote = (cardId, note) => {
-    const updatedCards = savedCards.map(card => 
-      card.id === cardId ? { ...card, personal_note: note } : card
-    );
-    setSavedCards(updatedCards);
-    saveToLocalStorage(updatedCards);
+  const removeCard = async (cardId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const cardToRemove = savedCards.find(card => card.id === cardId);
+      
+      // 如果有登入且有 collection_id，從雲端刪除
+      if (token && cardToRemove?.collection_id) {
+        try {
+          await axios.delete(`/api/digital-wallet/cards/${cardToRemove.collection_id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (error) {
+          console.warn('從雲端刪除失敗:', error);
+        }
+      }
+      
+      // 從本地刪除
+      const updatedCards = savedCards.filter(card => card.id !== cardId);
+      setSavedCards(updatedCards);
+      saveToLocalStorage(updatedCards);
+    } catch (error) {
+      console.error('刪除名片失敗:', error);
+    }
+  };
+
+  const updateCard = async (cardId, updates) => {
+    try {
+      const token = localStorage.getItem('token');
+      const cardToUpdate = savedCards.find(card => card.id === cardId);
+      
+      // 如果有登入且有 collection_id，更新雲端
+      if (token && cardToUpdate?.collection_id) {
+        try {
+          await axios.put(`/api/digital-wallet/cards/${cardToUpdate.collection_id}`, {
+            notes: updates.personal_note,
+            tags: updates.tags,
+            is_favorite: updates.is_favorite,
+            folder_name: updates.folder_name
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (error) {
+          console.warn('更新雲端失敗:', error);
+        }
+      }
+      
+      // 更新本地
+      const updatedCards = savedCards.map(card => 
+        card.id === cardId ? { ...card, ...updates } : card
+      );
+      setSavedCards(updatedCards);
+      saveToLocalStorage(updatedCards);
+    } catch (error) {
+      console.error('更新名片失敗:', error);
+    }
   };
 
   const addTag = (cardId, tag) => {
@@ -220,7 +302,7 @@ const DigitalWallet = () => {
   };
 
   const saveNote = (cardId) => {
-    updateCardNote(cardId, tempNote);
+    updateCard(cardId, { personal_note: tempNote });
     setEditingNote(null);
     setTempNote('');
   };
@@ -528,6 +610,9 @@ const DigitalWallet = () => {
           </div>
         )}
       </div>
+      
+      {/* 雲端同步狀態 */}
+      <DigitalWalletSync />
       
       {/* 名片掃描器 */}
       {showScanner && (

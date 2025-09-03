@@ -177,7 +177,7 @@ const MemberCard = () => {
     }
   };
 
-  const addToWallet = () => {
+  const addToWallet = async () => {
     try {
       const cardToSave = {
         id: cardData.id,
@@ -194,10 +194,40 @@ const MemberCard = () => {
       const existingCards = saved ? JSON.parse(saved) : [];
       
       // 檢查是否已存在
-      if (!existingCards.some(card => card.id === cardData.id)) {
-        const updatedCards = [...existingCards, cardToSave];
-        localStorage.setItem('digitalWallet', JSON.stringify(updatedCards));
-        setIsInWallet(true);
+      if (existingCards.some(card => card.id === cardData.id)) {
+        showSuccess('名片已在數位名片夾中！');
+        return;
+      }
+
+      // 嘗試添加到雲端
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await axios.post('/api/digital-wallet/cards', {
+            card_id: cardData.id,
+            notes: '',
+            tags: [],
+            folder_name: null
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (response.data.success) {
+            // 添加 collection_id 到本地數據
+            cardToSave.collection_id = response.data.collection_id;
+            showSuccess('已加入數位名片夾！');
+          }
+        } catch (error) {
+          console.warn('添加到雲端失敗，僅保存到本地:', error);
+        }
+      }
+      
+      // 添加到本地存儲
+      const updatedCards = [...existingCards, cardToSave];
+      localStorage.setItem('digitalWallet', JSON.stringify(updatedCards));
+      setIsInWallet(true);
+      
+      if (!token) {
         showSuccess('已加入數位名片夾！');
       }
     } catch (error) {
