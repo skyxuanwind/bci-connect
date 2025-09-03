@@ -161,6 +161,15 @@ router.post('/sync', authenticateToken, async (req, res) => {
     
     const userId = req.user.id;
     const { cards } = req.body; // 本地的名片數據
+
+    // 調試日誌：觀察請求是否到達與負載規模
+    try {
+      console.log('[DigitalWallet] /sync called', {
+        userId,
+        payloadType: Array.isArray(cards) ? 'array' : typeof cards,
+        payloadCount: Array.isArray(cards) ? cards.length : 0
+      });
+    } catch {}
     
     if (!Array.isArray(cards)) {
       return res.status(400).json({ success: false, message: '無效的數據格式' });
@@ -218,6 +227,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
         
         if (cardExists.rows.length === 0) {
           // 名片不存在則略過（可能是本地舊資料）
+          console.warn('[DigitalWallet] skip non-existent card id in nfc_cards:', card.id);
           await client.query('RELEASE SAVEPOINT sp_sync');
           continue;
         }
@@ -321,6 +331,10 @@ router.post('/sync', authenticateToken, async (req, res) => {
     }
     
     await client.query('COMMIT');
+
+    try {
+      console.log('[DigitalWallet] /sync success commit for user', userId);
+    } catch {}
     
     res.json({ success: true, message: '數位名片夾同步成功' });
   } catch (error) {
