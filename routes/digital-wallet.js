@@ -165,6 +165,23 @@ router.post('/sync', authenticateToken, async (req, res) => {
     if (!Array.isArray(cards)) {
       return res.status(400).json({ success: false, message: '無效的數據格式' });
     }
+
+    // 在交易內確認使用者存在，避免外鍵錯誤造成交易中止
+    const userCheck = await client.query('SELECT id FROM users WHERE id = $1', [userId]);
+    if (userCheck.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(401).json({ success: false, message: '用戶不存在或未授權' });
+    }
+
+    // 內部安全轉換工具
+    const toSafeDate = (input, fallback = new Date()) => {
+      if (!input) return fallback;
+      const d = new Date(input);
+      return isNaN(d.getTime()) ? fallback : d;
+    };
+    const toSafeTags = (arr) => Array.isArray(arr) ? arr.map(x => String(x)).filter(Boolean) : [];
+    const toSafeFolder = (name) => name ? String(name).slice(0, 100) : null;
+    const toSafeNote = (note) => typeof note === 'string' ? note : (note == null ? '' : String(note));
     
     // 獲取現有的收藏記錄
     const existingCollections = await client.query(
@@ -177,31 +194,41 @@ router.post('/sync', authenticateToken, async (req, res) => {
     
     // 處理每張名片
     for (const card of cards) {
-      // 跳過無效資料或在本次 payload 中重複的卡片
-      if (!card || !card.id) {
-        console.warn('跳過無效名片資料，缺少 id:', card);
-        continue;
-      }
-      if (seenInPayload.has(card.id)) {
-        // 已在本次請求中處理過，避免重複插入
-        continue;
-      }
-      seenInPayload.add(card.id);
+      // 為每筆卡片操作建立 SAVEPOINT，避免單筆失敗導致整個交易中止
+      await client.query('SAVEPOINT sp_sync');
+      try {
+        // 跳過無效資料或在本次 payload 中重複的卡片
+        if (!card || !card.id) {
+          console.warn('跳過無效名片資料，缺少 id:', card);
+          await client.query('RELEASE SAVEPOINT sp_sync');
+          continue;
+        }
+        if (seenInPayload.has(card.id)) {
+          // 已在本次請求中處理過，避免重複插入
+          await client.query('RELEASE SAVEPOINT sp_sync');
+          continue;
+        }
+        seenInPayload.add(card.id);
+  
+        // 檢查名片是否存在於 nfc_cards 表中
+        const cardExists = await client.query(
+          'SELECT id FROM nfc_cards WHERE id = $1',
+          [card.id]
+        );
+        
+        if (cardExists.rows.length === 0) {
+          // 名片不存在則略過（可能是本地舊資料）
+          await client.query('RELEASE SAVEPOINT sp_sync');
+          continue;
+        }
 
-      // 檢查名片是否存在於 nfc_cards 表中
-      const cardExists = await client.query(
-        'SELECT id FROM nfc_cards WHERE id = $1',
-        [card.id]
-      );
-      
-      if (cardExists.rows.length > 0) {
         // 正規化資料型別
-        const notes = card.personal_note || '';
-        const tags = Array.isArray(card.tags) ? card.tags.map(String) : [];
-        const folderName = card.folder_name || null;
-        const collectedAt = card.date_added ? new Date(card.date_added) : new Date();
-        const lastViewed = card.last_viewed ? new Date(card.last_viewed) : new Date();
-
+        const notes = toSafeNote(card.personal_note);
+        const tags = toSafeTags(card.tags);
+        const folderName = toSafeFolder(card.folder_name);
+        const collectedAt = toSafeDate(card.date_added);
+        const lastViewed = toSafeDate(card.last_viewed);
+  
         try {
           if (!existingCardIds.has(card.id)) {
             // 添加新的收藏記錄
@@ -249,10 +276,47 @@ router.post('/sync', authenticateToken, async (req, res) => {
               folderName,
               lastViewed
             ]);
+          } else if (err && err.code === '22001') {
+            // value too long for type character varying(100) 等情況，再次以截斷後資料更新
+            const safeFolder = toSafeFolder(folderName);
+            await client.query(`
+              UPDATE nfc_card_collections 
+              SET notes = $3, tags = $4, folder_name = $5, last_viewed = $6
+              WHERE user_id = $1 AND card_id = $2
+            `, [
+              userId, 
+              card.id, 
+              notes, 
+              tags, 
+              safeFolder,
+              lastViewed
+            ]);
           } else {
+            console.error('同步數位名片夾單筆處理失敗', {
+              userId,
+              cardId: card.id,
+              code: err && err.code,
+              detail: err && err.detail,
+              constraint: err && err.constraint,
+              message: err && err.message
+            });
             throw err;
           }
         }
+        // 單筆流程成功，釋放 SAVEPOINT
+        await client.query('RELEASE SAVEPOINT sp_sync');
+      } catch (perCardErr) {
+        // 單筆錯誤回滾至 SAVEPOINT，避免交易中止
+        await client.query('ROLLBACK TO SAVEPOINT sp_sync');
+        await client.query('RELEASE SAVEPOINT sp_sync');
+        // 單筆錯誤紀錄後繼續處理其他卡，避免整批失敗
+        console.error('同步數位名片夾單筆錯誤，已略過該卡片', {
+          userId,
+          cardId: card && card.id,
+          error: perCardErr && perCardErr.message,
+          code: perCardErr && perCardErr.code
+        });
+        continue;
       }
     }
     
