@@ -121,13 +121,27 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
     }
   };
 
-  // 手動編輯結果
+  // 手動編輯結果（一般欄位）
   const handleEdit = (field, value) => {
     setScanResult(prev => ({
       ...prev,
       extractedInfo: {
         ...prev.extractedInfo,
         [field]: value
+      }
+    }));
+  };
+
+  // 編輯社群連結（巢狀欄位）
+  const handleEditSocial = (platform, value) => {
+    setScanResult(prev => ({
+      ...prev,
+      extractedInfo: {
+        ...prev.extractedInfo,
+        social: {
+          ...(prev.extractedInfo?.social || {}),
+          [platform]: value
+        }
       }
     }));
   };
@@ -146,6 +160,8 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
       }
     }));
   };
+
+  const social = scanResult?.extractedInfo?.social || {};
 
   return (
     <div className="business-card-scanner-overlay">
@@ -308,6 +324,71 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
                     value={scanResult.extractedInfo.department || ''}
                     onChange={(e) => handleEdit('department', e.target.value)}
                     placeholder="請輸入部門"
+                  />
+                </div>
+
+                {/* 社群與 LINE */}
+                <div className="info-field info-field-full">
+                  <label>LinkedIn</label>
+                  <input
+                    type="url"
+                    value={social.linkedin || ''}
+                    onChange={(e) => handleEditSocial('linkedin', e.target.value)}
+                    placeholder="https://www.linkedin.com/in/username"
+                  />
+                </div>
+                <div className="info-field info-field-full">
+                  <label>Facebook</label>
+                  <input
+                    type="url"
+                    value={social.facebook || ''}
+                    onChange={(e) => handleEditSocial('facebook', e.target.value)}
+                    placeholder="https://www.facebook.com/username"
+                  />
+                </div>
+                <div className="info-field info-field-full">
+                  <label>Instagram</label>
+                  <input
+                    type="url"
+                    value={social.instagram || ''}
+                    onChange={(e) => handleEditSocial('instagram', e.target.value)}
+                    placeholder="https://www.instagram.com/username"
+                  />
+                </div>
+                <div className="info-field info-field-full">
+                  <label>Twitter/X</label>
+                  <input
+                    type="url"
+                    value={social.twitter || ''}
+                    onChange={(e) => handleEditSocial('twitter', e.target.value)}
+                    placeholder="https://twitter.com/username 或 https://x.com/username"
+                  />
+                </div>
+                <div className="info-field info-field-full">
+                  <label>YouTube</label>
+                  <input
+                    type="url"
+                    value={social.youtube || ''}
+                    onChange={(e) => handleEditSocial('youtube', e.target.value)}
+                    placeholder="https://www.youtube.com/@channel 或 user/channel 連結"
+                  />
+                </div>
+                <div className="info-field info-field-full">
+                  <label>TikTok</label>
+                  <input
+                    type="url"
+                    value={social.tiktok || ''}
+                    onChange={(e) => handleEditSocial('tiktok', e.target.value)}
+                    placeholder="https://www.tiktok.com/@username"
+                  />
+                </div>
+                <div className="info-field">
+                  <label>LINE ID</label>
+                  <input
+                    type="text"
+                    value={scanResult.extractedInfo.line_id || ''}
+                    onChange={(e) => handleEdit('line_id', e.target.value)}
+                    placeholder="請輸入 LINE ID"
                   />
                 </div>
 

@@ -235,10 +235,23 @@ ${rawText}
   "address": "地址",
   "fax": "傳真",
   "department": "部門",
+  "social": {
+    "linkedin": "LinkedIn 個人頁完整連結，如 https://www.linkedin.com/in/username",
+    "facebook": "Facebook 個人或公司頁完整連結",
+    "instagram": "Instagram 個人頁完整連結",
+    "twitter": "Twitter/X 個人頁完整連結",
+    "youtube": "YouTube 頻道或使用者完整連結",
+    "tiktok": "TikTok 個人頁完整連結"
+  },
+  "line_id": "LINE ID（若有）",
   "tags": ["自動生成的標籤1", "標籤2"]
 }
 
-請根據公司名稱和職稱自動生成2-3個相關標籤。
+注意：
+- 儘量輸出完整的社群連結（含 https 前綴）。
+- 如果只有使用者名稱（例如 IG 的 @handle），請轉為對應平台的標準 URL。
+- 若有 LINE ID，請放在 line_id 欄位；不要把 LINE 當成一般網址。
+- 請根據公司名稱和職稱自動生成2-3個相關標籤。
     `;
     
     const aiResponse = await geminiService.generateContent(prompt);
@@ -257,7 +270,23 @@ function parseAIResponse(aiResponse) {
     // 嘗試提取JSON
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      // 保障結構完整性
+      return {
+        name: parsed.name ?? null,
+        title: parsed.title ?? null,
+        company: parsed.company ?? null,
+        phone: parsed.phone ?? null,
+        mobile: parsed.mobile ?? null,
+        email: parsed.email ?? null,
+        website: parsed.website ?? null,
+        address: parsed.address ?? null,
+        fax: parsed.fax ?? null,
+        department: parsed.department ?? null,
+        social: parsed.social || {},
+        line_id: parsed.line_id ?? null,
+        tags: Array.isArray(parsed.tags) ? parsed.tags : []
+      };
     }
   } catch (error) {
     console.error('解析AI回應失敗:', error);
@@ -275,6 +304,8 @@ function parseAIResponse(aiResponse) {
     address: null,
     fax: null,
     department: null,
+    social: {},
+    line_id: null,
     tags: []
   };
 }
@@ -292,6 +323,8 @@ function extractWithRules(text) {
     address: null,
     fax: null,
     department: null,
+    social: {},
+    line_id: null,
     tags: []
   };
   
@@ -320,7 +353,37 @@ function extractWithRules(text) {
   const websiteRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
   const websiteMatch = text.match(websiteRegex);
   if (websiteMatch) {
+    // 避免把社群連結當成一般網站：先保留第一個
     result.website = websiteMatch[0];
+  }
+
+  // 社群連結正則匹配
+  const findFirst = (regex) => {
+    const m = text.match(regex);
+    return m ? m[0] : null;
+  };
+
+  const linkedin = findFirst(/https?:\/\/(?:[\w-]+\.)?linkedin\.com\/[\w\-_/%.?=]+/i);
+  const facebook = findFirst(/https?:\/\/(?:[\w-]+\.)?facebook\.com\/[A-Za-z0-9_.\-\/]+/i);
+  const instagram = findFirst(/https?:\/\/(?:[\w-]+\.)?instagram\.com\/[A-Za-z0-9_.\-]+/i);
+  const twitter = findFirst(/https?:\/\/(?:[\w-]+\.)?(?:twitter\.com|x\.com)\/[A-Za-z0-9_\-]+/i);
+  const youtube = findFirst(/https?:\/\/(?:[\w-]+\.)?(?:youtube\.com\/(?:channel|c|user|@)[A-Za-z0-9_\-@\/]+|youtu\.be\/[A-Za-z0-9_\-]+)/i);
+  const tiktok = findFirst(/https?:\/\/(?:[\w-]+\.)?tiktok\.com\/@[\w.\-]+/i);
+
+  if (linkedin) result.social.linkedin = linkedin;
+  if (facebook) result.social.facebook = facebook;
+  if (instagram) result.social.instagram = instagram;
+  if (twitter) result.social.twitter = twitter;
+  if (youtube) result.social.youtube = youtube;
+  if (tiktok) result.social.tiktok = tiktok;
+
+  // LINE ID（非網址）
+  const lineIdMatch = text.match(/(?:LINE\s*ID|Line\s*ID|LINE|Line)\s*[:：]?\s*([A-Za-z0-9_.\-@]+)/);
+  if (lineIdMatch && lineIdMatch[1]) {
+    const id = lineIdMatch[1];
+    result.line_id = id;
+    // 方便前端點擊：也提供一個可能可用的連結
+    result.social.line = `https://line.me/ti/p/~${id}`;
   }
   
   return result;

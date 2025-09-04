@@ -176,10 +176,24 @@ const MemberCard = () => {
           email: found.contact_info?.email || scanned.email || '',
           website: found.contact_info?.website || scanned.website || '',
           company: found.contact_info?.company || scanned.company || '',
-          address: found.contact_info?.address || scanned.address || ''
+          address: found.contact_info?.address || scanned.address || '',
+          line_id: found.contact_info?.line_id || scanned.line_id || ''
         },
         content_blocks: []
       };
+
+      // 如果掃描結果包含社群連結，加入社群內容區塊
+      const hasSocial = scanned.social && Object.values(scanned.social).some(v => !!v);
+      if (hasSocial) {
+        transformed.content_blocks.push({
+          id: 'social_scanned',
+          content_type: 'social',
+          content_data: scanned.social,
+          display_order: 999,
+          is_visible: true,
+          custom_styles: {}
+        });
+      }
 
       setCardData(transformed);
       updateLastViewed();
@@ -648,6 +662,14 @@ const MemberCard = () => {
         label: '網站',
         value: contact_info.website,
         href: contact_info.website
+      });
+    }
+
+    if (contact_info.line_id) {
+      contactItems.push({
+        icon: UserIcon,
+        label: 'LINE ID',
+        value: contact_info.line_id
       });
     }
 
