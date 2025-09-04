@@ -358,45 +358,53 @@ const DigitalWallet = () => {
   };
 
   // 處理掃描完成
-  const handleScanComplete = (extractedInfo) => {
-    const nowIso = new Date().toISOString();
-    const contactInfo = {
-      phone: extractedInfo.phone || extractedInfo.mobile || '',
-      email: extractedInfo.email || '',
-      company: extractedInfo.company || ''
-    };
-    const newCard = {
-      id: `scanned_${Date.now()}`,
-      card_title: extractedInfo.name || '掃描名片',
-      card_subtitle: extractedInfo.title || '',
-      contact_info: contactInfo,
-      // 兼容舊結構（頂層欄位）
-      company: extractedInfo.company || '',
-      phone: extractedInfo.phone || extractedInfo.mobile || '',
-      email: extractedInfo.email || '',
-      website: extractedInfo.website || '',
-      address: extractedInfo.address || '',
-      tags: extractedInfo.tags || [],
-      personal_note: '',
-      date_added: nowIso,
-      last_viewed: nowIso,
-      is_scanned: true,
-      scanned_data: { ...extractedInfo }
-    };
-    
-    const updatedCards = [newCard, ...savedCards];
-    setSavedCards(updatedCards);
-    saveToLocalStorage(updatedCards);
+  const handleScanComplete = async (extractedInfo) => {
+    try {
+      const nowIso = new Date().toISOString();
+      const contactInfo = {
+        phone: extractedInfo.phone || extractedInfo.mobile || '',
+        email: extractedInfo.email || '',
+        company: extractedInfo.company || ''
+      };
+      const newCard = {
+        id: `scanned_${Date.now()}`,
+        card_title: extractedInfo.name || '掃描名片',
+        card_subtitle: extractedInfo.title || '',
+        contact_info: contactInfo,
+        // 兼容舊結構（頂層欄位）
+        company: extractedInfo.company || '',
+        phone: extractedInfo.phone || extractedInfo.mobile || '',
+        email: extractedInfo.email || '',
+        website: extractedInfo.website || '',
+        address: extractedInfo.address || '',
+        tags: extractedInfo.tags || [],
+        personal_note: '',
+        date_added: nowIso,
+        last_viewed: nowIso,
+        is_scanned: true,
+        scanned_data: { ...extractedInfo }
+      };
+      
+      const updatedCards = [newCard, ...savedCards];
+      setSavedCards(updatedCards);
+      saveToLocalStorage(updatedCards);
 
-    // 若已登入，立即觸發雲端同步
-    const token = Cookies.get('token');
-    if (token) {
-      // 不 await，避免阻塞 UI
-      syncToCloud(updatedCards).catch((err) => console.warn('掃描後自動同步失敗：', err));
+      // 若已登入，立即觸發雲端同步
+      const token = Cookies.get('token');
+      if (token) {
+        try {
+          await syncToCloud(updatedCards);
+        } catch (err) {
+          console.warn('掃描後自動同步失敗：', err);
+        }
+      }
+
+      setShowScanner(false);
+      alert('名片已成功添加到數位名片夾！');
+    } catch (error) {
+      console.error('處理掃描結果失敗:', error);
+      throw error; // 重新拋出錯誤，讓 BusinessCardScanner 處理
     }
-
-    setShowScanner(false);
-    alert('名片已成功添加到數位名片夾！');
   };
 
   // 導航到數據分析頁面

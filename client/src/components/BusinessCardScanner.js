@@ -7,6 +7,7 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
   const [scanResult, setScanResult] = useState(null);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const fileInputRef = useRef(null);
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -92,9 +93,21 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
   };
 
   // 確認掃描結果
-  const handleConfirm = () => {
-    if (scanResult && onScanComplete) {
-      onScanComplete(scanResult.extractedInfo);
+  const handleConfirm = async () => {
+    if (isConfirming || !scanResult || !onScanComplete) {
+      return;
+    }
+    
+    setIsConfirming(true);
+    try {
+      await onScanComplete(scanResult.extractedInfo);
+      // 成功後關閉掃描器
+      onClose();
+    } catch (error) {
+      console.error('確認掃描結果失敗:', error);
+      alert('加入名片夾失敗，請稍後再試');
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -311,8 +324,14 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
             </div>
 
             <div className="actions">
-              <button className="confirm-btn" onClick={handleConfirm}>確認加入名片夾</button>
-              <button className="rescan-btn" onClick={handleRescan}>重新掃描</button>
+              <button 
+                className="confirm-btn" 
+                onClick={handleConfirm}
+                disabled={isConfirming}
+              >
+                {isConfirming ? '處理中...' : '確認加入名片夾'}
+              </button>
+              <button className="rescan-btn" onClick={handleRescan} disabled={isConfirming}>重新掃描</button>
             </div>
           </div>
         )}
