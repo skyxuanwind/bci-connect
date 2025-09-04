@@ -168,11 +168,15 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
     
     // 使用AI增強識別結果
     const enhancedResult = await enhanceWithAI(ocrResult.rawText);
+
+    // 產生可公開讀取的圖片 URL（保留正規化後的檔案，若未產生則保留原檔）
+    const keepPath = imagePath; // 優先保留正規化後的影像
+    const imageUrl = `/uploads/business-cards/${path.basename(keepPath)}`;
     
-    // 清理上傳的臨時文件
+    // 清理上傳的臨時文件（但保留 keepPath）
     try {
       tempFiles.forEach(p => {
-        if (p && fs.existsSync(p)) fs.unlinkSync(p);
+        if (p && fs.existsSync(p) && p !== keepPath) fs.unlinkSync(p);
       });
     } catch (cleanupErr) {
       console.warn('清理臨時檔案失敗:', cleanupErr.message);
@@ -183,7 +187,8 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
       data: {
         extractedInfo: enhancedResult,
         rawText: ocrResult.rawText,
-        confidence: ocrResult.confidence || 0.8
+        confidence: ocrResult.confidence || 0.8,
+        imageUrl
       }
     });
     

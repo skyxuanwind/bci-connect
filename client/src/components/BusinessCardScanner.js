@@ -100,7 +100,12 @@ const BusinessCardScanner = ({ onScanComplete, onClose }) => {
     
     setIsConfirming(true);
     try {
-      await onScanComplete(scanResult.extractedInfo);
+      // 將後端提供的 imageUrl 併入 extractedInfo，統一使用 image_url 欄位名稱
+      const payload = {
+        ...(scanResult.extractedInfo || {}),
+        image_url: scanResult.imageUrl || scanResult.extractedInfo?.image_url || scanResult.extractedInfo?.imageUrl || null
+      };
+      await onScanComplete(payload);
       // 成功後關閉掃描器
       onClose();
     } catch (error) {

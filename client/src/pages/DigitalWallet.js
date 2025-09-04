@@ -547,6 +547,8 @@ const DigitalWallet = () => {
         email: extractedInfo.email || '',
         website: extractedInfo.website || '',
         address: extractedInfo.address || '',
+        // 圖片 URL（若有）
+        image_url: extractedInfo.image_url || extractedInfo.imageUrl || '',
         tags: extractedInfo.tags || [],
         personal_note: '',
         date_added: nowIso,
@@ -956,6 +958,35 @@ const DigitalWallet = () => {
                   </button>
                 ))}
               </div>
+
+              {/* 名片類型過濾 */}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">名片類型：</span>
+                <button
+                  onClick={() => setTypeFilter('all')}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    typeFilter === 'all' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  全部
+                </button>
+                <button
+                  onClick={() => setTypeFilter('scanned')}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    typeFilter === 'scanned' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  掃描
+                </button>
+                <button
+                  onClick={() => setTypeFilter('regular')}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    typeFilter === 'regular' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  一般
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -977,6 +1008,17 @@ const DigitalWallet = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAndSortedCards.map(card => (
               <div key={card.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                {/* 掃描名片縮圖 */}
+                {(() => {
+                  const imgUrl = card?.scanned_data?.image_url || card?.image_url;
+                  if (!imgUrl) return null;
+                  return (
+                    <div className="relative w-full h-40 bg-gray-100">
+                      <img src={imgUrl} alt="掃描名片" className="w-full h-full object-cover" />
+                      <span className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded">掃描名片</span>
+                    </div>
+                  );
+                })()}
                 {/* 名片頭部 */}
                 <div className="p-6 pb-4">
                   <div className="flex items-start justify-between mb-4">
