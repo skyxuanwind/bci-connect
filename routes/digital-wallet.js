@@ -26,6 +26,40 @@ function mergeTags(base, extra) {
   return Array.from(new Set([...a, ...b]));
 }
 
+// 規則式 +（可用時）Gemini 輔助的非同步標籤抽取
+async function extractTagsFromTextAsync(text) {
+  try {
+    const base = extractTagsFromText(text);
+    const input = (typeof text === 'string' ? text.trim() : '');
+    if (!input) return base;
+
+    // 若 Gemini 可用，嘗試抽取標籤（最多 8 個，中文優先，逗號或換行分隔，純文字輸出）
+    let aiTags = [];
+    try {
+      const prompt = `請從以下備註文字中萃取最多 8 個與名片聯絡人、公司、產業或需求相關的實用標籤，請只輸出純文字清單，使用逗號或換行分隔，不要加任何說明或編號。\n\n備註：${input}`;
+      const output = await geminiService.generateContent(prompt);
+      if (output && typeof output === 'string') {
+        const raw = output
+          .replace(/^[-*\s\d\.]+/gm, '') // 去除項目符號/編號
+          .replace(/[#\[\]\(\)\u3000]/g, ' ') // 清理雜訊符號
+          .split(/,|\n|\r/)
+          .map(s => s.trim())
+          .filter(Boolean);
+        aiTags = raw
+          .map(s => s.slice(0, 20)) // 單標籤長度限制
+          .filter(s => s.length >= 2)
+          .slice(0, 10);
+      }
+    } catch (e) {
+      // 若 AI 失敗則忽略，僅用規則式
+    }
+
+    return mergeTags(base, aiTags).slice(0, 10);
+  } catch {
+    return extractTagsFromText(text);
+  }
+}
+
 // 獲取用戶的數位名片夾
 router.get('/cards', authenticateToken, async (req, res) => {
   try {
@@ -59,8 +93,8 @@ router.get('/cards', authenticateToken, async (req, res) => {
       ORDER BY ncc.collected_at DESC
     `, [userId]);
     
-    // 轉換為前端需要的格式，含掃描名片
-    const cards = result.rows.map(row => {
+    // 轉換為前端需要的格式，含掃描名片（存在於 nfc_card_collections 的）
+    const cardsFromCollections = result.rows.map(row => {
       if (row.is_scanned || !row.card_id) {
         const data = row.scanned_data || {};
         return {
@@ -102,6 +136,63 @@ router.get('/cards', authenticateToken, async (req, res) => {
         card_owner_id: row.card_owner_id
       });
     });
+
+    // 從 scanned_business_cards 讀取（當某些環境中 card_id 仍有 NOT NULL 限制時的保險機制）
+    const sbc = await pool.query(`
+      SELECT id, extracted_data, tags, notes, created_at, updated_at
+      FROM scanned_business_cards
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+    `, [userId]);
+
+    const cardsFromSBC = (sbc.rows || []).map(row => {
+      const data = row.extracted_data || {};
+      return {
+        id: `scanned_sbc_${row.id}`,
+        // 這類型沒有 collections 的 id，避免前端誤用刪除/更新雲端
+        collection_id: null,
+        card_title: data.name || '掃描名片',
+        card_subtitle: data.title || '',
+        contact_info: {
+          phone: data.phone || data.mobile || '',
+          email: data.email || '',
+          company: data.company || ''
+        },
+        date_added: row.created_at,
+        last_viewed: row.updated_at || row.created_at,
+        personal_note: row.notes || '',
+        tags: row.tags || [],
+        is_favorite: false,
+        folder_name: null,
+        is_scanned: true,
+        scanned_data: data
+      };
+    });
+
+    // 去重：若 collections 中已存在等值（name+email+phone 正規化）則不重複加入 SBC 的同一張
+    const normalize = s => (s == null ? '' : String(s).trim().toLowerCase());
+    const normalizePhone = s => {
+      if (!s) return '';
+      let v = String(s).trim();
+      if (v.startsWith('+886')) v = '0' + v.slice(4);
+      else if (v.startsWith('886')) v = '0' + v.slice(3);
+      v = v.replace(/[^\d+]/g, '');
+      return v;
+    };
+    const scannedKeys = new Set(cardsFromCollections
+      .filter(c => c.is_scanned && c.scanned_data)
+      .map(c => {
+        const d = c.scanned_data || {};
+        return [normalize(d.name || c.card_title), normalize(d.email), normalizePhone(d.phone || d.mobile)].join('|');
+      }));
+
+    const filteredSBC = cardsFromSBC.filter(c => {
+      const d = c.scanned_data || {};
+      const key = [normalize(d.name || c.card_title), normalize(d.email), normalizePhone(d.phone || d.mobile)].join('|');
+      return !scannedKeys.has(key);
+    });
+
+    const cards = [...cardsFromCollections, ...filteredSBC];
     
     res.json({ success: true, cards });
   } catch (error) {
@@ -249,10 +340,8 @@ router.post('/sync', authenticateToken, async (req, res) => {
     const normalizePhone = (s) => {
       if (!s) return '';
       let v = String(s).trim();
-      // 轉 886/ +886 開頭為 0 開頭
       if (v.startsWith('+886')) v = '0' + v.slice(4);
       else if (v.startsWith('886')) v = '0' + v.slice(3);
-      // 移除非數字與加號
       v = v.replace(/[^\d+]/g, '');
       return v;
     };
@@ -294,54 +383,110 @@ router.post('/sync', authenticateToken, async (req, res) => {
             tags: tags
           };
 
-          // 嘗試用 正規化的 name+email+phone 去重，以避免重複插入
+          // 嘗試用 正規化的 name+email+phone 去重，以避免重複插入（nfc_card_collections）
           const nameKey = normalizeString(data.name || card.card_title || '');
           const emailKey = normalizeString(data.email || '');
           const phoneKey = normalizePhone(data.phone || data.mobile || '');
-          const exist = await client.query(`
-            SELECT id FROM nfc_card_collections 
-            WHERE user_id = $1 AND is_scanned = true
-              AND LOWER(COALESCE(scanned_data->>'name','')) = $2
-              AND LOWER(COALESCE(scanned_data->>'email','')) = $3
-              AND regexp_replace(
-                    CASE 
-                      WHEN left(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')), 4) = '+886' THEN '0' || substring(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')) from 5)
-                      WHEN left(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')), 3) = '886' THEN '0' || substring(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')) from 4)
-                      ELSE COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile',''))
-                    END, '[^0-9+]', '', 'g'
-                  ) = $4
-            LIMIT 1
-          `, [userId, nameKey, emailKey, phoneKey]);
 
-          if (exist.rowCount > 0) {
-            const cid = exist.rows[0].id;
-            await client.query(`
-              UPDATE nfc_card_collections 
-              SET notes = $2, tags = $3, folder_name = $4, last_viewed = $5, scanned_data = $6
-              WHERE id = $1 AND user_id = $7
-            `, [
-              cid,
-              notes,
-              tags,
-              folderName,
-              lastViewed,
-              data,
-              userId
-            ]);
-          } else {
-            await client.query(`
-              INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed, is_scanned, scanned_data)
-              VALUES ($1, NULL, $2, $3, $4, $5, $6, true, $7)
-            `, [
-              userId,
-              notes,
-              tags,
-              folderName,
-              collectedAt,
-              lastViewed,
-              data
-            ]);
+          const upsertIntoCollections = async () => {
+            const exist = await client.query(`
+              SELECT id FROM nfc_card_collections 
+              WHERE user_id = $1 AND is_scanned = true
+                AND LOWER(COALESCE(scanned_data->>'name','')) = $2
+                AND LOWER(COALESCE(scanned_data->>'email','')) = $3
+                AND regexp_replace(
+                      CASE 
+                        WHEN left(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')), 4) = '+886' THEN '0' || substring(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')) from 5)
+                        WHEN left(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')), 3) = '886' THEN '0' || substring(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')) from 4)
+                        ELSE COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile',''))
+                      END, '[^0-9+]', '', 'g'
+                    ) = $4
+              LIMIT 1
+            `, [userId, nameKey, emailKey, phoneKey]);
+  
+            if (exist.rowCount > 0) {
+              const cid = exist.rows[0].id;
+              await client.query(`
+                UPDATE nfc_card_collections 
+                SET notes = $2, tags = $3, folder_name = $4, last_viewed = $5, scanned_data = $6
+                WHERE id = $1 AND user_id = $7
+              `, [
+                cid,
+                notes,
+                tags,
+                folderName,
+                lastViewed,
+                data,
+                userId
+              ]);
+            } else {
+              await client.query(`
+                INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed, is_scanned, scanned_data)
+                VALUES ($1, NULL, $2, $3, $4, $5, $6, true, $7)
+              `, [
+                userId,
+                notes,
+                tags,
+                folderName,
+                collectedAt,
+                lastViewed,
+                data
+              ]);
+            }
+          };
+
+          const upsertIntoSBC = async () => {
+            // 後備：寫入 scanned_business_cards（避免某些環境 card_id 仍為 NOT NULL 導致失敗）
+            const existS = await client.query(`
+              SELECT id FROM scanned_business_cards 
+              WHERE user_id = $1
+                AND LOWER(COALESCE(extracted_data->>'name','')) = $2
+                AND LOWER(COALESCE(extracted_data->>'email','')) = $3
+                AND regexp_replace(
+                      CASE 
+                        WHEN left(COALESCE(extracted_data->>'phone', COALESCE(extracted_data->>'mobile','')), 4) = '+886' THEN '0' || substring(COALESCE(extracted_data->>'phone', COALESCE(extracted_data->>'mobile','')) from 5)
+                        WHEN left(COALESCE(extracted_data->>'phone', COALESCE(extracted_data->>'mobile','')), 3) = '886' THEN '0' || substring(COALESCE(extracted_data->>'phone', COALESCE(extracted_data->>'mobile','')) from 4)
+                        ELSE COALESCE(extracted_data->>'phone', COALESCE(extracted_data->>'mobile',''))
+                      END, '[^0-9+]', '', 'g'
+                    ) = $4
+              LIMIT 1
+            `, [userId, nameKey, emailKey, phoneKey]);
+
+            if (existS.rowCount > 0) {
+              const sid = existS.rows[0].id;
+              await client.query(`
+                UPDATE scanned_business_cards
+                SET extracted_data = $2, tags = $3, notes = $4, updated_at = NOW()
+                WHERE id = $1 AND user_id = $5
+              `, [sid, data, tags, notes, userId]);
+            } else {
+              await client.query(`
+                INSERT INTO scanned_business_cards (user_id, extracted_data, confidence_score, tags, notes, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+              `, [
+                userId,
+                data,
+                0.85,
+                tags,
+                notes,
+                collectedAt,
+                lastViewed
+              ]);
+            }
+          };
+
+          try {
+            await upsertIntoCollections();
+          } catch (e) {
+            // 若是 card_id NOT NULL 或相關限制導致失敗，退回使用 scanned_business_cards
+            if (e && (e.code === '23502' || /card_id/i.test(String(e.detail || e.message || '')))) {
+              console.warn('[DigitalWallet] collections 插入失敗，退回 SBC 儲存（可能尚未移除 card_id NOT NULL）:', e.code || e.message);
+              await upsertIntoSBC();
+            } else {
+              throw e;
+            }
           }
+
           await client.query('RELEASE SAVEPOINT sp_sync');
           continue; // 處理下一張
         }
