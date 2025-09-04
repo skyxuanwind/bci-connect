@@ -10,6 +10,49 @@ const { cloudinary } = require('../config/cloudinary');
 
 const router = express.Router();
 
+// Debug route to check environment and database status
+router.get('/debug', async (req, res) => {
+  try {
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'Not Set',
+        DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not Set',
+        MONGODB_URI: process.env.MONGODB_URI ? 'Set' : 'Not Set'
+      },
+      database: {
+        postgresql: 'Unknown',
+        mongodb: 'Unknown'
+      }
+    };
+
+    // Test PostgreSQL connection
+    try {
+      const result = await pool.query('SELECT NOW() as current_time');
+      debugInfo.database.postgresql = 'Connected';
+      debugInfo.database.postgresqlTime = result.rows[0].current_time;
+    } catch (error) {
+      debugInfo.database.postgresql = `Error: ${error.message}`;
+    }
+
+    // Test MongoDB connection (if mongoose is available)
+    try {
+      const mongoose = require('mongoose');
+      debugInfo.database.mongodb = `State: ${mongoose.connection.readyState}`;
+    } catch (error) {
+      debugInfo.database.mongodb = `Error: ${error.message}`;
+    }
+
+    res.json(debugInfo);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Debug route failed',
+      message: error.message
+    });
+  }
+});
+
 // Configure multer for avatar upload
 const upload = multer({
   storage: multer.memoryStorage(),
