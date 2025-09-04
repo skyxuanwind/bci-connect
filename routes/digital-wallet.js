@@ -2,6 +2,29 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const geminiService = require('../services/geminiService');
+
+// 從備註文字中抽取標籤（與前端邏輯對齊的簡易規則）
+function extractTagsFromText(text) {
+  if (!text || typeof text !== 'string') return [];
+  const tags = new Set();
+  // 1) Hashtags
+  (text.match(/#([\u4e00-\u9fa5\w\-]{2,20})/g) || []).forEach(t => tags.add(t.replace(/^#/, '')));
+  // 2) 產業關鍵字
+  const industries = ['金融','保險','醫療','生技','科技','軟體','硬體','半導體','製造','教育','房地產','建築','裝修','行銷','廣告','顧問','法律','會計','電商','零售','餐飲','旅遊','物流','人資','設計','媒體'];
+  industries.forEach(k => { if (text.includes(k)) tags.add(k); });
+  // 3) 地區
+  const regions = ['台北','新北','基隆','桃園','新竹','苗栗','台中','彰化','南投','雲林','嘉義','台南','高雄','屏東','宜蘭','花蓮','台東','澎湖','金門','連江'];
+  regions.forEach(r => { if (text.includes(r)) tags.add(r); });
+  // 4) 其他關鍵詞（英數詞彙）
+  (text.match(/[A-Za-z]{3,}/g) || []).slice(0, 5).forEach(w => tags.add(w.toLowerCase()));
+  return Array.from(tags).slice(0, 8);
+}
+function mergeTags(base, extra) {
+  const a = Array.isArray(base) ? base.map(String).filter(Boolean) : [];
+  const b = Array.isArray(extra) ? extra.map(String).filter(Boolean) : [];
+  return Array.from(new Set([...a, ...b]));
+}
 
 // 獲取用戶的數位名片夾
 router.get('/cards', authenticateToken, async (req, res) => {
@@ -92,34 +115,37 @@ router.post('/cards', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { card_id, notes, tags, folder_name } = req.body;
-    
+
+    const autoTags = await extractTagsFromTextAsync(notes);
+    const mergedTags = mergeTags(tags, autoTags);
+
     // 檢查名片是否存在
     const cardCheck = await pool.query(
       'SELECT id FROM nfc_cards WHERE id = $1',
       [card_id]
     );
-    
+
     if (cardCheck.rows.length === 0) {
       return res.status(404).json({ success: false, message: '名片不存在' });
     }
-    
+
     // 檢查是否已收藏
     const existingCollection = await pool.query(
       'SELECT id FROM nfc_card_collections WHERE user_id = $1 AND card_id = $2',
       [userId, card_id]
     );
-    
+
     if (existingCollection.rows.length > 0) {
       return res.status(400).json({ success: false, message: '名片已在收藏夾中' });
     }
-    
+
     // 添加到收藏
     const result = await pool.query(`
       INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING id, collected_at
-    `, [userId, card_id, notes, tags, folder_name]);
-    
+    `, [userId, card_id, notes, mergedTags, folder_name]);
+
     res.json({ 
       success: true, 
       message: '名片已添加到數位名片夾',
@@ -138,18 +164,21 @@ router.put('/cards/:collectionId', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { collectionId } = req.params;
     const { notes, tags, is_favorite, folder_name } = req.body;
-    
+
+    const autoTags = await extractTagsFromTextAsync(notes);
+    const mergedTags = mergeTags(tags, autoTags);
+
     const result = await pool.query(`
       UPDATE nfc_card_collections 
       SET notes = $1, tags = $2, is_favorite = $3, folder_name = $4, last_viewed = CURRENT_TIMESTAMP
       WHERE id = $5 AND user_id = $6
       RETURNING *
-    `, [notes, tags, is_favorite, folder_name, collectionId, userId]);
-    
+    `, [notes, mergedTags, is_favorite, folder_name, collectionId, userId]);
+
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: '收藏記錄不存在' });
     }
-    
+
     res.json({ success: true, message: '名片信息已更新' });
   } catch (error) {
     console.error('更新名片收藏信息失敗:', error);
@@ -215,6 +244,18 @@ router.post('/sync', authenticateToken, async (req, res) => {
     const toSafeTags = (arr) => Array.isArray(arr) ? arr.map(x => String(x)).filter(Boolean) : [];
     const toSafeFolder = (name) => name ? String(name).slice(0, 100) : null;
     const toSafeNote = (note) => typeof note === 'string' ? note : (note == null ? '' : String(note));
+    // 正規化工具：提升去重準確性
+    const normalizeString = (s) => (s == null ? '' : String(s).trim().toLowerCase());
+    const normalizePhone = (s) => {
+      if (!s) return '';
+      let v = String(s).trim();
+      // 轉 886/ +886 開頭為 0 開頭
+      if (v.startsWith('+886')) v = '0' + v.slice(4);
+      else if (v.startsWith('886')) v = '0' + v.slice(3);
+      // 移除非數字與加號
+      v = v.replace(/[^\d+]/g, '');
+      return v;
+    };
     
     const existingCollections = await client.query(
       'SELECT card_id FROM nfc_card_collections WHERE user_id = $1',
@@ -233,10 +274,15 @@ router.post('/sync', authenticateToken, async (req, res) => {
         // 先處理掃描/手動名片（沒有有效的 nfc_cards.id）
         if (card?.is_scanned || !Number.isFinite(parsedId)) {
           const notes = toSafeNote(card.personal_note);
-          const tags = toSafeTags(card.tags);
+          let tags = toSafeTags(card.tags);
           const folderName = toSafeFolder(card.folder_name);
           const collectedAt = toSafeDate(card.date_added);
           const lastViewed = toSafeDate(card.last_viewed);
+
+          // 從備註抽取自動標籤並合併
+          const autoTags = await extractTagsFromTextAsync(notes);
+          tags = mergeTags(tags, autoTags);
+
           const data = card.scanned_data || {
             name: card.card_title || null,
             title: card.card_subtitle || null,
@@ -248,16 +294,22 @@ router.post('/sync', authenticateToken, async (req, res) => {
             tags: tags
           };
 
-          // 嘗試用 name+email+phone 去重，以避免重複插入
-          const nameKey = data.name || '';
-          const emailKey = data.email || '';
-          const phoneKey = data.phone || data.mobile || '';
+          // 嘗試用 正規化的 name+email+phone 去重，以避免重複插入
+          const nameKey = normalizeString(data.name || card.card_title || '');
+          const emailKey = normalizeString(data.email || '');
+          const phoneKey = normalizePhone(data.phone || data.mobile || '');
           const exist = await client.query(`
             SELECT id FROM nfc_card_collections 
             WHERE user_id = $1 AND is_scanned = true
-              AND COALESCE(scanned_data->>'name','') = $2
-              AND COALESCE(scanned_data->>'email','') = $3
-              AND COALESCE(scanned_data->>'phone','') = $4
+              AND LOWER(COALESCE(scanned_data->>'name','')) = $2
+              AND LOWER(COALESCE(scanned_data->>'email','')) = $3
+              AND regexp_replace(
+                    CASE 
+                      WHEN left(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')), 4) = '+886' THEN '0' || substring(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')) from 5)
+                      WHEN left(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')), 3) = '886' THEN '0' || substring(COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile','')) from 4)
+                      ELSE COALESCE(scanned_data->>'phone', COALESCE(scanned_data->>'mobile',''))
+                    END, '[^0-9+]', '', 'g'
+                  ) = $4
             LIMIT 1
           `, [userId, nameKey, emailKey, phoneKey]);
 
@@ -318,11 +370,15 @@ router.post('/sync', authenticateToken, async (req, res) => {
         }
 
         const notes = toSafeNote(card.personal_note);
-        const tags = toSafeTags(card.tags);
+        let tags = toSafeTags(card.tags);
         const folderName = toSafeFolder(card.folder_name);
         const collectedAt = toSafeDate(card.date_added);
         const lastViewed = toSafeDate(card.last_viewed);
-  
+
+        // 從備註抽取自動標籤並合併
+        const autoTags = await extractTagsFromTextAsync(notes);
+        tags = mergeTags(tags, autoTags);
+
         try {
           if (!existingCardIds.has(parsedId)) {
             await client.query(`
@@ -437,12 +493,15 @@ router.get('/stats', authenticateToken, async (req, res) => {
       WHERE user_id = $1
     `, [userId]);
     
+    // 熱門標籤：考慮最近 30 天的權重
     const tagStats = await pool.query(`
-      SELECT UNNEST(tags) as tag, COUNT(*) as count
-      FROM nfc_card_collections 
-      WHERE user_id = $1 AND tags IS NOT NULL
-      GROUP BY tag
-      ORDER BY count DESC
+      SELECT t.tag as tag,
+             COUNT(*) as count,
+             SUM(CASE WHEN c.last_viewed >= NOW() - INTERVAL '30 days' THEN 2 ELSE 1 END) AS recency_weight
+      FROM nfc_card_collections c, UNNEST(c.tags) AS t(tag)
+      WHERE c.user_id = $1 AND c.tags IS NOT NULL
+      GROUP BY t.tag
+      ORDER BY recency_weight DESC, count DESC
       LIMIT 10
     `, [userId]);
     

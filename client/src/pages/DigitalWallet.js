@@ -16,7 +16,8 @@ import {
   CameraIcon,
   ChartBarIcon,
   ExclamationTriangleIcon,
-  SparklesIcon
+  SparklesIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import BusinessCardScanner from '../components/BusinessCardScanner';
@@ -739,13 +740,79 @@ const DigitalWallet = () => {
     try { await navigator.clipboard.writeText(text || ''); alert('已複製到剪貼簿'); } catch {}
   };
 
+  // 將網址/Email/電話轉為可點擊連結的輔助
+  const ensureProtocol = (url) => {
+    if (!url) return '';
+    return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+  };
+  const linkifyText = (text) => {
+    if (!text) return null;
+    const pattern = /(https?:\/\/[^\s]+|www\.[^\s]+)|([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})|(\+?\d[\d\s\-]{7,}\d)/gi;
+    const elements = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        elements.push(text.slice(lastIndex, match.index));
+      }
+      const m = match[0];
+      let href = '#';
+      let isExternal = false;
+      if (match[1]) {
+        href = ensureProtocol(m);
+        isExternal = true;
+      } else if (match[2]) {
+        href = `mailto:${m}`;
+      } else if (match[3]) {
+        const tel = m.replace(/[^\d+]/g, '');
+        href = `tel:${tel}`;
+      }
+      elements.push(
+        <a
+          key={`lnk-${elements.length}`}
+          href={href}
+          target={isExternal ? '_blank' : undefined}
+          rel={isExternal ? 'noopener noreferrer' : undefined}
+          className="text-blue-600 hover:underline"
+        >
+          {m}
+        </a>
+      );
+      lastIndex = match.index + m.length;
+    }
+    if (lastIndex < text.length) {
+      elements.push(text.slice(lastIndex));
+    }
+    return elements;
+  };
+
+  // 從備註中自動抽取標籤（產業/地區/關鍵字等簡易規則）
+  const extractTagsFromText = (text) => {
+    if (!text) return [];
+    const tags = new Set();
+    // 1) Hashtags
+    (text.match(/#([\u4e00-\u9fa5\w\-]{2,20})/g) || []).forEach(t => tags.add(t.replace(/^#/, '')));
+    // 2) 產業關鍵字
+    const industries = ['金融','保險','醫療','生技','科技','軟體','硬體','半導體','製造','教育','房地產','建築','裝修','行銷','廣告','顧問','法律','會計','電商','零售','餐飲','旅遊','物流','人資','設計','媒體'];
+    industries.forEach(k => { if (text.includes(k)) tags.add(k); });
+    // 3) 地區
+    const regions = ['台北','新北','基隆','桃園','新竹','苗栗','台中','彰化','南投','雲林','嘉義','台南','高雄','屏東','宜蘭','花蓮','台東','澎湖','金門','連江'];
+    regions.forEach(r => { if (text.includes(r)) tags.add(r); });
+    // 4) 其他關鍵詞（英數詞彙）
+    (text.match(/[A-Za-z]{3,}/g) || []).slice(0, 5).forEach(w => tags.add(w.toLowerCase()));
+    return Array.from(tags).slice(0, 8);
+  };
+
   const handleEditNote = (cardId, currentNote) => {
     setEditingNote(cardId);
     setTempNote(currentNote || '');
   };
 
   const saveNote = (cardId) => {
-    updateCard(cardId, { personal_note: tempNote });
+    const cardObj = savedCards.find(c => c.id === cardId);
+    const autoTags = extractTagsFromText(tempNote);
+    const mergedTags = Array.from(new Set([...(cardObj?.tags || []), ...autoTags]));
+    updateCard(cardId, { personal_note: tempNote, tags: mergedTags });
     setEditingNote(null);
     setTempNote('');
   };
@@ -936,13 +1003,17 @@ const DigitalWallet = () => {
                     {card.contact_info?.phone && (
                       <div className="flex items-center">
                         <PhoneIcon className="h-4 w-4 mr-2" />
-                        <span>{card.contact_info.phone}</span>
+                        <a href={`tel:${(card.contact_info.phone || '').replace(/[^\d+]/g,'')}`} className="text-blue-600 hover:underline">
+                          {card.contact_info.phone}
+                        </a>
                       </div>
                     )}
                     {card.contact_info?.email && (
                       <div className="flex items-center">
                         <EnvelopeIcon className="h-4 w-4 mr-2" />
-                        <span>{card.contact_info.email}</span>
+                        <a href={`mailto:${card.contact_info.email}`} className="text-blue-600 hover:underline">
+                          {card.contact_info.email}
+                        </a>
                       </div>
                     )}
                     {card.contact_info?.company && (
@@ -951,6 +1022,18 @@ const DigitalWallet = () => {
                         <span>{card.contact_info.company}</span>
                       </div>
                     )}
+                    {(() => {
+                      const website = card.website || card.scanned_data?.website;
+                      if (!website) return null;
+                      return (
+                        <div className="flex items-center">
+                          <GlobeAltIcon className="h-4 w-4 mr-2" />
+                          <a href={ensureProtocol(website)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            {website}
+                          </a>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
                 
@@ -1007,7 +1090,9 @@ const DigitalWallet = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         {card.personal_note ? (
-                          <p className="text-sm text-gray-600 italic">"{card.personal_note}"</p>
+                          <div className="text-sm text-gray-600 italic">
+                            {linkifyText(card.personal_note)}
+                          </div>
                         ) : (
                           <p className="text-sm text-gray-400">點擊添加個人備註</p>
                         )}

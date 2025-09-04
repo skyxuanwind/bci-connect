@@ -58,6 +58,56 @@ async function normalizeImageForOCR(originalPath) {
   }
 }
 
+// 產生多組預處理影像以提升 OCR 成功率
+async function preprocessForOCR(imagePath) {
+  const variants = [];
+  const baseName = imagePath.replace(/\.(jpg|jpeg|png)$/i, '');
+  // 變體1：灰階 + 正規化 + 銳利化 + 中值去噪
+  try {
+    const out1 = baseName + '.pre1.jpg';
+    await sharp(imagePath, { failOn: 'none' })
+      .flatten({ background: '#ffffff' })
+      .grayscale()
+      .normalize()
+      .median(1)
+      .sharpen()
+      .jpeg({ quality: 90, mozjpeg: true })
+      .toFile(out1);
+    variants.push(out1);
+  } catch (e) {
+    console.warn('預處理變體1失敗:', e.message);
+  }
+  // 變體2：灰階 + 正規化 + 對比微增強 + 銳利化
+  try {
+    const out2 = baseName + '.pre2.jpg';
+    await sharp(imagePath, { failOn: 'none' })
+      .flatten({ background: '#ffffff' })
+      .grayscale()
+      .normalize()
+      .linear(1.15, -12)
+      .sharpen()
+      .jpeg({ quality: 90, mozjpeg: true })
+      .toFile(out2);
+    variants.push(out2);
+  } catch (e) {
+    console.warn('預處理變體2失敗:', e.message);
+  }
+  // 變體3：灰階 + 二值化（適合高對比黑白名片）
+  try {
+    const out3 = baseName + '.pre3.jpg';
+    await sharp(imagePath, { failOn: 'none' })
+      .flatten({ background: '#ffffff' })
+      .grayscale()
+      .threshold(180)
+      .jpeg({ quality: 95, mozjpeg: true })
+      .toFile(out3);
+    variants.push(out3);
+  } catch (e) {
+    console.warn('預處理變體3失敗:', e.message);
+  }
+  return variants;
+}
+
 // OCR名片掃描API
 router.post('/scan-business-card', upload.single('cardImage'), async (req, res) => {
   try {
@@ -77,26 +127,38 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
     if (normalized.created && normalized.path !== originalImagePath) {
       tempFiles.push(normalized.path);
     }
+    // 產生多組預處理影像
+    const preprocessed = await preprocessForOCR(imagePath);
+    preprocessed.forEach(p => tempFiles.push(p));
+    const candidatePaths = [imagePath, ...preprocessed];
     
     // 使用多種OCR服務進行識別
     let ocrResult = null;
-    
-    // 1. 嘗試使用Google Vision API（如果配置了）
-    if (process.env.GOOGLE_VISION_API_KEY) {
-      try {
-        ocrResult = await processWithGoogleVision(imagePath);
-      } catch (error) {
-        console.log('Google Vision API失敗，嘗試其他方法:', error.message);
+    // 逐一嘗試各種預處理變體
+    for (const candidate of candidatePaths) {
+      // 1. 嘗試使用Google Vision API（如果配置了）
+      if (!ocrResult && process.env.GOOGLE_VISION_API_KEY) {
+        try {
+          const r = await processWithGoogleVision(candidate);
+          if (r && (r.rawText || '').trim().length >= 20) {
+            ocrResult = r;
+          }
+        } catch (error) {
+          console.log('Google Vision API失敗，嘗試其他方法:', error.message);
+        }
       }
-    }
-    
-    // 2. 如果Google Vision失敗，使用OCR.space API（免費版）
-    if (!ocrResult) {
-      try {
-        ocrResult = await processWithOCRSpace(imagePath);
-      } catch (error) {
-        console.log('OCR.space API失敗，使用本地處理:', error.message);
+      // 2. 如果Google Vision失敗，使用OCR.space API（免費版）
+      if (!ocrResult) {
+        try {
+          const r = await processWithOCRSpace(candidate);
+          if (r && (r.rawText || '').trim().length >= 20) {
+            ocrResult = r;
+          }
+        } catch (error) {
+          console.log('OCR.space API失敗，嘗試其他候選影像:', error.message);
+        }
       }
+      if (ocrResult) break;
     }
     
     // 3. 如果都失敗，使用本地規則處理
@@ -136,6 +198,16 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
       const normalizedPath = req.file?.path ? req.file.path + '.normalized.jpg' : null;
       if (normalizedPath && fs.existsSync(normalizedPath)) {
         fs.unlinkSync(normalizedPath);
+      }
+      // 清理預處理變體
+      const baseNormalized = req.file?.path ? req.file.path + '.normalized.jpg' : null;
+      if (baseNormalized) {
+        ['.pre1.jpg', '.pre2.jpg', '.pre3.jpg'].forEach(suffix => {
+          const p = baseNormalized.replace(/\.normalized\.jpg$/i, '') + suffix;
+          if (fs.existsSync(p)) {
+            try { fs.unlinkSync(p); } catch {}
+          }
+        });
       }
     } catch (cleanupErr) {
       console.warn('清理臨時檔案失敗:', cleanupErr.message);
