@@ -21,7 +21,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import BusinessCardScanner from '../components/BusinessCardScanner';
-import DigitalWalletSync from '../components/DigitalWalletSync';
+// DigitalWalletSync 面板已移除（自動同步運作中）
 import { useNavigate } from 'react-router-dom';
 
 const DigitalWallet = () => {
@@ -175,7 +175,7 @@ const DigitalWallet = () => {
     try {
       const key = getLocalStorageKey();
       localStorage.setItem(key, JSON.stringify(cards));
-      // 通知其他元件（如同步面板）本地名片已更新
+      // 通知其他元件本地名片已更新
       window.dispatchEvent(new CustomEvent('digitalWallet:localUpdated'));
     } catch (error) {
       console.error('保存名片夾失敗:', error);
@@ -1176,8 +1176,7 @@ const DigitalWallet = () => {
         )}
       </div>
       
-      {/* 雲端同步狀態 */}
-      <DigitalWalletSync />
+      {/* 雲端同步狀態區塊已移除（新增後自動同步） */}
       
       {/* 名片掃描器 */}
       {showScanner && (
