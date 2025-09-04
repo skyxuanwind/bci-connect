@@ -70,9 +70,24 @@ const DigitalWalletSync = () => {
     return loggedIn;
   };
 
+  const getLocalStorageKey = () => {
+    const token = Cookies.get('token');
+    if (token) {
+      try {
+        // 解析 JWT token 獲取用戶 ID
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return `digitalWallet_${payload.id}`;
+      } catch (error) {
+        console.warn('無法解析 token，使用預設 key:', error);
+      }
+    }
+    return 'digitalWallet'; // 未登入時使用預設 key
+  };
+
   const loadLocalCards = () => {
     try {
-      const saved = localStorage.getItem('digitalWallet');
+      const key = getLocalStorageKey();
+      const saved = localStorage.getItem(key);
       if (saved) {
         const cards = JSON.parse(saved);
         setLocalCards(cards);

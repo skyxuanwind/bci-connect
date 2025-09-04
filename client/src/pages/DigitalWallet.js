@@ -56,14 +56,18 @@ const DigitalWallet = () => {
       }
 
       // 讀取本地備份
-      const saved = localStorage.getItem('digitalWallet');
+      const key = getLocalStorageKey();
+      const saved = localStorage.getItem(key);
       const localCards = saved ? JSON.parse(saved) : [];
 
       if (Array.isArray(cloudCards)) {
         if (cloudCards.length > 0) {
           // 雲端有資料 -> 採用雲端，並覆寫本地備份
           setSavedCards(cloudCards);
-          try { localStorage.setItem('digitalWallet', JSON.stringify(cloudCards)); } catch {}
+          try { 
+            const key = getLocalStorageKey();
+            localStorage.setItem(key, JSON.stringify(cloudCards)); 
+          } catch {}
           return;
         }
         // 雲端空陣列 -> 若本地有資料，不要覆蓋，改採用本地並嘗試同步上雲
@@ -89,9 +93,24 @@ const DigitalWallet = () => {
     }
   };
 
+  const getLocalStorageKey = () => {
+    const token = Cookies.get('token');
+    if (token) {
+      try {
+        // 解析 JWT token 獲取用戶 ID
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return `digitalWallet_${payload.id}`;
+      } catch (error) {
+        console.warn('無法解析 token，使用預設 key:', error);
+      }
+    }
+    return 'digitalWallet'; // 未登入時使用預設 key
+  };
+
   const saveToLocalStorage = (cards) => {
     try {
-      localStorage.setItem('digitalWallet', JSON.stringify(cards));
+      const key = getLocalStorageKey();
+      localStorage.setItem(key, JSON.stringify(cards));
       // 通知其他元件（如同步面板）本地名片已更新
       window.dispatchEvent(new CustomEvent('digitalWallet:localUpdated'));
     } catch (error) {

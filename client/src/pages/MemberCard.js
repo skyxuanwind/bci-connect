@@ -116,7 +116,8 @@ const MemberCard = () => {
       setLoading(true);
 
       // 1) 先找本地錢包
-      const saved = localStorage.getItem('digitalWallet');
+      const key = getLocalStorageKey();
+      const saved = localStorage.getItem(key);
       const localCards = saved ? JSON.parse(saved) : [];
       let found = localCards.find(c => String(c.id) === baseId);
 
@@ -212,9 +213,24 @@ const MemberCard = () => {
     }
   };
 
+  const getLocalStorageKey = () => {
+    const token = Cookies.get('token');
+    if (token) {
+      try {
+        // 解析 JWT token 獲取用戶 ID
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return `digitalWallet_${payload.id}`;
+      } catch (error) {
+        console.warn('無法解析 token，使用預設 key:', error);
+      }
+    }
+    return 'digitalWallet'; // 未登入時使用預設 key
+  };
+
   const checkIfInWallet = () => {
     try {
-      const saved = localStorage.getItem('digitalWallet');
+      const key = getLocalStorageKey();
+      const saved = localStorage.getItem(key);
       if (saved) {
         const cards = JSON.parse(saved);
         const exists = cards.some(card => String(card.id) === baseId);
@@ -227,7 +243,8 @@ const MemberCard = () => {
 
   const updateLastViewed = () => {
     try {
-      const saved = localStorage.getItem('digitalWallet');
+      const key = getLocalStorageKey();
+      const saved = localStorage.getItem(key);
       if (saved) {
         const cards = JSON.parse(saved);
         const updatedCards = cards.map(card => 
@@ -235,7 +252,7 @@ const MemberCard = () => {
             ? { ...card, last_viewed: new Date().toISOString() }
             : card
         );
-        localStorage.setItem('digitalWallet', JSON.stringify(updatedCards));
+        localStorage.setItem(key, JSON.stringify(updatedCards));
       }
     } catch (error) {
       console.error('更新查看時間失敗:', error);
@@ -255,7 +272,8 @@ const MemberCard = () => {
         tags: []
       };
 
-      const saved = localStorage.getItem('digitalWallet');
+      const key = getLocalStorageKey();
+      const saved = localStorage.getItem(key);
       const existingCards = saved ? JSON.parse(saved) : [];
       
       // 檢查是否已存在
@@ -289,7 +307,7 @@ const MemberCard = () => {
       
       // 添加到本地存儲
       const updatedCards = [...existingCards, cardToSave];
-      localStorage.setItem('digitalWallet', JSON.stringify(updatedCards));
+      localStorage.setItem(key, JSON.stringify(updatedCards));
       setIsInWallet(true);
       
       if (!token) {
@@ -303,11 +321,12 @@ const MemberCard = () => {
 
   const removeFromWallet = () => {
     try {
-      const saved = localStorage.getItem('digitalWallet');
+      const key = getLocalStorageKey();
+      const saved = localStorage.getItem(key);
       if (saved) {
         const cards = JSON.parse(saved);
         const updatedCards = cards.filter(card => String(card.id) !== String(cardData.id));
-        localStorage.setItem('digitalWallet', JSON.stringify(updatedCards));
+        localStorage.setItem(key, JSON.stringify(updatedCards));
         setIsInWallet(false);
         showSuccess('已從數位名片夾移除');
       }
