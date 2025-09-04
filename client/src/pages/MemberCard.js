@@ -240,8 +240,11 @@ const MemberCard = () => {
     const token = Cookies.get('token');
     if (token) {
       try {
-        // 解析 JWT token 獲取用戶 ID
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        // 解析 JWT token 獲取用戶 ID（base64url 安全）
+        const base64Url = token.split('.')[1] || '';
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+        const payload = JSON.parse(atob(padded));
         const userId = payload.userId || payload.id;
         return `digitalWallet_${userId}`;
       } catch (error) {

@@ -43,6 +43,8 @@ const DigitalWallet = () => {
     const token = Cookies.get('token');
     if (token !== currentToken) {
       setCurrentToken(token);
+      // 切換帳號時，先清空畫面上的名片列表，避免短暫顯示舊帳號資料
+      setSavedCards([]);
       loadSavedCards();
     }
   }, [currentToken]);
@@ -59,9 +61,29 @@ const DigitalWallet = () => {
     return () => clearInterval(interval);
   }, [currentToken]);
 
+  // 清理因舊版 bug 產生的共享 localStorage key，避免不同用戶看到相同資料
+  const cleanupLegacyLocalStorageKeys = () => {
+    try {
+      const token = Cookies.get('token');
+      if (!token) return;
+      const properKey = getLocalStorageKey();
+      if (!properKey || properKey === 'digitalWallet') return;
+      // 僅清理錯誤的 key，不做自動遷移以避免將共享資料誤歸屬到單一用戶
+      const legacyKeys = ['digitalWallet', 'digitalWallet_undefined', 'digitalWallet_null', 'digitalWallet_NaN'];
+      legacyKeys.forEach(k => {
+        try { localStorage.removeItem(k); } catch {}
+      });
+    } catch {}
+  };
+
   const loadSavedCards = async () => {
     try {
       const token = Cookies.get('token');
+
+      // 若已登入，先清理由舊版造成的共享 key，避免讀取到錯誤資料
+      if (token) {
+        cleanupLegacyLocalStorageKeys();
+      }
 
       let cloudCards = null;
       if (token) {
@@ -119,10 +141,13 @@ const DigitalWallet = () => {
     const token = Cookies.get('token');
     if (token) {
       try {
-        // 解析 JWT token 獲取用戶 ID
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        // 解析 JWT token 獲取用戶 ID（base64url 安全）
+        const base64Url = token.split('.')[1] || '';
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+        const payload = JSON.parse(atob(padded));
         const userId = payload.userId || payload.id;
-        return `digitalWallet_${userId}`;
+        if (userId) return `digitalWallet_${userId}`;
       } catch (error) {
         console.warn('無法解析 token，使用預設 key:', error);
       }
