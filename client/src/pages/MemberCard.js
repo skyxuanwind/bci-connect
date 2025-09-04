@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from '../config/axios';
 import Cookies from 'js-cookie';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -17,7 +17,8 @@ import {
   UserIcon,
   PlayIcon,
   LinkIcon,
-  PhotoIcon
+  PhotoIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import {
@@ -31,6 +32,8 @@ import {
 
 const MemberCard = () => {
   const { memberId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [cardData, setCardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,11 +42,51 @@ const MemberCard = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [downloadingVCard, setDownloadingVCard] = useState(false);
   const [currentToken, setCurrentToken] = useState(Cookies.get('token'));
-  const navigate = useNavigate();
+
+  // AI modal states
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiData, setAiData] = useState(null);
+  const [aiError, setAiError] = useState('');
 
   // 輔助：是否為掃描名片 ID
   const isScannedId = (id) => String(id || '').split(':')[0].startsWith('scanned_');
   const baseId = String(memberId || '').split(':')[0];
+
+  // 分析追蹤
+  const trackAnalytics = async (eventType, extra = {}) => {
+    try {
+      const rawId = cardData?.id || baseId;
+      if (!rawId) return;
+      const idStr = String(rawId);
+
+      // 僅追蹤數字型卡片ID，跳過測試/掃描等非正式ID以避免後端寫入錯誤
+      if (!/^[0-9]+$/.test(idStr)) {
+        return;
+      }
+
+      const payload = {
+        cardId: Number(idStr),
+        eventType,
+        referrer: document.referrer || '',
+        userAgent: navigator.userAgent,
+        source:
+          (location && location.state && location.state.source) ||
+          new URLSearchParams(window.location.search).get('src') ||
+          ''
+      };
+
+      // 後端期望 contentType/contentId，這裡自動兼容舊鍵名 content_type/content_id
+      const contentType = extra.contentType ?? extra.content_type;
+      const contentId = extra.contentId ?? extra.content_id;
+      if (contentType != null) payload.contentType = contentType;
+      if (contentId != null) payload.contentId = contentId;
+
+      await axios.post('/api/nfc-analytics/track', payload).catch(() => {});
+    } catch (e) {
+      /* ignore */
+    }
+  };
 
   useEffect(() => {
     fetchCardData();
@@ -212,6 +255,40 @@ const MemberCard = () => {
 
     try {
       setLoading(true);
+
+      // 開發/預覽用：支援 /member/test 顯示公開測試名片
+      if (memberId === 'test') {
+        const response = await axios.get('/api/nfc-cards/public/test-card');
+        const data = response.data || {};
+        const member = data.member;
+        const card = data.cardConfig;
+
+        if (!card) {
+          throw new Error('名片不存在');
+        }
+
+        const contentRows = Array.isArray(card.content_blocks) ? card.content_blocks : [];
+        const transformed = {
+          id: card.id,
+          card_title: card.card_title || member?.name || '測試名片',
+          card_subtitle: card.card_subtitle || '',
+          template_name: card.template_name,
+          contact_info: {
+            phone: member?.contact_number || '',
+            email: member?.email || '',
+            website: member?.website || '',
+            company: member?.company || '',
+            address: member?.address || ''
+          },
+          content_blocks: contentRows.map(mapRowToBlock)
+        };
+
+        setCardData(transformed);
+        updateLastViewed();
+        trackAnalytics('view');
+        return;
+      }
+
       const response = await axios.get(`/api/nfc-cards/member/${memberId}`);
       const data = response.data || {};
 
@@ -242,6 +319,8 @@ const MemberCard = () => {
       setCardData(transformed);
       // 更新最後查看時間（如果已在名片夾中）
       updateLastViewed();
+      // 記錄瀏覽
+      trackAnalytics('view');
     } catch (error) {
       console.error('獲取名片數據失敗:', error);
       setError(error.response?.status === 404 ? '名片不存在' : '載入失敗');
@@ -381,7 +460,7 @@ const MemberCard = () => {
     try {
       setDownloadingVCard(true);
 
-      // 掃描名片：改為本地生成 vCard
+      // 掃描名片：本地生成 vCard
       if (isScannedId(memberId)) {
         const saved = localStorage.getItem(getLocalStorageKey());
         const cards = saved ? JSON.parse(saved) : [];
@@ -416,7 +495,37 @@ const MemberCard = () => {
         return;
       }
 
-      // 一般名片：沿用後端下載
+      // 測試名片：本地生成 vCard
+      if (memberId === 'test') {
+        const info = cardData?.contact_info || {};
+        const lines = [
+          'BEGIN:VCARD',
+          'VERSION:3.0',
+          `FN:${cardData?.card_title || ''}`,
+          `ORG:${info.company || ''}`,
+          `TITLE:${cardData?.card_subtitle || ''}`,
+          `EMAIL:${info.email || ''}`,
+          info.phone ? `TEL;TYPE=CELL:${info.phone}` : '',
+          `URL:${info.website || ''}`,
+          info.address ? `ADR;TYPE=WORK:;;${info.address};;;;` : '',
+          'END:VCARD'
+        ].filter(Boolean);
+
+        const blob = new Blob([lines.join('\r\n')], { type: 'text/vcard' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${cardData?.card_title || 'contact'}.vcf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showSuccess('聯絡人已下載！');
+        trackAnalytics('vcard_download');
+        return;
+      }
+
+      // 一般名片：沿用後端下載（修正端點）
       const response = await axios.get(`/api/nfc-cards/member/${memberId}/vcard`, {
         responseType: 'blob'
       });
@@ -432,6 +541,8 @@ const MemberCard = () => {
       document.body.removeChild(a);
       
       showSuccess('聯絡人已下載！');
+      // 記錄下載
+      trackAnalytics('vcard_download');
     } catch (error) {
       console.error('下載 vCard 失敗:', error);
       alert('下載失敗，請稍後再試');
@@ -443,6 +554,59 @@ const MemberCard = () => {
   const showSuccess = (message) => {
     setShowSuccessMessage(message);
     setTimeout(() => setShowSuccessMessage(false), 3000);
+  };
+
+  // AI 跟進建議
+  const openAISuggestion = async () => {
+    try {
+      setAiModalOpen(true);
+      setAiLoading(true);
+      setAiError('');
+      setAiData(null);
+
+      const payload = {
+        name: cardData?.card_title || '',
+        company: cardData?.contact_info?.company || '',
+        title: cardData?.card_subtitle || '',
+        email: cardData?.contact_info?.email || '',
+        phone: cardData?.contact_info?.phone || '',
+        tags: [],
+        notes: '',
+        last_interaction: '',
+        goal: '建立關係並安排會談',
+        channelPreference: ''
+      };
+
+      const token = Cookies.get('token');
+      const resp = await axios.post('/api/ai/contacts/followup-suggestion', payload, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      if (resp?.data?.success) {
+        setAiData(resp.data.data);
+      } else {
+        setAiError(resp?.data?.message || '生成失敗');
+      }
+    } catch (err) {
+      console.error('生成 AI 建議失敗:', err);
+      setAiError(err?.response?.data?.message || err.message || '生成失敗');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const closeAISuggestion = () => {
+    setAiModalOpen(false);
+    setAiLoading(false);
+    setAiData(null);
+    setAiError('');
+  };
+
+  const copyText = async (text) => {
+    try { 
+      await navigator.clipboard.writeText(text || ''); 
+      alert('已複製到剪貼簿'); 
+    } catch {}
   };
 
   const toggleDarkMode = () => {
@@ -493,6 +657,7 @@ const MemberCard = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="link-item"
+              onClick={() => trackAnalytics('content_click', { content_type: 'link', content_id: block.id, url: block.content_data.url || '', title: block.content_data.title || '' })}
             >
               <div className="flex items-center">
                 <LinkIcon className="h-5 w-5 mr-3" />
@@ -697,6 +862,7 @@ const MemberCard = () => {
         <div className="contact-info">
           {contactItems.map((item, index) => {
             const IconComponent = item.icon;
+            const key = `${item.label}-${item.value || index}`;
             const content = (
               <div className="contact-item">
                 <IconComponent className="contact-icon" />
@@ -708,11 +874,11 @@ const MemberCard = () => {
             );
 
             return item.href ? (
-              <a key={index} href={item.href} className="block">
+              <a key={key} href={item.href} className="block">
                 {content}
               </a>
             ) : (
-              <div key={index}>
+              <div key={key}>
                 {content}
               </div>
             );
@@ -770,6 +936,16 @@ const MemberCard = () => {
           {cardData.card_subtitle && (
             <p className="card-subtitle">{cardData.card_subtitle}</p>
           )}
+          <div className="mt-3 flex items-center gap-2">
+            <button 
+              onClick={openAISuggestion}
+              className="inline-flex items-center px-3 py-1 text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-sm"
+              title="AI 跟進建議"
+            >
+              <SparklesIcon className="h-4 w-4 mr-1" />
+              AI 跟進
+            </button>
+          </div>
         </div>
 
         {/* 聯絡資訊 */}
@@ -778,7 +954,14 @@ const MemberCard = () => {
         {/* 動態內容區塊 */}
         {cardData.content_blocks && cardData.content_blocks
           .sort((a, b) => a.display_order - b.display_order)
-          .map(block => renderContentBlock(block))
+          .map((block, idx) => {
+            const key = block?.id ?? `${block?.content_type || 'block'}-${block?.display_order ?? idx}-${idx}`;
+            return (
+              <React.Fragment key={key}>
+                {renderContentBlock(block)}
+              </React.Fragment>
+            );
+          })
         }
       </div>
 
@@ -813,6 +996,60 @@ const MemberCard = () => {
           <HeartIcon className="h-6 w-6" />
         )}
       </button>
+
+      {/* AI 跟進建議 Modal */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-900 bg-opacity-50" onClick={closeAISuggestion}></div>
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">AI 跟進建議</h3>
+              <button onClick={closeAISuggestion} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+
+            {aiLoading && (
+              <div className="text-gray-600">正在生成建議，請稍候...</div>
+            )}
+
+            {!aiLoading && aiError && (
+              <div className="text-red-600 text-sm">{aiError}</div>
+            )}
+
+            {!aiLoading && aiData && (
+              <div className="space-y-4">
+                {Array.isArray(aiData.suggestions) && aiData.suggestions.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2">建議：</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                      {aiData.suggestions.map((s, idx) => (
+                      -                        <li key={idx}>{s}</li>
+                      +                        <li key={`${String(s).slice(0,30)}-${idx}`}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {aiData.draft && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-gray-800">建議草稿</h4>
+                      <button
+                        onClick={() => copyText(aiData.draft)}
+                        className="px-2 py-1 text-xs text-blue-600 bg-blue-50 rounded hover:bg-blue-100"
+                      >
+                        複製
+                      </button>
+                    </div>
+                    <pre className="whitespace-pre-wrap text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-200">
+{aiData.draft}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

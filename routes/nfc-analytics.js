@@ -149,18 +149,36 @@ router.post('/track', async (req, res) => {
       userAgent,
       referrer 
     } = req.body;
+
+    // 後端容錯：cardId 必須為正整數
+    const rawId = typeof cardId === 'string' ? cardId.trim() : cardId;
+    const cardIdStr = String(rawId || '');
+    if (!cardIdStr || !/^\d+$/.test(cardIdStr)) {
+      return res.json({ success: true, skipped: true, reason: 'invalid_cardId' });
+    }
+    const cardIdInt = parseInt(cardIdStr, 10);
+
+    // 後端容錯：確認卡片是否存在
+    const exists = await pool.query('SELECT 1 FROM nfc_cards WHERE id = $1 LIMIT 1', [cardIdInt]);
+    if (exists.rowCount === 0) {
+      return res.json({ success: true, skipped: true, reason: 'card_not_found' });
+    }
     
     // 獲取訪客IP
-    const visitorIp = req.ip || req.connection.remoteAddress;
+    const visitorIp = req.ip || (req.connection && req.connection.remoteAddress);
     
     // 解析設備和瀏覽器信息
     const deviceInfo = parseUserAgent(userAgent);
+
+    // 兼容 contentType/contentId 與 content_type/content_id
+    const normalizedContentType = contentType || req.body.content_type || null;
+    const normalizedContentId = contentId || req.body.content_id || null;
     
     // 構建額外數據
     const additionalData = {
       source: source,
-      content_type: contentType,
-      content_id: contentId
+      content_type: normalizedContentType,
+      content_id: normalizedContentId
     };
     
     // 插入分析記錄
@@ -170,7 +188,7 @@ router.post('/track', async (req, res) => {
         referrer, device_type, browser, additional_data
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
-      cardId, 
+      cardIdInt, 
       eventType, 
       visitorIp, 
       userAgent, 
