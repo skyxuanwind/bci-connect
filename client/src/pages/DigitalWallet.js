@@ -121,7 +121,8 @@ const DigitalWallet = () => {
       try {
         // 解析 JWT token 獲取用戶 ID
         const payload = JSON.parse(atob(token.split('.')[1]));
-        return `digitalWallet_${payload.id}`;
+        const userId = payload.userId || payload.id;
+        return `digitalWallet_${userId}`;
       } catch (error) {
         console.warn('無法解析 token，使用預設 key:', error);
       }
