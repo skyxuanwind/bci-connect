@@ -1033,15 +1033,18 @@ const MemberCard = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-semibold text-gray-800">建議草稿</h4>
-                      <button
-                        onClick={() => copyText(aiData.draft)}
-                        className="px-2 py-1 text-xs text-blue-600 bg-blue-50 rounded hover:bg-blue-100"
-                      >
-                        複製
-                      </button>
+                      <div className="space-x-2">
+                        {aiData.draft.subject ? (
+                          <>
+                            <button onClick={() => copyText(aiData.draft.subject)} className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">複製主旨</button>
+                            <button onClick={() => copyText(`${aiData.draft.subject}\n\n${aiData.draft.message || ''}`)} className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">複製主旨+內容</button>
+                          </>
+                        ) : null}
+                        <button onClick={() => copyText(aiData.draft.message || '')} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200">一鍵複製</button>
+                      </div>
                     </div>
                     <pre className="whitespace-pre-wrap text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-200">
-{aiData.draft}
+{aiData.draft.message || ''}
                     </pre>
                   </div>
                 )}
