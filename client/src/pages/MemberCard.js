@@ -38,6 +38,8 @@ const MemberCard = () => {
   const [isInWallet, setIsInWallet] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [downloadingVCard, setDownloadingVCard] = useState(false);
+  const [currentToken, setCurrentToken] = useState(Cookies.get('token'));
+  const navigate = useNavigate();
 
   // 輔助：是否為掃描名片 ID
   const isScannedId = (id) => String(id || '').split(':')[0].startsWith('scanned_');
@@ -50,6 +52,27 @@ const MemberCard = () => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setDarkMode(prefersDark);
   }, [memberId]);
+
+  // 監聽 token 變化，當用戶切換帳戶時重新檢查收藏狀態
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (token !== currentToken) {
+      setCurrentToken(token);
+      checkIfInWallet();
+    }
+  }, [currentToken]);
+
+  // 定期檢查 token 變化
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const token = Cookies.get('token');
+      if (token !== currentToken) {
+        setCurrentToken(token);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentToken]);
 
   // 從資料列轉換為前端需要的內容區塊格式
   const mapRowToBlock = (row) => {
@@ -342,7 +365,7 @@ const MemberCard = () => {
 
       // 掃描名片：改為本地生成 vCard
       if (isScannedId(memberId)) {
-        const saved = localStorage.getItem('digitalWallet');
+        const saved = localStorage.getItem(getLocalStorageKey());
         const cards = saved ? JSON.parse(saved) : [];
         const local = cards.find(c => String(c.id) === baseId);
         const scanned = local?.scanned_data || {};

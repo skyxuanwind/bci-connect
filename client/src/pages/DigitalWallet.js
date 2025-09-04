@@ -31,11 +31,33 @@ const DigitalWallet = () => {
   const [tempNote, setTempNote] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [currentToken, setCurrentToken] = useState(Cookies.get('token'));
   const navigate = useNavigate();
 
   useEffect(() => {
     loadSavedCards();
   }, []);
+
+  // 監聽 token 變化，當用戶切換帳戶時重新載入數據
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (token !== currentToken) {
+      setCurrentToken(token);
+      loadSavedCards();
+    }
+  }, [currentToken]);
+
+  // 定期檢查 token 變化（用於處理用戶在其他頁面登入/登出的情況）
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const token = Cookies.get('token');
+      if (token !== currentToken) {
+        setCurrentToken(token);
+      }
+    }, 1000); // 每秒檢查一次
+
+    return () => clearInterval(interval);
+  }, [currentToken]);
 
   const loadSavedCards = async () => {
     try {
