@@ -120,7 +120,7 @@ const MemberCard = () => {
 
   const downloadVCard = async () => {
     try {
-      const response = await axios.get(`/api/nfc-cards/vcard/${memberId}`, {
+      const response = await axios.get(`/api/nfc-cards/member/${memberId}/vcard`, {
         responseType: 'blob'
       });
       

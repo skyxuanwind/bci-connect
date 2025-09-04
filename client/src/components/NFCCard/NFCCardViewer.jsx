@@ -89,7 +89,7 @@ const NFCCardViewer = () => {
 
   const handleDownloadVCard = async () => {
     try {
-      const response = await axios.get(`/api/nfc-cards/vcard/${userId}`, {
+      const response = await axios.get(`/api/nfc-cards/member/${userId}/vcard`, {
         responseType: 'blob'
       });
       

@@ -145,6 +145,10 @@ app.use('/api/wishes', wishesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/ai-profiles', aiProfilesRoutes);
 
+// 新增 AI 聯絡人端點
+const aiContactsRoutes = require('./routes/ai-contacts');
+app.use('/api/ai', aiContactsRoutes);
+
 // 添加MongoDB NFC報到路由
 const nfcMongodbRoutes = require('./routes/nfc-mongodb');
 app.use('/api/nfc-checkin-mongo', nfcMongodbRoutes);

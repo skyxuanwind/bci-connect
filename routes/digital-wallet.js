@@ -75,7 +75,8 @@ router.get('/cards', authenticateToken, async (req, res) => {
         personal_note: row.notes || '',
         tags: row.tags || [],
         is_favorite: row.is_favorite,
-        folder_name: row.folder_name
+        folder_name: row.folder_name,
+        card_owner_id: row.card_owner_id
       });
     });
     

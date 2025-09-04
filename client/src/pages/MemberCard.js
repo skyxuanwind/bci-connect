@@ -417,7 +417,7 @@ const MemberCard = () => {
       }
 
       // 一般名片：沿用後端下載
-      const response = await axios.get(`/api/nfc-cards/vcard/${memberId}`, {
+      const response = await axios.get(`/api/nfc-cards/member/${memberId}/vcard`, {
         responseType: 'blob'
       });
       

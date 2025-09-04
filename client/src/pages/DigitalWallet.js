@@ -15,7 +15,8 @@ import {
   ArrowDownTrayIcon,
   CameraIcon,
   ChartBarIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import BusinessCardScanner from '../components/BusinessCardScanner';
@@ -32,6 +33,20 @@ const DigitalWallet = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [currentToken, setCurrentToken] = useState(Cookies.get('token'));
+  // 進階篩選/排序/AI 狀態
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagMatchMode, setTagMatchMode] = useState('any'); // any | all
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [hasNotes, setHasNotes] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('all'); // all | scanned | regular
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [contactPresence, setContactPresence] = useState('any'); // any | email | phone | email_or_phone | both
+  const [dateRange, setDateRange] = useState('any'); // any | 7d | 30d | 90d | 1y
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiData, setAiData] = useState(null);
+  const [aiError, setAiError] = useState('');
+  const [aiCurrentCard, setAiCurrentCard] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -185,6 +200,15 @@ const DigitalWallet = () => {
     } catch (error) {
       console.warn('同步到雲端失敗:', error);
     }
+  };
+
+  // 取得可用於 /member/:memberId 的參數：
+  // 掃描名片 -> 使用 card.id (scanned_*)；常規名片 -> 使用持有者的 userId
+  const getMemberIdForCard = (card) => {
+    if (!card) return '';
+    const idStr = String(card.id || '');
+    if (idStr.startsWith('scanned_') || card.is_scanned) return idStr;
+    return String(card.card_owner_id || card.owner_id || card.user_id || '');
   };
 
   const removeCard = async (cardId) => {
@@ -410,7 +434,41 @@ const DigitalWallet = () => {
 
   const downloadVCard = async (card) => {
     try {
-      const response = await fetch(`/api/nfc-cards/${card.id}/vcard`);
+      const memberParam = getMemberIdForCard(card);
+      if (!memberParam) {
+        alert('找不到名片擁有者資訊，無法下載 vCard');
+        return;
+      }
+
+      // 掃描名片：本地生成 vCard
+      if (String(memberParam).startsWith('scanned_')) {
+        const scanned = card.scanned_data || {};
+        const lines = [
+          'BEGIN:VCARD',
+          'VERSION:3.0',
+          `FN:${card.card_title || scanned.name || ''}`,
+          `ORG:${scanned.company || ''}`,
+          `TITLE:${scanned.title || ''}`,
+          `EMAIL:${scanned.email || ''}`,
+          `TEL:${scanned.phone || scanned.mobile || ''}`,
+          `URL:${scanned.website || ''}`,
+          `NOTE:${card.personal_note || ''}`,
+          'END:VCARD'
+        ];
+        const blob = new Blob([lines.join('\r\n')], { type: 'text/vcard' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${card.card_title || scanned.name || 'contact'}.vcf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        return;
+      }
+
+      // 常規名片：以 userId 呼叫 API 端點
+      const response = await fetch(`/api/nfc-cards/member/${memberParam}/vcard`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -421,6 +479,8 @@ const DigitalWallet = () => {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+      } else {
+        throw new Error('下載失敗');
       }
     } catch (error) {
       console.error('下載 vCard 失敗:', error);
@@ -528,11 +588,55 @@ const DigitalWallet = () => {
         card.card_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         card.card_subtitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         card.personal_note?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesTag = !filterTag || 
-        (card.tags && card.tags.includes(filterTag));
-      
-      return matchesSearch && matchesTag;
+
+      // 聚合單選與多選標籤
+      const aggTags = Array.from(new Set([...
+        (selectedTags || []),
+        ...(filterTag ? [filterTag] : [])
+      ]));
+      const cardTags = card.tags || [];
+      let matchesTags = true;
+      if (aggTags.length > 0) {
+        if (tagMatchMode === 'all') {
+          matchesTags = aggTags.every(t => cardTags.includes(t));
+        } else {
+          matchesTags = aggTags.some(t => cardTags.includes(t));
+        }
+      }
+
+      const matchesFavorites = !onlyFavorites || !!card.is_favorite;
+      const matchesNotes = !hasNotes || !!(card.personal_note && card.personal_note.trim());
+      const matchesType = typeFilter === 'all' 
+        ? true 
+        : (typeFilter === 'scanned' ? !!card.is_scanned : !card.is_scanned);
+
+      const companyVal = (card.contact_info?.company || card.company || '').toLowerCase();
+      const matchesCompany = !companyFilter || companyVal.includes(companyFilter.toLowerCase());
+
+      const emailVal = (card.contact_info?.email || card.email || '').trim();
+      const phoneVal = (card.contact_info?.phone || card.phone || card.mobile || '').trim();
+      let matchesPresence = true;
+      switch (contactPresence) {
+        case 'email': matchesPresence = !!emailVal; break;
+        case 'phone': matchesPresence = !!phoneVal; break;
+        case 'email_or_phone': matchesPresence = !!emailVal || !!phoneVal; break;
+        case 'both': matchesPresence = !!emailVal && !!phoneVal; break;
+        default: matchesPresence = true;
+      }
+
+      let matchesDate = true;
+      if (dateRange !== 'any') {
+        const now = Date.now();
+        const map = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+        const days = map[dateRange] || 0;
+        if (days > 0) {
+          const threshold = new Date(now - days * 24 * 60 * 60 * 1000);
+          const added = card.date_added ? new Date(card.date_added) : null;
+          matchesDate = added ? added >= threshold : false;
+        }
+      }
+
+      return matchesSearch && matchesTags && matchesFavorites && matchesNotes && matchesType && matchesCompany && matchesPresence && matchesDate;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -542,6 +646,23 @@ const DigitalWallet = () => {
           return new Date(b.date_added) - new Date(a.date_added);
         case 'last_viewed':
           return new Date(b.last_viewed || 0) - new Date(a.last_viewed || 0);
+        case 'favorite_recent': {
+          const favDiff = (b.is_favorite ? 1 : 0) - (a.is_favorite ? 1 : 0);
+          if (favDiff !== 0) return favDiff;
+          return new Date(b.date_added) - new Date(a.date_added);
+        }
+        case 'company': {
+          const ac = (a.contact_info?.company || a.company || '').toLowerCase();
+          const bc = (b.contact_info?.company || b.company || '').toLowerCase();
+          const cmp = ac.localeCompare(bc);
+          return cmp !== 0 ? cmp : new Date(b.date_added) - new Date(a.date_added);
+        }
+        case 'tag_count': {
+          const at = (a.tags || []).length;
+          const bt = (b.tags || []).length;
+          const diff = bt - at;
+          return diff !== 0 ? diff : new Date(b.date_added) - new Date(a.date_added);
+        }
         default:
           return 0;
       }
@@ -549,6 +670,74 @@ const DigitalWallet = () => {
 
   // 獲取所有標籤
   const allTags = [...new Set(savedCards.flatMap(card => card.tags || []))];
+
+  const toggleSelectTag = (tag) => {
+    setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterTag('');
+    setSelectedTags([]);
+    setTagMatchMode('any');
+    setOnlyFavorites(false);
+    setHasNotes(false);
+    setTypeFilter('all');
+    setCompanyFilter('');
+    setContactPresence('any');
+    setDateRange('any');
+  };
+
+  const openAISuggestion = async (card) => {
+    try {
+      setAiModalOpen(true);
+      setAiLoading(true);
+      setAiError('');
+      setAiData(null);
+      setAiCurrentCard(card);
+
+      const payload = {
+        name: card.card_title || '',
+        company: card.contact_info?.company || card.company || '',
+        title: card.card_subtitle || '',
+        email: card.contact_info?.email || card.email || '',
+        phone: card.contact_info?.phone || card.phone || card.mobile || '',
+        tags: card.tags || [],
+        notes: card.personal_note || '',
+        last_interaction: card.last_viewed || card.date_added || '',
+        goal: '建立關係並安排會談',
+        channelPreference: ''
+      };
+
+      const token = Cookies.get('token');
+      const resp = await axios.post('/api/ai/contacts/followup-suggestion', payload, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      if (resp?.data?.success) {
+        setAiData(resp.data.data);
+      } else {
+        setAiError(resp?.data?.message || '生成失敗');
+      }
+    } catch (err) {
+      console.error('生成 AI 建議失敗:', err);
+      setAiError(err?.response?.data?.message || err.message || '生成失敗');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const closeAISuggestion = () => {
+    setAiModalOpen(false);
+    setAiLoading(false);
+    setAiData(null);
+    setAiError('');
+    setAiCurrentCard(null);
+  };
+
+  const copyText = async (text) => {
+    try { await navigator.clipboard.writeText(text || ''); alert('已複製到剪貼簿'); } catch {}
+  };
 
   const handleEditNote = (cardId, currentNote) => {
     setEditingNote(cardId);
@@ -664,6 +853,9 @@ const DigitalWallet = () => {
                 <option value="date_added">新增時間</option>
                 <option value="name">名稱</option>
                 <option value="last_viewed">最後查看</option>
+                <option value="favorite_recent">收藏優先 + 最近新增</option>
+                <option value="company">公司名稱</option>
+                <option value="tag_count">標籤數量</option>
               </select>
             </div>
           </div>
@@ -834,7 +1026,7 @@ const DigitalWallet = () => {
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                   <div className="flex justify-between items-center">
                     <a
-                      href={`/member/${card.id}`}
+                      href={`/member/${getMemberIdForCard(card)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
@@ -872,6 +1064,14 @@ const DigitalWallet = () => {
                       </button>
                       
                       <button
+                        onClick={() => openAISuggestion(card)}
+                        className="p-1 text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                        title="AI 跟進建議"
+                      >
+                        <SparklesIcon className="h-4 w-4" />
+                      </button>
+                      
+                      <button
                         onClick={() => downloadVCard(card)}
                         className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
                         title="下載 vCard"
@@ -900,6 +1100,82 @@ const DigitalWallet = () => {
           onScanComplete={handleScanComplete}
           onClose={() => setShowScanner(false)}
         />
+      )}
+
+      {/* AI 跟進建議 Modal */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-900 bg-opacity-50" onClick={closeAISuggestion}></div>
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">AI 跟進建議</h3>
+              <button onClick={closeAISuggestion} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+
+            {aiLoading && (
+              <div className="text-gray-600">正在生成建議，請稍候...</div>
+            )}
+
+            {!aiLoading && aiError && (
+              <div className="text-red-600 text-sm">{aiError}</div>
+            )}
+
+            {!aiLoading && aiData && (
+              <div className="space-y-4">
+                {Array.isArray(aiData.suggestions) && aiData.suggestions.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2">建議：</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                      {aiData.suggestions.map((s, idx) => (
+                        <li key={idx}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {aiData.draft && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">建議管道：{aiData.draft.channel || 'message'}</div>
+                      <div className="space-x-2">
+                        {aiData.draft.subject ? (
+                          <>
+                            <button onClick={() => copyText(aiData.draft.subject)} className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">複製主旨</button>
+                            <button onClick={() => copyText(`${aiData.draft.subject}\n\n${aiData.draft.message || ''}`)} className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">複製主旨+內容</button>
+                          </>
+                        ) : null}
+                        <button onClick={() => copyText(aiData.draft.message || '')} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200">一鍵複製</button>
+                      </div>
+                    </div>
+                    {aiData.draft.subject ? (
+                      <input value={aiData.draft.subject} readOnly className="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+                    ) : null}
+                    <textarea value={aiData.draft.message || ''} readOnly rows={8} className="w-full px-3 py-2 border border-gray-300 rounded text-sm"></textarea>
+                  </div>
+                )}
+
+                {Array.isArray(aiData.next_steps) && aiData.next_steps.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2">下一步：</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                      {aiData.next_steps.map((s, idx) => (
+                        <li key={idx}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {aiData.followup_timeline && (
+                  <div className="text-xs text-gray-600">建議節奏：{aiData.followup_timeline}</div>
+                )}
+              </div>
+            )}
+
+            <div className="mt-4 flex justify-end">
+              <button onClick={closeAISuggestion} className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">關閉</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

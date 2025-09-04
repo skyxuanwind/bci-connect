@@ -182,7 +182,7 @@ const DigitalCardWallet = () => {
 
   const downloadVCard = async (bookmark) => {
     try {
-      const response = await axios.get(`/api/nfc-cards/vcard/${bookmark.userId}`, {
+      const response = await axios.get(`/api/nfc-cards/member/${bookmark.userId}/vcard`, {
         responseType: 'blob'
       });
       
