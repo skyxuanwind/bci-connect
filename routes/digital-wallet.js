@@ -458,4 +458,28 @@ router.get('/stats', authenticateToken, async (req, res) => {
   }
 });
 
+// 清空數位名片夾
+router.delete('/clear', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // 刪除用戶的所有名片收藏記錄
+    const result = await pool.query(
+      'DELETE FROM nfc_card_collections WHERE user_id = $1 RETURNING id',
+      [userId]
+    );
+    
+    const deletedCount = result.rows.length;
+    
+    res.json({ 
+      success: true, 
+      message: `已清空數位名片夾，共移除 ${deletedCount} 張名片`,
+      deleted_count: deletedCount
+    });
+  } catch (error) {
+    console.error('清空數位名片夾失敗:', error);
+    res.status(500).json({ success: false, message: '清空數位名片夾失敗' });
+  }
+});
+
 module.exports = router;

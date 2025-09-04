@@ -14,7 +14,8 @@ import {
   FunnelIcon,
   ArrowDownTrayIcon,
   CameraIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import BusinessCardScanner from '../components/BusinessCardScanner';
@@ -141,6 +142,47 @@ const DigitalWallet = () => {
       saveToLocalStorage(updatedCards);
     } catch (error) {
       console.error('刪除名片失敗:', error);
+    }
+  };
+
+  const clearAllCards = async () => {
+    if (savedCards.length === 0) {
+      alert('名片夾已經是空的了！');
+      return;
+    }
+
+    const confirmed = window.confirm(`確定要清空數位名片夾嗎？這將移除所有 ${savedCards.length} 張名片，此操作無法復原。`);
+    if (!confirmed) return;
+
+    try {
+      const token = Cookies.get('token');
+      
+      // 如果有登入，從雲端清空
+      if (token) {
+        try {
+          const response = await axios.delete('/api/digital-wallet/clear', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (response.data.success) {
+            alert(response.data.message);
+          }
+        } catch (error) {
+          console.warn('從雲端清空失敗:', error);
+          alert('雲端清空失敗，僅清空本地名片夾');
+        }
+      }
+      
+      // 清空本地存儲
+      setSavedCards([]);
+      saveToLocalStorage([]);
+      
+      if (!token) {
+        alert(`已清空數位名片夾，共移除 ${savedCards.length} 張名片`);
+      }
+    } catch (error) {
+      console.error('清空名片夾失敗:', error);
+      alert('清空失敗，請稍後再試');
     }
   };
 
@@ -506,6 +548,16 @@ const DigitalWallet = () => {
                   className="hidden"
                 />
               </label>
+              
+              {savedCards.length > 0 && (
+                <button
+                  onClick={clearAllCards}
+                  className="flex items-center px-4 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                >
+                  <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+                  清空名片夾
+                </button>
+              )}
             </div>
           </div>
         </div>
