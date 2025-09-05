@@ -24,13 +24,77 @@ const CheckInScanner = () => {
   const html5QrcodeScannerRef = useRef(null);
   const processedSseCheckinsRef = useRef(new Set());
   const modalTimeoutRef = useRef(null);
+  // 新增：SSE 連線狀態與最後一次 NFC 事件
+  const [sseConnected, setSseConnected] = useState(false);
+  const sseRef = useRef(null);
+  const [lastNfcEvent, setLastNfcEvent] = useState(null);
 
   useEffect(() => {
     fetchEvents();
     
+    // 啟動 SSE 連線：接收來自後端（本地 Gateway → 雲端 API）推播的 NFC 報到事件
+    try {
+      const es = new EventSource('/api/nfc-checkin-mongo/events');
+      sseRef.current = es;
+
+      es.onopen = () => {
+        setSseConnected(true);
+        addDebugInfo('SSE 連線已建立（NFC 報到事件）');
+      };
+
+      es.onerror = (e) => {
+        setSseConnected(false);
+        addDebugInfo('SSE 連線中斷，將自動重試');
+      };
+
+      es.addEventListener('nfc-checkin', (event) => {
+        try {
+          const data = JSON.parse(event.data || '{}');
+          if (!data || !data.id) return;
+          if (processedSseCheckinsRef.current.has(data.id)) return; // 去重
+          processedSseCheckinsRef.current.add(data.id);
+
+          setLastNfcEvent(data);
+          addDebugInfo(`收到 NFC 報到事件：${data.member?.name || data.cardUid}`);
+
+          // 將事件呈現在右側結果與成功彈窗
+          const successPayload = {
+            success: true,
+            message: data.member?.name ? `${data.member.name} 已完成 NFC 報到` : `NFC 卡片 ${data.cardUid} 已完成報到`,
+            user: data.member || null,
+            event: null // 後端已同步至出席管理（若有近期活動），此處僅呈現即時資訊
+          };
+          setScanResult(successPayload);
+
+          setSuccessModalData({
+            user: successPayload.user,
+            event: successPayload.event,
+            method: 'NFC（Gateway）',
+            timestamp: new Date().toLocaleString('zh-TW')
+          });
+          setShowSuccessModal(true);
+
+          if (modalTimeoutRef.current) clearTimeout(modalTimeoutRef.current);
+          modalTimeoutRef.current = setTimeout(() => {
+            setShowSuccessModal(false);
+            setSuccessModalData(null);
+            setScanResult(null);
+          }, 3000);
+        } catch (e) {
+          addDebugInfo('解析 NFC SSE 事件失敗');
+        }
+      });
+    } catch (e) {
+      addDebugInfo('建立 SSE 連線失敗');
+    }
+
     return () => {
       if (html5QrcodeScannerRef.current) {
         html5QrcodeScannerRef.current.clear();
+      }
+      if (sseRef.current) {
+        try { sseRef.current.close(); } catch {}
+        sseRef.current = null;
       }
     };
   }, [user]);
@@ -202,31 +266,46 @@ const CheckInScanner = () => {
     setIsScanning(true);
     
     try {
-      const scanner = new Html5QrcodeScanner(
-        "qr-reader",
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-        },
-        false
-      );
-      
-      scanner.render(
-        (decodedText) => {
-          handleQRCodeScan(decodedText);
-          scanner.clear();
+      // 延後初始化，確保 #qr-reader 已經渲染在 DOM
+      setTimeout(() => {
+        try {
+          const el = document.getElementById('qr-reader');
+          if (!el) {
+            setScannerError('找不到掃描區域，請重試');
+            setIsScanning(false);
+            return;
+          }
+
+          const scanner = new Html5QrcodeScanner(
+            'qr-reader',
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+              supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+              formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+            },
+            false
+          );
+          
+          scanner.render(
+            (decodedText) => {
+              handleQRCodeScan(decodedText);
+              scanner.clear();
+              setIsScanning(false);
+            },
+            (error) => {
+              // 忽略持續的掃描錯誤
+            }
+          );
+          
+          html5QrcodeScannerRef.current = scanner;
+          addDebugInfo('QR Code 掃描器已啟動');
+        } catch (err) {
+          console.error('啟動 QR 掃描器失敗:', err);
+          setScannerError('無法啟動相機，請檢查權限設定');
           setIsScanning(false);
-        },
-        (error) => {
-          // 忽略持續的掃描錯誤
         }
-      );
-      
-      html5QrcodeScannerRef.current = scanner;
-      addDebugInfo('QR Code 掃描器已啟動');
-      
+      }, 50);
     } catch (error) {
       console.error('啟動 QR 掃描器失敗:', error);
       setScannerError('無法啟動相機，請檢查權限設定');
@@ -288,6 +367,9 @@ const CheckInScanner = () => {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">📱 QR Code 掃描</h2>
               
               <div className="text-center">
+                {/* 永遠渲染掃描器容器，但非掃描時隱藏以避免初始化找不到元素 */}
+                <div id="qr-reader" className="mb-4" style={{ display: isScanning ? 'block' : 'none' }}></div>
+
                 {!isScanning ? (
                   <div>
                     <div className="mb-4">
@@ -305,7 +387,6 @@ const CheckInScanner = () => {
                   </div>
                 ) : (
                   <div>
-                    <div id="qr-reader" className="mb-4"></div>
                     <button
                       onClick={stopQRScanner}
                       className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
@@ -326,7 +407,18 @@ const CheckInScanner = () => {
             {/* 新增：NFC 名片感應（外接讀卡機輸入網址） */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">💳 NFC 名片感應</h2>
-              <p className="text-gray-600 text-sm mb-3">將外接 NFC 感應器連至電腦，感應會員名片後，裝置通常會以鍵盤輸入的方式輸出電子名片網址。請確保下方輸入框保持聚焦，感應後系統將自動帶入網址並可按 Enter 提交。</p>
+              <p className="text-gray-600 text-sm mb-3">將外接 NFC 感應器連至電腦，由後端服務（Node.js / Python）透過 ACR122U 讀取卡片 UID，寫入資料庫並以 SSE 推播到前端。此頁面會自動接收並顯示報到結果；若名片內含電子名片網址，也可使用下方輸入框進行報到。</p>
+
+              {/* SSE 連線狀態 */}
+              <div className="flex items-center gap-2 mb-3 text-sm">
+                <span className={`inline-block w-2 h-2 rounded-full ${sseConnected ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                <span className="text-gray-700">NFC 即時通道（SSE）：{sseConnected ? '已連線' : '未連線 / 重試中'}</span>
+                {lastNfcEvent && (
+                  <span className="ml-auto text-gray-500">最近一次：{lastNfcEvent.member?.name || lastNfcEvent.cardUid}</span>
+                )}
+              </div>
+
+              <p className="text-gray-600 text-sm mb-3">外接裝置若會模擬鍵盤輸出網址，也可在下方輸入框直接貼上/自動輸入後按 Enter 送出：</p>
               <div className="flex items-center gap-2">
                 <input
                   ref={nfcInputRef}
