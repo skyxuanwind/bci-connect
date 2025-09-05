@@ -21,6 +21,14 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari and Opera */
   }
+  /* Alias utility for hiding scrollbar (requested as no-scrollbar) */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;             /* Chrome, Safari and Opera */
+  }
   
   /* Button Components */
   .btn-primary {

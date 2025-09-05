@@ -912,10 +912,10 @@ const DigitalWallet = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap py-2 -mx-2 px-2 no-scrollbar snap-x snap-mandatory">
               <button
                 onClick={() => setShowScanner(true)}
-                className="flex items-center px-4 py-2 text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                className="shrink-0 flex items-center px-3 py-1.5 text-xs sm:text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors snap-start"
               >
                 <CameraIcon className="h-4 w-4 mr-2" />
                 掃描名片
@@ -923,7 +923,7 @@ const DigitalWallet = () => {
               
               <button
                 onClick={goToAnalytics}
-                className="flex items-center px-4 py-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                className="shrink-0 flex items-center px-3 py-1.5 text-xs sm:text-sm text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors snap-start"
               >
                 <ChartBarIcon className="h-4 w-4 mr-2" />
                 數據分析
@@ -931,13 +931,13 @@ const DigitalWallet = () => {
               
               <button
                 onClick={exportAllCards}
-                className="flex items-center px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                className="shrink-0 flex items-center px-3 py-1.5 text-xs sm:text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors snap-start"
               >
                 <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
                 匯出備份
               </button>
               
-              <label className="flex items-center px-4 py-2 text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors cursor-pointer">
+              <label className="shrink-0 flex items-center px-3 py-1.5 text-xs sm:text-sm text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors cursor-pointer snap-start">
                 <ArrowDownTrayIcon className="h-4 w-4 mr-2 rotate-180" />
                 匯入名片
                 <input
@@ -951,7 +951,7 @@ const DigitalWallet = () => {
               {savedCards.length > 0 && (
                 <button
                   onClick={clearAllCards}
-                  className="flex items-center px-4 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  className="shrink-0 flex items-center px-3 py-1.5 text-xs sm:text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors snap-start"
                 >
                   <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
                   清空名片夾
@@ -967,7 +967,7 @@ const DigitalWallet = () => {
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* 搜尋框 */}
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 max-w-md min-w-0">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
@@ -979,10 +979,10 @@ const DigitalWallet = () => {
             </div>
             
             {/* 篩選和排序 */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap sm:gap-3 sm:overflow-visible overflow-x-auto whitespace-nowrap no-scrollbar snap-x sm:snap-none snap-mandatory">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-3 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="shrink-0 flex items-center px-3 py-1.5 text-xs sm:text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <FunnelIcon className="h-4 w-4 mr-2" />
                 篩選
@@ -991,7 +991,7 @@ const DigitalWallet = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="shrink-0 px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="date_added">新增時間</option>
                 <option value="name">名稱</option>
@@ -1001,7 +1001,7 @@ const DigitalWallet = () => {
                 <option value="tag_count">標籤數量</option>
               </select>
             </div>
-          </div>
+           </div>
           
           {/* 展開的篩選選項 */}
           {showFilters && (
@@ -1144,9 +1144,9 @@ const DigitalWallet = () => {
                   
                   {/* 聯絡資訊預覽 */}
                   <div className="space-y-2 text-sm text-gray-600">
-                    {card.contact_info?.phone && (
+                     {card.contact_info?.phone && (
                       <div className="flex items-center">
-                        <PhoneIcon className="h-4 w-4 mr-2" />
+                         <PhoneIcon className="h-4 w-4 mr-2" />
                         <a href={`tel:${(card.contact_info.phone || '').replace(/[^\d+]/g,'')}`} className="text-blue-600 hover:underline">
                           {card.contact_info.phone}
                         </a>
@@ -1160,24 +1160,40 @@ const DigitalWallet = () => {
                         </a>
                       </div>
                     )}
-                    {card.contact_info?.company && (
-                      <div className="flex items-center">
-                        <BuildingOfficeIcon className="h-4 w-4 mr-2" />
-                        <span>{card.contact_info.company}</span>
+                    {card.contact_info?.phone && (
+                      <div className="flex items-center min-w-0">
+                        <PhoneIcon className="h-4 w-4 mr-2" />
+                        <a href={`tel:${(card.contact_info.phone || '').replace(/[^\d+]/g,'')}`} className="text-blue-600 hover:underline break-all truncate">
+                          {card.contact_info.phone}
+                        </a>
                       </div>
                     )}
-                    {(() => {
-                      const website = card.website || card.scanned_data?.website;
-                      if (!website) return null;
-                      return (
-                        <div className="flex items-center">
-                          <GlobeAltIcon className="h-4 w-4 mr-2" />
-                          <a href={ensureProtocol(website)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            {website}
-                          </a>
-                        </div>
-                      );
-                    })()}
+                    {card.contact_info?.email && (
+                      <div className="flex items-center min-w-0">
+                        <EnvelopeIcon className="h-4 w-4 mr-2" />
+                        <a href={`mailto:${card.contact_info.email}`} className="text-blue-600 hover:underline break-all truncate">
+                          {card.contact_info.email}
+                        </a>
+                      </div>
+                    )}
+                     {card.contact_info?.company && (
+                       <div className="flex items-center">
+                         <BuildingOfficeIcon className="h-4 w-4 mr-2" />
+                         <span>{card.contact_info.company}</span>
+                       </div>
+                     )}
+                     {(() => {
+                       const website = card.website || card.scanned_data?.website;
+                       if (!website) return null;
+                       return (
+                        <div className="flex items-center min-w-0">
+                           <GlobeAltIcon className="h-4 w-4 mr-2" />
+                          <a href={ensureProtocol(website)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all truncate">
+                             {website}
+                           </a>
+                         </div>
+                       );
+                     })()}
                   </div>
                 </div>
                 
