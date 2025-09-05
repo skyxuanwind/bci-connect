@@ -483,39 +483,56 @@ router.put('/:id', authenticateToken, requireAdmin, upload.single('poster'), asy
 
 // 刪除活動 (僅管理員)
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  let client;
   try {
     const { id } = req.params;
-    
-    // Get event to check for poster image
-    const eventResult = await pool.query('SELECT poster_image_url FROM events WHERE id = $1', [id]);
-    
+    client = await pool.connect();
+
+    await client.query('BEGIN');
+
+    // 先檢查活動是否存在，並鎖定該列以避免併發刪除問題
+    const eventResult = await client.query('SELECT poster_image_url FROM events WHERE id = $1 FOR UPDATE', [id]);
+
     if (eventResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({
         success: false,
         message: '活動不存在'
       });
     }
-    
+
     const posterImageUrl = eventResult.rows[0].poster_image_url;
-    
-    // 先刪除相關的報名記錄
-    await pool.query('DELETE FROM event_registrations WHERE event_id = $1', [id]);
-    
-    // 再刪除活動
-    await pool.query('DELETE FROM events WHERE id = $1', [id]);
-    
-    // 已改用 Cloudinary，不再刪本機檔案
-    
-    res.json({
+
+    // 先刪除相關的報名記錄（會員報名）
+    await client.query('DELETE FROM event_registrations WHERE event_id = $1', [id]);
+
+    // 刪除來賓報名記錄（guest_registrations）
+    await client.query('DELETE FROM guest_registrations WHERE event_id = $1', [id]);
+
+    // 刪除出席紀錄（attendance_records）
+    await client.query('DELETE FROM attendance_records WHERE event_id = $1', [id]);
+
+    // 最後刪除活動本身
+    await client.query('DELETE FROM events WHERE id = $1', [id]);
+
+    await client.query('COMMIT');
+
+    // 已改用 Cloudinary，不在此刪除雲端圖片（僅保留 URL），如需可後續補充
+    return res.json({
       success: true,
       message: '活動刪除成功'
     });
   } catch (error) {
+    if (client) {
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore rollback error */ }
+    }
     console.error('Error deleting event:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: '刪除活動失敗'
     });
+  } finally {
+    if (client) client.release();
   }
 });
 
