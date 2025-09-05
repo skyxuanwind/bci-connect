@@ -77,6 +77,7 @@ router.get('/cards', authenticateToken, async (req, res) => {
         ncc.last_viewed,
         ncc.scanned_data,
         ncc.is_scanned,
+        ncc.image_url,
         nc.id as card_id,
         nc.card_title,
         nc.card_subtitle,
@@ -114,7 +115,8 @@ router.get('/cards', authenticateToken, async (req, res) => {
           is_favorite: row.is_favorite,
           folder_name: row.folder_name,
           is_scanned: true,
-          scanned_data: data
+          scanned_data: data,
+          image_url: data.image_url || row.image_url || null
         };
       }
       return ({
@@ -165,7 +167,8 @@ router.get('/cards', authenticateToken, async (req, res) => {
         is_favorite: false,
         folder_name: null,
         is_scanned: true,
-        scanned_data: data
+        scanned_data: data,
+        image_url: data.image_url || null
       };
     });
 
