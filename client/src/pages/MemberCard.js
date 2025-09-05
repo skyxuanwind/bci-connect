@@ -140,13 +140,17 @@ const MemberCard = () => {
         case 'video':
           data = {
             title: row.title || row.content_data?.title || '',
-            url: row.url || row.content_data?.url || ''
+            type: row.video_type || row.content_data?.type || (row.url ? 'youtube' : (row.file_url || row.file || row.content_data?.file ? 'file' : '')),
+            url: row.url || row.content_data?.url || '',
+            videoId: row.video_id || row.content_data?.videoId || '',
+            file: row.file_url || row.file || row.content_data?.file || ''
           };
           break;
         case 'image':
           data = {
+            title: row.title || row.content_data?.title || '',
             url: row.image_url || row.url || row.content_data?.url || '',
-            alt: row.title || row.content_data?.alt || '',
+            alt: row.content_data?.alt || row.title || '',
             caption: row.content_data?.caption || ''
           };
           break;
@@ -157,6 +161,7 @@ const MemberCard = () => {
         }
         case 'map':
           data = {
+            title: row.title || row.content_data?.title || '',
             address: row.map_address || row.content_data?.address || '',
             map_url: row.url || row.content_data?.map_url || '',
             coordinates: row.map_coordinates || row.content_data?.coordinates || null
@@ -702,9 +707,9 @@ const MemberCard = () => {
           <div key={block.id} className="content-block">
             <h3 className="block-title">{block.content_data.title}</h3>
             <div className="video-container">
-              {block.content_data.type === 'youtube' && block.content_data.url ? (
+              {block.content_data.type === 'youtube' && (block.content_data.url || block.content_data.videoId) ? (
                 <iframe
-                  src={getYouTubeEmbedUrl(block.content_data.url)}
+                  src={block.content_data.videoId ? `https://www.youtube.com/embed/${block.content_data.videoId}` : getYouTubeEmbedUrl(block.content_data.url)}
                   title={block.content_data.title}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -735,7 +740,7 @@ const MemberCard = () => {
                 <img 
                   src={block.content_data.url} 
                   alt={block.content_data.alt || '圖片'}
-                  className="rounded-lg w-full object-cover"
+                  className="rounded-lg w-full object-contain bg-gray-50"
                   style={{ maxHeight: '400px' }}
                 />
               ) : (
@@ -823,8 +828,23 @@ const MemberCard = () => {
   };
 
   const getYouTubeEmbedUrl = (url) => {
-    const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-    return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : url;
+    if (!url) return '';
+    // 支援多種常見格式：
+    // https://www.youtube.com/watch?v=VIDEO_ID
+    // https://youtu.be/VIDEO_ID
+    // https://www.youtube.com/embed/VIDEO_ID
+    // 以及可能附帶的參數
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#/]+)/,
+      /youtube\.com\/embed\/([^&\n?#/]+)/,
+      /youtube\.com\/shorts\/([^&\n?#/]+)/
+    ];
+    let videoId = null;
+    for (const p of patterns) {
+      const m = url.match(p);
+      if (m && m[1]) { videoId = m[1]; break; }
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
   };
 
   const renderContactInfo = () => {
@@ -1104,8 +1124,7 @@ const MemberCard = () => {
                     <h4 className="text-sm font-semibold text-gray-800 mb-2">建議：</h4>
                     <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
                       {aiData.suggestions.map((s, idx) => (
-                      -                        <li key={idx}>{s}</li>
-                      +                        <li key={`${String(s).slice(0,30)}-${idx}`}>{s}</li>
+                        <li key={`${String(s).slice(0,30)}-${idx}`}>{s}</li>
                       ))}
                     </ul>
                   </div>

@@ -28,6 +28,30 @@ import {
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../styles/templates.css';
 
+// 解析 YouTube 影片網址取得 videoId（支援 watch?v=、youtu.be、embed、shorts 等格式）
+const getYouTubeVideoId = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#\/]+)/,
+    /youtube\.com\/embed\/([^&\n?#\/]+)/,
+    /youtube\.com\/shorts\/([^&\n?#\/]+)/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m && m[1]) return m[1];
+  }
+  // 退而求其次：嘗試最後一段 path
+  try {
+    const u = new URL(url);
+    const v = u.searchParams.get('v');
+    if (v) return v;
+    const parts = u.pathname.split('/').filter(Boolean);
+    return parts[parts.length - 1] || '';
+  } catch {
+    return '';
+  }
+};
+
 const NFCCardEditor = () => {
   const { user } = useAuth();
   const [cardConfig, setCardConfig] = useState(null);
@@ -64,7 +88,10 @@ const NFCCardEditor = () => {
         case 'video':
           data = {
             title: row.title || row.content_data?.title || '',
-            url: row.url || row.content_data?.url || ''
+            type: row.video_type || row.content_data?.type || (row.url ? 'youtube' : ((row.file_url || row.file || row.content_data?.file) ? 'upload' : 'youtube')),
+            url: row.url || row.content_data?.url || '',
+            file: row.file_url || row.file || row.content_data?.file || '',
+            videoId: row.video_id || row.content_data?.videoId || getYouTubeVideoId(row.url || row.content_data?.url || '')
           };
           break;
         case 'image':
@@ -241,7 +268,7 @@ const NFCCardEditor = () => {
       case 'link':
         return { title: '連結標題', url: 'https://example.com' };
       case 'video':
-        return { title: '影片標題', type: 'youtube', url: '', file: '' };
+        return { title: '影片標題', type: 'youtube', url: '', file: '', videoId: '' };
       case 'image':
         return { title: '圖片標題', url: '', alt: '圖片描述' };
       case 'social':
@@ -585,12 +612,12 @@ const NFCCardEditor = () => {
 
 // 區塊內容編輯器組件
 const BlockContentEditor = ({ block, onSave, onCancel }) => {
-  const [data, setData] = useState(block.content_data);
-  
+  const [data, setData] = useState(block.content_data || {});
+
   const handleSave = () => {
     onSave(data);
   };
-  
+
   const renderEditor = () => {
     switch (block.content_type) {
       case 'text':
@@ -655,7 +682,10 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
               <input
                 type="text"
                 value={data.url || ''}
-                onChange={(e) => setData({ ...data, url: e.target.value })}
+                onChange={(e) => {
+                  const url = e.target.value;
+                  setData({ ...data, url, videoId: getYouTubeVideoId(url) });
+                }}
                 placeholder="YouTube 網址 (例如: https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
               />
@@ -935,7 +965,7 @@ const BlockPreview = ({ block }) => {
           </div>
           <div className="text-gray-500 text-xs">
             {content_data?.type === 'youtube' ? (
-              content_data?.url ? (
+              (content_data?.url || content_data?.videoId) ? (
                 <div className="flex items-center gap-1">
                   <span>📺</span>
                   <span>YouTube 影片</span>
@@ -978,7 +1008,7 @@ const BlockPreview = ({ block }) => {
             </div>
           )}
           {content_data?.alt && (
-            <div className="text-gray-400 text-xs">
+            <div className="text-gray-400 text-xs italic">
               {content_data.alt}
             </div>
           )}
