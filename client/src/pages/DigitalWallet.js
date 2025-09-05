@@ -767,14 +767,16 @@ const DigitalWallet = () => {
   const normalizeImageUrl = (url) => {
     if (!url) return null;
     
-    // 已是絕對 URL，直接返回
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    // 絕對 URL：若為 http 則轉 https
+    if (url.startsWith('http://')) {
+      return url.replace(/^http:/, 'https:');
+    }
+    if (url.startsWith('https://')) {
       return url;
     }
     
     // 相對路徑轉絕對路徑 - 優先使用 HTTPS
     const baseUrl = process.env.REACT_APP_API_URL || window.location.origin;
-    // 在生產環境強制使用 HTTPS
     const secureBaseUrl = baseUrl.replace(/^http:/, 'https:');
     return `${secureBaseUrl.replace(/\/$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
   };
