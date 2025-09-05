@@ -772,9 +772,11 @@ const DigitalWallet = () => {
       return url;
     }
     
-    // 相對路徑轉絕對路徑
+    // 相對路徑轉絕對路徑 - 優先使用 HTTPS
     const baseUrl = process.env.REACT_APP_API_URL || window.location.origin;
-    return `${baseUrl.replace(/\/$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
+    // 在生產環境強制使用 HTTPS
+    const secureBaseUrl = baseUrl.replace(/^http:/, 'https:');
+    return `${secureBaseUrl.replace(/\/$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
   };
   const linkifyText = (text) => {
     if (!text) return null;
@@ -1098,6 +1100,17 @@ const DigitalWallet = () => {
                         alt="掃描名片"
                         className="w-full h-full object-cover"
                         onError={(e) => {
+                          // 嘗試 HTTPS 重試一次
+                          const currentSrc = e.currentTarget.src;
+                          if (currentSrc.startsWith('http://')) {
+                            const httpsSrc = currentSrc.replace(/^http:/, 'https:');
+                            if (e.currentTarget.dataset.retried !== 'true') {
+                              e.currentTarget.dataset.retried = 'true';
+                              e.currentTarget.src = httpsSrc;
+                              return;
+                            }
+                          }
+                          
                           // 圖片載入失敗時顯示降級 UI
                           const container = e.currentTarget.parentElement;
                           if (!container) return;
@@ -1163,7 +1176,7 @@ const DigitalWallet = () => {
                     {card.contact_info?.phone && (
                       <div className="flex items-center min-w-0">
                         <PhoneIcon className="h-4 w-4 mr-2" />
-                        <a href={`tel:${(card.contact_info.phone || '').replace(/[^\d+]/g,'')}`} className="text-blue-600 hover:underline break-all truncate">
+                        <a href={`tel:${(card.contact_info.phone || '').replace(/[^\d+]/g,'')}`} className="text-blue-600 hover:underline break-all">
                           {card.contact_info.phone}
                         </a>
                       </div>
@@ -1171,7 +1184,7 @@ const DigitalWallet = () => {
                     {card.contact_info?.email && (
                       <div className="flex items-center min-w-0">
                         <EnvelopeIcon className="h-4 w-4 mr-2" />
-                        <a href={`mailto:${card.contact_info.email}`} className="text-blue-600 hover:underline break-all truncate">
+                        <a href={`mailto:${card.contact_info.email}`} className="text-blue-600 hover:underline break-all">
                           {card.contact_info.email}
                         </a>
                       </div>
@@ -1188,7 +1201,7 @@ const DigitalWallet = () => {
                        return (
                         <div className="flex items-center min-w-0">
                            <GlobeAltIcon className="h-4 w-4 mr-2" />
-                          <a href={ensureProtocol(website)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all truncate">
+                          <a href={ensureProtocol(website)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
                              {website}
                            </a>
                          </div>
