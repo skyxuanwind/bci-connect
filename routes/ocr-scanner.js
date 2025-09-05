@@ -1,29 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const axios = require('axios');
 const FormData = require('form-data');
 const sharp = require('sharp');
+const { cloudinary } = require('../config/cloudinary');
 
-// 配置multer用於圖片上傳
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../uploads/business-cards');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'business-card-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
 
+
+// 使用記憶體緩衝上傳，不落地
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -34,73 +21,67 @@ const upload = multer({
   }
 });
 
-// 將上傳的原始圖片正規化為適合 OCR 的 JPEG（自動旋轉、縮放、壓縮、處理 HEIC）
-async function normalizeImageForOCR(originalPath) {
-  const normalizedPath = originalPath + '.normalized.jpg';
+// 將上傳的原始圖片正規化為適合 OCR 的 JPEG（Buffer 版，不落地）
+async function normalizeImageForOCRBuffer(originalBuffer) {
   try {
-    const image = sharp(originalPath, { failOn: 'none' }).rotate(); // 依 EXIF 自動旋轉
+    const image = sharp(originalBuffer, { failOn: 'none' }).rotate(); // 依 EXIF 自動旋轉
     const meta = await image.metadata();
 
-    const maxDim = 2000; // 限制最大邊，避免超高解析度影響 OCR
+    const maxDim = 2000; // 限制最大邊
     const needResize = (meta.width && meta.width > maxDim) || (meta.height && meta.height > maxDim);
 
-    let pipeline = sharp(originalPath, { failOn: 'none' }).rotate();
+    let pipeline = sharp(originalBuffer, { failOn: 'none' }).rotate();
     if (needResize) {
       pipeline = pipeline.resize({ width: maxDim, height: maxDim, fit: 'inside', withoutEnlargement: true });
     }
 
-    await pipeline.jpeg({ quality: 85, mozjpeg: true }).toFile(normalizedPath);
-
-    return { path: normalizedPath, created: true };
+    const outBuffer = await pipeline.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+    return { buffer: outBuffer, created: true };
   } catch (err) {
-    console.warn('影像正規化失敗，改用原始檔處理:', err.message);
-    return { path: originalPath, created: false };
+    console.warn('影像正規化失敗，改用原始 Buffer 處理:', err.message);
+    return { buffer: originalBuffer, created: false };
   }
 }
 
-// 產生多組預處理影像以提升 OCR 成功率
-async function preprocessForOCR(imagePath) {
+// 產生多組預處理影像（Buffer 版，不落地）
+async function preprocessForOCRBuffers(imageBuffer) {
   const variants = [];
-  const baseName = imagePath.replace(/\.(jpg|jpeg|png)$/i, '');
   // 變體1：灰階 + 正規化 + 銳利化 + 中值去噪
   try {
-    const out1 = baseName + '.pre1.jpg';
-    await sharp(imagePath, { failOn: 'none' })
+    const out1 = await sharp(imageBuffer, { failOn: 'none' })
       .flatten({ background: '#ffffff' })
       .grayscale()
       .normalize()
       .median(1)
       .sharpen()
       .jpeg({ quality: 90, mozjpeg: true })
-      .toFile(out1);
+      .toBuffer();
     variants.push(out1);
   } catch (e) {
     console.warn('預處理變體1失敗:', e.message);
   }
   // 變體2：灰階 + 正規化 + 對比微增強 + 銳利化
   try {
-    const out2 = baseName + '.pre2.jpg';
-    await sharp(imagePath, { failOn: 'none' })
+    const out2 = await sharp(imageBuffer, { failOn: 'none' })
       .flatten({ background: '#ffffff' })
       .grayscale()
       .normalize()
       .linear(1.15, -12)
       .sharpen()
       .jpeg({ quality: 90, mozjpeg: true })
-      .toFile(out2);
+      .toBuffer();
     variants.push(out2);
   } catch (e) {
     console.warn('預處理變體2失敗:', e.message);
   }
-  // 變體3：灰階 + 二值化（適合高對比黑白名片）
+  // 變體3：灰階 + 二值化
   try {
-    const out3 = baseName + '.pre3.jpg';
-    await sharp(imagePath, { failOn: 'none' })
+    const out3 = await sharp(imageBuffer, { failOn: 'none' })
       .flatten({ background: '#ffffff' })
       .grayscale()
       .threshold(180)
       .jpeg({ quality: 95, mozjpeg: true })
-      .toFile(out3);
+      .toBuffer();
     variants.push(out3);
   } catch (e) {
     console.warn('預處理變體3失敗:', e.message);
@@ -108,35 +89,27 @@ async function preprocessForOCR(imagePath) {
   return variants;
 }
 
-// OCR名片掃描API
+// OCR名片掃描API（不落地版本）
 router.post('/scan-business-card', upload.single('cardImage'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: '請上傳名片圖片'
-      });
+      return res.status(400).json({ success: false, message: '請上傳名片圖片' });
     }
 
-    const originalImagePath = req.file.path;
+    const originalBuffer = req.file.buffer;
 
     // 先對圖片進行正規化（處理 HEIC、旋轉、縮圖、壓縮）
-    const normalized = await normalizeImageForOCR(originalImagePath);
-    const imagePath = normalized.path;
-    const tempFiles = [originalImagePath];
-    if (normalized.created && normalized.path !== originalImagePath) {
-      tempFiles.push(normalized.path);
-    }
+    const normalized = await normalizeImageForOCRBuffer(originalBuffer);
+    const imageBuffer = normalized.buffer;
+
     // 產生多組預處理影像
-    const preprocessed = await preprocessForOCR(imagePath);
-    preprocessed.forEach(p => tempFiles.push(p));
-    const candidatePaths = [imagePath, ...preprocessed];
-    
+    const preprocessed = await preprocessForOCRBuffers(imageBuffer);
+    const candidateBuffers = [imageBuffer, ...preprocessed];
+
     // 使用多種OCR服務進行識別
     let ocrResult = null;
-    // 逐一嘗試各種預處理變體
-    for (const candidate of candidatePaths) {
-      // 1. 嘗試使用Google Vision API（如果配置了）
+    for (const candidate of candidateBuffers) {
+      // 1) Google Vision
       if (!ocrResult && process.env.GOOGLE_VISION_API_KEY) {
         try {
           const r = await processWithGoogleVision(candidate);
@@ -144,10 +117,10 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
             ocrResult = r;
           }
         } catch (error) {
-          console.log('Google Vision API失敗，嘗試其他方法:', error.message);
+          console.log('Google Vision 失敗，嘗試其他方法:', error.message);
         }
       }
-      // 2. 如果Google Vision失敗，使用OCR.space API（免費版）
+      // 2) OCR.space
       if (!ocrResult) {
         try {
           const r = await processWithOCRSpace(candidate);
@@ -155,34 +128,32 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
             ocrResult = r;
           }
         } catch (error) {
-          console.log('OCR.space API失敗，嘗試其他候選影像:', error.message);
+          console.log('OCR.space 失敗，嘗試其他候選影像:', error.message);
         }
       }
       if (ocrResult) break;
     }
-    
-    // 3. 如果都失敗，使用本地規則處理
+
+    // 3) 全部失敗則回退本地規則
     if (!ocrResult) {
-      ocrResult = await processWithLocalRules(imagePath);
+      ocrResult = await processWithLocalRules();
     }
-    
+
     // 使用AI增強識別結果
     const enhancedResult = await enhanceWithAI(ocrResult.rawText);
 
-    // 產生可公開讀取的圖片 URL（保留正規化後的檔案，若未產生則保留原檔）
-    const keepPath = imagePath; // 優先保留正規化後的影像
-    const imageUrl = `/uploads/business-cards/${path.basename(keepPath)}`;
-    
-    // 清理上傳的臨時文件（但保留 keepPath）
-    try {
-      tempFiles.forEach(p => {
-        if (p && fs.existsSync(p) && p !== keepPath) fs.unlinkSync(p);
-      });
-    } catch (cleanupErr) {
-      console.warn('清理臨時檔案失敗:', cleanupErr.message);
-    }
-    
-    res.json({
+    // 上傳至 Cloudinary（只上傳正規化後影像），不再回傳本機 URL
+    const uploadJpegBuffer = await sharp(imageBuffer, { failOn: 'none' }).jpeg({ quality: 90, mozjpeg: true }).toBuffer();
+    const base64 = uploadJpegBuffer.toString('base64');
+    const uploadResult = await cloudinary.uploader.upload(`data:image/jpeg;base64,${base64}` ,{
+      folder: 'bci-connect/business-cards',
+      resource_type: 'image',
+      overwrite: false,
+      use_filename: false
+    });
+    const imageUrl = uploadResult.secure_url;
+
+    return res.json({
       success: true,
       data: {
         extractedInfo: enhancedResult,
@@ -191,45 +162,15 @@ router.post('/scan-business-card', upload.single('cardImage'), async (req, res) 
         imageUrl
       }
     });
-    
   } catch (error) {
     console.error('OCR掃描錯誤:', error);
-    
-    // 清理臨時文件
-    try {
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-      const normalizedPath = req.file?.path ? req.file.path + '.normalized.jpg' : null;
-      if (normalizedPath && fs.existsSync(normalizedPath)) {
-        fs.unlinkSync(normalizedPath);
-      }
-      // 清理預處理變體
-      const baseNormalized = req.file?.path ? req.file.path + '.normalized.jpg' : null;
-      if (baseNormalized) {
-        ['.pre1.jpg', '.pre2.jpg', '.pre3.jpg'].forEach(suffix => {
-          const p = baseNormalized.replace(/\.normalized\.jpg$/i, '') + suffix;
-          if (fs.existsSync(p)) {
-            try { fs.unlinkSync(p); } catch {}
-          }
-        });
-      }
-    } catch (cleanupErr) {
-      console.warn('清理臨時檔案失敗:', cleanupErr.message);
-    }
-    
-    res.status(500).json({
-      success: false,
-      message: '名片掃描失敗，請稍後再試'
-    });
+    return res.status(500).json({ success: false, message: '名片掃描失敗，請稍後再試' });
   }
 });
 
-// Google Vision API處理
-async function processWithGoogleVision(imagePath) {
-  const imageBuffer = fs.readFileSync(imagePath);
+// Google Vision API處理（Buffer 版）
+async function processWithGoogleVision(imageBuffer) {
   const base64Image = imageBuffer.toString('base64');
-  
   const response = await axios.post(
     `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_VISION_API_KEY}`,
     {
@@ -239,39 +180,38 @@ async function processWithGoogleVision(imagePath) {
       }]
     }
   );
-  
   const textAnnotations = response.data.responses[0].textAnnotations;
   if (!textAnnotations || textAnnotations.length === 0) {
     throw new Error('未檢測到文字');
   }
-  
   return {
     rawText: textAnnotations[0].description,
     confidence: 0.9
   };
 }
 
-// OCR.space API處理（免費版）
-async function processWithOCRSpace(imagePath) {
+// OCR.space API處理（Buffer 版）
+async function processWithOCRSpace(imageBuffer) {
   const formData = new FormData();
-  formData.append('file', fs.createReadStream(imagePath));
-  formData.append('language', 'cht'); // 繁體中文
+  // 以 Buffer 直接附檔（指定檔名與 MIME）
+  formData.append('file', imageBuffer, { filename: 'image.jpg', contentType: 'image/jpeg' });
+  formData.append('language', 'cht');
   formData.append('isOverlayRequired', 'false');
   formData.append('detectOrientation', 'true');
   formData.append('scale', 'true');
-  
+
   const response = await axios.post('https://api.ocr.space/parse/image', formData, {
     headers: {
       ...formData.getHeaders(),
-      'apikey': process.env.OCR_SPACE_API_KEY || 'helloworld' // 免費key
+      'apikey': process.env.OCR_SPACE_API_KEY || 'helloworld'
     },
     timeout: 30000
   });
-  
+
   if (!response.data.ParsedResults || response.data.ParsedResults.length === 0) {
     throw new Error('OCR解析失敗');
   }
-  
+
   return {
     rawText: response.data.ParsedResults[0].ParsedText,
     confidence: 0.7
@@ -279,9 +219,7 @@ async function processWithOCRSpace(imagePath) {
 }
 
 // 本地規則處理（備用方案）
-async function processWithLocalRules(imagePath) {
-  // 這裡可以實現基本的圖片處理和文字識別
-  // 目前返回示例數據
+async function processWithLocalRules() {
   return {
     rawText: '請手動輸入名片信息，自動識別暫時不可用',
     confidence: 0.1

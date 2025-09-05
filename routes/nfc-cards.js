@@ -5,32 +5,21 @@ const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { storage } = require('../config/cloudinary');
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../uploads/nfc-cards');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'nfc-card-' + uniqueSuffix + path.extname(file.originalname));
+// 使用 Cloudinary 作為上傳儲存，僅允許圖片
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('只允許上傳圖片文件'), false);
   }
-});
+};
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('只允許上傳圖片文件'));
-    }
-  }
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 // 獲取會員的電子名片
@@ -243,7 +232,7 @@ router.post('/my-card/content', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { content_blocks } = req.body;
     
-    // 獲取用戶的名片ID
+    // 獲取用戶的名牌ID
     const cardResult = await pool.query(
       'SELECT id FROM nfc_cards WHERE user_id = $1',
       [userId]
@@ -440,6 +429,30 @@ router.get('/public/test-card', async (req, res) => {
   } catch (error) {
     console.error('測試端點錯誤:', error);
     res.status(500).json({ message: '服務器錯誤' });
+  }
+});
+
+// 新增：上傳圖片（Cloudinary）
+router.post('/upload', authenticateToken, upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: '沒有上傳文件' });
+    }
+    const fileUrl = req.file.path; // Cloudinary secure URL
+    res.json({
+      success: true,
+      message: '文件上傳成功',
+      data: {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        url: fileUrl
+      }
+    });
+  } catch (error) {
+    console.error('文件上傳失敗:', error);
+    res.status(500).json({ success: false, message: '文件上傳失敗' });
   }
 });
 

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
+// 移除不再需要的 path 匯入
 const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { storage } = require('../config/cloudinary');
+const { cloudinary } = require('../config/cloudinary');
 
 // Configure file filter for multer
 const fileFilter = (req, file, cb) => {
@@ -17,7 +17,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({ 
-  storage: storage,
+  storage: multer.memoryStorage(),
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
@@ -379,8 +379,12 @@ router.post('/', authenticateToken, requireAdmin, upload.single('poster'), async
       });
     }
     
-    // Get poster image URL if uploaded
-    const posterImageUrl = req.file ? req.file.path : null;
+    // 直接上傳至 Cloudinary（記憶體 Buffer）
+    let posterImageUrl = null;
+    if (req.file && req.file.buffer) {
+      const uploadRes = await uploadBufferToCloudinary(req.file.buffer);
+      posterImageUrl = uploadRes.secure_url;
+    }
     
     console.log('Inserting event into database...');
     const result = await pool.query(`
@@ -421,9 +425,10 @@ router.put('/:id', authenticateToken, requireAdmin, upload.single('poster'), asy
     
     let posterImageUrl = currentEvent.rows[0].poster_image_url;
     
-    // If new poster is uploaded, update the URL
-    if (req.file) {
-      posterImageUrl = req.file.path;
+    // 如有新圖片，直接上傳 Cloudinary 取得 URL
+    if (req.file && req.file.buffer) {
+      const uploadRes = await uploadBufferToCloudinary(req.file.buffer);
+      posterImageUrl = uploadRes.secure_url;
     }
     
     const result = await pool.query(`
@@ -478,13 +483,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     // 再刪除活動
     await pool.query('DELETE FROM events WHERE id = $1', [id]);
     
-    // Delete poster image file if exists
-    if (posterImageUrl) {
-      const filePath = path.join(__dirname, '..', posterImageUrl);
-      fs.unlink(filePath, (err) => {
-        if (err) console.error('Error deleting poster file:', err);
-      });
-    }
+    // 已改用 Cloudinary，不再刪本機檔案
     
     res.json({
       success: true,

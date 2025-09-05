@@ -6,35 +6,21 @@ const vCard = require('vcards-js');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { storage } = require('../config/cloudinary');
 
-// 配置文件上傳
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = 'uploads/nfc-cards';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+// 使用 Cloudinary 作為上傳儲存
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('只允許上傳圖片文件'), false);
   }
-});
+};
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB 限制
-  },
-  fileFilter: function (req, file, cb) {
-    // 只允許圖片和視頻文件
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('只允許上傳圖片或視頻文件'), false);
-    }
-  }
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 // 記錄訪問日誌的中間件
@@ -100,8 +86,7 @@ router.get('/member/:userId', logVisit, async (req, res) => {
         u.company as user_company,
         u.position as user_position,
         u.avatar as user_avatar,
-        u.website as user_website,
-        u.address as user_address
+        u.website as user_website
       FROM nfc_cards nc
       LEFT JOIN nfc_card_templates nct ON nc.template_id = nct.id
       LEFT JOIN users u ON nc.user_id = u.id
@@ -111,124 +96,101 @@ router.get('/member/:userId', logVisit, async (req, res) => {
     if (cardResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '名片不存在或已停用'
+        message: '名片不存在或未啟用'
       });
     }
     
     const card = cardResult.rows[0];
     
-    // 獲取名片內容區塊
+    // 獲取內容區塊
     const contentResult = await db.query(`
-      SELECT * FROM nfc_content_blocks 
-      WHERE card_id = $1 AND is_visible = true 
-      ORDER BY display_order
+      SELECT *
+      FROM nfc_content_blocks
+      WHERE card_id = $1 AND is_visible = true
+      ORDER BY display_order ASC
     `, [card.id]);
+    
+    // 解析 JSON 字段
+    const contentBlocks = contentResult.rows.map(block => ({
+      ...block,
+      content_data: typeof block.content_data === 'string' 
+        ? JSON.parse(block.content_data) 
+        : (block.content_data || {})
+    }));
     
     res.json({
       success: true,
       data: {
         ...card,
-        content: contentResult.rows
+        content_blocks: contentBlocks
       }
     });
   } catch (error) {
-    console.error('獲取名片失敗:', error);
+    console.error('獲取用戶名片失敗:', error);
     res.status(500).json({
       success: false,
-      message: '獲取名片失敗'
+      message: '獲取用戶名片失敗'
     });
   }
 });
 
-// 3. 獲取當前用戶的名片信息（需要登入）
+// 3. 獲取當前用戶的名片（需要認證）
 router.get('/my-card', auth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const cardResult = await db.query('SELECT * FROM nfc_cards WHERE user_id = $1', [userId]);
     
-    // 獲取名片基本信息
-    const cardResult = await db.query(`
-      SELECT 
-        nc.*,
-        nct.name as template_name,
-        nct.css_config as template_css_config
-      FROM nfc_cards nc
-      LEFT JOIN nfc_card_templates nct ON nc.template_id = nct.id
-      WHERE nc.user_id = $1
-    `, [userId]);
-    
-    let card = null;
-    let content = [];
-    
-    if (cardResult.rows.length > 0) {
-      card = cardResult.rows[0];
-      
-      // 獲取名片內容區塊
-      const contentResult = await db.query(`
-        SELECT * FROM nfc_content_blocks 
-        WHERE card_id = $1 
-        ORDER BY display_order
-      `, [card.id]);
-      
-      content = contentResult.rows;
+    if (cardResult.rows.length === 0) {
+      return res.json({
+        success: true,
+        data: null
+      });
     }
+    
+    const card = cardResult.rows[0];
+    const contentResult = await db.query('SELECT * FROM nfc_content_blocks WHERE card_id = $1 ORDER BY display_order ASC', [card.id]);
     
     res.json({
       success: true,
       data: {
-        card,
-        content,
-        cardUrl: card ? `${req.protocol}://${req.get('host')}/member/${userId}` : null
+        ...card,
+        content_blocks: contentResult.rows
       }
     });
   } catch (error) {
     console.error('獲取我的名片失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '獲取我的名片失敗'
-    });
+    res.status(500).json({ success: false, message: '獲取我的名片失敗' });
   }
 });
 
-// 4. 創建或更新名片
+// 4. 創建或更新名片（需要認證）
 router.post('/my-card', auth, async (req, res) => {
-  const client = await db.getClient();
-  
+  const client = await db.connect();
   try {
-    await client.query('BEGIN');
-    
     const userId = req.user.id;
     const { card_title, card_subtitle, template_id, custom_css, content } = req.body;
     
     // 檢查是否已有名片
-    const existingCard = await client.query(
-      'SELECT id FROM nfc_cards WHERE user_id = $1',
-      [userId]
-    );
+    const existing = await client.query('SELECT id FROM nfc_cards WHERE user_id = $1', [userId]);
+    let cardId = existing.rows[0]?.id || null;
     
-    let cardId;
-    
-    if (existingCard.rows.length > 0) {
-      // 更新現有名片
-      cardId = existingCard.rows[0].id;
+    if (cardId) {
       await client.query(`
         UPDATE nfc_cards 
         SET card_title = $1, card_subtitle = $2, template_id = $3, custom_css = $4, updated_at = CURRENT_TIMESTAMP
         WHERE user_id = $5
       `, [card_title, card_subtitle, template_id, custom_css, userId]);
     } else {
-      // 創建新名片
-      const newCard = await client.query(`
+      const created = await client.query(`
         INSERT INTO nfc_cards (user_id, card_title, card_subtitle, template_id, custom_css)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id
       `, [userId, card_title, card_subtitle, template_id, custom_css]);
-      cardId = newCard.rows[0].id;
+      cardId = created.rows[0].id;
     }
     
-    // 刪除舊的內容區塊
     await client.query('DELETE FROM nfc_content_blocks WHERE card_id = $1', [cardId]);
     
-    // 插入新的內容區塊
     if (content && content.length > 0) {
       for (let i = 0; i < content.length; i++) {
         const item = content[i];
@@ -252,27 +214,19 @@ router.post('/my-card', auth, async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('保存名片失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '保存名片失敗'
-    });
+    res.status(500).json({ success: false, message: '保存名片失敗' });
   } finally {
     client.release();
   }
 });
 
-// 5. 上傳文件
+// 5. 上傳文件（Cloudinary）
 router.post('/upload', auth, upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: '沒有上傳文件'
-      });
+      return res.status(400).json({ success: false, message: '沒有上傳文件' });
     }
-    
-    const fileUrl = `/uploads/nfc-cards/${req.file.filename}`;
-    
+    const fileUrl = req.file.path; // Cloudinary secure URL
     res.json({
       success: true,
       message: '文件上傳成功',
@@ -286,10 +240,7 @@ router.post('/upload', auth, upload.single('file'), (req, res) => {
     });
   } catch (error) {
     console.error('文件上傳失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '文件上傳失敗'
-    });
+    res.status(500).json({ success: false, message: '文件上傳失敗' });
   }
 });
 
@@ -309,192 +260,93 @@ router.get('/vcard/:userId', async (req, res) => {
     `, [userId]);
     
     if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '用戶不存在'
-      });
+      return res.status(404).json({ success: false, message: '用戶不存在' });
     }
     
     const user = result.rows[0];
-    
-    // 創建 vCard
     const vcard = vCard();
     
-    // 基本信息
     if (user.name) {
       const nameParts = user.name.split(' ');
       vcard.firstName = nameParts[0] || '';
       vcard.lastName = nameParts.slice(1).join(' ') || '';
     }
-    
     if (user.company) vcard.organization = user.company;
     if (user.position) vcard.title = user.position;
     if (user.email) vcard.email = user.email;
     if (user.phone) vcard.cellPhone = user.phone;
     if (user.website) vcard.url = user.website;
-    if (user.address) vcard.workAddress.label = user.address;
-    
-    // 名片標題作為備註
-    if (user.card_title) vcard.note = user.card_title;
-    if (user.card_subtitle) vcard.note += (user.card_title ? '\n' : '') + user.card_subtitle;
-    
-    // 設置響應頭
-    const filename = `${user.name || 'contact'}_${Date.now()}.vcf`;
-    res.setHeader('Content-Type', 'text/vcard; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    
-    // 發送 vCard 內容
+    if (user.address) vcard.homeAddress = user.address;
+
+    res.setHeader('Content-Type', 'text/vcard');
+    res.setHeader('Content-Disposition', `attachment; filename="${user.name}.vcf"`);
     res.send(vcard.getFormattedString());
   } catch (error) {
     console.error('生成 vCard 失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '生成 vCard 失敗'
-    });
+    res.status(500).json({ success: false, message: '生成 vCard 失敗' });
   }
 });
 
-// 7. 獲取名片統計信息
+// 7. 統計數據
 router.get('/statistics', auth, async (req, res) => {
   try {
-    const userId = req.user.id;
-    
-    const result = await db.query('SELECT * FROM get_card_statistics($1)', [userId]);
-    
-    res.json({
-      success: true,
-      data: result.rows[0] || {
-        total_views: 0,
-        today_views: 0,
-        this_week_views: 0,
-        this_month_views: 0
-      }
-    });
+    const result = await db.query(`
+      SELECT nc.user_id, COUNT(ncv.id) AS visit_count
+      FROM nfc_cards nc
+      LEFT JOIN nfc_card_visits ncv ON nc.id = ncv.card_id
+      GROUP BY nc.user_id
+      ORDER BY visit_count DESC
+    `);
+    res.json({ success: true, data: result.rows });
   } catch (error) {
-    console.error('獲取統計信息失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '獲取統計信息失敗'
-    });
+    console.error('獲取統計數據失敗:', error);
+    res.status(500).json({ success: false, message: '獲取統計數據失敗' });
   }
 });
 
-// 8. 切換名片狀態（啟用/停用）
+// 8. 切換名片啟用狀態
 router.patch('/my-card/toggle', auth, async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    const result = await db.query(`
-      UPDATE nfc_cards 
-      SET is_active = NOT is_active, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = $1
-      RETURNING is_active
-    `, [userId]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '名片不存在'
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: `名片已${result.rows[0].is_active ? '啟用' : '停用'}`,
-      data: {
-        is_active: result.rows[0].is_active
-      }
-    });
+    const current = await db.query('SELECT is_active FROM nfc_cards WHERE user_id = $1', [userId]);
+    const active = !current.rows[0]?.is_active;
+    await db.query('UPDATE nfc_cards SET is_active = $1 WHERE user_id = $2', [active, userId]);
+    res.json({ success: true, is_active: active });
   } catch (error) {
     console.error('切換名片狀態失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '切換名片狀態失敗'
-    });
+    res.status(500).json({ success: false, message: '切換名片狀態失敗' });
   }
 });
 
 // 9. 刪除名片
 router.delete('/my-card', auth, async (req, res) => {
-  const client = await db.getClient();
-  
   try {
-    await client.query('BEGIN');
-    
     const userId = req.user.id;
-    
-    // 刪除名片內容
-    await client.query(`
-      DELETE FROM nfc_content_blocks 
-      WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)
-    `, [userId]);
-    
-    // 刪除訪問記錄
-    await client.query(`
-      DELETE FROM nfc_card_visits 
-      WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)
-    `, [userId]);
-    
-    // 刪除名片
-    const result = await client.query(
-      'DELETE FROM nfc_cards WHERE user_id = $1 RETURNING id',
-      [userId]
-    );
-    
-    await client.query('COMMIT');
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '名片不存在'
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: '名片已刪除'
-    });
+    await db.query('DELETE FROM nfc_card_visits WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)', [userId]);
+    await db.query('DELETE FROM nfc_content_blocks WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)', [userId]);
+    await db.query('DELETE FROM nfc_cards WHERE user_id = $1', [userId]);
+    res.json({ success: true, message: '刪除成功' });
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('刪除名片失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '刪除名片失敗'
-    });
-  } finally {
-    client.release();
+    res.status(500).json({ success: false, message: '刪除名片失敗' });
   }
 });
 
-// 10. 獲取最近訪問記錄
+// 10. 最近訪問
 router.get('/recent-visits', auth, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 10;
-    
     const result = await db.query(`
-      SELECT 
-        ncv.visitor_ip,
-        ncv.visit_time,
-        ncv.referrer,
-        ncv.visitor_user_agent
+      SELECT ncv.*, u.name
       FROM nfc_card_visits ncv
       JOIN nfc_cards nc ON ncv.card_id = nc.id
-      WHERE nc.user_id = $1
+      JOIN users u ON nc.user_id = u.id
       ORDER BY ncv.visit_time DESC
-      LIMIT $2
-    `, [userId, limit]);
-    
-    res.json({
-      success: true,
-      data: result.rows
-    });
+      LIMIT 50
+    `);
+    res.json({ success: true, data: result.rows });
   } catch (error) {
-    console.error('獲取訪問記錄失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '獲取訪問記錄失敗'
-    });
+    console.error('獲取最近訪問失敗:', error);
+    res.status(500).json({ success: false, message: '獲取最近訪問失敗' });
   }
 });
 
