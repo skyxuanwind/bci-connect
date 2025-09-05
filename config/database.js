@@ -498,7 +498,13 @@ const initializeDatabase = async () => {
     await pool.query(`
       ALTER TABLE nfc_card_collections
       ADD COLUMN IF NOT EXISTS scanned_data JSONB DEFAULT '{}',
-      ADD COLUMN IF NOT EXISTS is_scanned BOOLEAN DEFAULT false
+      ADD COLUMN IF NOT EXISTS is_scanned BOOLEAN DEFAULT false,
+      ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)
+    `);
+
+    // 新增索引：依 image_url 查詢更快
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_nfc_card_collections_image_url ON nfc_card_collections(image_url)
     `);
 
     // Ensure foreign key references users(id) instead of digital_card_users(id)

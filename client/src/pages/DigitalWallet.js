@@ -48,6 +48,9 @@ const DigitalWallet = () => {
   const [aiData, setAiData] = useState(null);
   const [aiError, setAiError] = useState('');
   const [aiCurrentCard, setAiCurrentCard] = useState(null);
+  // 圖片預覽 Modal 狀態
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,6 +79,18 @@ const DigitalWallet = () => {
 
     return () => clearInterval(interval);
   }, [currentToken]);
+
+  // 按下 ESC 關閉圖片預覽
+  useEffect(() => {
+    if (!imagePreviewOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setImagePreviewOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [imagePreviewOpen]);
 
   // 清理因舊版 bug 產生的共享 localStorage key，避免不同用戶看到相同資料
   const cleanupLegacyLocalStorageKeys = () => {
@@ -788,6 +803,51 @@ const DigitalWallet = () => {
     return elements;
   };
 
+  // 下載掃描原圖輔助
+  const getFileExtFromUrl = (url) => {
+    try {
+      const u = new URL(url, window.location.href);
+      const pathname = u.pathname || '';
+      const dot = pathname.lastIndexOf('.');
+      let ext = dot !== -1 ? pathname.substring(dot) : '';
+      if (!/\.(png|jpg|jpeg|webp|gif|bmp|svg)$/i.test(ext)) {
+        // 嘗試從查詢參數推測
+        const q = u.searchParams.get('format') || u.searchParams.get('ext');
+        if (q && /^(png|jpg|jpeg|webp|gif|bmp|svg)$/i.test(q)) ext = `.${q.toLowerCase()}`;
+      }
+      return ext || '.jpg';
+    } catch {
+      return '.jpg';
+    }
+  };
+  const downloadImage = async (url, baseName = 'scanned-card') => {
+    if (!url) return;
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      const blob = await res.blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeBase = (baseName || 'scanned-card').replace(/[^\w\-\u4e00-\u9fa5]+/g, '_');
+      a.href = href;
+      a.download = `${safeBase}${getFileExtFromUrl(url)}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+    } catch (e) {
+      console.error('下載圖片失敗:', e);
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch {}
+    }
+  };
+
   // 從備註中自動抽取標籤（產業/地區/關鍵字等簡易規則）
   const extractTagsFromText = (text) => {
     if (!text) return [];
@@ -1013,9 +1073,14 @@ const DigitalWallet = () => {
                   const imgUrl = card?.scanned_data?.image_url || card?.image_url;
                   if (!imgUrl) return null;
                   return (
-                    <div className="relative w-full h-40 bg-gray-100">
+                    <div
+                      className="relative w-full h-40 bg-gray-100 cursor-zoom-in"
+                      onClick={() => { setPreviewImageUrl(imgUrl); setImagePreviewOpen(true); }}
+                      title="點擊放大預覽"
+                    >
                       <img src={imgUrl} alt="掃描名片" className="w-full h-full object-cover" />
                       <span className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded">掃描名片</span>
+                      <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded">點擊放大</span>
                     </div>
                   );
                 })()}
@@ -1198,6 +1263,28 @@ const DigitalWallet = () => {
                         <SparklesIcon className="h-4 w-4" />
                       </button>
                       
+                      {/* 預覽掃描圖（若有） */}
+                      {(() => { const imgUrl = card?.scanned_data?.image_url || card?.image_url; return imgUrl ? (
+                        <button
+                          onClick={() => { setPreviewImageUrl(imgUrl); setImagePreviewOpen(true); }}
+                          className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="預覽掃描圖"
+                        >
+                          <MagnifyingGlassIcon className="h-4 w-4" />
+                        </button>
+                      ) : null; })()}
+                      
+                      {/* 下載掃描原圖（若有） */}
+                      {(() => { const imgUrl = card?.scanned_data?.image_url || card?.image_url; return imgUrl ? (
+                        <button
+                          onClick={() => downloadImage(imgUrl, card.card_title)}
+                          className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                          title="下載掃描原圖"
+                        >
+                          <ArrowDownTrayIcon className="h-4 w-4" />
+                        </button>
+                      ) : null; })()}
+                      
                       <button
                         onClick={() => downloadVCard(card)}
                         className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
@@ -1226,6 +1313,23 @@ const DigitalWallet = () => {
           onScanComplete={handleScanComplete}
           onClose={() => setShowScanner(false)}
         />
+      )}
+
+      {/* 圖片放大預覽 Modal */}
+      {imagePreviewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black bg-opacity-60" onClick={() => setImagePreviewOpen(false)}></div>
+          <div className="relative max-w-5xl w-[92vw] max-h-[92vh] p-2">
+            <img src={previewImageUrl} alt="掃描名片預覽" className="w-full h-full object-contain rounded shadow-xl" />
+            <button
+              onClick={() => setImagePreviewOpen(false)}
+              className="absolute top-3 right-3 bg-black/60 text-white rounded-full px-3 py-1 text-sm hover:bg-black/70"
+              aria-label="關閉預覽"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
 
       {/* AI 跟進建議 Modal */}

@@ -382,6 +382,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
             address: card.address || null,
             tags: tags
           };
+          const imageUrl = card.image_url || data.image_url || data.imageUrl || null;
 
           // 嘗試用 正規化的 name+email+phone 去重，以避免重複插入（nfc_card_collections）
           const nameKey = normalizeString(data.name || card.card_title || '');
@@ -408,8 +409,8 @@ router.post('/sync', authenticateToken, async (req, res) => {
               const cid = exist.rows[0].id;
               await client.query(`
                 UPDATE nfc_card_collections 
-                SET notes = $2, tags = $3, folder_name = $4, last_viewed = $5, scanned_data = $6
-                WHERE id = $1 AND user_id = $7
+                SET notes = $2, tags = $3, folder_name = $4, last_viewed = $5, scanned_data = $6, image_url = $7
+                WHERE id = $1 AND user_id = $8
               `, [
                 cid,
                 notes,
@@ -417,12 +418,13 @@ router.post('/sync', authenticateToken, async (req, res) => {
                 folderName,
                 lastViewed,
                 data,
+                imageUrl,
                 userId
               ]);
             } else {
               await client.query(`
-                INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed, is_scanned, scanned_data)
-                VALUES ($1, NULL, $2, $3, $4, $5, $6, true, $7)
+                INSERT INTO nfc_card_collections (user_id, card_id, notes, tags, folder_name, collected_at, last_viewed, is_scanned, scanned_data, image_url)
+                VALUES ($1, NULL, $2, $3, $4, $5, $6, true, $7, $8)
               `, [
                 userId,
                 notes,
@@ -430,7 +432,8 @@ router.post('/sync', authenticateToken, async (req, res) => {
                 folderName,
                 collectedAt,
                 lastViewed,
-                data
+                data,
+                imageUrl
               ]);
             }
           };

@@ -48,6 +48,8 @@ const MemberCard = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiData, setAiData] = useState(null);
   const [aiError, setAiError] = useState('');
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState('');
 
   // 輔助：是否為掃描名片 ID
   const isScannedId = (id) => String(id || '').split(':')[0].startsWith('scanned_');
@@ -222,6 +224,7 @@ const MemberCard = () => {
           address: found.contact_info?.address || scanned.address || '',
           line_id: found.contact_info?.line_id || scanned.line_id || ''
         },
+        scanned_image_url: scanned.image_url || found.image_url || '',
         content_blocks: []
       };
 
@@ -609,6 +612,33 @@ const MemberCard = () => {
     } catch {}
   };
 
+  // 下載圖片小工具
+  const getFileExtFromUrl = (url) => {
+    try {
+      const pathname = new URL(url, window.location.origin).pathname;
+      const idx = pathname.lastIndexOf('.');
+      const ext = idx >= 0 ? pathname.substring(idx) : '';
+      if (ext && ext.length <= 6) return ext;
+      return '.jpg';
+    } catch {
+      return '.jpg';
+    }
+  };
+  const downloadImage = (url, filenameBase = 'scanned-card') => {
+    if (!url) return;
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      const safeBase = String(filenameBase || 'scanned-card').replace(/\s+/g, '_');
+      a.download = `${safeBase}${getFileExtFromUrl(url)}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error('下載圖片失敗', e);
+    }
+  };
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
   };
@@ -948,6 +978,30 @@ const MemberCard = () => {
           </div>
         </div>
 
+        {/* 掃描圖片預覽 */}
+        {isScannedId(memberId) && cardData?.scanned_image_url && (
+          <div className="content-block">
+            <h3 className="block-title">掃描名片</h3>
+            <div className="relative">
+              <img
+                src={cardData.scanned_image_url}
+                alt="掃描名片"
+                className="rounded-lg w-full object-contain cursor-zoom-in bg-gray-50"
+                style={{ maxHeight: '480px' }}
+                onClick={() => { setPreviewImageUrl(cardData.scanned_image_url); setImagePreviewOpen(true); }}
+              />
+              <button
+                onClick={() => downloadImage(cardData.scanned_image_url, cardData.card_title)}
+                className="absolute bottom-2 right-2 px-2 py-1 text-xs bg-white/90 text-gray-700 border border-gray-200 rounded shadow hover:bg-white"
+                title="下載掃描原圖"
+              >
+                下載原圖
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">點擊圖片可放大預覽</p>
+          </div>
+        )}
+
         {/* 聯絡資訊 */}
         {renderContactInfo()}
 
@@ -996,6 +1050,34 @@ const MemberCard = () => {
           <HeartIcon className="h-6 w-6" />
         )}
       </button>
+
+      {/* 掃描圖片放大預覽 Modal */}
+      {imagePreviewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setImagePreviewOpen(false)}></div>
+          <div className="relative bg-transparent w-full max-w-5xl mx-4">
+            <img
+              src={previewImageUrl}
+              alt="掃描名片大圖"
+              className="w-full max-h-[80vh] object-contain rounded-lg shadow-lg"
+            />
+            <div className="absolute top-2 right-2 flex gap-2">
+              <button
+                onClick={() => downloadImage(previewImageUrl, cardData?.card_title)}
+                className="px-3 py-1 text-xs bg-white/90 text-gray-700 rounded shadow hover:bg-white"
+              >
+                下載原圖
+              </button>
+              <button
+                onClick={() => setImagePreviewOpen(false)}
+                className="px-3 py-1 text-xs bg-white/90 text-gray-700 rounded shadow hover:bg-white"
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI 跟進建議 Modal */}
       {aiModalOpen && (
