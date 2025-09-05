@@ -693,4 +693,53 @@ router.delete('/clear', authenticateToken, async (req, res) => {
   }
 });
 
+// 批次資料修復：將 scanned_data.image_url 補寫回 image_url（僅管理員）
+router.post('/admin/repair-image-urls', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user || {};
+    // 簡化權限：僅允許 membership_level 1 且 email 含 admin 的管理員
+    if (user.membership_level !== 1 || !String(user.email || '').includes('admin')) {
+      return res.status(403).json({ success: false, message: '需要管理員權限' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      // 找出 scanned_data 內含 image_url 但 image_url 欄位為空的資料
+      const { rows } = await client.query(`
+        SELECT id, scanned_data
+        FROM nfc_card_collections
+        WHERE (scanned_data->>'image_url') IS NOT NULL AND (
+          image_url IS NULL OR image_url = ''
+        )
+        FOR UPDATE
+      `);
+
+      let updated = 0;
+      for (const row of rows) {
+        const data = row.scanned_data || {};
+        const img = data.image_url || data.imageUrl;
+        if (!img) continue;
+        await client.query(
+          'UPDATE nfc_card_collections SET image_url = $2 WHERE id = $1',
+          [row.id, img]
+        );
+        updated++;
+      }
+
+      await client.query('COMMIT');
+      return res.json({ success: true, updated });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('repair-image-urls failed:', err);
+      return res.status(500).json({ success: false, message: '資料修復失敗' });
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false, message: '伺服器錯誤' });
+  }
+});
+
 module.exports = router;

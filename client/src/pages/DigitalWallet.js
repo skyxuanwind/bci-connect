@@ -762,6 +762,20 @@ const DigitalWallet = () => {
     if (!url) return '';
     return /^https?:\/\//i.test(url) ? url : `https://${url}`;
   };
+
+  // 確保圖片 URL 為絕對路徑（部署環境相容）
+  const normalizeImageUrl = (url) => {
+    if (!url) return null;
+    
+    // 已是絕對 URL，直接返回
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // 相對路徑轉絕對路徑
+    const baseUrl = process.env.REACT_APP_API_URL || window.location.origin;
+    return `${baseUrl.replace(/\/$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
   const linkifyText = (text) => {
     if (!text) return null;
     const pattern = /(https?:\/\/[^\s]+|www\.[^\s]+)|([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})|(\+?\d[\d\s\-]{7,}\d)/gi;
@@ -1070,7 +1084,8 @@ const DigitalWallet = () => {
               <div key={card.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                 {/* 掃描名片縮圖 */}
                 {(() => {
-                  const imgUrl = card?.scanned_data?.image_url || card?.image_url;
+                  const rawUrl = card?.scanned_data?.image_url || card?.image_url;
+                  const imgUrl = normalizeImageUrl(rawUrl);
                   if (!imgUrl) return null;
                   return (
                     <div
@@ -1078,7 +1093,29 @@ const DigitalWallet = () => {
                       onClick={() => { setPreviewImageUrl(imgUrl); setImagePreviewOpen(true); }}
                       title="點擊放大預覽"
                     >
-                      <img src={imgUrl} alt="掃描名片" className="w-full h-full object-cover" />
+                      <img
+                        src={imgUrl}
+                        alt="掃描名片"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // 圖片載入失敗時顯示降級 UI
+                          const container = e.currentTarget.parentElement;
+                          if (!container) return;
+                          e.currentTarget.style.display = 'none';
+                          const fallback = container.querySelector('.img-fallback');
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="img-fallback hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-100 text-gray-500">
+                        <ExclamationTriangleIcon className="h-8 w-8 mb-2" />
+                        <div className="text-sm mb-2">圖片已失效</div>
+                        <button
+                          onClick={(ev) => { ev.stopPropagation(); downloadImage(imgUrl, card.card_title); }}
+                          className="inline-flex items-center px-3 py-1.5 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-700"
+                        >
+                          <ArrowDownTrayIcon className="h-4 w-4 mr-1" /> 重新下載
+                        </button>
+                      </div>
                       <span className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded">掃描名片</span>
                       <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded">點擊放大</span>
                     </div>
@@ -1264,7 +1301,7 @@ const DigitalWallet = () => {
                       </button>
                       
                       {/* 預覽掃描圖（若有） */}
-                      {(() => { const imgUrl = card?.scanned_data?.image_url || card?.image_url; return imgUrl ? (
+                      {(() => { const raw = card?.scanned_data?.image_url || card?.image_url; const imgUrl = normalizeImageUrl(raw); return imgUrl ? (
                         <button
                           onClick={() => { setPreviewImageUrl(imgUrl); setImagePreviewOpen(true); }}
                           className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -1275,7 +1312,7 @@ const DigitalWallet = () => {
                       ) : null; })()}
                       
                       {/* 下載掃描原圖（若有） */}
-                      {(() => { const imgUrl = card?.scanned_data?.image_url || card?.image_url; return imgUrl ? (
+                      {(() => { const raw = card?.scanned_data?.image_url || card?.image_url; const imgUrl = normalizeImageUrl(raw); return imgUrl ? (
                         <button
                           onClick={() => downloadImage(imgUrl, card.card_title)}
                           className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
