@@ -6,6 +6,27 @@ const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { cloudinary } = require('../config/cloudinary');
 
+// Helper: upload buffer to Cloudinary and return result
+const uploadBufferToCloudinary = async (buffer) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'bci-connect/events',
+        resource_type: 'image',
+        transformation: [
+          { width: 800, height: 600, crop: 'limit' },
+          { quality: 'auto' }
+        ]
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    uploadStream.end(buffer);
+  });
+};
+
 // Configure file filter for multer
 const fileFilter = (req, file, cb) => {
   // Check if the file is an image
