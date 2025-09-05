@@ -16,6 +16,10 @@ const CheckInScanner = () => {
   const [successModalData, setSuccessModalData] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scannerError, setScannerError] = useState('');
+  // 新增：NFC URL 相關狀態
+  const [nfcUrl, setNfcUrl] = useState('');
+  const [nfcLoading, setNfcLoading] = useState(false);
+  const nfcInputRef = useRef(null);
   
   const html5QrcodeScannerRef = useRef(null);
   const processedSseCheckinsRef = useRef(new Set());
@@ -129,6 +133,60 @@ const CheckInScanner = () => {
     } finally {
       setLoading(false);
       // 清除結果顯示
+      setTimeout(() => {
+        setScanResult(null);
+      }, 3000);
+    }
+  };
+
+  // 新增：NFC 名片網址報到
+  const handleNfcUrlCheckin = async () => {
+    if (!nfcUrl || nfcLoading) return;
+    setNfcLoading(true);
+    setScanResult(null);
+    addDebugInfo(`嘗試以 NFC 名片網址報到: ${nfcUrl}`);
+
+    try {
+      const response = await api.post('/api/attendance/nfc-url-checkin', {
+        url: nfcUrl,
+        eventId: selectedEvent || null
+      });
+
+      setScanResult({
+        success: true,
+        message: response.data.message,
+        user: response.data.user,
+        event: response.data.event
+      });
+
+      setSuccessModalData({
+        user: response.data.user,
+        event: response.data.event,
+        method: 'NFC 名片',
+        timestamp: new Date().toLocaleString('zh-TW')
+      });
+      setShowSuccessModal(true);
+
+      if (modalTimeoutRef.current) {
+        clearTimeout(modalTimeoutRef.current);
+      }
+      modalTimeoutRef.current = setTimeout(() => {
+        setShowSuccessModal(false);
+        setSuccessModalData(null);
+      }, 3000);
+
+      addDebugInfo(`✅ NFC 報到成功: ${response.data.user?.name}`);
+      setNfcUrl('');
+      if (nfcInputRef.current) nfcInputRef.current.focus();
+    } catch (error) {
+      console.error('NFC URL 報到失敗:', error);
+      setScanResult({
+        success: false,
+        message: error.response?.data?.message || 'NFC URL 報到失敗，請稍後再試'
+      });
+      addDebugInfo(`❌ NFC 報到失敗: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setNfcLoading(false);
       setTimeout(() => {
         setScanResult(null);
       }, 3000);
@@ -265,6 +323,47 @@ const CheckInScanner = () => {
               </div>
             </div>
 
+            {/* 新增：NFC 名片感應（外接讀卡機輸入網址） */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">💳 NFC 名片感應</h2>
+              <p className="text-gray-600 text-sm mb-3">將外接 NFC 感應器連至電腦，感應會員名片後，裝置通常會以鍵盤輸入的方式輸出電子名片網址。請確保下方輸入框保持聚焦，感應後系統將自動帶入網址並可按 Enter 提交。</p>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={nfcInputRef}
+                  type="text"
+                  value={nfcUrl}
+                  onChange={(e) => setNfcUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleNfcUrlCheckin();
+                    }
+                  }}
+                  placeholder="請感應 NFC 名片或貼上電子名片網址 (例如：https://your.domain/nfc-cards/member/123)"
+                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleNfcUrlCheckin}
+                  disabled={!nfcUrl || nfcLoading}
+                  className={`px-5 py-3 rounded-lg text-white font-medium ${nfcLoading ? 'bg-green-300' : 'bg-green-600 hover:bg-green-700'} transition-colors`}
+                >
+                  {nfcLoading ? '送出中…' : '送出報到'}
+                </button>
+              </div>
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (nfcInputRef.current) nfcInputRef.current.focus();
+                    addDebugInfo('已將焦點移至 NFC 輸入框');
+                  }}
+                  className="text-xs text-gray-500 underline"
+                >
+                  將焦點移至輸入框
+                </button>
+              </div>
+            </div>
+
             {/* 掃描結果 */}
             {scanResult && (
               <div className={`p-4 rounded-lg border ${
@@ -303,6 +402,14 @@ const CheckInScanner = () => {
                   <li>• 允許瀏覽器使用相機權限</li>
                   <li>• 將會員的 QR Code 對準鏡頭</li>
                   <li>• 系統自動識別並完成報到</li>
+                </ul>
+                <div className="font-medium text-green-800 mb-2 mt-4">NFC 名片報到步驟：</div>
+                <ul className="space-y-1 ml-4">
+                  <li>• 將外接 NFC 感應器連接電腦</li>
+                  <li>• 選擇對應的活動（可選）</li>
+                  <li>• 點選「將焦點移至輸入框」，或直接點擊輸入框</li>
+                  <li>• 感應會員的 NFC 名片（名片內容為會員電子名片網址）</li>
+                  <li>• 按 Enter 或點擊「送出報到」完成報到</li>
                 </ul>
               </div>
             </div>

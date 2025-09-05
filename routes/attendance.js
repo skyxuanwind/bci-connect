@@ -32,6 +32,205 @@ const checkAttendancePermission = async (req, res, next) => {
   }
 };
 
+// 解析 QR/NFC URL 取得 memberId
+function parseMemberIdFromTextOrUrl(raw) {
+  if (!raw) return null;
+  let text = String(raw).trim();
+  // 嘗試 JSON
+  try {
+    const obj = JSON.parse(text);
+    const cand = obj.userId || obj.id || obj.memberId;
+    if (cand && /^\d+$/.test(String(cand))) return String(cand);
+  } catch (e) {}
+
+  // 嘗試從 URL 擷取
+  try {
+    // 若沒有協議，嘗試補上
+    if (!/^https?:\/\//i.test(text)) {
+      if (text.startsWith('www.')) text = 'https://' + text;
+    }
+    const u = new URL(text);
+    // 常見路徑: /member/:id 或 /nfc-cards/member/:id
+    const parts = u.pathname.split('/').filter(Boolean);
+    const idxMember = parts.findIndex(p => p === 'member');
+    if (idxMember >= 0 && parts[idxMember + 1] && /^\d+$/.test(parts[idxMember + 1])) {
+      return parts[idxMember + 1];
+    }
+    // 查 query 參數
+    const qid = u.searchParams.get('memberId') || u.searchParams.get('id') || u.searchParams.get('uid');
+    if (qid && /^\d+$/.test(qid)) return qid;
+  } catch (e) {}
+
+  // 直接從字串中找數字 ID
+  const m = text.match(/(?:member\s*[:=\/]\s*|id\s*[:=\/]\s*)(\d{1,10})/i) || text.match(/\b(\d{1,10})\b/);
+  if (m && m[1]) return m[1];
+  return null;
+}
+
+// 嘗試決定要使用的活動（若未提供 eventId）
+async function resolveEventIdOrRecord(client, providedEventId) {
+  if (providedEventId) {
+    const er = await client.query('SELECT id, title FROM events WHERE id = $1', [providedEventId]);
+    if (er.rows.length === 0) throw new Error('活動不存在');
+    return er.rows[0];
+  }
+  // 預設：找最近 7 天內含今日的活動，優先今天，其次最近未來/過去
+  const cand = await client.query(`
+    SELECT id, title, event_date
+    FROM events
+    WHERE event_date >= CURRENT_DATE - INTERVAL '7 days'
+    ORDER BY CASE WHEN event_date = CURRENT_DATE THEN 0 ELSE 1 END, event_date ASC
+    LIMIT 1
+  `);
+  if (cand.rows.length === 0) throw new Error('未提供活動且近期無活動，請先選擇活動');
+  return cand.rows[0];
+}
+
+// 新增：QR Code 報到（支援 JSON 或 URL 內容）
+router.post('/qr-checkin', authenticateToken, checkAttendancePermission, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { qrData, eventId } = req.body || {};
+    if (!qrData) {
+      return res.status(400).json({ success: false, message: '缺少 QR Code 內容' });
+    }
+
+    const memberIdStr = parseMemberIdFromTextOrUrl(qrData);
+    if (!memberIdStr) {
+      return res.status(400).json({ success: false, message: '無法從 QR Code 內容解析會員資訊' });
+    }
+
+    await client.query('BEGIN');
+
+    // 會員存在檢查
+    const userResult = await client.query('SELECT id, name FROM users WHERE id = $1', [memberIdStr]);
+    if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: '用戶不存在' });
+    }
+
+    // 活動解析
+    const event = await resolveEventIdOrRecord(client, eventId);
+
+    // 重複報到檢查
+    const existing = await client.query(
+      'SELECT id FROM attendance_records WHERE user_id = $1 AND event_id = $2',
+      [memberIdStr, event.id]
+    );
+    if (existing.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: `${userResult.rows[0].name} 已經完成報到` });
+    }
+
+    // 新增報到
+    await client.query(
+      'INSERT INTO attendance_records (user_id, event_id) VALUES ($1, $2)',
+      [memberIdStr, event.id]
+    );
+
+    // 新增收入
+    await client.query(
+      'INSERT INTO transactions (date, item_name, type, amount, notes, created_by_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [
+        new Date().toISOString().split('T')[0],
+        `${userResult.rows[0].name} - ${event.title} 活動報到 (QR)`,
+        'income',
+        300,
+        'QR Code 自動報到收入',
+        req.user.id
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: `${userResult.rows[0].name} 報到成功，已自動新增300元收入`,
+      user: userResult.rows[0],
+      event: { id: event.id, title: event.title }
+    });
+  } catch (error) {
+    try { await pool.query('ROLLBACK'); } catch (e) {}
+    console.error('Error during QR check-in:', error);
+    res.status(500).json({ success: false, message: 'QR 報到失敗' });
+  } finally {
+    try { client.release(); } catch (e) {}
+  }
+});
+
+// 新增：NFC 名片 URL 報到（NDEF 內容為會員電子名片網址）
+router.post('/nfc-url-checkin', authenticateToken, checkAttendancePermission, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { url, eventId } = req.body || {};
+    if (!url) {
+      return res.status(400).json({ success: false, message: '缺少 NFC 名片網址' });
+    }
+
+    const memberIdStr = parseMemberIdFromTextOrUrl(url);
+    if (!memberIdStr) {
+      return res.status(400).json({ success: false, message: '無法從 NFC 名片網址解析會員資訊' });
+    }
+
+    await client.query('BEGIN');
+
+    // 會員存在檢查
+    const userResult = await client.query('SELECT id, name FROM users WHERE id = $1', [memberIdStr]);
+    if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: '用戶不存在' });
+    }
+
+    // 活動解析
+    const event = await resolveEventIdOrRecord(client, eventId);
+
+    // 重複報到檢查
+    const existing = await client.query(
+      'SELECT id FROM attendance_records WHERE user_id = $1 AND event_id = $2',
+      [memberIdStr, event.id]
+    );
+    if (existing.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: `${userResult.rows[0].name} 已經完成報到` });
+    }
+
+    // 新增報到
+    await client.query(
+      'INSERT INTO attendance_records (user_id, event_id) VALUES ($1, $2)',
+      [memberIdStr, event.id]
+    );
+
+    // 新增收入
+    await client.query(
+      'INSERT INTO transactions (date, item_name, type, amount, notes, created_by_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [
+        new Date().toISOString().split('T')[0],
+        `${userResult.rows[0].name} - ${event.title} 活動報到 (NFC URL)`,
+        'income',
+        300,
+        'NFC 名片 URL 自動報到收入',
+        req.user.id
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: `${userResult.rows[0].name} 報到成功，已自動新增300元收入`,
+      user: userResult.rows[0],
+      event: { id: event.id, title: event.title },
+      method: 'NFC URL'
+    });
+  } catch (error) {
+    try { await pool.query('ROLLBACK'); } catch (e) {}
+    console.error('Error during NFC URL check-in:', error);
+    res.status(500).json({ success: false, message: 'NFC URL 報到失敗' });
+  } finally {
+    try { client.release(); } catch (e) {}
+  }
+});
+
 // QR Code 報到
 router.post('/checkin', authenticateToken, checkAttendancePermission, async (req, res) => {
   try {
