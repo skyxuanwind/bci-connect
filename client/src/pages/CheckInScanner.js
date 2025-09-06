@@ -29,35 +29,47 @@ const CheckInScanner = () => {
   const sseRef = useRef(null);
   const [lastNfcEvent, setLastNfcEvent] = useState(null);
   const [showGatewayHelp, setShowGatewayHelp] = useState(false);
+  const [hideSseHint, setHideSseHint] = useState(false);
+  // 新增：Gateway 下載區塊收合與複製反饋
+  const [showGatewayDownloads, setShowGatewayDownloads] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState('');
+
+  useEffect(() => {
+    // 初始化讀取是否關閉過浮層
+    try {
+      const v = localStorage.getItem('bci_hideSseHint');
+      if (v === '1') setHideSseHint(true);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     fetchEvents();
-    
+  
     // 啟動 SSE 連線：接收來自後端（本地 Gateway → 雲端 API）推播的 NFC 報到事件
     try {
       const es = new EventSource('/api/nfc-checkin-mongo/events');
       sseRef.current = es;
-
+  
       es.onopen = () => {
         setSseConnected(true);
         addDebugInfo('SSE 連線已建立（NFC 報到事件）');
       };
-
+  
       es.onerror = (e) => {
         setSseConnected(false);
         addDebugInfo('SSE 連線中斷，將自動重試');
       };
-
+  
       es.addEventListener('nfc-checkin', (event) => {
         try {
           const data = JSON.parse(event.data || '{}');
           if (!data || !data.id) return;
           if (processedSseCheckinsRef.current.has(data.id)) return; // 去重
           processedSseCheckinsRef.current.add(data.id);
-
+  
           setLastNfcEvent(data);
           addDebugInfo(`收到 NFC 報到事件：${data.member?.name || data.cardUid}`);
-
+  
           // 將事件呈現在右側結果與成功彈窗
           const successPayload = {
             success: true,
@@ -66,7 +78,7 @@ const CheckInScanner = () => {
             event: null // 後端已同步至出席管理（若有近期活動），此處僅呈現即時資訊
           };
           setScanResult(successPayload);
-
+  
           setSuccessModalData({
             user: successPayload.user,
             event: successPayload.event,
@@ -74,7 +86,7 @@ const CheckInScanner = () => {
             timestamp: new Date().toLocaleString('zh-TW')
           });
           setShowSuccessModal(true);
-
+  
           if (modalTimeoutRef.current) clearTimeout(modalTimeoutRef.current);
           modalTimeoutRef.current = setTimeout(() => {
             setShowSuccessModal(false);
@@ -88,7 +100,7 @@ const CheckInScanner = () => {
     } catch (e) {
       addDebugInfo('建立 SSE 連線失敗');
     }
-
+  
     return () => {
       if (html5QrcodeScannerRef.current) {
         html5QrcodeScannerRef.current.clear();
@@ -146,6 +158,20 @@ const CheckInScanner = () => {
   const addDebugInfo = (message) => {
     const timestamp = new Date().toLocaleTimeString();
     setDebugInfo(prev => [`[${timestamp}] ${message}`, ...prev].slice(0, 10));
+  };
+
+  const copyToClipboard = async (text, label = '') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      const msg = label ? `已複製：${label}` : '已複製連結';
+      setCopyFeedback(msg);
+      addDebugInfo(msg);
+      setTimeout(() => setCopyFeedback(''), 2000);
+    } catch (e) {
+      setCopyFeedback('複製失敗');
+      addDebugInfo('複製失敗');
+      setTimeout(() => setCopyFeedback(''), 2000);
+    }
   };
 
   const handleQRCodeScan = async (decodedText) => {
@@ -325,84 +351,72 @@ const CheckInScanner = () => {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('zh-TW', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      weekday: 'short'
+      year: 'numeric', month: '2-digit', day: '2-digit'
     });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
-        {/* 標題區域 */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">📱 活動報到系統</h1>
-          <p className="text-lg text-gray-600">
-            使用 QR Code 掃描進行活動報到
-          </p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Check-In Scanner</h1>
+          <p className="text-gray-600">使用 QR Code 或 NFC 名片進行快速報到</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 左側：掃描控制 */}
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 左側：掃描區域 */}
+          <div className="lg:col-span-2 space-y-6">
             {/* 活動選擇 */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">選擇活動</h2>
-              <select
-                value={selectedEvent}
-                onChange={(e) => setSelectedEvent(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">請選擇活動（或留空進行一般報到）</option>
-                {events.map(event => (
-                  <option key={event.id} value={event.id}>
-                    {event.title} - {formatDate(event.event_date)}
-                  </option>
-                ))}
-              </select>
+              <h2 className="text-xl font-semibold text-blue-900 mb-4">選擇活動</h2>
+              <div className="flex items-center gap-3">
+                <select
+                  value={selectedEvent}
+                  onChange={(e) => setSelectedEvent(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">不限活動</option>
+                  {events.map(event => (
+                    <option key={event.id} value={event.id}>
+                      {event.title}（{formatDate(event.event_date)}）
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={fetchEvents}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  重新載入活動
+                </button>
+              </div>
             </div>
 
-            {/* QR Code 掃描區域 */}
+            {/* QR Code 掃描 */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">📱 QR Code 掃描</h2>
-              
-              <div className="text-center">
-                {/* 永遠渲染掃描器容器，但非掃描時隱藏以避免初始化找不到元素 */}
-                <div id="qr-reader" className="mb-4" style={{ display: isScanning ? 'block' : 'none' }}></div>
-
-                {!isScanning ? (
-                  <div>
-                    <div className="mb-4">
-                      <svg className="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m-2 0h-2m3-4h2m-6 0h2v-4m0 0V9a2 2 0 012-2h2a2 2 0 012 2v2m-6 4V9a2 2 0 012-2h2a2 2 0 012 2v2m-6 4h2m6-4h2" />
-                      </svg>
-                      <p className="text-gray-600 mb-4">點擊開始掃描 QR Code</p>
-                    </div>
-                    <button
-                      onClick={startQRScanner}
-                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      🚀 開始 QR 掃描
-                    </button>
-                  </div>
-                ) : (
-                  <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">📷 QR Code 掃描</h2>
+              {!isScanning ? (
+                <button
+                  onClick={startQRScanner}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  開始 QR 掃描
+                </button>
+              ) : (
+                <div>
+                  <div id="qr-reader" className="w-full h-[300px] mb-3 bg-gray-50" />
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={stopQRScanner}
-                      className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                     >
-                      ⏹️ 停止掃描
+                      停止掃描
                     </button>
+                    {scannerError && (
+                      <span className="text-sm text-red-600">{scannerError}</span>
+                    )}
                   </div>
-                )}
-                
-                {scannerError && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-700 text-sm">{scannerError}</p>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* 新增：NFC 名片感應（外接讀卡機輸入網址） */}
@@ -457,55 +471,105 @@ const CheckInScanner = () => {
               </div>
 
               {/* 下載本地 Gateway 啟動器 */}
-              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="text-sm font-semibold text-gray-800 mb-2">⬇️ 下載本地 Gateway 啟動器（在讀卡機旁的電腦執行）</div>
-                <div className="flex flex-wrap gap-2">
-                  <a
-                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-macOS.zip`}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-gray-800 text-white hover:bg-gray-900"
-                  >
-                    🍎 macOS App（建議）
-                  </a>
-                  <a
-                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher.command`}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-gray-700 text-white hover:bg-gray-800"
-                  >
-                    🍎 macOS Script（.command）
-                  </a>
-                  <a
-                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.vbs`}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    🪟 Windows 一鍵（VBS，建議）
-                  </a>
-                  <a
-                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.bat`}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-blue-500 text-white hover:bg-blue-600"
-                  >
-                    🪟 Windows Batch（.bat）
-                  </a>
-                  <a
-                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.ps1`}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-indigo-500 text-white hover:bg-indigo-600"
-                  >
-                    🪟 Windows PowerShell（.ps1）
-                  </a>
+              <div id="gateway-downloads" className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-semibold text-gray-800">
+                    ⬇️ 下載本地 Gateway 啟動器（在讀卡機旁的電腦執行）
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {copyFeedback && (
+                      <span className="text-xs text-green-600">{copyFeedback}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowGatewayDownloads(v => !v)}
+                      className="text-xs text-blue-600 underline hover:text-blue-700"
+                    >
+                      {showGatewayDownloads ? '收起' : '展開'}
+                    </button>
+                  </div>
                 </div>
+
+                {showGatewayDownloads && (
+                  <div className="flex flex-wrap gap-2">
+                    <div className="inline-flex items-center gap-2">
+                      <a
+                        href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-macOS.zip`}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-gray-800 text-white hover:bg-gray-900"
+                      >
+                        🍎 macOS App（建議）
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-macOS.zip`, 'macOS App 下載連結')}
+                        className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        複製連結
+                      </button>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2">
+                      <a
+                        href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher.command`}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-gray-700 text-white hover:bg-gray-800"
+                      >
+                        🍎 macOS Script（.command）
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher.command`, 'macOS Script（.command）下載連結')}
+                        className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        複製連結
+                      </button>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2">
+                      <a
+                        href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.vbs`}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        🪟 Windows 一鍵（VBS，建議）
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.vbs`, 'Windows VBS 下載連結')}
+                        className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        複製連結
+                      </button>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2">
+                      <a
+                        href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.bat`}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-blue-500 text-white hover:bg-blue-600"
+                      >
+                        🪟 Windows .bat（備用）
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.bat`, 'Windows .bat 下載連結')}
+                        className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        複製連結
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
                 <div className="text-xs text-gray-500 mt-2 leading-relaxed">
                   • 下載後放到桌面，雙擊執行；依指示安裝依賴並啟動本地 Gateway（預設埠 3002）。<br/>
                   • macOS 第一次可能需要允許「來自身份不明的開發者」，或先解壓 .zip 再打開 App。<br/>
@@ -641,46 +705,6 @@ const CheckInScanner = () => {
           </div>
         </div>
       </div>
-
-      {/* 報到成功彈窗 */}
-      {showSuccessModal && successModalData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
-            <div className="mb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">報到成功！</h3>
-              <p className="text-lg text-gray-700 mb-1">{successModalData.user?.name}</p>
-              {successModalData.user?.company && (
-                <p className="text-sm text-gray-500 mb-2">{successModalData.user.company}</p>
-              )}
-              {successModalData.event && (
-                <p className="text-sm text-blue-600 mb-2">活動：{successModalData.event.title}</p>
-              )}
-              <p className="text-xs text-gray-400">
-                {successModalData.method} • {successModalData.timestamp}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setShowSuccessModal(false);
-                setSuccessModalData(null);
-                if (modalTimeoutRef.current) {
-                  clearTimeout(modalTimeoutRef.current);
-                }
-              }}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              確定
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
   );
 };
-
 export default CheckInScanner;
