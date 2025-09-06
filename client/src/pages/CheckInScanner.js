@@ -454,6 +454,63 @@ const CheckInScanner = () => {
                   將焦點移至輸入框
                 </button>
               </div>
+
+              {/* 下載本地 Gateway 啟動器 */}
+              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-sm font-semibold text-gray-800 mb-2">⬇️ 下載本地 Gateway 啟動器（在讀卡機旁的電腦執行）</div>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-macOS.zip`}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-gray-800 text-white hover:bg-gray-900"
+                  >
+                    🍎 macOS App（建議）
+                  </a>
+                  <a
+                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher.command`}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-gray-700 text-white hover:bg-gray-800"
+                  >
+                    🍎 macOS Script（.command）
+                  </a>
+                  <a
+                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.vbs`}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    🪟 Windows 一鍵（VBS，建議）
+                  </a>
+                  <a
+                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.bat`}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-blue-500 text-white hover:bg-blue-600"
+                  >
+                    🪟 Windows Batch（.bat）
+                  </a>
+                  <a
+                    href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.ps1`}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-indigo-500 text-white hover:bg-indigo-600"
+                  >
+                    🪟 Windows PowerShell（.ps1）
+                  </a>
+                </div>
+                <div className="text-xs text-gray-500 mt-2 leading-relaxed">
+                  • 下載後放到桌面，雙擊執行；依指示安裝依賴並啟動本地 Gateway（預設埠 3002）。<br/>
+                  • macOS 第一次可能需要允許「來自身份不明的開發者」，或先解壓 .zip 再打開 App。<br/>
+                  • 啟動成功後回到此頁面，SSE 狀態保持「已連線」，刷卡即會自動報到。
+                </div>
+              </div>
             </div>
 
             {/* 掃描結果 */}
