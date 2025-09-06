@@ -4,6 +4,12 @@
 # 若被安全性阻擋，請右鍵 → 開啟（首次可能需要到「系統設定 > 隱私權與安全性 > 仍要打開」）
 
 set -e
+# 在本機專案中若已存在 Gateway 啟動腳本，則直接呼叫以簡化操作
+LOCAL_CMD="/Users/xuan/Desktop/BCI Connect/nfc-gateway-service/Start-NFC-Gateway.command"
+if [ -x "$LOCAL_CMD" ]; then
+  echo "[BCI] 發現本機 Gateway 啟動器，直接執行：$LOCAL_CMD"
+  exec "$LOCAL_CMD"
+fi
 
 APP_NAME="BCI NFC Gateway 啟動器"
 DEST_DIR="$HOME/BCI-NFC-Gateway"
