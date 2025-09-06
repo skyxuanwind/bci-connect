@@ -2,13 +2,12 @@ import axios from 'axios';
 
 // 根據環境設置 API 基礎 URL
 const getBaseURL = () => {
-  // 在生產環境中，不設置 baseURL，因為前端代碼中的 API 路徑已經包含 /api
-  if (process.env.NODE_ENV === 'production') {
-    return '';
+  // 允許以環境變數覆蓋（例如在部署或特別開發情境）
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
   }
-  
-  // 開發環境直接指向後端伺服器
-  return 'http://localhost:8000';
+  // 預設走同源 + CRA 代理，在生產與開發皆回傳空字串
+  return '';
 }
 
 // 設置axios默認配置

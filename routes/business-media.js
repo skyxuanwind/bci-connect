@@ -38,7 +38,9 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       body,
       ctas = [], // [{ label, url, style, targetMemberId }]
       status = 'draft',
-      publishedAt
+      publishedAt,
+      pinned = false,
+      sortOrder = 0
     } = req.body;
 
     if (!title || !speakerId || !contentType) {
@@ -49,10 +51,10 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     const baseSlug = slugify(title);
 
     const insertResult = await pool.query(
-      `INSERT INTO business_media (title, speaker_id, content_type, platform, external_url, summary, body, ctas, status, published_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      `INSERT INTO business_media (title, speaker_id, content_type, platform, external_url, summary, body, ctas, status, published_at, pinned, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        RETURNING id`,
-      [title, speakerId, contentType, platform, externalUrl || null, summary || null, body || null, JSON.stringify(ctas || []), status, publishedAt || null]
+      [title, speakerId, contentType, platform, externalUrl || null, summary || null, body || null, JSON.stringify(ctas || []), status, publishedAt || null, pinned, sortOrder]
     );
 
     const id = insertResult.rows[0].id;
@@ -79,7 +81,9 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       body,
       ctas,
       status,
-      publishedAt
+      publishedAt,
+      pinned, // 新增：置頂
+      sortOrder // 新增：排序
     } = req.body;
 
     const platform = externalUrl ? parsePlatform(externalUrl) : undefined;
@@ -96,9 +100,11 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
         ctas = COALESCE($8, ctas),
         status = COALESCE($9, status),
         published_at = COALESCE($10, published_at),
+        pinned = COALESCE($11, pinned),
+        sort_order = COALESCE($12, sort_order),
         updated_at = CURRENT_TIMESTAMP
-       WHERE id = $11 RETURNING *`,
-      [title ?? null, speakerId ?? null, contentType ?? null, platform ?? null, externalUrl ?? null, summary ?? null, body ?? null, ctas != null ? JSON.stringify(ctas) : null, status ?? null, publishedAt ?? null, id]
+       WHERE id = $13 RETURNING *`,
+      [title ?? null, speakerId ?? null, contentType ?? null, platform ?? null, externalUrl ?? null, summary ?? null, body ?? null, ctas != null ? JSON.stringify(ctas) : null, status ?? null, publishedAt ?? null, pinned, sortOrder, id]
     );
 
     if (result.rowCount === 0) return res.status(404).json({ success: false, message: '內容不存在' });
@@ -174,7 +180,7 @@ router.get('/', authenticateToken, async (req, res) => {
        FROM business_media bm
        JOIN users u ON bm.speaker_id = u.id
        ${whereSql}
-       ORDER BY COALESCE(bm.published_at, bm.created_at) DESC
+       ORDER BY bm.pinned DESC, bm.sort_order ASC, COALESCE(bm.published_at, bm.created_at) DESC
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, limit, offset]
     );
@@ -306,3 +312,23 @@ router.post('/:id/track/card', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+
+// Delete content (Admin)
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 先刪除分析資料
+    await pool.query('DELETE FROM business_media_analytics WHERE content_id = $1', [id]);
+
+    // 再刪除主內容
+    const result = await pool.query('DELETE FROM business_media WHERE id = $1', [id]);
+
+    if (result.rowCount === 0) return res.status(404).json({ success: false, message: '內容不存在' });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete business media error:', error);
+    res.status(500).json({ success: false, message: '刪除內容失敗' });
+  }
+});

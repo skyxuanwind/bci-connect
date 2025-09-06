@@ -301,6 +301,16 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Ensure pinned & sort_order columns exist for business_media
+    await pool.query(`
+      ALTER TABLE business_media
+      ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE;
+    `);
+    await pool.query(`
+      ALTER TABLE business_media
+      ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+    `);
+
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_business_media_speaker_id ON business_media(speaker_id);
     `);
@@ -309,6 +319,12 @@ const initializeDatabase = async () => {
     `);
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_business_media_published_at ON business_media(published_at DESC);
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_business_media_pinned ON business_media(pinned);
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_business_media_sort_order ON business_media(sort_order);
     `);
 
     // Create business_media_analytics table (商媒體分析)

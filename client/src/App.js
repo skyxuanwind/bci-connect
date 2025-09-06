@@ -55,6 +55,7 @@ import MemberCard from './pages/MemberCard';
 import DigitalWallet from './pages/DigitalWallet';
 import NFCAnalytics from './pages/NFCAnalytics';
 import BusinessMediaList from './pages/BusinessMediaList';
+import BusinessMediaAdmin from './pages/admin/BusinessMediaAdmin';
 
 
 
@@ -244,6 +245,14 @@ function App() {
           } />
           
 
+          
+          <Route path="/admin/business-media" element={
+            <AdminRoute>
+              <Layout>
+                <BusinessMediaAdmin />
+              </Layout>
+            </AdminRoute>
+          } />
           
           <Route path="/prospects/:id" element={
             <Level1Route>
