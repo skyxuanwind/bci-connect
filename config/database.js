@@ -279,6 +279,61 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create business_media table (商媒體內容中心)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS business_media (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        speaker_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        content_type VARCHAR(20) NOT NULL CHECK (content_type IN ('video_long', 'video_short', 'article')),
+        platform VARCHAR(30),
+        external_url VARCHAR(500),
+        slug VARCHAR(255) UNIQUE,
+        summary TEXT,
+        body TEXT,
+        ctas JSONB DEFAULT '[]',
+        published_at TIMESTAMP,
+        status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+        view_count INTEGER DEFAULT 0,
+        comment_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_business_media_speaker_id ON business_media(speaker_id);
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_business_media_content_type ON business_media(content_type);
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_business_media_published_at ON business_media(published_at DESC);
+    `);
+
+    // Create business_media_analytics table (商媒體分析)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS business_media_analytics (
+        id SERIAL PRIMARY KEY,
+        content_id INTEGER NOT NULL REFERENCES business_media(id) ON DELETE CASCADE,
+        event_type VARCHAR(20) NOT NULL CHECK (event_type IN ('view', 'cta_click', 'card_click')),
+        visitor_ip VARCHAR(45),
+        user_agent TEXT,
+        referrer VARCHAR(500),
+        cta_label VARCHAR(200),
+        cta_url VARCHAR(500),
+        target_member_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_business_media_analytics_content_id ON business_media_analytics(content_id);
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_business_media_analytics_event_type ON business_media_analytics(event_type);
+    `);
+
     // Create blacklist_entries table (黑名單專區)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS blacklist_entries (

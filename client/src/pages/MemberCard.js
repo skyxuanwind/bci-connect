@@ -51,6 +51,10 @@ const MemberCard = () => {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState('');
 
+  // 商媒體：顯示該講者的精選內容
+  const [businessMediaItems, setBusinessMediaItems] = useState([]);
+  const [bmLoading, setBmLoading] = useState(false);
+  const [bmError, setBmError] = useState('');
   // 輔助：是否為掃描名片 ID
   const isScannedId = (id) => String(id || '').split(':')[0].startsWith('scanned_');
   const baseId = String(memberId || '').split(':')[0];
@@ -118,6 +122,28 @@ const MemberCard = () => {
 
     return () => clearInterval(interval);
   }, [currentToken]);
+
+  // 取得商媒體精選內容
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchBM() {
+      if (!memberId || isScannedId(memberId) || memberId === 'test') return;
+      try {
+        setBmLoading(true);
+        setBmError('');
+        const resp = await axios.get('/api/business-media', {
+          params: { speakerId: memberId, limit: 5, status: 'published' }
+        });
+        if (!cancelled) setBusinessMediaItems(resp?.data?.items || []);
+      } catch (e) {
+        if (!cancelled) setBmError('');
+      } finally {
+        if (!cancelled) setBmLoading(false);
+      }
+    }
+    fetchBM();
+    return () => { cancelled = true };
+  }, [memberId]);
 
   // 從資料列轉換為前端需要的內容區塊格式
   const mapRowToBlock = (row) => {
@@ -1037,6 +1063,69 @@ const MemberCard = () => {
             );
           })
         }
+
+        {/* 商媒體精選內容 */}
+        {businessMediaItems.length > 0 && (
+          <div className="content-block">
+            <h3 className="block-title">我的商媒體</h3>
+            <div className="space-y-3">
+              {businessMediaItems.map((it) => (
+                <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">{it.title}</div>
+                      <div className="mt-1 text-xs text-gray-500 space-x-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{it.content_type}</span>
+                        {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">{it.platform}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  {it.summary && (
+                    <p className="mt-2 text-xs text-gray-600 line-clamp-3">{it.summary}</p>
+                  )}
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await axios.post(`/api/business-media/${it.id}/track/cta`, {
+                            ctaLabel: 'open_external',
+                            ctaUrl: it.external_url || '',
+                            targetMemberId: null,
+                          }).catch(() => {});
+                        } catch {}
+                        if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
+                      }}
+                      className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
+                    >
+                      前往觀看
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await axios.post(`/api/business-media/${it.id}/track/card`, {
+                            targetMemberId: Number(memberId),
+                          }).catch(() => {});
+                        } catch {}
+                        navigate(`/member/${memberId}`);
+                      }}
+                      className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                    >
+                      我的名片
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {businessMediaItems.length >= 5 && (
+                <button
+                  onClick={() => navigate(`/business-media?speakerId=${memberId}`)}
+                  className="px-3 py-1.5 text-xs bg-white text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  查看更多
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 固定按鈕 */}

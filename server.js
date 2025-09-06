@@ -28,6 +28,7 @@ const nfcCardsRoutes = require('./routes/nfc-cards');
 const nfcAnalyticsRoutes = require('./routes/nfc-analytics');
 const ocrScannerRoutes = require('./routes/ocr-scanner');
 const digitalWalletRoutes = require('./routes/digital-wallet');
+const businessMediaRoutes = require('./routes/business-media');
 
 const wishesRoutes = require('./routes/wishes');
 const notificationsRoutes = require('./routes/notifications');
@@ -54,7 +55,7 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "http://localhost:3000", "http://localhost:3001", "https:", "https://res.cloudinary.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       scriptSrc: ["'self'"],
-      frameSrc: ["'self'", "https://www.youtube.com", "https://player.vimeo.com"],
+      frameSrc: ["'self'", "https://www.youtube.com", "https://player.vimeo.com", "https://www.tiktok.com", "https://www.instagram.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
     }
@@ -65,7 +66,7 @@ app.use(helmet({
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; connect-src 'self' http://localhost:* https://*.onrender.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; frame-src 'self' https://www.youtube.com https://player.vimeo.com; media-src 'self' data:;"
+    "default-src 'self'; connect-src 'self' http://localhost:* https://*.onrender.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; frame-src 'self' https://www.youtube.com https://player.vimeo.com https://www.tiktok.com https://www.instagram.com; media-src 'self' data:;"
   );
   next();
 });

@@ -54,6 +54,7 @@ import NFCCardEditor from './pages/NFCCardEditor';
 import MemberCard from './pages/MemberCard';
 import DigitalWallet from './pages/DigitalWallet';
 import NFCAnalytics from './pages/NFCAnalytics';
+import BusinessMediaList from './pages/BusinessMediaList';
 
 
 
@@ -153,6 +154,14 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <FoundationInfo />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/business-media" element={
+            <ProtectedRoute>
+              <Layout>
+                <BusinessMediaList />
               </Layout>
             </ProtectedRoute>
           } />
