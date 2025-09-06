@@ -28,6 +28,7 @@ const CheckInScanner = () => {
   const [sseConnected, setSseConnected] = useState(false);
   const sseRef = useRef(null);
   const [lastNfcEvent, setLastNfcEvent] = useState(null);
+  const [showGatewayHelp, setShowGatewayHelp] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -509,6 +510,67 @@ const CheckInScanner = () => {
                   • 下載後放到桌面，雙擊執行；依指示安裝依賴並啟動本地 Gateway（預設埠 3002）。<br/>
                   • macOS 第一次可能需要允許「來自身份不明的開發者」，或先解壓 .zip 再打開 App。<br/>
                   • 啟動成功後回到此頁面，SSE 狀態保持「已連線」，刷卡即會自動報到。
+                </div>
+
+                {/* 教學與常見問題（可展開） */}
+                <div className="mt-4 border-t border-gray-200 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowGatewayHelp(v => !v)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {showGatewayHelp ? '－ 收合教學與常見問題' : '＋ 展開教學與常見問題'}
+                  </button>
+
+                  {showGatewayHelp && (
+                    <div className="mt-3 text-sm text-gray-700 space-y-3">
+                      <div>
+                        <div className="font-semibold text-gray-800 mb-1">一、準備與安裝</div>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>插上讀卡機（ACR122U 等），避免延長線造成供電不足。</li>
+                          <li>下載上方啟動器到桌面，雙擊執行並允許網路權限。</li>
+                          <li>啟動後會開在本機埠 3002，並連線雲端 API。</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <div className="font-semibold text-gray-800 mb-1">二、macOS 啟動指引</div>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>若出現「無法打開，因為來自身份不明的開發者」，請到「系統設定 → 隱私與安全性」點選仍要打開。</li>
+                          <li>若 .command 無法執行，打開「終端機」執行：chmod +x ~/Desktop/BCI-NFC-Gateway-Launcher.command 後再雙擊。</li>
+                          <li>必要時於「系統設定 → 隱私與安全性 → 完整磁碟存取 / 自動化」允許終端機執行。</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <div className="font-semibold text-gray-800 mb-1">三、Windows 啟動指引</div>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>若被 Defender 阻擋，請選擇「其他資訊 → 仍要執行」，或改用 .bat / .ps1 版。</li>
+                          <li>PowerShell 可能需要允許腳本：以系統管理員開啟 PowerShell，執行 Set-ExecutionPolicy RemoteSigned。</li>
+                          <li>若未自動安裝 USB 驅動，請於裝置管理員更新 ACR122U 相關驅動。</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <div className="font-semibold text-gray-800 mb-1">四、如何確認通路正常？</div>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>此頁面上方「SSE 即時通道」顯示為「已連線」。</li>
+                          <li>啟動器日誌顯示「已連線 Gateway 服務，監聽 3002」之類訊息。</li>
+                          <li>刷卡後 1 秒內，右側會跳出成功提示並顯示會員姓名或卡片 UID。</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <div className="font-semibold text-gray-800 mb-1">五、常見問題排查</div>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>SSE 顯示未連線：檢查網路是否可連雲端 API，或稍候自動重試。</li>
+                          <li>刷卡無反應：確認本機 3002 服務仍在執行，或重新啟動啟動器。</li>
+                          <li>卡片不相容：目前以 MIFARE/ISO14443 常見 UID 為主；若特殊卡片，請回報我協助擴充。</li>
+                          <li>安全性：本機啟動器只連線到雲端 API，不會對外開放；請勿公開分享 API Key。</li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
