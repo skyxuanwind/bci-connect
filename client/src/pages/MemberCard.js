@@ -57,7 +57,7 @@ const MemberCard = () => {
   const [bmError, setBmError] = useState('');
   const [bmExpandedId, setBmExpandedId] = useState(null);
   // 輔助：是否為掃描名片 ID
-  const isScannedId = (id) => String(id || '').split(':')[0].startsWith('scanned_');
+  const isScannedId = (id) => String(id).split(':')[0].startsWith('scanned_');
   const baseId = String(memberId || '').split(':')[0];
 
   // 分析追蹤
@@ -1089,7 +1089,7 @@ const MemberCard = () => {
               />
               <button
                 onClick={() => downloadImage(cardData.scanned_image_url, cardData.card_title)}
-                className="absolute bottom-2 right-2 px-2 py-1 text-xs bg-white/90 text-gray-700 border border-gray-200 rounded shadow hover:bg-white"
+                className="absolute bottom-2 right-2 px-2 py-1 text-xs bg-white/90 text-gray-700 rounded shadow hover:bg-white"
                 title="下載掃描原圖"
               >
                 下載原圖
@@ -1120,147 +1120,133 @@ const MemberCard = () => {
           <div className="content-block">
             <h3 className="block-title">我的商媒體</h3>
             <div className="space-y-3">
-              {businessMediaItems.map((it) => {
-                const embedUrl = getBusinessMediaEmbedUrl(it);
-                const canEmbed = !!embedUrl && (it.content_type === 'video_long' || it.content_type === 'video_short');
-                const lowerUrl = (it.external_url || '').toLowerCase();
-                const isInstagram = lowerUrl.includes('instagram.com') || it.platform === 'instagram';
-                const isExpanded = bmExpandedId === it.id; // 非 IG 保持原本切換
+              {businessMediaItems.map((it) => (
+                (() => {
+                  const embedUrl = getBusinessMediaEmbedUrl(it);
+                  const canEmbed = !!embedUrl && (it.content_type === 'video_long' || it.content_type === 'video_short');
+                  const lowerUrl = (it.external_url || '').toLowerCase();
+                  const isInstagram = lowerUrl.includes('instagram.com') || it.platform === 'instagram';
+                  const isExpanded = bmExpandedId === it.id;
 
-                return (
-                  <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900">{it.title}</div>
-                        <div className="mt-1 text-xs text-gray-500 space-x-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{it.content_type}</span>
-                          {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">{it.platform}</span>}
+                  return (
+                    <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{it.title}</div>
+                          <div className="mt-1 text-xs text-gray-500 space-x-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{it.content_type}</span>
+                            {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">{it.platform}</span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* 影片：IG 直接顯示；其他平台依 isExpanded 顯示 */}
-                    {(isInstagram && canEmbed) ? (
-                      <div className="mt-2 video-container">
-                        <iframe
-                          title={it.title || 'Instagram Embed'}
-                          src={embedUrl}
-                          allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
-                          allowFullScreen
-                          loading="lazy"
-                          style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
-                          scrolling="no"
-                        />
-                      </div>
-                    ) : (
-                      isExpanded && canEmbed && (
+                      {(isInstagram && canEmbed) ? (
                         <div className="mt-2 video-container">
                           <iframe
-                            title={it.title}
+                            title={it.title || 'Instagram Embed'}
                             src={embedUrl}
-                            width="100%"
-                            height="315"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                            allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
                             allowFullScreen
+                            loading="lazy"
+                            style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
+                            scrolling="no"
                           />
                         </div>
-                      )
-                    )}
-
-                    {it.summary && (
-                      <p className="mt-2 text-xs text-gray-600 line-clamp-3">{it.summary}</p>
-                    )}
-                    <div className="mt-2 flex items-center gap-2">
-                      {/* 非 IG 才顯示切換按鈕；IG 直接展示 */}
-                      {!isInstagram && (
-                        <button
-                          onClick={async () => {
-                            if (!canEmbed) {
-                              try {
-                                await axios.post(`/api/business-media/${it.id}/track/cta`, {
-                                  ctaLabel: 'open_external',
-                                  ctaUrl: it.external_url || '',
-                                  targetMemberId: null,
-                                }).catch(() => {});
-                              } catch {}
-                              if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
-                              return;
-                            }
-                            const next = isExpanded ? null : it.id;
-                            setBmExpandedId(next);
-                            if (next) {
-                              try {
-                                await axios.post(`/api/business-media/${it.id}/track/view`, {}).catch(() => {});
-                              } catch {}
-                            }
-                          }}
-                          className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
-                        >
-                          {isExpanded ? '收起影片' : (canEmbed ? '在本站播放' : '前往觀看')}
-                        </button>
+                      ) : (
+                        isExpanded && canEmbed ? (
+                          <div className="mt-2 video-container">
+                            <iframe
+                              title={it.title}
+                              src={embedUrl}
+                              width="100%"
+                              height="315"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                              allowFullScreen
+                            />
+                          </div>
+                        ) : null
                       )}
 
-                      {/* 前往原平台 */}
-                      <button
-                        onClick={async () => {
-                          try {
-                            await axios.post(`/api/business-media/${it.id}/track/cta`, {
-                              ctaLabel: 'open_external',
-                              ctaUrl: it.external_url || '',
-                              targetMemberId: null,
-                            }).catch(() => {});
-                          } catch {}
-                          if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
-                        }}
-                        className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
-                      >
-                        前往原平台
-                      </button>
+                      {it.summary && (
+                        <p className="mt-2 text-xs text-gray-600 line-clamp-3">{it.summary}</p>
+                      )}
+                      <div className="mt-2 flex items-center gap-2">
+                        {!isInstagram && (
+                          <button
+                            onClick={async () => {
+                              if (!canEmbed) {
+                                try {
+                                  await axios.post(`/api/business-media/${it.id}/track/cta`, {
+                                    ctaLabel: 'open_external',
+                                    ctaUrl: it.external_url || '',
+                                    targetMemberId: null,
+                                  }).catch(() => {});
+                                } catch {}
+                                if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
+                                return;
+                              }
+                              const next = isExpanded ? null : it.id;
+                              setBmExpandedId(next);
+                              if (next) {
+                                try {
+                                  await axios.post(`/api/business-media/${it.id}/track/view`, {}).catch(() => {});
+                                } catch {}
+                              }
+                            }}
+                            className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
+                          >
+                            {isExpanded ? '收起影片' : (canEmbed ? '在本站播放' : '前往觀看')}
+                          </button>
+                        )}
 
-                      {/* 我的名片 */}
-                      <button
-                        onClick={async () => {
-                          try {
-                            await axios.post(`/api/business-media/${it.id}/track/card`, {
-                              targetMemberId: Number(memberId),
-                            }).catch(() => {});
-                          } catch {}
-                          navigate(`/member/${memberId}`);
-                        }}
-                        className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
-                      >
-                        我的名片
-                      </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await axios.post(`/api/business-media/${it.id}/track/cta`, {
+                                ctaLabel: 'open_external',
+                                ctaUrl: it.external_url || '',
+                                targetMemberId: null,
+                              }).catch(() => {});
+                            } catch {}
+                            if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                        >
+                          前往原平台
+                        </button>
+
+                        <button
+                          onClick={async () => {
+                            try {
+                              await axios.post(`/api/business-media/${it.id}/track/card`, {
+                                targetMemberId: Number(memberId),
+                              }).catch(() => {});
+                            } catch {}
+                            navigate(`/member/${memberId}`);
+                          }}
+                          className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                        >
+                          我的名片
+                        </button>
+                      </div>
                     </div>
                   );
-                  -                  {businessMediaItems.length >= 5 && (
-                  -                    <button
-                  -                      onClick={() => navigate(`/business-media?speakerId=${memberId}`)}
-                  -                      className="px-3 py-1.5 text-xs bg-white text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
-                  -                    >
-                  -                      查看更多
-                  -                    </button>
-                  -                  )}
-                  -                </div>
-                  +                })}
-                  +                {businessMediaItems.length >= 5 && (
-                  +                  <button
-                  +                    onClick={() => navigate(`/business-media?speakerId=${memberId}`)}
-                  +                    className="px-3 py-1.5 text-xs bg-white text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
-                  +                  >
-                  +                    查看更多
-                  +                  </button>
-                  +                )}
-                  +              </div>
-                </div>
+                })()
+              ))}
+              {businessMediaItems.length >= 5 && (
+                <button
+                  onClick={() => navigate(`/business-media?speakerId=${memberId}`)}
+                  className="px-3 py-1.5 text-xs bg-white text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  查看更多
+                </button>
               )}
             </div>
           </div>
         )}
-      </div>
 
-      {/* 固定按鈕 */}
+
       <button
         onClick={downloadVCard}
         disabled={downloadingVCard}
@@ -1291,9 +1277,9 @@ const MemberCard = () => {
           <HeartIcon className="h-6 w-6" />
         )}
       </button>
+    </div>
 
-      {/* 掃描圖片放大預覽 Modal */}
-      {imagePreviewOpen && (
+    {imagePreviewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => setImagePreviewOpen(false)}></div>
           <div className="relative bg-transparent w-full max-w-5xl mx-4">
