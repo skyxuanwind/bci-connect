@@ -55,6 +55,7 @@ const MemberCard = () => {
   const [businessMediaItems, setBusinessMediaItems] = useState([]);
   const [bmLoading, setBmLoading] = useState(false);
   const [bmError, setBmError] = useState('');
+  const [bmExpandedId, setBmExpandedId] = useState(null);
   // 輔助：是否為掃描名片 ID
   const isScannedId = (id) => String(id || '').split(':')[0].startsWith('scanned_');
   const baseId = String(memberId || '').split(':')[0];
@@ -861,9 +862,9 @@ const MemberCard = () => {
     // https://www.youtube.com/embed/VIDEO_ID
     // 以及可能附帶的參數
     const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#/]+)/,
-      /youtube\.com\/embed\/([^&\n?#/]+)/,
-      /youtube\.com\/shorts\/([^&\n?#/]+)/
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#\/]+)/,
+      /youtube\.com\/embed\/([^&\n?#\/]+)/,
+      /youtube\.com\/shorts\/([^&\n?#\/]+)/
     ];
     let videoId = null;
     for (const p of patterns) {
@@ -871,6 +872,56 @@ const MemberCard = () => {
       if (m && m[1]) { videoId = m[1]; break; }
     }
     return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+  };
+
+  // 解析商媒體的可內嵌播放 URL（支援 YouTube / Vimeo / TikTok / Instagram）
+  const getBusinessMediaEmbedUrl = (item) => {
+    if (!item?.external_url) return null;
+    const url = item.external_url;
+    const lower = url.toLowerCase();
+    // YouTube
+    if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
+      try {
+        const vParam = new URL(url).searchParams.get('v');
+        let videoId = vParam;
+        if (!videoId && lower.includes('youtu.be/')) {
+          const m = lower.match(/youtu\.be\/([a-z0-9_-]{6,})/i);
+          videoId = m ? m[1] : null;
+        }
+        if (!videoId && lower.includes('/shorts/')) {
+          const m = lower.match(/\/shorts\/([a-z0-9_-]{6,})/i);
+          videoId = m ? m[1] : null;
+        }
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+      } catch {
+        return null;
+      }
+    }
+    // Vimeo
+    if (lower.includes('vimeo.com')) {
+      const m = lower.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+      return m ? `https://player.vimeo.com/video/${m[1]}` : null;
+    }
+    // TikTok
+    if (lower.includes('tiktok.com')) {
+      let id = null;
+      const m1 = lower.match(/\/video\/(\d+)/);
+      const m2 = lower.match(/\/embed\/v\d+\/(\d+)/);
+      const m3 = lower.match(/\/player\/v1\/(\d+)/);
+      if (m1 && m1[1]) id = m1[1];
+      else if (m2 && m2[1]) id = m2[1];
+      else if (m3 && m3[1]) id = m3[1];
+      return id ? `https://www.tiktok.com/player/v1/${id}` : null;
+    }
+    // Instagram (posts/reels/tv)
+    if (lower.includes('instagram.com')) {
+      const m = lower.match(/instagram\.com\/(reel|p|tv)\/([a-z0-9_-]+)/i);
+      if (m && m[1] && m[2]) {
+        return `https://www.instagram.com/${m[1]}/${m[2]}/embed`;
+      }
+      return null;
+    }
+    return null;
   };
 
   const renderContactInfo = () => {
@@ -1069,52 +1120,97 @@ const MemberCard = () => {
           <div className="content-block">
             <h3 className="block-title">我的商媒體</h3>
             <div className="space-y-3">
-              {businessMediaItems.map((it) => (
-                <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">{it.title}</div>
-                      <div className="mt-1 text-xs text-gray-500 space-x-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{it.content_type}</span>
-                        {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">{it.platform}</span>}
+              {businessMediaItems.map((it) => {
+                const embedUrl = getBusinessMediaEmbedUrl(it);
+                const canEmbed = !!embedUrl && (it.content_type === 'video_long' || it.content_type === 'video_short');
+                const isExpanded = bmExpandedId === it.id;
+                return (
+                  <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">{it.title}</div>
+                        <div className="mt-1 text-xs text-gray-500 space-x-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{it.content_type}</span>
+                          {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">{it.platform}</span>}
+                        </div>
                       </div>
                     </div>
+
+                    {isExpanded && canEmbed && (
+                      <div className="mt-2 video-container">
+                        <iframe
+                          title={it.title}
+                          src={embedUrl}
+                          width="100%"
+                          height="315"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                          allowFullScreen
+                        />
+                      </div>
+                    )}
+
+                    {it.summary && (
+                      <p className="mt-2 text-xs text-gray-600 line-clamp-3">{it.summary}</p>
+                    )}
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        onClick={async () => {
+                          if (!canEmbed) {
+                            try {
+                              await axios.post(`/api/business-media/${it.id}/track/cta`, {
+                                ctaLabel: 'open_external',
+                                ctaUrl: it.external_url || '',
+                                targetMemberId: null,
+                              }).catch(() => {});
+                            } catch {}
+                            if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
+                            return;
+                          }
+                          const next = isExpanded ? null : it.id;
+                          setBmExpandedId(next);
+                          if (next) {
+                            try {
+                              await axios.post(`/api/business-media/${it.id}/track/view`, {}).catch(() => {});
+                            } catch {}
+                          }
+                        }}
+                        className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
+                      >
+                        {isExpanded ? '收起影片' : (canEmbed ? '在本站播放' : '前往觀看')}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.post(`/api/business-media/${it.id}/track/cta`, {
+                              ctaLabel: 'open_external',
+                              ctaUrl: it.external_url || '',
+                              targetMemberId: null,
+                            }).catch(() => {});
+                          } catch {}
+                          if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
+                        }}
+                        className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                      >
+                        前往原平台
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.post(`/api/business-media/${it.id}/track/card`, {
+                              targetMemberId: Number(memberId),
+                            }).catch(() => {});
+                          } catch {}
+                          navigate(`/member/${memberId}`);
+                        }}
+                        className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                      >
+                        我的名片
+                      </button>
+                    </div>
                   </div>
-                  {it.summary && (
-                    <p className="mt-2 text-xs text-gray-600 line-clamp-3">{it.summary}</p>
-                  )}
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      onClick={async () => {
-                        try {
-                          await axios.post(`/api/business-media/${it.id}/track/cta`, {
-                            ctaLabel: 'open_external',
-                            ctaUrl: it.external_url || '',
-                            targetMemberId: null,
-                          }).catch(() => {});
-                        } catch {}
-                        if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
-                      }}
-                      className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
-                    >
-                      前往觀看
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await axios.post(`/api/business-media/${it.id}/track/card`, {
-                            targetMemberId: Number(memberId),
-                          }).catch(() => {});
-                        } catch {}
-                        navigate(`/member/${memberId}`);
-                      }}
-                      className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
-                    >
-                      我的名片
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {businessMediaItems.length >= 5 && (
                 <button
                   onClick={() => navigate(`/business-media?speakerId=${memberId}`)}

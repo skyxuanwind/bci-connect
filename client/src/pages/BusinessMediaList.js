@@ -31,25 +31,48 @@ export default function BusinessMediaList() {
     // YouTube
     if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
       // Try v=ID
-      const vParam = new URL(url).searchParams.get('v');
-      let videoId = vParam;
-      if (!videoId && lower.includes('youtu.be/')) {
-        // youtu.be/VIDEOID
-        const m = lower.match(/youtu\.be\/([a-z0-9_-]{6,})/i);
-        videoId = m ? m[1] : null;
+      try {
+        const vParam = new URL(url).searchParams.get('v');
+        let videoId = vParam;
+        if (!videoId && lower.includes('youtu.be/')) {
+          // youtu.be/VIDEOID
+          const m = lower.match(/youtu\.be\/([a-z0-9_-]{6,})/i);
+          videoId = m ? m[1] : null;
+        }
+        if (!videoId && lower.includes('/shorts/')) {
+          const m = lower.match(/\/shorts\/([a-z0-9_-]{6,})/i);
+          videoId = m ? m[1] : null;
+        }
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+      } catch {
+        return null;
       }
-      if (!videoId && lower.includes('/shorts/')) {
-        const m = lower.match(/\/shorts\/([a-z0-9_-]{6,})/i);
-        videoId = m ? m[1] : null;
-      }
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
     }
     // Vimeo
     if (lower.includes('vimeo.com')) {
       const m = lower.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
       return m ? `https://player.vimeo.com/video/${m[1]}` : null;
     }
-    // Other platforms (TikTok/Instagram) require extra SDKs; fallback to open externally
+    // TikTok
+    if (lower.includes('tiktok.com')) {
+      let id = null;
+      const m1 = lower.match(/\/video\/(\d+)/); // standard share URL
+      const m2 = lower.match(/\/embed\/v\d+\/(\d+)/); // legacy embed
+      const m3 = lower.match(/\/player\/v1\/(\d+)/); // direct player
+      if (m1 && m1[1]) id = m1[1];
+      else if (m2 && m2[1]) id = m2[1];
+      else if (m3 && m3[1]) id = m3[1];
+      return id ? `https://www.tiktok.com/player/v1/${id}` : null;
+    }
+    // Instagram (posts/reels/tv)
+    if (lower.includes('instagram.com')) {
+      const m = lower.match(/instagram\.com\/(reel|p|tv)\/([a-z0-9_-]+)/i);
+      if (m && m[1] && m[2]) {
+        return `https://www.instagram.com/${m[1]}/${m[2]}/embed`;
+      }
+      return null;
+    }
+    // Other platforms fallback to open externally
     return null;
   };
 
@@ -201,7 +224,7 @@ export default function BusinessMediaList() {
                         src={embedUrl}
                         className="w-full h-full"
                         frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                         allowFullScreen
                       />
                     </div>
