@@ -141,6 +141,7 @@ app.use('/api/nfc-cards', nfcCardsRoutes);
 app.use('/api/nfc-analytics', nfcAnalyticsRoutes);
 app.use('/api/ocr', ocrScannerRoutes);
 app.use('/api/digital-wallet', digitalWalletRoutes);
+app.use('/api/business-media', businessMediaRoutes);
 
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/notifications', notificationsRoutes);
