@@ -920,7 +920,8 @@ const MemberCard = () => {
     if (lower.includes('instagram.com')) {
       const m = lower.match(/instagram\.com\/(reel|p|tv)\/([a-z0-9_-]+)/i);
       if (m && m[1] && m[2]) {
-        return `https://www.instagram.com/${m[1]}/${m[2]}/embed`;
+        // 對於Instagram，返回null讓它使用embed_code
+        return null;
       }
       return null;
     }
@@ -1126,9 +1127,9 @@ const MemberCard = () => {
               {businessMediaItems.map((it) => (
                 (() => {
                   const embedUrl = getBusinessMediaEmbedUrl(it);
-                  const canEmbed = !!embedUrl && (it.content_type === 'video_long' || it.content_type === 'video_short');
                   const lowerUrl = (it.external_url || '').toLowerCase();
                   const isInstagram = lowerUrl.includes('instagram.com') || it.platform === 'instagram';
+                  const canEmbed = (!!embedUrl || (isInstagram && it.embed_code)) && (it.content_type === 'video_long' || it.content_type === 'video_short');
 
                   return (
                     <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
@@ -1143,14 +1144,18 @@ const MemberCard = () => {
                       </div>
 
                       {canEmbed && (
-                        <div className="mt-2 video-container">
-                          {it.embed_code ? (
+                        <div className="mt-2" style={{ width: '100%' }}>
+                          {isInstagram && it.embed_code ? (
                             <div 
+                              style={{ width: '100%', minHeight: '600px' }}
                               dangerouslySetInnerHTML={{ 
-                                __html: isInstagram ? 
-                                  it.embed_code + '<script async src="//www.instagram.com/embed.js"></script>' : 
-                                  it.embed_code 
+                                __html: it.embed_code + '<script async src="//www.instagram.com/embed.js"></script>'
                               }} 
+                            />
+                          ) : it.embed_code ? (
+                            <div 
+                              style={{ width: '100%', minHeight: '315px' }}
+                              dangerouslySetInnerHTML={{ __html: it.embed_code }} 
                             />
                           ) : (
                             <iframe
@@ -1166,10 +1171,9 @@ const MemberCard = () => {
                               height={isInstagram ? "600" : "315"}
                               frameBorder="0"
                               style={{ 
-                                border: 0, 
-                                overflow: isInstagram ? 'hidden' : 'visible' 
+                                border: 0,
+                                maxWidth: '100%'
                               }}
-                              scrolling={isInstagram ? "no" : "auto"}
                             />
                           )}
                         </div>

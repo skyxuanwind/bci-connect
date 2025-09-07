@@ -72,7 +72,8 @@ export default function BusinessMediaList() {
     if (lower.includes('instagram.com')) {
       const m = lower.match(/instagram\.com\/(reel|p|tv)\/([a-z0-9_-]+)/i);
       if (m && m[1] && m[2]) {
-        return `https://www.instagram.com/${m[1]}/${m[2]}/embed`;
+        // 對於Instagram，返回null讓它使用embed_code
+        return null;
       }
       return null;
     }
@@ -194,9 +195,9 @@ export default function BusinessMediaList() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {items.map((item) => {
             const embedUrl = getEmbedUrl(item);
-            const canEmbed = !!embedUrl;
-            const lower = (item.external_url || '').toLowerCase();
-            const isInstagram = lower.includes('instagram.com') || item.platform === 'instagram';
+                const lower = (item.external_url || '').toLowerCase();
+                const isInstagram = lower.includes('instagram.com') || item.platform === 'instagram';
+                const canEmbed = !!embedUrl || (isInstagram && item.embed_code);
             return (
               <div key={item.id} className="p-4 bg-white rounded-lg border">
                 {/* 標題與標籤等保留既有內容 */}
@@ -218,14 +219,18 @@ export default function BusinessMediaList() {
 
                 {/* 影片區塊：所有影片都直接顯示 */}
                 {canEmbed && (
-                  <div className="mt-2 video-container">
-                    {item.embed_code ? (
+                  <div className="mt-2" style={{ width: '100%' }}>
+                    {isInstagram && item.embed_code ? (
                       <div 
+                        style={{ width: '100%', minHeight: '600px' }}
                         dangerouslySetInnerHTML={{ 
-                          __html: isInstagram ? 
-                            item.embed_code + '<script async src="//www.instagram.com/embed.js"></script>' : 
-                            item.embed_code 
+                          __html: item.embed_code + '<script async src="//www.instagram.com/embed.js"></script>'
                         }} 
+                      />
+                    ) : item.embed_code ? (
+                      <div 
+                        style={{ width: '100%', minHeight: '315px' }}
+                        dangerouslySetInnerHTML={{ __html: item.embed_code }} 
                       />
                     ) : (
                       <iframe
@@ -237,13 +242,13 @@ export default function BusinessMediaList() {
                         }
                         allowFullScreen
                         loading="lazy"
+                        width="100%"
+                        height={isInstagram ? "600" : "315"}
                         style={{ 
-                          width: '100%', 
-                          height: isInstagram ? '600px' : '360px', 
-                          border: 0, 
-                          overflow: isInstagram ? 'hidden' : 'visible' 
+                          border: 0,
+                          maxWidth: '100%'
                         }}
-                        scrolling={isInstagram ? "no" : "auto"}
+                        frameBorder="0"
                       />
                     )}
                   </div>

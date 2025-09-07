@@ -5,6 +5,27 @@ const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../config/database');
 const { addClient, removeClient, broadcast } = require('../utils/sse');
 
+// 從 URL 解析會員 ID 的函數
+function parseMemberIdFromUrl(url) {
+  if (!url) return null;
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/').filter(Boolean);
+    const memberIndex = pathParts.findIndex(part => part === 'member');
+    if (memberIndex >= 0 && pathParts[memberIndex + 1] && /^\d+$/.test(pathParts[memberIndex + 1])) {
+      return pathParts[memberIndex + 1];
+    }
+    // 也檢查 query 參數
+    const memberId = urlObj.searchParams.get('memberId') || urlObj.searchParams.get('id');
+    if (memberId && /^\d+$/.test(memberId)) {
+      return memberId;
+    }
+  } catch (e) {
+    console.error('解析 URL 失敗:', e.message);
+  }
+  return null;
+}
+
 // SSE 客戶端連接列表
 // const sseClients = new Set(); // replaced by shared utils
 
@@ -34,13 +55,34 @@ router.post('/submit', async (req, res) => {
     try {
       let memberResult;
       if (normalizedCardUrl) {
+        // 先嘗試用網址查詢
         memberResult = await pool.query(
-          'SELECT id, name, email, company, industry, title, membership_level, status FROM users WHERE nfc_card_url = $1',
+          'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url FROM users WHERE nfc_card_url = $1',
           [normalizedCardUrl]
         );
+        
+        // 如果網址查詢不到，嘗試從網址解析會員ID
+        if (memberResult.rows.length === 0) {
+          const memberIdFromUrl = parseMemberIdFromUrl(normalizedCardUrl);
+          if (memberIdFromUrl) {
+            memberResult = await pool.query(
+              'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url FROM users WHERE id = $1',
+              [memberIdFromUrl]
+            );
+            
+            // 如果找到會員且該會員的 nfcCardUrl 為空，自動更新
+            if (memberResult.rows.length > 0 && !memberResult.rows[0].nfc_card_url) {
+              await pool.query(
+                'UPDATE users SET nfc_card_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+                [normalizedCardUrl, memberIdFromUrl]
+              );
+              console.log(`🔄 自動更新會員 ${memberResult.rows[0].name} 的 NFC 卡片網址: ${normalizedCardUrl}`);
+            }
+          }
+        }
       } else {
         memberResult = await pool.query(
-          'SELECT id, name, email, company, industry, title, membership_level, status FROM users WHERE nfc_card_id = $1',
+          'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url FROM users WHERE nfc_card_id = $1',
           [normalizedCardUid]
         );
       }

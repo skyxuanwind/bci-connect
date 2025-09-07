@@ -103,10 +103,19 @@ router.post('/qr-checkin', authenticateToken, checkAttendancePermission, async (
     await client.query('BEGIN');
 
     // 會員存在檢查
-    const userResult = await client.query('SELECT id, name FROM users WHERE id = $1', [memberIdStr]);
+    const userResult = await client.query('SELECT id, name, nfc_card_url FROM users WHERE id = $1', [memberIdStr]);
     if (userResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ success: false, message: '用戶不存在' });
+    }
+
+    // 如果會員的 nfcCardUrl 為空，自動更新
+    if (!userResult.rows[0].nfc_card_url) {
+      await client.query(
+        'UPDATE users SET nfc_card_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [url, memberIdStr]
+      );
+      console.log(`🔄 自動更新會員 ${userResult.rows[0].name} 的 NFC 卡片網址: ${url}`);
     }
 
     // 活動解析
