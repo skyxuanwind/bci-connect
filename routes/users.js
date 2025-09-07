@@ -66,7 +66,7 @@ router.get('/profile', async (req, res) => {
     const result = await pool.query(
       `SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
               u.profile_picture_url, u.contact_number, u.membership_level,
-              u.status, u.nfc_card_id, u.qr_code_url, u.interview_form, u.created_at,
+              u.status, u.nfc_card_id, u.nfc_card_url, u.qr_code_url, u.interview_form, u.created_at,
               c.name as chapter_name
        FROM users u
        LEFT JOIN chapters c ON u.chapter_id = c.id
@@ -108,6 +108,7 @@ router.get('/profile', async (req, res) => {
         membershipLevel: user.membership_level,
         status: user.status,
         nfcCardId: user.nfc_card_id,
+        nfcCardUrl: user.nfc_card_url,
         qrCodeUrl: `/api/qrcode/member/${user.id}`,
         interviewForm: interviewForm,
         chapterName: user.chapter_name,
@@ -132,7 +133,8 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
       industry,
       title,
       contactNumber,
-      nfcCardId
+      nfcCardId,
+      nfcCardUrl
     } = req.body;
 
     // Validation
@@ -174,14 +176,14 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
     const updateQuery = profilePictureUrl 
       ? `UPDATE users 
          SET name = $1, company = $2, industry = $3, title = $4, 
-             contact_number = $5, nfc_card_id = $6, profile_picture_url = $7, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $8
-         RETURNING id, name, company, industry, title, contact_number, nfc_card_id, profile_picture_url`
+             contact_number = $5, nfc_card_id = $6, nfc_card_url = $7, profile_picture_url = $8, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $9
+         RETURNING id, name, company, industry, title, contact_number, nfc_card_id, nfc_card_url, profile_picture_url`
       : `UPDATE users 
          SET name = $1, company = $2, industry = $3, title = $4, 
-             contact_number = $5, nfc_card_id = $6, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $7
-         RETURNING id, name, company, industry, title, contact_number, nfc_card_id, profile_picture_url`;
+             contact_number = $5, nfc_card_id = $6, nfc_card_url = $7, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $8
+         RETURNING id, name, company, industry, title, contact_number, nfc_card_id, nfc_card_url, profile_picture_url`;
     
     const updateParams = profilePictureUrl 
       ? [
@@ -191,6 +193,7 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
           title?.trim() || null,
           contactNumber?.trim() || null,
           nfcCardId?.trim() || null,
+          nfcCardUrl?.trim() || null,
           profilePictureUrl,
           req.user.id
         ]
@@ -201,6 +204,7 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
           title?.trim() || null,
           contactNumber?.trim() || null,
           nfcCardId?.trim() || null,
+          nfcCardUrl?.trim() || null,
           req.user.id
         ];
 

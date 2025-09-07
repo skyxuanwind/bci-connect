@@ -23,8 +23,12 @@ export default function BusinessMediaList() {
 
   const speakerId = useMemo(() => searchParams.get('speakerId') || '', [searchParams]);
 
-  // Helper to compute embeddable URL from external link
+  // Helper to compute embeddable URL from external link or embed code
   const getEmbedUrl = (item) => {
+    // 優先使用 embed_code
+    if (item?.embed_code) {
+      return item.embed_code;
+    }
     if (!item?.external_url) return null;
     const url = item.external_url;
     const lower = url.toLowerCase();
@@ -222,27 +226,35 @@ export default function BusinessMediaList() {
                 {/* 影片區塊：IG 直接顯示；其他平台依照 isExpanded 顯示 */}
                 {(isInstagram && canEmbed) ? (
                   <div className="mt-2 video-container">
-                    <iframe
-                      src={embedUrl}
-                      title={item.title || 'Instagram Embed'}
-                      allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
-                      allowFullScreen
-                      loading="lazy"
-                      style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
-                      scrolling="no"
-                    />
+                    {item.embed_code ? (
+                      <div dangerouslySetInnerHTML={{ __html: item.embed_code }} />
+                    ) : (
+                      <iframe
+                        src={embedUrl}
+                        title={item.title || 'Instagram Embed'}
+                        allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
+                        allowFullScreen
+                        loading="lazy"
+                        style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
+                        scrolling="no"
+                      />
+                    )}
                   </div>
                 ) : (
                   isExpanded && canEmbed && (
                     <div className="mt-2 video-container">
-                      <iframe
-                        src={embedUrl}
-                        title={item.title || 'Embedded Media'}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        loading="lazy"
-                        style={{ width: '100%', height: '360px', border: 0 }}
-                      />
+                      {item.embed_code ? (
+                        <div dangerouslySetInnerHTML={{ __html: item.embed_code }} />
+                      ) : (
+                        <iframe
+                          src={embedUrl}
+                          title={item.title || 'Embedded Media'}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          loading="lazy"
+                          style={{ width: '100%', height: '360px', border: 0 }}
+                        />
+                      )}
                     </div>
                   )
                 )}

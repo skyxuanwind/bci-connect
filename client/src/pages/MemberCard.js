@@ -874,8 +874,12 @@ const MemberCard = () => {
     return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
   };
 
-  // 解析商媒體的可內嵌播放 URL（支援 YouTube / Vimeo / TikTok / Instagram）
+  // 解析商媒體的可內嵌播放 URL（支援 YouTube / Vimeo / TikTok / Instagram）或直接使用內嵌代碼
   const getBusinessMediaEmbedUrl = (item) => {
+    // 優先使用 embed_code
+    if (item?.embed_code) {
+      return item.embed_code;
+    }
     if (!item?.external_url) return null;
     const url = item.external_url;
     const lower = url.toLowerCase();
@@ -1142,28 +1146,36 @@ const MemberCard = () => {
 
                       {(isInstagram && canEmbed) ? (
                         <div className="mt-2 video-container">
-                          <iframe
-                            title={it.title || 'Instagram Embed'}
-                            src={embedUrl}
-                            allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
-                            allowFullScreen
-                            loading="lazy"
-                            style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
-                            scrolling="no"
-                          />
+                          {it.embed_code ? (
+                            <div dangerouslySetInnerHTML={{ __html: it.embed_code }} />
+                          ) : (
+                            <iframe
+                              title={it.title || 'Instagram Embed'}
+                              src={embedUrl}
+                              allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
+                              allowFullScreen
+                              loading="lazy"
+                              style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
+                              scrolling="no"
+                            />
+                          )}
                         </div>
                       ) : (
                         isExpanded && canEmbed ? (
                           <div className="mt-2 video-container">
-                            <iframe
-                              title={it.title}
-                              src={embedUrl}
-                              width="100%"
-                              height="315"
-                              frameBorder="0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                              allowFullScreen
-                            />
+                            {it.embed_code ? (
+                              <div dangerouslySetInnerHTML={{ __html: it.embed_code }} />
+                            ) : (
+                              <iframe
+                                title={it.title}
+                                src={embedUrl}
+                                width="100%"
+                                height="315"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                                allowFullScreen
+                              />
+                            )}
                           </div>
                         ) : null
                       )}

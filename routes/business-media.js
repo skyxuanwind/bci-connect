@@ -34,6 +34,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       speakerId,
       contentType, // 'video_long' | 'video_short' | 'article'
       externalUrl,
+      embedCode,
       summary,
       body,
       ctas = [], // [{ label, url, style, targetMemberId }]
@@ -51,10 +52,10 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     const baseSlug = slugify(title);
 
     const insertResult = await pool.query(
-      `INSERT INTO business_media (title, speaker_id, content_type, platform, external_url, summary, body, ctas, status, published_at, pinned, sort_order)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      `INSERT INTO business_media (title, speaker_id, content_type, platform, external_url, embed_code, summary, body, ctas, status, published_at, pinned, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        RETURNING id`,
-      [title, speakerId, contentType, platform, externalUrl || null, summary || null, body || null, JSON.stringify(ctas || []), status, publishedAt || null, pinned, sortOrder]
+      [title, speakerId, contentType, platform, externalUrl || null, embedCode || null, summary || null, body || null, JSON.stringify(ctas || []), status, publishedAt || null, pinned, sortOrder]
     );
 
     const id = insertResult.rows[0].id;
@@ -77,6 +78,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       speakerId,
       contentType,
       externalUrl,
+      embedCode,
       summary,
       body,
       ctas,
@@ -95,16 +97,17 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
         content_type = COALESCE($3, content_type),
         platform = COALESCE($4, platform),
         external_url = COALESCE($5, external_url),
-        summary = COALESCE($6, summary),
-        body = COALESCE($7, body),
-        ctas = COALESCE($8, ctas),
-        status = COALESCE($9, status),
-        published_at = COALESCE($10, published_at),
-        pinned = COALESCE($11, pinned),
-        sort_order = COALESCE($12, sort_order),
+        embed_code = COALESCE($6, embed_code),
+        summary = COALESCE($7, summary),
+        body = COALESCE($8, body),
+        ctas = COALESCE($9, ctas),
+        status = COALESCE($10, status),
+        published_at = COALESCE($11, published_at),
+        pinned = COALESCE($12, pinned),
+        sort_order = COALESCE($13, sort_order),
         updated_at = CURRENT_TIMESTAMP
-       WHERE id = $13 RETURNING *`,
-      [title ?? null, speakerId ?? null, contentType ?? null, platform ?? null, externalUrl ?? null, summary ?? null, body ?? null, ctas != null ? JSON.stringify(ctas) : null, status ?? null, publishedAt ?? null, pinned, sortOrder, id]
+       WHERE id = $14 RETURNING *`,
+      [title ?? null, speakerId ?? null, contentType ?? null, platform ?? null, externalUrl ?? null, embedCode ?? null, summary ?? null, body ?? null, ctas != null ? JSON.stringify(ctas) : null, status ?? null, publishedAt ?? null, pinned, sortOrder, id]
     );
 
     if (result.rowCount === 0) return res.status(404).json({ success: false, message: '內容不存在' });

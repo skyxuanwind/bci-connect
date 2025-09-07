@@ -107,6 +107,12 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS ai_deep_profile JSONB
     `);
 
+    // Add nfc_card_url column for NFC card URL identification
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS nfc_card_url VARCHAR(500) UNIQUE
+    `);
+
     // Create referrals table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS referrals (
@@ -309,6 +315,10 @@ const initializeDatabase = async () => {
     await pool.query(`
       ALTER TABLE business_media
       ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+    `);
+    await pool.query(`
+      ALTER TABLE business_media
+      ADD COLUMN IF NOT EXISTS embed_code TEXT;
     `);
 
     await pool.query(`

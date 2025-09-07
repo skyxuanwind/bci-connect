@@ -16,31 +16,41 @@ function sseBroadcast(event, dataObj) {
 // 接收來自本地 NFC Gateway Service 的報到資料
 router.post('/submit', async (req, res) => {
   try {
-    const { cardUid, timestamp, readerName, source = 'nfc-gateway' } = req.body;
+    const { cardUid, cardUrl, timestamp, readerName, source = 'nfc-gateway' } = req.body;
     
-    // 驗證必要欄位
-    if (!cardUid) {
+    // 驗證必要欄位 - 優先使用名片網址，其次使用UID
+    if (!cardUrl && !cardUid) {
       return res.status(400).json({
         success: false,
-        message: '缺少卡片 UID'
+        message: '缺少卡片網址或 UID'
       });
     }
     
-    const normalizedCardUid = cardUid.toUpperCase();
+    const normalizedCardUid = cardUid ? cardUid.toUpperCase() : null;
+    const normalizedCardUrl = cardUrl ? cardUrl.trim() : null;
     
-    // 查詢會員資料
+    // 查詢會員資料 - 優先使用名片網址查詢
     let memberInfo = null;
     try {
-      const memberResult = await pool.query(
-        'SELECT id, name, email, company, industry, title, membership_level, status FROM users WHERE nfc_card_id = $1',
-        [normalizedCardUid]
-      );
+      let memberResult;
+      if (normalizedCardUrl) {
+        memberResult = await pool.query(
+          'SELECT id, name, email, company, industry, title, membership_level, status FROM users WHERE nfc_card_url = $1',
+          [normalizedCardUrl]
+        );
+      } else {
+        memberResult = await pool.query(
+          'SELECT id, name, email, company, industry, title, membership_level, status FROM users WHERE nfc_card_id = $1',
+          [normalizedCardUid]
+        );
+      }
       
       if (memberResult.rows.length > 0) {
         memberInfo = memberResult.rows[0];
         console.log(`👤 識別到會員: ${memberInfo.name} (ID: ${memberInfo.id})`);
       } else {
-        console.log(`❓ 未識別的 NFC 卡片: ${normalizedCardUid}`);
+        const identifier = normalizedCardUrl || normalizedCardUid;
+        console.log(`❓ 未識別的 NFC 卡片: ${identifier}`);
       }
     } catch (dbError) {
       console.error('❌ 查詢會員資料失敗:', dbError.message);
@@ -48,8 +58,9 @@ router.post('/submit', async (req, res) => {
     }
     
     // 創建新的報到記錄
+    const identifier = normalizedCardUrl || normalizedCardUid;
     const checkinData = {
-      cardUid: normalizedCardUid,
+      cardUid: identifier, // 存儲實際使用的識別符（網址或UID）
       checkinTime: timestamp ? new Date(timestamp) : new Date(),
       readerName: readerName || null,
       source: source,
@@ -65,7 +76,7 @@ router.post('/submit', async (req, res) => {
       ? `✅ ${memberInfo.name} 報到成功！`
       : `✅ NFC 卡片報到成功（未識別會員）`;
     
-    console.log(`✅ NFC 報到記錄已儲存: ${normalizedCardUid} (ID: ${savedCheckin._id})`);
+    console.log(`✅ NFC 報到記錄已儲存: ${identifier} (ID: ${savedCheckin._id})`);
 
     // 自動同步到 PostgreSQL attendance_records 表（如果是已識別會員）
     if (memberInfo) {

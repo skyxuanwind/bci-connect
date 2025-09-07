@@ -6,6 +6,7 @@ const emptyForm = {
   speakerId: '',
   contentType: 'video_long',
   externalUrl: '',
+  embedCode: '',
   summary: '',
   pinned: false,
   sortOrder: 0,
@@ -60,6 +61,7 @@ const BusinessMediaAdmin = () => {
       speakerId: item.speaker_id || '',
       contentType: item.content_type || 'video_long',
       externalUrl: item.external_url || '',
+      embedCode: item.embed_code || '',
       summary: item.summary || '',
       pinned: !!item.pinned,
       sortOrder: item.sort_order || 0,
@@ -116,6 +118,7 @@ const BusinessMediaAdmin = () => {
         speakerId: Number(form.speakerId),
         contentType: form.contentType,
         externalUrl: form.externalUrl || null,
+        embedCode: form.embedCode || null,
         summary: form.summary || null,
         ctas: [],
         pinned: !!form.pinned,
@@ -176,6 +179,11 @@ const BusinessMediaAdmin = () => {
             <div>
               <label className="block text-sm font-medium mb-1">外部連結（YouTube/TikTok/文章等）</label>
               <input className="input" value={form.externalUrl} onChange={e=>setForm({...form, externalUrl:e.target.value})} placeholder="https://..." />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">內嵌代碼（iframe 或其他嵌入代碼）</label>
+              <textarea className="input" rows={4} value={form.embedCode} onChange={e=>setForm({...form, embedCode:e.target.value})} placeholder="<iframe src='...' width='560' height='315'></iframe>" />
+              <p className="text-xs text-gray-500 mt-1">可貼入 iframe 或其他平台提供的嵌入代碼，優先於外部連結使用</p>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">摘要</label>
