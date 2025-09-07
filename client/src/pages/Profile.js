@@ -50,7 +50,8 @@ const Profile = () => {
       company: user?.company || '',
       industry: user?.industry || '',
       title: user?.title || '',
-      contactNumber: user?.contactNumber || ''
+      contactNumber: user?.contactNumber || '',
+      nfcCardUrl: user?.nfcCardUrl || ''
     }
   });
 
@@ -97,7 +98,8 @@ const Profile = () => {
       company: user.company || '',
       industry: user.industry || '',
       title: user.title || '',
-      contactNumber: user.contactNumber || ''
+      contactNumber: user.contactNumber || '',
+      nfcCardUrl: user.nfcCardUrl || ''
     });
   }, [user, resetProfile]);
 
@@ -416,6 +418,28 @@ const Profile = () => {
                 )}
               </div>
 
+              {/* NFC Card URL */}
+              <div>
+                <label className="label">
+                  <CreditCardIcon className="h-4 w-4 mr-2" />
+                  NFC 卡片網址
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/nfc-card"
+                  className={`input w-full ${profileErrors.nfcCardUrl ? 'input-error' : ''}`}
+                  {...registerProfile('nfcCardUrl', {
+                    pattern: {
+                      value: /^https?:\/\/.+/,
+                      message: '請輸入有效的網址（需以 http:// 或 https:// 開頭）'
+                    }
+                  })}
+                />
+                {profileErrors.nfcCardUrl && (
+                  <p className="error-message">{profileErrors.nfcCardUrl.message}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">設定 NFC 卡片中的網址，用於報到識別</p>
+              </div>
 
             </div>
 

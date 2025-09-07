@@ -80,8 +80,6 @@ export default function BusinessMediaList() {
     return null;
   };
 
-  const [expandedId, setExpandedId] = useState(null);
-
   useEffect(() => {
     const params = {};
     if (q) params.q = q;
@@ -139,14 +137,10 @@ export default function BusinessMediaList() {
       // 若無法內嵌，直接外開
       return handleOpenItem(item);
     }
-    const next = expandedId === item.id ? null : item.id;
-    setExpandedId(next);
-    if (next) {
-      // 記錄觀看
-      try {
-        await axios.post(`/api/business-media/${item.id}/track/view`, {}).catch(() => {});
-      } catch {}
-    }
+    // 記錄觀看
+    try {
+      await axios.post(`/api/business-media/${item.id}/track/view`, {}).catch(() => {});
+    } catch {}
   };
 
   const handleGoSpeakerCard = async (item) => {
@@ -203,7 +197,6 @@ export default function BusinessMediaList() {
             const canEmbed = !!embedUrl;
             const lower = (item.external_url || '').toLowerCase();
             const isInstagram = lower.includes('instagram.com') || item.platform === 'instagram';
-            const isExpanded = expandedId === item.id;
             return (
               <div key={item.id} className="p-4 bg-white rounded-lg border">
                 {/* 標題與標籤等保留既有內容 */}
@@ -223,52 +216,41 @@ export default function BusinessMediaList() {
                   </div>
                 </div>
 
-                {/* 影片區塊：IG 直接顯示；其他平台依照 isExpanded 顯示 */}
-                {(isInstagram && canEmbed) ? (
+                {/* 影片區塊：所有影片都直接顯示 */}
+                {canEmbed && (
                   <div className="mt-2 video-container">
                     {item.embed_code ? (
-                      <div dangerouslySetInnerHTML={{ __html: item.embed_code }} />
+                      <div 
+                        dangerouslySetInnerHTML={{ 
+                          __html: isInstagram ? 
+                            item.embed_code + '<script async src="//www.instagram.com/embed.js"></script>' : 
+                            item.embed_code 
+                        }} 
+                      />
                     ) : (
                       <iframe
                         src={embedUrl}
-                        title={item.title || 'Instagram Embed'}
-                        allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
+                        title={item.title || 'Embedded Media'}
+                        allow={isInstagram ? 
+                          "clipboard-write; encrypted-media; picture-in-picture; web-share" : 
+                          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        }
                         allowFullScreen
                         loading="lazy"
-                        style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
-                        scrolling="no"
+                        style={{ 
+                          width: '100%', 
+                          height: isInstagram ? '600px' : '360px', 
+                          border: 0, 
+                          overflow: isInstagram ? 'hidden' : 'visible' 
+                        }}
+                        scrolling={isInstagram ? "no" : "auto"}
                       />
                     )}
                   </div>
-                ) : (
-                  isExpanded && canEmbed && (
-                    <div className="mt-2 video-container">
-                      {item.embed_code ? (
-                        <div dangerouslySetInnerHTML={{ __html: item.embed_code }} />
-                      ) : (
-                        <iframe
-                          src={embedUrl}
-                          title={item.title || 'Embedded Media'}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                          loading="lazy"
-                          style={{ width: '100%', height: '360px', border: 0 }}
-                        />
-                      )}
-                    </div>
-                  )
                 )}
 
-                {/* 操作按鈕列：對 IG 隱藏站內播放切換；其他平台保留 */}
+                {/* 操作按鈕列 */}
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {!isInstagram && (
-                    <button
-                      onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                      className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
-                    >
-                      {isExpanded ? '收起影片' : (canEmbed ? '在本站播放' : '前往觀看')}
-                    </button>
-                  )}
                   <a
                     href={item.external_url}
                     target="_blank"

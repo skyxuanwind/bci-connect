@@ -1,11 +1,12 @@
 // Simple NFC Gateway Service
 // Listens on localhost:3002 and exposes health + mock endpoints
-// If ACR122U present, uses nfc-pcsc to read card UIDs and forward to cloud
+// If ACR122U present, uses nfc-pcsc to read card UIDs and NDEF URLs and forward to cloud
 
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const dotenv = require('dotenv');
+const ndef = require('ndef');
 
 dotenv.config();
 
@@ -41,20 +42,64 @@ app.post('/api/nfc-checkin/start-reader', async (req, res) => {
       reader.aid = 'F222222222';
 
       reader.on('card', async card => {
-        // Some readers provide uid in card.uid
-        const uid = (card && card.uid) ? String(card.uid).toUpperCase() : null;
-        if (uid) {
-          lastCardUid = uid;
+        console.log('Card detected:', card);
+        
+        // Try to read NDEF records first (for URL)
+        let cardUrl = null;
+        let uid = null;
+        
+        try {
+          // Read NDEF data if available
+          if (card && card.data) {
+            const ndefRecords = ndef.decodeMessage(card.data);
+            console.log('NDEF records found:', ndefRecords.length);
+            
+            // Look for URI record
+            for (const record of ndefRecords) {
+              if (record.type && record.type.toString() === 'U') {
+                cardUrl = ndef.uri.decodePayload(record.payload);
+                console.log('Found URL in NDEF:', cardUrl);
+                break;
+              }
+            }
+          }
+        } catch (ndefError) {
+          console.log('NDEF reading failed or no NDEF data:', ndefError.message);
+        }
+        
+        // Fallback to UID if no URL found
+        if (!cardUrl && card && card.uid) {
+          uid = String(card.uid).toUpperCase();
+          console.log('Using UID as fallback:', uid);
+        }
+        
+        // Send data to cloud (prefer URL over UID)
+        const identifier = cardUrl || uid;
+        if (identifier) {
+          lastCardUid = identifier; // Store the identifier (URL or UID)
           try {
-            await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, {
-              cardUid: uid,
+            const payload = {
               timestamp: new Date().toISOString(),
               readerName: readerName,
               source: 'nfc-gateway'
-            }, { timeout: 5000 });
+            };
+            
+            // Add URL or UID to payload
+            if (cardUrl) {
+              payload.cardUrl = cardUrl;
+              console.log('Sending card URL:', cardUrl);
+            } else {
+              payload.cardUid = uid;
+              console.log('Sending card UID:', uid);
+            }
+            
+            await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, payload, { timeout: 5000 });
+            console.log('Successfully forwarded to cloud');
           } catch (e) {
             console.error('Forward to cloud failed:', e?.message || e);
           }
+        } else {
+          console.log('No valid identifier found (neither URL nor UID)');
         }
       });
 
@@ -87,16 +132,29 @@ app.post('/api/nfc-checkin/stop-reader', (req, res) => {
 });
 
 app.post('/api/nfc-checkin/simulate-scan', async (req, res) => {
-  const { cardUid } = req.body || {};
-  if (!cardUid) return res.status(400).json({ success: false, message: 'cardUid required' });
+  const { cardUid, cardUrl } = req.body || {};
+  if (!cardUid && !cardUrl) {
+    return res.status(400).json({ success: false, message: 'cardUid or cardUrl required' });
+  }
+  
   try {
-    await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, {
-      cardUid: String(cardUid).toUpperCase(),
+    const payload = {
       timestamp: new Date().toISOString(),
       readerName: 'SIMULATED',
       source: 'nfc-gateway'
-    }, { timeout: 5000 });
-    res.json({ success: true });
+    };
+    
+    // Prefer URL over UID
+    if (cardUrl) {
+      payload.cardUrl = cardUrl.trim();
+      console.log('Simulating card URL:', cardUrl);
+    } else {
+      payload.cardUid = String(cardUid).toUpperCase();
+      console.log('Simulating card UID:', cardUid);
+    }
+    
+    await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, payload, { timeout: 5000 });
+    res.json({ success: true, identifier: cardUrl || cardUid });
   } catch (e) {
     res.status(502).json({ success: false, message: 'Forward failed', error: e?.message });
   }

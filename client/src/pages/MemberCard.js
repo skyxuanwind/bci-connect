@@ -55,7 +55,6 @@ const MemberCard = () => {
   const [businessMediaItems, setBusinessMediaItems] = useState([]);
   const [bmLoading, setBmLoading] = useState(false);
   const [bmError, setBmError] = useState('');
-  const [bmExpandedId, setBmExpandedId] = useState(null);
   // 輔助：是否為掃描名片 ID
   const isScannedId = (id) => String(id).split(':')[0].startsWith('scanned_');
   const baseId = String(memberId || '').split(':')[0];
@@ -1130,7 +1129,6 @@ const MemberCard = () => {
                   const canEmbed = !!embedUrl && (it.content_type === 'video_long' || it.content_type === 'video_short');
                   const lowerUrl = (it.external_url || '').toLowerCase();
                   const isInstagram = lowerUrl.includes('instagram.com') || it.platform === 'instagram';
-                  const isExpanded = bmExpandedId === it.id;
 
                   return (
                     <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
@@ -1144,71 +1142,53 @@ const MemberCard = () => {
                         </div>
                       </div>
 
-                      {(isInstagram && canEmbed) ? (
+                      {canEmbed && (
                         <div className="mt-2 video-container">
                           {it.embed_code ? (
-                            <div dangerouslySetInnerHTML={{ __html: it.embed_code }} />
+                            <div 
+                              dangerouslySetInnerHTML={{ 
+                                __html: isInstagram ? 
+                                  it.embed_code + '<script async src="//www.instagram.com/embed.js"></script>' : 
+                                  it.embed_code 
+                              }} 
+                            />
                           ) : (
                             <iframe
-                              title={it.title || 'Instagram Embed'}
+                              title={it.title || 'Embedded Media'}
                               src={embedUrl}
-                              allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
+                              allow={isInstagram ? 
+                                "clipboard-write; encrypted-media; picture-in-picture; web-share" : 
+                                "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                              }
                               allowFullScreen
                               loading="lazy"
-                              style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
-                              scrolling="no"
+                              width="100%"
+                              height={isInstagram ? "600" : "315"}
+                              frameBorder="0"
+                              style={{ 
+                                border: 0, 
+                                overflow: isInstagram ? 'hidden' : 'visible' 
+                              }}
+                              scrolling={isInstagram ? "no" : "auto"}
                             />
                           )}
                         </div>
-                      ) : (
-                        isExpanded && canEmbed ? (
-                          <div className="mt-2 video-container">
-                            {it.embed_code ? (
-                              <div dangerouslySetInnerHTML={{ __html: it.embed_code }} />
-                            ) : (
-                              <iframe
-                                title={it.title}
-                                src={embedUrl}
-                                width="100%"
-                                height="315"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                                allowFullScreen
-                              />
-                            )}
-                          </div>
-                        ) : null
                       )}
 
                       {it.summary && (
                         <p className="mt-2 text-xs text-gray-600 line-clamp-3">{it.summary}</p>
                       )}
                       <div className="mt-2 flex items-center gap-2">
-                        {!isInstagram && (
+                        {canEmbed && (
                           <button
                             onClick={async () => {
-                              if (!canEmbed) {
-                                try {
-                                  await axios.post(`/api/business-media/${it.id}/track/cta`, {
-                                    ctaLabel: 'open_external',
-                                    ctaUrl: it.external_url || '',
-                                    targetMemberId: null,
-                                  }).catch(() => {});
-                                } catch {}
-                                if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
-                                return;
-                              }
-                              const next = isExpanded ? null : it.id;
-                              setBmExpandedId(next);
-                              if (next) {
-                                try {
-                                  await axios.post(`/api/business-media/${it.id}/track/view`, {}).catch(() => {});
-                                } catch {}
-                              }
+                              try {
+                                await axios.post(`/api/business-media/${it.id}/track/view`, {}).catch(() => {});
+                              } catch {}
                             }}
                             className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
                           >
-                            {isExpanded ? '收起影片' : (canEmbed ? '在本站播放' : '前往觀看')}
+                            已播放
                           </button>
                         )}
 
