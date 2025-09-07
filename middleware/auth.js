@@ -46,7 +46,11 @@ const authenticateToken = async (req, res, next) => {
       return res.status(403).json({ message: '帳號未啟用或已被停用' });
     }
 
-    req.user = user;
+    // Attach computed admin flag for downstream checks
+    req.user = { 
+      ...user, 
+      is_admin: user.membership_level === 1 && !!user.email && user.email.includes('admin') 
+    };
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
