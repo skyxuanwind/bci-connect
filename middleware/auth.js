@@ -49,7 +49,8 @@ const authenticateToken = async (req, res, next) => {
     // Attach computed admin flag for downstream checks
     req.user = { 
       ...user, 
-      is_admin: user.membership_level === 1 && !!user.email && user.email.includes('admin') 
+      // Admin: highest membership level
+      is_admin: user.membership_level === 1,
     };
     next();
   } catch (error) {
@@ -72,8 +73,8 @@ const requireAdmin = (req, res, next) => {
     return res.status(401).json({ message: '需要認證' });
   }
 
-  // Admin check - assuming admin has membership_level 1 and specific email
-  if (req.user.membership_level !== 1 || !req.user.email.includes('admin')) {
+  // Admin check via computed flag
+  if (!req.user.is_admin) {
     return res.status(403).json({ message: '需要管理員權限' });
   }
 
