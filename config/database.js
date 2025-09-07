@@ -113,6 +113,12 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS nfc_card_url VARCHAR(500) UNIQUE
     `);
 
+    // Add nfc_uid column for NFC card UID identification
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS nfc_uid VARCHAR(50) UNIQUE
+    `);
+
     // Create referrals table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS referrals (

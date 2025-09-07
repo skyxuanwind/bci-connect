@@ -81,10 +81,19 @@ router.post('/submit', async (req, res) => {
           }
         }
       } else {
+        // 優先使用 nfc_uid 查詢，如果沒有結果再使用 nfc_card_id 查詢
         memberResult = await pool.query(
-          'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url FROM users WHERE nfc_card_id = $1',
+          'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url, nfc_uid FROM users WHERE nfc_uid = $1',
           [normalizedCardUid]
         );
+        
+        // 如果通過 nfc_uid 沒有找到會員，再嘗試使用 nfc_card_id 查詢（向後兼容）
+        if (memberResult.rows.length === 0) {
+          memberResult = await pool.query(
+            'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url, nfc_uid FROM users WHERE nfc_card_id = $1',
+            [normalizedCardUid]
+          );
+        }
       }
       
       if (memberResult.rows.length > 0) {
