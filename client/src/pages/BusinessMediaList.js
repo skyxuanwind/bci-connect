@@ -17,6 +17,16 @@ export default function BusinessMediaList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // 處理 Instagram 嵌入內容
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (window.instgrm) {
+        window.instgrm.Embeds.process();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [items]);
+
   const [q, setQ] = useState(searchParams.get('q') || '');
   const [type, setType] = useState(searchParams.get('type') || '');
   const [page, setPage] = useState(Number(searchParams.get('page') || 1));

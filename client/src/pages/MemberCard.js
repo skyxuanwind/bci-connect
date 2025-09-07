@@ -55,6 +55,16 @@ const MemberCard = () => {
   const [businessMediaItems, setBusinessMediaItems] = useState([]);
   const [bmLoading, setBmLoading] = useState(false);
   const [bmError, setBmError] = useState('');
+
+  // 處理 Instagram 嵌入內容
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (window.instgrm) {
+        window.instgrm.Embeds.process();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [cardData, businessMediaItems]);
   // 輔助：是否為掃描名片 ID
   const isScannedId = (id) => String(id).split(':')[0].startsWith('scanned_');
   const baseId = String(memberId || '').split(':')[0];

@@ -354,6 +354,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         membershipLevel: user.membership_level,
         status: user.status,
         nfcCardId: user.nfc_card_id,
+        nfcCardUrl: user.nfc_card_url,
         qrCodeUrl: `/api/qrcode/member/${user.id}`,
         interviewForm: interviewForm,
         createdAt: user.created_at
