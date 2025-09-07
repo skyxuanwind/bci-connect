@@ -196,10 +196,13 @@ export default function BusinessMediaList() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {items.map((item) => {
             const embedUrl = getEmbedUrl(item);
-            const canEmbed = !!embedUrl && (item.content_type === 'video_long' || item.content_type === 'video_short');
+            const canEmbed = !!embedUrl;
+            const lower = (item.external_url || '').toLowerCase();
+            const isInstagram = lower.includes('instagram.com') || item.platform === 'instagram';
             const isExpanded = expandedId === item.id;
             return (
-              <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+              <div key={item.id} className="p-4 bg-white rounded-lg border">
+                {/* 標題與標籤等保留既有內容 */}
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-base font-semibold text-gray-900">{item.title}</h3>
@@ -216,37 +219,53 @@ export default function BusinessMediaList() {
                   </div>
                 </div>
 
-                {isExpanded && canEmbed && (
-                  <div className="mt-3">
-                    <div className="w-full aspect-video bg-black/5 rounded overflow-hidden">
+                {/* 影片區塊：IG 直接顯示；其他平台依照 isExpanded 顯示 */}
+                {(isInstagram && canEmbed) ? (
+                  <div className="mt-2 video-container">
+                    <iframe
+                      src={embedUrl}
+                      title={item.title || 'Instagram Embed'}
+                      allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
+                      allowFullScreen
+                      loading="lazy"
+                      style={{ width: '100%', height: '600px', border: 0, overflow: 'hidden' }}
+                      scrolling="no"
+                    />
+                  </div>
+                ) : (
+                  isExpanded && canEmbed && (
+                    <div className="mt-2 video-container">
                       <iframe
-                        title={item.title}
                         src={embedUrl}
-                        className="w-full h-full"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                        title={item.title || 'Embedded Media'}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
+                        loading="lazy"
+                        style={{ width: '100%', height: '360px', border: 0 }}
                       />
                     </div>
-                  </div>
+                  )
                 )}
 
-                {item.summary && (
-                  <p className="mt-2 text-sm text-gray-600 line-clamp-3">{item.summary}</p>
-                )}
-                <div className="mt-3 flex items-center gap-2">
-                  <button
-                    onClick={() => handlePlayOnSite(item)}
-                    className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700"
-                  >
-                    {isExpanded ? '收起影片' : (canEmbed ? '在本站播放' : '前往觀看')}
-                  </button>
-                  <button
-                    onClick={() => handleOpenItem(item)}
-                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                {/* 操作按鈕列：對 IG 隱藏站內播放切換；其他平台保留 */}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {!isInstagram && (
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                      className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
+                    >
+                      {isExpanded ? '收起影片' : (canEmbed ? '在本站播放' : '前往觀看')}
+                    </button>
+                  )}
+                  <a
+                    href={item.external_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
                   >
                     前往原平台
-                  </button>
+                  </a>
+                  {/* 其餘按鈕保留 */}
                   <button
                     onClick={() => handleGoSpeakerCard(item)}
                     className="px-3 py-1.5 text-sm bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
