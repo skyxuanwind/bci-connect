@@ -254,7 +254,7 @@ const ReferralSystem = () => {
                 onClick={() => setActiveTab('received')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'received'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-gold-500 text-gold-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -264,7 +264,7 @@ const ReferralSystem = () => {
                 onClick={() => setActiveTab('sent')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'sent'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-gold-500 text-gold-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -286,7 +286,7 @@ const ReferralSystem = () => {
                     <select
                       value={newReferral.referred_to_id}
                       onChange={(e) => setNewReferral({ ...newReferral, referred_to_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
                       required
                     >
                       <option value="">請選擇會員</option>
@@ -308,7 +308,7 @@ const ReferralSystem = () => {
                       step="0.01"
                       value={newReferral.referral_amount}
                       onChange={(e) => setNewReferral({ ...newReferral, referral_amount: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
                       placeholder="請輸入引薦金額"
                       required
                     />
@@ -322,7 +322,7 @@ const ReferralSystem = () => {
                       value={newReferral.description}
                       onChange={(e) => setNewReferral({ ...newReferral, description: e.target.value })}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
                       placeholder="請描述引薦的詳細內容..."
                     />
                   </div>

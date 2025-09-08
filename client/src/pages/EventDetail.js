@@ -260,7 +260,7 @@ const EventDetail = () => {
                     </button>
                     <button
                       onClick={generateInviteLink}
-                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-700 transition-colors duration-200"
+                      className="w-full btn-primary"
                     >
                       生成邀請連結
                     </button>
@@ -271,7 +271,7 @@ const EventDetail = () => {
                     disabled={!canRegister() || registering}
                     className={`w-full px-4 py-2 rounded-md font-medium transition-colors duration-200 ${
                       canRegister() && !registering
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'btn-primary'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >

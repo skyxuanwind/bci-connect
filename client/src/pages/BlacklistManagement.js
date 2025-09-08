@@ -205,7 +205,7 @@ const BlacklistManagement = () => {
             </div>
             <button
               onClick={() => setShowAddModal(true)}
-              className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              className="bg-black text-yellow-400 px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors border border-yellow-400"
             >
               新增黑名單
             </button>
@@ -389,7 +389,7 @@ const BlacklistManagement = () => {
                 </button>
                 <button
                   onClick={handleAddEntry}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                  className="px-4 py-2 bg-black text-yellow-400 rounded-md hover:bg-gray-800 transition-colors border border-yellow-400"
                 >
                   確認新增
                 </button>
@@ -481,7 +481,7 @@ const BlacklistManagement = () => {
                 </button>
                 <button
                   onClick={handleEditEntry}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-black text-yellow-400 rounded-md hover:bg-gray-800 transition-colors border border-yellow-400"
                 >
                   確認更新
                 </button>

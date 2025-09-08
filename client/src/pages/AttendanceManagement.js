@@ -160,7 +160,7 @@ const AttendanceManagement = () => {
               onClick={() => setActiveTab('overview')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-gold-500 text-gold-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -170,7 +170,7 @@ const AttendanceManagement = () => {
               onClick={() => setActiveTab('details')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'details'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-gold-500 text-gold-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -304,7 +304,7 @@ const AttendanceManagement = () => {
                                 setSelectedEvent(stat.id.toString());
                                 setActiveTab('details');
                               }}
-                              className="text-blue-600 hover:text-blue-900 transition-colors"
+                              className="text-gold-600 hover:text-gold-900 transition-colors"
                             >
                               查看詳情
                             </button>
@@ -342,7 +342,7 @@ const AttendanceManagement = () => {
                 {attendanceData && (
                   <button
                     onClick={exportToCSV}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                    className="btn-primary"
                   >
                     匯出 CSV
                   </button>

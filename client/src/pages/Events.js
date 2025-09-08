@@ -171,7 +171,7 @@ const Events = () => {
                   <div className="mt-6">
                     <Link
                       to={`/events/${event.id}`}
-                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-200 inline-block text-center"
+                      className="w-full btn-primary inline-block text-center"
                     >
                       查看詳情
                     </Link>

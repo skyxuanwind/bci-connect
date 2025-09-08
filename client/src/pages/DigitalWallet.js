@@ -1286,19 +1286,19 @@ const DigitalWallet = () => {
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                   <div className="flex justify-between items-center">
                     <a
-                      href={`/member/${getMemberIdForCard(card)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
-                    >
-                      查看名片
-                    </a>
+                        href={`/member/${getMemberIdForCard(card)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gold-600 hover:text-gold-800 text-sm font-medium transition-colors"
+                      >
+                        查看名片
+                      </a>
                     
                     <div className="flex items-center space-x-2">
                       <input
                         type="text"
                         placeholder="添加標籤"
-                        className="px-2 py-1 border border-gray-300 rounded text-xs w-20 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                        className="px-2 py-1 border border-gray-300 rounded text-xs w-20 focus:ring-1 focus:ring-gold-500 focus:border-transparent"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') {
                             addTag(card.id, e.target.value);

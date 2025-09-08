@@ -251,7 +251,7 @@ const ComplaintBox = () => {
           
           <button
             onClick={() => setShowSubmitModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            className="btn-primary"
           >
             提交申訴
           </button>
