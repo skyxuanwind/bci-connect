@@ -903,9 +903,9 @@ const DigitalWallet = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-black to-gray-900">
       {/* 頂部標題區 */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-gradient-to-r from-black/90 to-gray-900/90 border-b border-yellow-500/30 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -968,7 +968,7 @@ const DigitalWallet = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 搜尋和篩選區 */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* 搜尋框 */}
             <div className="relative flex-1 max-w-md min-w-0">
@@ -1071,7 +1071,7 @@ const DigitalWallet = () => {
 
         {/* 名片列表 */}
         {filteredAndSortedCards.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-12 text-center">
             <HeartIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               {savedCards.length === 0 ? '名片夾是空的' : '沒有符合條件的名片'}
@@ -1085,7 +1085,7 @@ const DigitalWallet = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAndSortedCards.map(card => (
-              <div key={card.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+              <div key={card.id} className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                 {/* 掃描名片縮圖 */}
                 {(() => {
                   const rawUrl = card?.scanned_data?.image_url || card?.image_url;

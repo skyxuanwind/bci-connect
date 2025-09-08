@@ -250,13 +250,15 @@
 }
 
 .qr-modal {
-  background: white;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(26, 26, 26, 0.95) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.3);
   padding: 30px;
   border-radius: 20px;
   text-align: center;
   max-width: 300px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  color: #fff;
 }
 
 .dark-mode .qr-modal {
@@ -313,14 +315,15 @@
 
 /* 個人資訊區域 */
 .personal-info-section {
-  background: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.85) 0%, rgba(26, 26, 26, 0.85) 100%);
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 40px;
   margin-bottom: 30px;
   text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #fff;
 }
 
 .dark-mode .personal-info-section {
@@ -417,13 +420,14 @@
 
 /* 聯絡資訊區域 */
 .contact-info-section {
-  background: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.85) 0%, rgba(26, 26, 26, 0.85) 100%);
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 30px;
   margin-bottom: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #fff;
 }
 
 .dark-mode .contact-info-section {
@@ -490,12 +494,13 @@
 }
 
 .content-block {
-  background: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.85) 0%, rgba(26, 26, 26, 0.85) 100%);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   padding: 25px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #fff;
 }
 
 .dark-mode .content-block {

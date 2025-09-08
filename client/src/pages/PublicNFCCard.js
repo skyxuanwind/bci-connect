@@ -327,7 +327,7 @@ const PublicNFCCard = () => {
       darkMode ? 'dark bg-gray-900' : 'bg-gray-50'
     }`}>
       {/* 頂部操作欄 */}
-      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-sm border-b border-yellow-500/30">
         <div className="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <button
@@ -370,7 +370,7 @@ const PublicNFCCard = () => {
       {/* 主要內容 */}
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* 名片頭部 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden mb-6"
+        <div className="bg-gradient-to-br from-black/90 to-gray-900/90 border border-yellow-500/30 rounded-2xl shadow-xl overflow-hidden mb-6"
              style={{
                background: darkMode 
                  ? `linear-gradient(135deg, ${cssConfig.gradientFrom || '#1e293b'}, ${cssConfig.gradientTo || '#334155'})`
@@ -412,14 +412,14 @@ const PublicNFCCard = () => {
         </div>
 
         {/* 聯絡信息 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">聯絡方式</h2>
           
           <div className="space-y-3">
             {member.contact_number && (
               <a 
                 href={`tel:${member.contact_number}`}
-                className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
               >
                 <PhoneIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
                 <span className="text-gray-900 dark:text-white">{member.contact_number}</span>
@@ -428,14 +428,14 @@ const PublicNFCCard = () => {
             
             <a 
               href={`mailto:${member.email}`}
-              className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
             >
               <EnvelopeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" />
               <span className="text-gray-900 dark:text-white">{member.email}</span>
             </a>
             
             {member.company && (
-              <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                 <BuildingOfficeIcon className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3" />
                 <span className="text-gray-900 dark:text-white">{member.company}</span>
               </div>
@@ -445,7 +445,7 @@ const PublicNFCCard = () => {
 
         {/* 動態內容區塊 */}
         {cardConfig?.content_blocks && cardConfig.content_blocks.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">更多信息</h2>
             {cardConfig.content_blocks.map((block, index) => (
               <div key={index}>
@@ -459,7 +459,7 @@ const PublicNFCCard = () => {
       {/* 分享成功提示 */}
       {showShareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mx-4 max-w-sm">
+          <div className="bg-gradient-to-br from-black/90 to-gray-900/90 border border-yellow-500/30 rounded-lg p-6 mx-4 max-w-sm">
             <div className="text-center">
               <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

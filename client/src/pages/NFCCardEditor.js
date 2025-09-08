@@ -604,9 +604,9 @@ const NFCCardEditor = () => {
   const selectedPreview = selectedTemplate?.preview_image_url || '/nfc-templates/placeholder.svg';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-black to-gray-900">
       {/* 頂部操作欄 */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-gradient-to-r from-black/90 to-gray-900/90 border-b border-yellow-500/30 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-2xl font-bold text-gray-900">電子名片編輯器</h1>

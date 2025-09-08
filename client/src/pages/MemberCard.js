@@ -1141,7 +1141,7 @@ const MemberCard = () => {
                 const canEmbed = (!!embedUrl || (isInstagram && it.embed_code)) && (it.content_type === 'video_long' || it.content_type === 'video_short');
 
                 return (
-                  <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
+                  <div key={it.id} className="p-3 border border-yellow-500/30 rounded-lg bg-gradient-to-br from-black/70 to-gray-900/70">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="text-sm font-semibold text-gray-900">{it.title}</div>
@@ -1314,7 +1314,7 @@ const MemberCard = () => {
       {aiModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-gray-900 bg-opacity-50" onClick={closeAISuggestion}></div>
-          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6">
+          <div className="relative bg-gradient-to-br from-black/95 to-gray-900/95 border border-yellow-500/30 rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold text-gray-900">AI 跟進建議</h3>
               <button onClick={closeAISuggestion} className="text-gray-500 hover:text-gray-700">✕</button>
