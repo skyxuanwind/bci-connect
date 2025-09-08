@@ -179,6 +179,48 @@
   .bg-gradient-gold {
     background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
   }
+
+  /* Black-Gold overrides for existing white/gray utilities */
+  .bg-white {
+    @apply bg-primary-800 text-gold-100 border border-gold-600; /* 卡片白底改黑金卡片 */
+    background: linear-gradient(135deg, #262626 0%, #404040 50%, #262626 100%) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(217, 119, 6, 0.2);
+  }
+
+  .bg-white\/90 {
+    background-color: rgba(38, 38, 38, 0.9) !important; /* 取代半透明白 */
+    border: 1px solid rgba(217, 119, 6, 0.6);
+    color: #fef7cd;
+  }
+
+  .bg-gray-50 {
+    @apply bg-primary-900 text-gold-100; /* 頁面白灰底改為深色底 */
+    background: linear-gradient(135deg, #171717 0%, #262626 50%, #171717 100%) !important;
+  }
+
+  .bg-gray-100 {
+    @apply bg-primary-800 text-gold-100; /* 區塊淺灰底改為深色區塊 */
+    background: linear-gradient(135deg, #262626 0%, #404040 100%) !important;
+  }
+
+  .hover\:bg-gray-50:hover { @apply bg-primary-700 !important; }
+  .hover\:bg-gray-100:hover { @apply bg-primary-700 !important; }
+  .hover\:bg-gray-200:hover { @apply bg-primary-600 !important; }
+
+  .border-gray-200 { @apply border-gold-600 !important; }
+  .border-gray-300 { @apply border-gold-700 !important; }
+
+  /* 調整表格分隔線顏色為金色調 */
+  .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(217, 119, 6, 0.3) !important;
+  }
+
+  /* 常見文字顏色映射為黑金系的金色，提升深色卡片上的可讀性 */
+  .text-gray-900, .text-gray-800 { @apply text-gold-100 !important; }
+  .text-gray-700 { @apply text-gold-200 !important; }
+  .text-gray-600 { @apply text-gold-300 !important; }
+  .text-gray-500 { @apply text-gold-400 !important; }
+  .placeholder-gray-500::placeholder { color: #facc15 !important; }
 }
 
 /* Custom scrollbar - 質感金色 */
