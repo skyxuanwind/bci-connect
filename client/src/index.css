@@ -223,11 +223,22 @@
   .text-gray-400 { @apply text-gold-200 !important; }
   .text-gray-300, .text-gray-200, .text-gray-100 { @apply text-gold-100 !important; }
 
-  /* Primary and link tones on dark surfaces */
-  .text-primary-900, .text-primary-800, .text-primary-700 { @apply text-gold-100 !important; }
-  .text-blue-700 { @apply text-gold-200 !important; }
-  .border-blue-300 { @apply border-gold-600 !important; }
-  .hover\:bg-blue-50:hover { @apply bg-primary-700 !important; }
+  /* Material UI (MUI) dark theme compatibility for readability */
+  /* Typography using color="text.secondary" */
+  .MuiTypography-colorTextSecondary { color: #facc15 !important; } /* gold-300 */
+  .MuiTypography-colorTextPrimary { color: #fefce8 !important; } /* near gold-50 */
+
+  /* Icons and subtle labels that default to low-contrast colors */
+  .MuiSvgIcon-root { color: #facc15 !important; }
+  .MuiInputBase-root .MuiSvgIcon-root { color: #facc15 !important; }
+
+  /* Tabs/Chips/Badges subtle text */
+  .MuiTab-root, .MuiChip-label, .MuiBadge-badge { color: #fde68a !important; }
+  .MuiBadge-badge { background-color: rgba(217, 119, 6, 0.25) !important; }
+
+  /* Text fields helper and placeholder colors */
+  .MuiFormHelperText-root { color: #facc15 !important; }
+  .MuiInputBase-input::placeholder { color: #facc15 !important; opacity: 0.8; }
 
   /* Success/Danger readability */
   .text-green-800, .text-green-700 { @apply text-green-300 !important; }
