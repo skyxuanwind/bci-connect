@@ -1146,8 +1146,8 @@ const MemberCard = () => {
                       <div>
                         <div className="text-sm font-semibold text-gray-900">{it.title}</div>
                         <div className="mt-1 text-xs text-gray-500 space-x-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{it.content_type}</span>
-                          {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">{it.platform}</span>}
+                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-300 border border-yellow-500/30">{it.content_type}</span>
+                          {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-300 border border-yellow-500/30">{it.platform}</span>}
                         </div>
                       </div>
                     </div>

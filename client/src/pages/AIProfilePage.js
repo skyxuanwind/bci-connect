@@ -112,7 +112,8 @@ const AIProfilePage = () => {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-3">
-            <CpuChipIcon className="h-8 w-8 text-primary-600" />
+            {/* 改為黑金主題色 */}
+            <CpuChipIcon className="h-8 w-8 text-yellow-400" />
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">AI 深度畫像</h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">智能分析您的商業特質與合作潛力</p>
@@ -121,7 +122,7 @@ const AIProfilePage = () => {
           <button
             onClick={handleUpdateProfile}
             disabled={updating}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+            className="btn-gold inline-flex items-center justify-center w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {updating ? (
               <>
@@ -158,7 +159,7 @@ const AIProfilePage = () => {
                 {profile?.profileCompleteness || 0}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div className="w-full bg-yellow-900/30 rounded-full h-2 mb-2">
               <div 
                 className={`h-2 rounded-full ${getCompletenessBarColor(profile?.profileCompleteness || 0)}`}
                 style={{ width: `${profile?.profileCompleteness || 0}%` }}
@@ -170,7 +171,7 @@ const AIProfilePage = () => {
           {/* 數據來源 */}
           <div className="text-center">
             <div className="mb-2">
-              <ChartBarIcon className="h-8 w-8 text-blue-500 mx-auto" />
+              <ChartBarIcon className="h-8 w-8 text-yellow-400 mx-auto" />
             </div>
             <p className="text-lg font-semibold text-gray-900">
               {(Object.values(profile?.profile?.data_sources || {}).filter(src => src && src.last_update).length) || 0} 個
@@ -181,7 +182,7 @@ const AIProfilePage = () => {
           {/* 分析維度 */}
           <div className="text-center">
             <div className="mb-2">
-              <BriefcaseIcon className="h-8 w-8 text-purple-500 mx-auto" />
+              <BriefcaseIcon className="h-8 w-8 text-yellow-400 mx-auto" />
             </div>
             <p className="text-lg font-semibold text-gray-900">
               {profile?.profile?.ai_insights?.personality_traits?.length || 0} 項
@@ -195,7 +196,7 @@ const AIProfilePage = () => {
           <button
             type="button"
             onClick={() => setShowSourceDetails((v) => !v)}
-            className="w-full flex items-center justify-between text-left text-sm font-medium text-primary-700 hover:text-primary-900"
+            className="w-full flex items-center justify-between text-left text-sm font-medium text-yellow-300 hover:text-yellow-200"
           >
             <span>資料來源詳情</span>
             {showSourceDetails ? (
@@ -270,10 +271,10 @@ const AIProfilePage = () => {
 
       {/* AI 建議（顯著展示於概覽卡片下方） */}
       {analysis?.suggestions?.length > 0 && (
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-5 mb-8">
+        <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-5 mb-8">
           <div className="flex items-center mb-3">
-            <LightBulbIcon className="h-5 w-5 text-primary-600 mr-2" />
-            <h3 className="text-base font-semibold text-primary-900">AI 建議</h3>
+            <LightBulbIcon className="h-5 w-5 text-yellow-400 mr-2" />
+            <h3 className="text-base font-semibold text-gold-100">AI 建議</h3>
             {analysis.lastAnalyzed && (
               <span className="ml-auto text-xs text-gray-500">分析時間：{formatDate(analysis.lastAnalyzed)}</span>
             )}
@@ -282,7 +283,7 @@ const AIProfilePage = () => {
             {analysis.suggestions.map((s, idx) => (
               <li key={idx} className="flex flex-col sm:flex-row sm:items-start gap-2">
                 <span
-                  className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.priority === 'high' ? 'bg-red-100 text-red-700' : s.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}
+                  className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.priority === 'high' ? 'bg-red-500/10 text-red-300 border border-red-500/30' : s.priority === 'medium' ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/30' : 'bg-green-500/10 text-green-300 border border-green-500/30'}`}
                 >
                   {s.priority === 'high' ? '高' : s.priority === 'medium' ? '中' : '低'}
                 </span>
@@ -371,7 +372,7 @@ const AIProfilePage = () => {
       </div>
 
       {/* 標籤頁導航 */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-yellow-500/30 mb-6">
         <nav className="-mb-px flex overflow-x-auto space-x-4 sm:space-x-8 scrollbar-hide">
           {[
             { id: 'overview', name: '總覽', icon: ChartBarIcon },
@@ -386,8 +387,8 @@ const AIProfilePage = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`${
                 activeTab === tab.id
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-yellow-500/60 text-yellow-300'
+                  : 'border-transparent text-gray-400 hover:text-yellow-300 hover:border-yellow-500/30'
               } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 flex-shrink-0`}
             >
               <tab.icon className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -459,10 +460,10 @@ const AIProfilePage = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">個性特質分析</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {profile.profile.ai_insights.personality_traits.map((trait, index) => (
-                <div key={index} className="bg-blue-50 rounded-lg p-4">
+                <div key={index} className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
-                    <TrophyIcon className="h-5 w-5 text-blue-500" />
-                    <span className="font-medium text-blue-900">{trait}</span>
+                    <TrophyIcon className="h-5 w-5 text-yellow-400" />
+                    <span className="font-medium text-yellow-300">{trait}</span>
                   </div>
                 </div>
               ))}
@@ -478,13 +479,13 @@ const AIProfilePage = () => {
                 <div key={industry} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 sm:justify-between">
                   <span className="text-gray-700 font-medium">{industry}</span>
                   <div className="flex items-center space-x-3">
-                    <div className="flex-1 sm:w-32 bg-gray-200 rounded-full h-2">
+                    <div className="flex-1 sm:w-32 bg-yellow-900/30 rounded-full h-2">
                       <div 
-                        className="bg-blue-500 h-2 rounded-full"
+                        className="bg-yellow-500 h-2 rounded-full"
                         style={{ width: `${score}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 w-12 text-right">{score}%</span>
+                    <span className="text-sm font-medium text-gold-100 w-12 text-right">{score}%</span>
                   </div>
                 </div>
               ))}
@@ -497,14 +498,14 @@ const AIProfilePage = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">合作潛力分析</h3>
             <div className="space-y-4">
               {Object.entries(profile.profile.ai_insights.collaboration_potential).map(([type, potential]) => (
-                <div key={type} className="bg-green-50 rounded-lg p-4">
+                <div key={type} className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-green-900">{type}</span>
-                    <span className="text-sm font-bold text-green-700">{potential}%</span>
+                    <span className="font-medium text-yellow-300">{type}</span>
+                    <span className="text-sm font-bold text-yellow-300">{potential}%</span>
                   </div>
-                  <div className="w-full bg-green-200 rounded-full h-2">
+                  <div className="w-full bg-yellow-900/30 rounded-full h-2">
                     <div 
-                      className="bg-green-500 h-2 rounded-full"
+                      className="bg-yellow-500 h-2 rounded-full"
                       style={{ width: `${potential}%` }}
                     ></div>
                   </div>
@@ -519,11 +520,11 @@ const AIProfilePage = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">市場機會識別</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {profile.profile.ai_insights.market_opportunities.map((opportunity, index) => (
-                <div key={index} className="bg-yellow-50 rounded-lg p-4">
+                <div key={index} className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
                     <LightBulbIcon className="h-5 w-5 text-yellow-500 mt-0.5" />
                     <div>
-                      <p className="text-yellow-900 font-medium">{opportunity}</p>
+                      <p className="text-yellow-300 font-medium">{opportunity}</p>
                     </div>
                   </div>
                 </div>
@@ -537,11 +538,11 @@ const AIProfilePage = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">風險因素評估</h3>
             <div className="space-y-4">
               {profile.profile.ai_insights.risk_factors.map((risk, index) => (
-                <div key={index} className="bg-red-50 rounded-lg p-4">
+                <div key={index} className="bg-black/40 border border-red-500/30 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
                     <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mt-0.5" />
                     <div>
-                      <p className="text-red-900">{risk}</p>
+                      <p className="text-red-300">{risk}</p>
                     </div>
                   </div>
                 </div>
@@ -553,16 +554,16 @@ const AIProfilePage = () => {
 
       {/* 無分析數據提示 */}
       {!analysis && !profile?.profile?.ai_insights && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <div className="bg-black/40 border border-yellow-500/30 rounded-lg p-6 text-center">
           <ExclamationTriangleIcon className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-yellow-900 mb-2">尚無AI分析數據</h3>
-          <p className="text-yellow-700 mb-4">
+          <h3 className="text-lg font-medium text-yellow-300 mb-2">尚無AI分析數據</h3>
+          <p className="text-yellow-200 mb-4">
             您的AI深度畫像尚未完成分析，請點擊上方「更新畫像」按鈕來生成分析報告。
           </p>
           <button
             onClick={handleUpdateProfile}
             disabled={updating}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-gold inline-flex items-center px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {updating ? (
               <>

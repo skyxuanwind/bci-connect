@@ -160,42 +160,42 @@ export default function BusinessMediaList() {
         targetMemberId: item.speaker_id,
       }).catch(() => {});
     } catch {}
-    navigate(`/member/${item.speaker_id}`);
+    navigate(`/members/${item.speaker_id}`);
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">商媒體</h1>
-        <p className="text-sm text-gray-500 mt-1">精選會員的影片與文章內容</p>
+        <h1 className="text-2xl font-semibold text-yellow-100">商媒體</h1>
+        <p className="text-sm text-gray-300 mt-1">精選會員的影片與文章內容</p>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+      <div className="bg-gradient-to-br from-black/85 to-gray-900/85 p-4 rounded-lg shadow border border-yellow-500/30">
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <input
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="搜尋標題或摘要"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="flex-1 px-3 py-2 border border-yellow-500/30 bg-black/40 text-gray-100 placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
           />
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="px-3 py-2 border border-yellow-500/30 bg-black/40 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
           >
             {typeOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
           {speakerId && (
-            <span className="text-xs text-gray-500">過濾講者ID：{speakerId}</span>
+            <span className="text-xs text-gray-400">過濾講者ID：{speakerId}</span>
           )}
         </div>
       </div>
 
       {loading && (
-        <div className="text-gray-600">載入中...</div>
+        <div className="text-gray-300">載入中...</div>
       )}
       {error && !loading && (
         <div className="text-red-600 text-sm">{error}</div>
@@ -209,17 +209,17 @@ export default function BusinessMediaList() {
                 const isInstagram = lower.includes('instagram.com') || item.platform === 'instagram';
                 const canEmbed = !!embedUrl || (isInstagram && item.embed_code);
             return (
-              <div key={item.id} className="p-4 bg-white rounded-lg border">
+              <div key={item.id} className="p-4 bg-gradient-to-br from-black/85 to-gray-900/85 rounded-lg border border-yellow-500/30">
                 {/* 標題與標籤等保留既有內容 */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900">{item.title}</h3>
+                    <h3 className="text-base font-semibold text-yellow-100">{item.title}</h3>
                     <div className="mt-1 space-x-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/10 text-yellow-300 border border-yellow-500/30">
                         {item.content_type}
                       </span>
                       {item.platform && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/10 text-yellow-300 border border-yellow-500/30">
                           {item.platform}
                         </span>
                       )}
@@ -282,14 +282,14 @@ export default function BusinessMediaList() {
                     href={item.external_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                    className="px-3 py-1.5 text-xs border border-yellow-500/30 text-yellow-100 rounded bg-black/40 hover:bg-black/60"
                   >
                     前往原平台
                   </a>
                   {/* 其餘按鈕保留 */}
                   <button
                     onClick={() => handleGoSpeakerCard(item)}
-                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                    className="px-3 py-1.5 text-sm border border-yellow-500/30 text-yellow-100 rounded bg-black/40 hover:bg-black/60"
                   >
                     查看講者名片
                   </button>
@@ -298,7 +298,7 @@ export default function BusinessMediaList() {
             );
           })}
           {items.length === 0 && (
-            <div className="col-span-full text-gray-500">暫無內容</div>
+            <div className="col-span-full text-gray-400">暫無內容</div>
           )}
         </div>
       )}

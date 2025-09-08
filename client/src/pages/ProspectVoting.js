@@ -183,7 +183,7 @@ const ProspectVoting = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">載入中...</p>
+          <p className="mt-2 text-gray-300">載入中...</p>
         </div>
       </div>
     );
@@ -202,20 +202,20 @@ const ProspectVoting = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">商訪專區</h1>
-        <p className="text-gray-600">審核待投票的申請人資料</p>
+        <h1 className="text-3xl font-bold text-yellow-100 mb-2">商訪專區</h1>
+        <p className="text-gray-300">審核待投票的申請人資料</p>
       </div>
 
       {/* 標籤切換 */}
       <div className="mb-6">
-        <div className="border-b border-gray-200">
+        <div className="border-b border-yellow-500/30">
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('pending')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'pending'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-yellow-500 text-yellow-300'
+                  : 'border-transparent text-gray-400 hover:text-yellow-300 hover:border-yellow-500/30'
               }`}
             >
               待投票 ({filteredProspects.length})
@@ -224,8 +224,8 @@ const ProspectVoting = () => {
               onClick={() => setActiveTab('all')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'all'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-yellow-500 text-yellow-300'
+                  : 'border-transparent text-gray-400 hover:text-yellow-300 hover:border-yellow-500/30'
               }`}
             >
               全部申請 ({processedProspects.length})
@@ -236,28 +236,28 @@ const ProspectVoting = () => {
 
       {filteredProspects.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-gray-500 text-lg">目前沒有待投票的申請</div>
+          <div className="text-gray-400 text-lg">目前沒有待投票的申請</div>
         </div>
       ) : (
         <div className="space-y-6">
           {filteredProspects.map((prospect) => (
-            <div key={prospect.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            <div key={prospect.id} className="bg-gradient-to-br from-black/85 to-gray-900/85 rounded-lg shadow-sm border border-yellow-500/30 overflow-hidden">
               {/* 申請人基本資訊 */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{prospect.name}</h3>
+                    <h3 className="text-xl font-bold text-yellow-100 mb-2">{prospect.name}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {prospect.company && (
                         <div>
-                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">公司</span>
-                          <div className="text-sm font-semibold text-gray-900 mt-1">{prospect.company}</div>
+                          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">公司</span>
+                          <div className="text-sm font-semibold text-gray-100 mt-1">{prospect.company}</div>
                         </div>
                       )}
                       {prospect.industry && (
                         <div>
-                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">行業</span>
-                          <div className="text-sm font-semibold text-gray-900 mt-1">{prospect.industry}</div>
+                          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">行業</span>
+                          <div className="text-sm font-semibold text-gray-100 mt-1">{prospect.industry}</div>
                         </div>
                       )}
                     </div>
@@ -272,17 +272,17 @@ const ProspectVoting = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
                       <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">創建者</div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">{prospect.createdBy}</div>
+                      <div className="text-sm font-semibold text-gray-100 mt-1">{prospect.createdBy}</div>
                     </div>
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
                       <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">創建時間</div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">{new Date(prospect.createdAt).toLocaleDateString('zh-TW')}</div>
+                      <div className="text-sm font-semibold text-gray-100 mt-1">{new Date(prospect.createdAt).toLocaleDateString('zh-TW')}</div>
                     </div>
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
                       <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">投票統計</div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-green-600 font-semibold">✓ {prospect.approveVotes}</span>
-                        <span className="text-gray-500">總計 {prospect.totalVotes}</span>
+                        <span className="text-green-400 font-semibold">✓ {prospect.approveVotes}</span>
+                        <span className="text-gray-400">總計 {prospect.totalVotes}</span>
                       </div>
                       {prospect.totalVotes > 0 && (
                         <div className="mt-2 bg-gray-200 rounded-full h-2">
@@ -312,44 +312,44 @@ const ProspectVoting = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {prospect.memberName && (
                               <div className="bg-white p-3 rounded border">
-                                <div className="text-xs text-gray-500 font-medium">會員姓名</div>
-                                <div className="text-sm font-semibold text-gray-900">{prospect.memberName}</div>
+                                <div className="text-xs text-gray-400 font-medium">會員姓名</div>
+                                <div className="text-sm font-semibold text-gray-100">{prospect.memberName}</div>
                               </div>
                             )}
                             {prospect.referralChapter && (
                               <div className="bg-white p-3 rounded border">
-                                <div className="text-xs text-gray-500 font-medium">引薦分會</div>
-                                <div className="text-sm font-semibold text-gray-900">{prospect.referralChapter}</div>
+                                <div className="text-xs text-gray-400 font-medium">引薦分會</div>
+                                <div className="text-sm font-semibold text-gray-100">{prospect.referralChapter}</div>
                               </div>
                             )}
                             {prospect.referralPartner && (
                               <div className="bg-white p-3 rounded border">
-                                <div className="text-xs text-gray-500 font-medium">引薦夥伴</div>
-                                <div className="text-sm font-semibold text-gray-900">{prospect.referralPartner}</div>
+                                <div className="text-xs text-gray-400 font-medium">引薦夥伴</div>
+                                <div className="text-sm font-semibold text-gray-100">{prospect.referralPartner}</div>
                               </div>
                             )}
                             {prospect.primaryProfession && (
                               <div className="bg-white p-3 rounded border">
-                                <div className="text-xs text-gray-500 font-medium">主要專業</div>
-                                <div className="text-sm font-semibold text-gray-900">{prospect.primaryProfession}</div>
+                                <div className="text-xs text-gray-400 font-medium">主要專業</div>
+                                <div className="text-sm font-semibold text-gray-100">{prospect.primaryProfession}</div>
                               </div>
                             )}
                             {prospect.secondaryProfession && (
                               <div className="bg-white p-3 rounded border">
-                                <div className="text-xs text-gray-500 font-medium">第二專業</div>
-                                <div className="text-sm font-semibold text-gray-900">{prospect.secondaryProfession}</div>
+                                <div className="text-xs text-gray-400 font-medium">第二專業</div>
+                                <div className="text-sm font-semibold text-gray-100">{prospect.secondaryProfession}</div>
                               </div>
                             )}
                             {prospect.interviewer && (
                               <div className="bg-white p-3 rounded border">
-                                <div className="text-xs text-gray-500 font-medium">面談人員</div>
-                                <div className="text-sm font-semibold text-gray-900">{prospect.interviewer}</div>
+                                <div className="text-xs text-gray-400 font-medium">面談人員</div>
+                                <div className="text-sm font-semibold text-gray-100">{prospect.interviewer}</div>
                               </div>
                             )}
                             {prospect.interviewDate && (
                               <div className="bg-white p-3 rounded border">
-                                <div className="text-xs text-gray-500 font-medium">面談日期</div>
-                                <div className="text-sm font-semibold text-gray-900">{prospect.interviewDate}</div>
+                                <div className="text-xs text-gray-400 font-medium">面談日期</div>
+                                <div className="text-sm font-semibold text-gray-100">{prospect.interviewDate}</div>
                               </div>
                             )}
                           </div>
@@ -362,32 +362,32 @@ const ProspectVoting = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {prospect.capital && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">資本額</div>
-                                  <div className="text-sm text-gray-900">{prospect.capital}</div>
+                                  <div className="text-xs text-gray-400 font-medium">資本額</div>
+                                  <div className="text-sm text-gray-100">{prospect.capital}</div>
                                 </div>
                               )}
                               {prospect.established && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">成立時間</div>
-                                  <div className="text-sm text-gray-900">{prospect.established}</div>
+                                  <div className="text-xs text-gray-400 font-medium">成立時間</div>
+                                  <div className="text-sm text-gray-100">{prospect.established}</div>
                                 </div>
                               )}
                               {prospect.professionalExperience && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">專業經驗</div>
-                                  <div className="text-sm text-gray-900">{prospect.professionalExperience}</div>
+                                  <div className="text-xs text-gray-400 font-medium">專業經驗</div>
+                                  <div className="text-sm text-gray-100">{prospect.professionalExperience}</div>
                                 </div>
                               )}
                               {prospect.certifications && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">證照</div>
-                                  <div className="text-sm text-gray-900">{prospect.certifications}</div>
+                                  <div className="text-xs text-gray-400 font-medium">證照</div>
+                                  <div className="text-sm text-gray-100">{prospect.certifications}</div>
                                 </div>
                               )}
                               {prospect.websiteInfo && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">網站資訊</div>
-                                  <div className="text-sm text-gray-900">{prospect.websiteInfo}</div>
+                                  <div className="text-xs text-gray-400 font-medium">網站資訊</div>
+                                  <div className="text-sm text-gray-100">{prospect.websiteInfo}</div>
                                 </div>
                               )}
                             </div>
@@ -401,62 +401,62 @@ const ProspectVoting = () => {
                             <div className="grid grid-cols-1 gap-4">
                               {prospect.mainBusiness && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">主要業務</div>
-                                  <div className="text-sm text-gray-900">{prospect.mainBusiness}</div>
+                                  <div className="text-xs text-gray-400 font-medium">主要業務</div>
+                                  <div className="text-sm text-gray-100">{prospect.mainBusiness}</div>
                                 </div>
                               )}
                               {prospect.mainProducts && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">主要產品</div>
-                                  <div className="text-sm text-gray-900">{prospect.mainProducts}</div>
+                                  <div className="text-xs text-gray-400 font-medium">主要產品</div>
+                                  <div className="text-sm text-gray-100">{prospect.mainProducts}</div>
                                 </div>
                               )}
                               {prospect.mainAdvantages && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">主要優勢</div>
-                                  <div className="text-sm text-gray-900">{prospect.mainAdvantages}</div>
+                                  <div className="text-xs text-gray-400 font-medium">主要優勢</div>
+                                  <div className="text-sm text-gray-100">{prospect.mainAdvantages}</div>
                                 </div>
                               )}
                               {prospect.representativeClients && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">代表客戶</div>
-                                  <div className="text-sm text-gray-900">{prospect.representativeClients}</div>
+                                  <div className="text-xs text-gray-400 font-medium">代表客戶</div>
+                                  <div className="text-sm text-gray-100">{prospect.representativeClients}</div>
                                 </div>
                               )}
                               {prospect.cooperationTargets && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">合作目標</div>
-                                  <div className="text-sm text-gray-900">{prospect.cooperationTargets}</div>
+                                  <div className="text-xs text-gray-400 font-medium">合作目標</div>
+                                  <div className="text-sm text-gray-100">{prospect.cooperationTargets}</div>
                                 </div>
                               )}
                               {prospect.bciExpectations && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">GBC期望</div>
-                    <div className="text-sm text-gray-900">{prospect.bciExpectations}</div>
+                                  <div className="text-xs text-gray-400 font-medium">GBC期望</div>
+                    <div className="text-sm text-gray-100">{prospect.bciExpectations}</div>
                                 </div>
                               )}
                               {prospect.pastAchievements && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">過往成就</div>
-                                  <div className="text-sm text-gray-900">{prospect.pastAchievements}</div>
+                                  <div className="text-xs text-gray-400 font-medium">過往成就</div>
+                                  <div className="text-sm text-gray-100">{prospect.pastAchievements}</div>
                                 </div>
                               )}
                               {prospect.futureGoals && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">未來目標</div>
-                                  <div className="text-sm text-gray-900">{prospect.futureGoals}</div>
+                                  <div className="text-xs text-gray-400 font-medium">未來目標</div>
+                                  <div className="text-sm text-gray-100">{prospect.futureGoals}</div>
                                 </div>
                               )}
                               {prospect.revenueTarget && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">營收目標</div>
-                                  <div className="text-sm text-gray-900">{prospect.revenueTarget}</div>
+                                  <div className="text-xs text-gray-400 font-medium">營收目標</div>
+                                  <div className="text-sm text-gray-100">{prospect.revenueTarget}</div>
                                 </div>
                               )}
                               {prospect.otherComments && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">其他備註</div>
-                                  <div className="text-sm text-gray-900">{prospect.otherComments}</div>
+                                  <div className="text-xs text-gray-400 font-medium">其他備註</div>
+                                  <div className="text-sm text-gray-100">{prospect.otherComments}</div>
                                 </div>
                               )}
                             </div>
@@ -470,26 +470,26 @@ const ProspectVoting = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {prospect.agreeRules && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">同意章程規定</div>
-                                  <div className="text-sm text-gray-900">{prospect.agreeRules}</div>
+                                  <div className="text-xs text-gray-400 font-medium">同意章程規定</div>
+                                  <div className="text-sm text-gray-100">{prospect.agreeRules}</div>
                                 </div>
                               )}
                               {prospect.agreeTraining && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">同意參加培訓</div>
-                                  <div className="text-sm text-gray-900">{prospect.agreeTraining}</div>
+                                  <div className="text-xs text-gray-400 font-medium">同意參加培訓</div>
+                                  <div className="text-sm text-gray-100">{prospect.agreeTraining}</div>
                                 </div>
                               )}
                               {prospect.noCriminalRecord && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">無犯罪紀錄聲明</div>
-                                  <div className="text-sm text-gray-900">{prospect.noCriminalRecord}</div>
+                                  <div className="text-xs text-gray-400 font-medium">無犯罪紀錄聲明</div>
+                                  <div className="text-sm text-gray-100">{prospect.noCriminalRecord}</div>
                                 </div>
                               )}
                               {prospect.agreeTerms && (
                                 <div className="bg-white p-3 rounded border">
-                                  <div className="text-xs text-gray-500 font-medium">同意相關條款</div>
-                                  <div className="text-sm text-gray-900">{prospect.agreeTerms}</div>
+                                  <div className="text-xs text-gray-400 font-medium">同意相關條款</div>
+                                  <div className="text-sm text-gray-100">{prospect.agreeTerms}</div>
                                 </div>
                               )}
                             </div>
@@ -517,7 +517,7 @@ const ProspectVoting = () => {
                         className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${
                           prospect.userVoted
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-yellow-500 text-black hover:bg-yellow-400'
                         }`}
                       >
                         {prospect.userVoted ? '已投票' : '進行投票'}
@@ -534,10 +534,10 @@ const ProspectVoting = () => {
       {/* 投票模態框 */}
       {showVoteModal && selectedProspect && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-gradient-to-br from-black/90 to-gray-900/90 rounded-lg border border-yellow-500/30 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">投票確認</h2>
+                <h2 className="text-2xl font-bold text-yellow-100">投票確認</h2>
                 <button
                   onClick={() => setShowVoteModal(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -549,7 +549,7 @@ const ProspectVoting = () => {
               </div>
 
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">{selectedProspect.name}</h3>
+                <h3 className="text-lg font-semibold text-yellow-100 mb-4">{selectedProspect.name}</h3>
                 
                 {/* 申請人資料摘要 */}
                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
@@ -563,62 +563,62 @@ const ProspectVoting = () => {
                       <>
                         {selectedProspect.parsedContactInfo.memberName && (
                           <div className="bg-white p-3 rounded border">
-                            <div className="text-xs text-gray-500 font-medium">會員姓名</div>
-                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.memberName}</div>
+                            <div className="text-xs text-gray-400 font-medium">會員姓名</div>
+                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.memberName}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.referralChapter && (
                           <div className="bg-white p-3 rounded border">
-                            <div className="text-xs text-gray-500 font-medium">引薦分會</div>
-                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.referralChapter}</div>
+                            <div className="text-xs text-gray-400 font-medium">引薦分會</div>
+                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.referralChapter}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.referralPartner && (
                           <div className="bg-white p-3 rounded border">
-                            <div className="text-xs text-gray-500 font-medium">引薦夥伴</div>
-                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.referralPartner}</div>
+                            <div className="text-xs text-gray-400 font-medium">引薦夥伴</div>
+                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.referralPartner}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.primaryProfession && (
                           <div className="bg-white p-3 rounded border">
-                            <div className="text-xs text-gray-500 font-medium">主要專業</div>
-                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.primaryProfession}</div>
+                            <div className="text-xs text-gray-400 font-medium">主要專業</div>
+                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.primaryProfession}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.interviewer && (
                           <div className="bg-white p-3 rounded border">
-                            <div className="text-xs text-gray-500 font-medium">面談人員</div>
-                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.interviewer}</div>
+                            <div className="text-xs text-gray-400 font-medium">面談人員</div>
+                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.interviewer}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.interviewDate && (
                           <div className="bg-white p-3 rounded border">
-                            <div className="text-xs text-gray-500 font-medium">面談日期</div>
-                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.interviewDate}</div>
+                            <div className="text-xs text-gray-400 font-medium">面談日期</div>
+                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.interviewDate}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.companyInfo?.capital && (
                           <div className="bg-white p-3 rounded border">
-                            <div className="text-xs text-gray-500 font-medium">資本額</div>
-                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.companyInfo.capital}</div>
+                            <div className="text-xs text-gray-400 font-medium">資本額</div>
+                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.companyInfo.capital}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.companyInfo?.established && (
                           <div className="bg-white p-3 rounded border">
-                            <div className="text-xs text-gray-500 font-medium">成立時間</div>
-                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.companyInfo.established}</div>
+                            <div className="text-xs text-gray-400 font-medium">成立時間</div>
+                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.companyInfo.established}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.interview?.mainBusiness && (
                           <div className="bg-white p-3 rounded border col-span-full">
-                            <div className="text-xs text-gray-500 font-medium">主要業務</div>
-                            <div className="text-gray-900">{selectedProspect.parsedContactInfo.interview.mainBusiness}</div>
+                            <div className="text-xs text-gray-400 font-medium">主要業務</div>
+                            <div className="text-gray-100">{selectedProspect.parsedContactInfo.interview.mainBusiness}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.interview?.bciExpectations && (
                           <div className="bg-white p-3 rounded border col-span-full">
-                            <div className="text-xs text-gray-500 font-medium">GBC期望</div>
-                    <div className="text-gray-900">{selectedProspect.parsedContactInfo.interview.bciExpectations}</div>
+                            <div className="text-xs text-gray-400 font-medium">GBC期望</div>
+                    <div className="text-gray-100">{selectedProspect.parsedContactInfo.interview.bciExpectations}</div>
                           </div>
                         )}
                       </>
