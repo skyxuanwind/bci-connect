@@ -326,6 +326,10 @@ const initializeDatabase = async () => {
       ALTER TABLE business_media
       ADD COLUMN IF NOT EXISTS embed_code TEXT;
     `);
+    await pool.query(`
+      ALTER TABLE business_media
+      ADD COLUMN IF NOT EXISTS cover_image_url VARCHAR(500);
+    `);
 
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_business_media_speaker_id ON business_media(speaker_id);

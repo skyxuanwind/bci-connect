@@ -41,7 +41,8 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       status = 'draft',
       publishedAt,
       pinned = false,
-      sortOrder = 0
+      sortOrder = 0,
+      coverImageUrl
     } = req.body;
 
     if (!title || !speakerId || !contentType) {
@@ -52,10 +53,10 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     const baseSlug = slugify(title);
 
     const insertResult = await pool.query(
-      `INSERT INTO business_media (title, speaker_id, content_type, platform, external_url, embed_code, summary, body, ctas, status, published_at, pinned, sort_order)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      `INSERT INTO business_media (title, speaker_id, content_type, platform, external_url, embed_code, summary, body, ctas, status, published_at, pinned, sort_order, cover_image_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING id`,
-      [title, speakerId, contentType, platform, externalUrl || null, embedCode || null, summary || null, body || null, JSON.stringify(ctas || []), status, publishedAt || null, pinned, sortOrder]
+      [title, speakerId, contentType, platform, externalUrl || null, embedCode || null, summary || null, body || null, JSON.stringify(ctas || []), status, publishedAt || null, pinned, sortOrder, coverImageUrl || null]
     );
 
     const id = insertResult.rows[0].id;
@@ -85,7 +86,8 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       status,
       publishedAt,
       pinned, // 新增：置頂
-      sortOrder // 新增：排序
+      sortOrder, // 新增：排序
+      coverImageUrl // 新增：封面圖片
     } = req.body;
 
     const platform = externalUrl ? parsePlatform(externalUrl) : undefined;
@@ -105,9 +107,10 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
         published_at = COALESCE($11, published_at),
         pinned = COALESCE($12, pinned),
         sort_order = COALESCE($13, sort_order),
+        cover_image_url = COALESCE($14, cover_image_url),
         updated_at = CURRENT_TIMESTAMP
-       WHERE id = $14 RETURNING *`,
-      [title ?? null, speakerId ?? null, contentType ?? null, platform ?? null, externalUrl ?? null, embedCode ?? null, summary ?? null, body ?? null, ctas != null ? JSON.stringify(ctas) : null, status ?? null, publishedAt ?? null, pinned, sortOrder, id]
+       WHERE id = $15 RETURNING *`,
+      [title ?? null, speakerId ?? null, contentType ?? null, platform ?? null, externalUrl ?? null, embedCode ?? null, summary ?? null, body ?? null, ctas != null ? JSON.stringify(ctas) : null, status ?? null, publishedAt ?? null, pinned, sortOrder, coverImageUrl ?? null, id]
     );
 
     if (result.rowCount === 0) return res.status(404).json({ success: false, message: '內容不存在' });

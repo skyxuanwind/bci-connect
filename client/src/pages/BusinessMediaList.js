@@ -227,7 +227,19 @@ export default function BusinessMediaList() {
                   </div>
                 </div>
 
-                {/* 影片區塊：所有影片都直接顯示 */}
+                {/* 封面圖片或影片區塊 */}
+                {item.cover_image_url && !canEmbed && (
+                  <div className="mt-2">
+                    <img 
+                      src={item.cover_image_url} 
+                      alt={item.title}
+                      className="w-full h-48 object-cover rounded"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
                 {canEmbed && (
                   <div className="mt-2" style={{ width: '100%' }}>
                     {isInstagram && item.embed_code ? (

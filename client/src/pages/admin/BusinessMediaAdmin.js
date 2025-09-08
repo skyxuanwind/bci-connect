@@ -10,6 +10,7 @@ const emptyForm = {
   summary: '',
   pinned: false,
   sortOrder: 0,
+  coverImageUrl: '',
 };
 
 const BusinessMediaAdmin = () => {
@@ -65,6 +66,7 @@ const BusinessMediaAdmin = () => {
       summary: item.summary || '',
       pinned: !!item.pinned,
       sortOrder: item.sort_order || 0,
+      coverImageUrl: item.cover_image_url || '',
     });
     setShowForm(true);
   };
@@ -123,6 +125,7 @@ const BusinessMediaAdmin = () => {
         ctas: [],
         pinned: !!form.pinned,
         sortOrder: Number(form.sortOrder) || 0,
+        coverImageUrl: form.coverImageUrl || null,
       };
       if (editingId) {
         await axios.put(`/api/business-media/${editingId}`, payload);
@@ -186,6 +189,29 @@ const BusinessMediaAdmin = () => {
               <p className="text-xs text-gray-500 mt-1">可貼入 iframe 或其他平台提供的嵌入代碼，優先於外部連結使用</p>
             </div>
             <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">封面圖片</label>
+              <input 
+                className="input" 
+                type="url" 
+                value={form.coverImageUrl} 
+                onChange={e=>setForm({...form, coverImageUrl:e.target.value})} 
+                placeholder="https://example.com/image.jpg" 
+              />
+              <p className="text-xs text-gray-500 mt-1">請輸入封面圖片的網址，建議尺寸 16:9，支援 JPG、PNG 格式</p>
+              {form.coverImageUrl && (
+                <div className="mt-2">
+                  <img 
+                    src={form.coverImageUrl} 
+                    alt="封面預覽" 
+                    className="w-32 h-18 object-cover rounded border"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">摘要</label>
               <textarea className="input" rows={3} value={form.summary} onChange={e=>setForm({...form, summary:e.target.value})} />
             </div>
@@ -215,6 +241,7 @@ const BusinessMediaAdmin = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">封面</th>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">標題</th>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">講者</th>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">類型</th>
@@ -227,6 +254,22 @@ const BusinessMediaAdmin = () => {
               <tbody className="divide-y divide-gray-100">
                 {items.map(item => (
                   <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2">
+                      {item.cover_image_url ? (
+                        <img 
+                          src={item.cover_image_url} 
+                          alt={item.title}
+                          className="w-16 h-10 object-cover rounded"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-16 h-10 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-500">
+                          無封面
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-2">{item.title}</td>
                     <td className="px-4 py-2">{item.speaker_name || item.speaker_id}</td>
                     <td className="px-4 py-2">{item.content_type}</td>
