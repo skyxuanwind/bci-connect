@@ -39,16 +39,16 @@ const Home = () => {
 
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-primary-900">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-primary-800 shadow-sm border-b border-gold-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">GBC</span>
               </div>
-              <span className="ml-2 text-xl font-bold text-primary-900">商務菁英會</span>
+              <span className="ml-2 text-xl font-bold text-gold-100">商務菁英會</span>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -63,7 +63,7 @@ const Home = () => {
                 <>
                   <Link
                     to="/login"
-                    className="text-primary-900 hover:text-primary-700 font-medium"
+                    className="text-gold-300 hover:text-gold-100 font-medium"
                   >
                     登入
                   </Link>
@@ -116,13 +116,13 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-primary-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-primary-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gold-100 mb-4">
               為什麼選擇GBC商務菁英會？
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gold-300 max-w-2xl mx-auto">
               我們提供專業的商務交流平台，幫助您建立有價值的商業關係
             </p>
           </div>
@@ -132,13 +132,13 @@ const Home = () => {
               const Icon = feature.icon;
               return (
                 <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon className="h-8 w-8 text-primary-600" />
+                  <div className="w-16 h-16 bg-gold-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-gold-600">
+                    <Icon className="h-8 w-8 text-gold-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-primary-900 mb-2">
+                  <h3 className="text-xl font-semibold text-gold-100 mb-2">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gold-300">
                     {feature.description}
                   </p>
                 </div>
@@ -151,19 +151,19 @@ const Home = () => {
 
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-gold text-white">
+      <section className="py-20 bg-gradient-to-r from-gold-600 to-gold-500 text-primary-900">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             準備加入我們了嗎？
           </h2>
-          <p className="text-xl mb-8 text-yellow-100">
+          <p className="text-xl mb-8 text-primary-800">
             立即註冊成為GBC商務菁英會會員，開始您的商務網絡之旅
           </p>
           
           {!isAuthenticated && (
             <Link
               to="/register"
-              className="bg-white text-gold-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-lg transition-colors duration-200 inline-flex items-center"
+              className="bg-primary-900 text-gold-100 hover:bg-primary-800 font-bold py-3 px-8 rounded-lg transition-colors duration-200 inline-flex items-center shadow-lg"
             >
               立即註冊
               <ArrowRightIcon className="ml-2 h-5 w-5" />
@@ -182,10 +182,10 @@ const Home = () => {
               </div>
               <span className="ml-2 text-xl font-bold">商務菁英會</span>
             </div>
-            <p className="text-blue-200 mb-4">
+            <p className="text-gold-300 mb-4">
               連接商務精英，創造無限商機
             </p>
-            <p className="text-blue-300 text-sm">
+            <p className="text-gold-400 text-sm">
               © 2025 GBC Business Elite Club. All rights reserved.
             </p>
           </div>

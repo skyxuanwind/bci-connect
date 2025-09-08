@@ -62,7 +62,7 @@ import BusinessMediaAdmin from './pages/admin/BusinessMediaAdmin';
 function App() {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-primary-900">
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
@@ -378,6 +378,9 @@ function App() {
           pauseOnFocusLoss
           draggable
           pauseOnHover
+          theme="dark"
+          toastClassName="!bg-primary-800 !text-gold-100 !border !border-gold-600"
+          progressClassName="!bg-gold-500"
         />
       </div>
     </AuthProvider>

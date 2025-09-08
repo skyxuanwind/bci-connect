@@ -167,17 +167,17 @@ const Layout = ({ children }) => {
   const Sidebar = ({ mobile = false }) => (
     <div className={`flex flex-col h-full ${mobile ? 'px-4' : ''}`}>
       {/* Logo */}
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
+      <div className="flex items-center justify-center h-16 px-4 border-b border-gold-600">
         <div className="flex items-center">
           <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">GBC</span>
           </div>
-          <span className="ml-2 text-lg font-semibold text-primary-900">商務菁英會</span>
+          <span className="ml-2 text-lg font-semibold text-gold-100">商務菁英會</span>
         </div>
       </div>
 
       {/* User Info */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gold-600">
         <div className="flex items-center">
           <Avatar 
             src={user?.profilePictureUrl} 
@@ -185,10 +185,10 @@ const Layout = ({ children }) => {
             size="medium"
           />
           <div className="ml-3 flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-medium text-gold-100 truncate">
               {user?.name}
             </p>
-            <p className="text-xs text-gray-500 truncate">
+            <p className="text-xs text-gold-300 truncate">
               {user?.company}
             </p>
           </div>
@@ -224,7 +224,7 @@ const Layout = ({ children }) => {
         
         {/* AI 智慧合作網絡 */}
         <div className="pt-4 pb-2">
-          <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
             🤖 AI 智慧合作網絡
           </h3>
         </div>
@@ -251,7 +251,7 @@ const Layout = ({ children }) => {
         {user?.membershipLevel <= 3 && (
           <>
             <div className="pt-4 pb-2">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
                 會員功能
               </h3>
             </div>
@@ -282,7 +282,7 @@ const Layout = ({ children }) => {
         {(user?.membershipLevel === 1 || isAdmin()) && (
           <>
             <div className="pt-4 pb-2">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
                 核心功能
               </h3>
             </div>
@@ -311,7 +311,7 @@ const Layout = ({ children }) => {
         {(user?.membershipLevel === 1 || isAdmin()) && (
           <>
             <div className="pt-4 pb-2">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
                 管理功能
               </h3>
             </div>
@@ -396,10 +396,10 @@ const Layout = ({ children }) => {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gold-600">
         <button
           onClick={handleLogout}
-          className="nav-link group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+          className="nav-link group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full text-red-400 hover:text-red-300 hover:bg-red-900/20"
         >
           <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
           登出
@@ -409,11 +409,11 @@ const Layout = ({ children }) => {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-primary-900">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-40 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="relative flex flex-col w-64 h-full bg-white shadow-xl">
+        <div className="relative flex flex-col w-64 h-full bg-primary-800 shadow-xl">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               type="button"
@@ -429,7 +429,7 @@ const Layout = ({ children }) => {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-64 bg-white border-r border-gray-200">
+        <div className="flex flex-col w-64 bg-primary-800 border-r border-gold-600">
           <Sidebar />
         </div>
       </div>
@@ -437,11 +437,11 @@ const Layout = ({ children }) => {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2">
+        <div className="lg:hidden bg-primary-800 border-b border-gold-600 px-4 py-2">
           <div className="flex items-center justify-between">
             <button
               type="button"
-              className="text-gray-500 hover:text-gray-600"
+              className="text-gold-300 hover:text-gold-100"
               onClick={() => setSidebarOpen(true)}
             >
               <Bars3Icon className="h-6 w-6" />
@@ -450,7 +450,7 @@ const Layout = ({ children }) => {
               <div className="w-6 h-6 bg-gradient-primary rounded flex items-center justify-center">
                 <span className="text-white font-bold text-xs">GBC</span>
               </div>
-              <span className="ml-2 text-sm font-semibold text-primary-900">商務菁英會</span>
+              <span className="ml-2 text-sm font-semibold text-gold-100">商務菁英會</span>
             </div>
           </div>
         </div>
