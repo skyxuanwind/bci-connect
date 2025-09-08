@@ -418,59 +418,8 @@ const Profile = () => {
                 )}
               </div>
 
-              {/* NFC Card URL */}
-              <div>
-                <label className="label">
-                  <CreditCardIcon className="h-4 w-4 mr-2" />
-                  NFC 卡片網址
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://example.com/nfc-card"
-                  className={`input w-full ${profileErrors.nfcCardUrl ? 'input-error' : ''}`}
-                  {...registerProfile('nfcCardUrl', {
-                    pattern: {
-                      value: /^https?:\/\/.+/,
-                      message: '請輸入有效的網址（需以 http:// 或 https:// 開頭）'
-                    }
-                  })}
-                />
-                {profileErrors.nfcCardUrl && (
-                  <p className="error-message">{profileErrors.nfcCardUrl.message}</p>
-                )}
-                <p className="text-xs text-gray-500 mt-1">設定 NFC 卡片中的網址，用於報到識別</p>
-              </div>
 
-              {/* NFC UID */}
-              <div>
-                <label className="label">
-                  <CreditCardIcon className="h-4 w-4 mr-2" />
-                  NFC 卡片 UID
-                </label>
-                <input
-                  type="text"
-                  placeholder="例如：04123456789ABC"
-                  className={`input w-full ${profileErrors.nfcUid ? 'input-error' : ''}`}
-                  {...registerProfile('nfcUid', {
-                    pattern: {
-                      value: /^[0-9A-Fa-f]+$/,
-                      message: '請輸入有效的 UID（僅限數字和英文字母）'
-                    },
-                    minLength: {
-                      value: 8,
-                      message: 'UID 長度至少需要 8 個字元'
-                    },
-                    maxLength: {
-                      value: 20,
-                      message: 'UID 長度不能超過 20 個字元'
-                    }
-                  })}
-                />
-                {profileErrors.nfcUid && (
-                  <p className="error-message">{profileErrors.nfcUid.message}</p>
-                )}
-                <p className="text-xs text-gray-500 mt-1">設定 NFC 卡片的 UID，用於報到系統識別會員身份</p>
-              </div>
+
 
             </div>
 

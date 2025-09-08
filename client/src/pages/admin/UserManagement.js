@@ -36,6 +36,8 @@ const UserManagement = () => {
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [newMembershipLevel, setNewMembershipLevel] = useState('');
+  const [showNfcModal, setShowNfcModal] = useState(false);
+  const [newNfcCardId, setNewNfcCardId] = useState('');
 
   
   const usersPerPage = 20;
@@ -129,6 +131,18 @@ const UserManagement = () => {
     setNewMembershipLevel('');
   };
 
+  const openNfcModal = (user) => {
+    setSelectedUser(user);
+    setNewNfcCardId(user.nfcCardId || '');
+    setShowNfcModal(true);
+  };
+
+  const closeNfcModal = () => {
+    setShowNfcModal(false);
+    setSelectedUser(null);
+    setNewNfcCardId('');
+  };
+
 
 
   const updateMembershipLevel = async () => {
@@ -145,6 +159,25 @@ const UserManagement = () => {
     } catch (error) {
       console.error('Failed to update membership level:', error);
       toast.error(error.response?.data?.message || '更新會員等級失敗');
+    } finally {
+      setUpdatingUser(null);
+    }
+  };
+
+  const updateNfcCard = async () => {
+    if (!selectedUser) return;
+
+    setUpdatingUser(selectedUser.id);
+    try {
+      await axios.put(`/api/admin/users/${selectedUser.id}/nfc-card`, {
+        nfcCardId: newNfcCardId.trim() || null
+      });
+      toast.success(newNfcCardId.trim() ? 'NFC 卡號更新成功' : '已清除 NFC 卡號');
+      loadUsers();
+      closeNfcModal();
+    } catch (error) {
+      console.error('Failed to update NFC card:', error);
+      toast.error(error.response?.data?.message || '更新 NFC 卡號失敗');
     } finally {
       setUpdatingUser(null);
     }
@@ -623,6 +656,13 @@ const UserManagement = () => {
                               >
                                 <PencilIcon className="h-4 w-4" />
                               </button>
+                              <button
+                                onClick={() => openNfcModal(user)}
+                                className="text-green-600 hover:text-green-900"
+                                title="管理 NFC 卡號"
+                              >
+                                <CreditCardIcon className="h-4 w-4" />
+                              </button>
 
                               {user.id !== 1 && (
                                 <button
@@ -727,6 +767,84 @@ const UserManagement = () => {
         </div>
       )}
 
+      {/* NFC Card Edit Modal */}
+      {showNfcModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  管理 NFC 卡號
+                </h3>
+                <button
+                  onClick={closeNfcModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircleIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              {selectedUser && (
+                <div className="mb-4">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <CreditCardIcon className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{selectedUser.name}</div>
+                      <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="label">當前 NFC 卡號</label>
+                    <div className="mt-1">
+                      {selectedUser.nfcCardId ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {selectedUser.nfcCardId}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">未設定</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="label">新 NFC 卡號</label>
+                    <input
+                      type="text"
+                      value={newNfcCardId}
+                      onChange={(e) => setNewNfcCardId(e.target.value.toUpperCase())}
+                      placeholder="輸入 NFC 卡號（留空則清除）"
+                      className="input mt-1"
+                      maxLength="20"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      請輸入 6-20 位十六進制字符（0-9, A-F）
+                    </p>
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={updateNfcCard}
+                      disabled={updatingUser === selectedUser.id}
+                      className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {updatingUser === selectedUser.id ? '更新中...' : (newNfcCardId.trim() ? '更新卡號' : '清除卡號')}
+                    </button>
+                    <button
+                      onClick={closeNfcModal}
+                      className="btn-secondary flex-1"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
