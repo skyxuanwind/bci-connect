@@ -140,14 +140,14 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold mb-2">
               歡迎回來，{user?.name}！
             </h1>
-            <p className="text-blue-100 mb-4">
+            <p className="text-gold-200 mb-4">
               {user?.company && `${user.company} • `}
               {user?.title}
             </p>
             <div className="flex items-center space-x-4">
               {user?.membershipLevel ? getMembershipLevelBadge(user.membershipLevel) : null}
               {user?.chapterName && (
-                <span className="text-blue-200 text-sm">
+                <span className="text-gold-300 text-sm">
                   {user.chapterName}
                 </span>
               )}
@@ -169,8 +169,8 @@ const Dashboard = () => {
                 <CurrencyDollarIcon className="h-6 w-6 text-emerald-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">總引薦金額</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gold-300">總引薦金額</p>
+                <p className="text-2xl font-bold text-gold-100">
                   NT$ {stats.totalReferralAmount ? stats.totalReferralAmount.toLocaleString() : '0'}
                 </p>
               </div>
@@ -186,8 +186,8 @@ const Dashboard = () => {
                     <UserGroupIcon className="h-6 w-6 text-blue-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">總會員數</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+                    <p className="text-sm font-medium text-gold-300">總會員數</p>
+                    <p className="text-2xl font-bold text-gold-100">{stats.totalUsers}</p>
                   </div>
                 </div>
               </div>
@@ -198,8 +198,8 @@ const Dashboard = () => {
                     <UserIcon className="h-6 w-6 text-green-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">活躍會員</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.activeUsers}</p>
+                    <p className="text-sm font-medium text-gold-300">活躍會員</p>
+                    <p className="text-2xl font-bold text-gold-100">{stats.activeUsers}</p>
                   </div>
                 </div>
               </div>
@@ -210,8 +210,8 @@ const Dashboard = () => {
                     <ClockIcon className="h-6 w-6 text-yellow-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">待審核</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.pendingUsers}</p>
+                    <p className="text-sm font-medium text-gold-300">待審核</p>
+                    <p className="text-2xl font-bold text-gold-100">{stats.pendingUsers}</p>
                   </div>
                 </div>
               </div>
@@ -222,8 +222,8 @@ const Dashboard = () => {
                     <BuildingOfficeIcon className="h-6 w-6 text-purple-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">分會數量</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalChapters}</p>
+                    <p className="text-sm font-medium text-gold-300">分會數量</p>
+                    <p className="text-2xl font-bold text-gold-100">{stats.totalChapters}</p>
                   </div>
                 </div>
               </div>
@@ -237,7 +237,7 @@ const Dashboard = () => {
         {/* User Actions */}
         <div className="card">
           <div className="card-header">
-            <h2 className="text-lg font-semibold text-gray-900">快速操作</h2>
+            <h2 className="text-lg font-semibold text-gold-100">快速操作</h2>
           </div>
           <div className="space-y-4">
             {quickActions.map((action, index) => {
@@ -246,16 +246,16 @@ const Dashboard = () => {
                 <Link
                   key={index}
                   to={action.href}
-                  className="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                  className="flex items-center p-4 bg-primary-700 hover:bg-primary-600 rounded-lg transition-colors duration-200"
                 >
                   <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center`}>
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div className="ml-4 flex-1">
-                    <h3 className="text-sm font-medium text-gray-900">{action.title}</h3>
-                    <p className="text-xs text-gray-500">{action.description}</p>
+                    <h3 className="text-sm font-medium text-gold-100">{action.title}</h3>
+                    <p className="text-xs text-gold-300">{action.description}</p>
                   </div>
-                  <ArrowRightIcon className="h-4 w-4 text-gray-400" />
+                  <ArrowRightIcon className="h-4 w-4 text-gold-400" />
                 </Link>
               );
             })}
@@ -266,7 +266,7 @@ const Dashboard = () => {
         {isAdmin() && (
           <div className="card">
             <div className="card-header">
-              <h2 className="text-lg font-semibold text-gray-900">管理功能</h2>
+              <h2 className="text-lg font-semibold text-gold-100">管理功能</h2>
             </div>
             <div className="space-y-4">
               {adminActions.map((action, index) => {
@@ -275,7 +275,7 @@ const Dashboard = () => {
                   <Link
                     key={index}
                     to={action.href}
-                    className="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                    className="flex items-center p-4 bg-primary-700 hover:bg-primary-600 rounded-lg transition-colors duration-200"
                   >
                     <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center relative`}>
                       <Icon className="h-5 w-5 text-white" />
@@ -286,10 +286,10 @@ const Dashboard = () => {
                       )}
                     </div>
                     <div className="ml-4 flex-1">
-                      <h3 className="text-sm font-medium text-gray-900">{action.title}</h3>
-                      <p className="text-xs text-gray-500">{action.description}</p>
+                      <h3 className="text-sm font-medium text-gold-100">{action.title}</h3>
+                      <p className="text-xs text-gold-300">{action.description}</p>
                     </div>
-                    <ArrowRightIcon className="h-4 w-4 text-gray-400" />
+                    <ArrowRightIcon className="h-4 w-4 text-gold-400" />
                   </Link>
                 );
               })}
@@ -302,24 +302,24 @@ const Dashboard = () => {
       {recentMembers.length > 0 && (
         <div className="card">
           <div className="card-header flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">最近加入的會員</h2>
+            <h2 className="text-lg font-semibold text-gold-100">最近加入的會員</h2>
             <Link
               to="/members"
-              className="text-sm text-primary-600 hover:text-primary-500 font-medium"
+              className="text-sm text-gold-400 hover:text-gold-300 font-medium"
             >
               查看全部
             </Link>
           </div>
           <div className="space-y-4">
             {recentMembers.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={member.id} className="flex items-center justify-between p-4 bg-primary-700 rounded-lg">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                    <UserIcon className="h-5 w-5 text-primary-600" />
+                  <div className="w-10 h-10 bg-gold-600 rounded-full flex items-center justify-center">
+                    <UserIcon className="h-5 w-5 text-primary-900" />
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-sm font-medium text-gray-900">{member.name}</h3>
-                    <p className="text-xs text-gray-500">
+                    <h3 className="text-sm font-medium text-gold-100">{member.name}</h3>
+                    <p className="text-xs text-gold-300">
                       {member.company} • {member.title}
                     </p>
                   </div>
@@ -328,7 +328,7 @@ const Dashboard = () => {
                   {getMembershipLevelBadge(member.membershipLevel)}
                   <Link
                     to={`/members/${member.id}`}
-                    className="text-primary-600 hover:text-primary-500"
+                    className="text-gold-400 hover:text-gold-300"
                   >
                     <ArrowRightIcon className="h-4 w-4" />
                   </Link>

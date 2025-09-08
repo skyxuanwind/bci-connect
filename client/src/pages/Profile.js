@@ -252,7 +252,7 @@ const Profile = () => {
           </div>
           <div className="ml-6">
             <h1 className="text-2xl font-bold">{user?.name}</h1>
-            <p className="text-blue-100 mt-1">{user?.email}</p>
+            <p className="text-gold-200 mt-1">{user?.email}</p>
             <div className="flex items-center space-x-4 mt-3">
               {user?.membershipLevel ? getMembershipLevelBadge(user.membershipLevel) : null}
             {user?.status ? getStatusBadge(user.status) : null}
@@ -272,8 +272,8 @@ const Profile = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-gold-500 text-gold-400'
+                    : 'border-transparent text-gold-300 hover:text-gold-200 hover:border-gold-400'
                 }`}
               >
                 <Icon className="h-5 w-5 mr-2" />
@@ -288,13 +288,13 @@ const Profile = () => {
       {activeTab === 'profile' && (
         <div className="card">
           <div className="card-header">
-            <h2 className="text-lg font-semibold text-gray-900">個人資料</h2>
-            <p className="text-sm text-gray-600 mt-1">更新您的個人資料和聯絡資訊</p>
+            <h2 className="text-lg font-semibold text-gold-100">個人資料</h2>
+            <p className="text-sm text-gold-300 mt-1">更新您的個人資料和聯絡資訊</p>
           </div>
           
           <form onSubmit={handleSubmitProfile(onSubmitProfile)} className="space-y-8">
             {/* Avatar Upload Section */}
-            <div className="flex justify-center pb-6 border-b border-gray-200">
+            <div className="flex justify-center pb-6 border-b border-gold-600">
               <div>
                 <label className="form-label text-center block mb-4">
                   大頭貼
@@ -336,10 +336,10 @@ const Profile = () => {
                 <input
                   type="email"
                   value={user?.email || ''}
-                  className="input w-full bg-gray-50 cursor-not-allowed"
+                  className="input w-full bg-primary-700 cursor-not-allowed"
                   disabled
                 />
-                <p className="text-xs text-gray-500 mt-1">電子郵件無法修改</p>
+                <p className="text-xs text-gold-400 mt-1">電子郵件無法修改</p>
               </div>
 
               {/* Company */}
@@ -425,7 +425,7 @@ const Profile = () => {
 
             {/* Additional Info (Read-only) */}
             <div className="border-t pt-8">
-              <h3 className="text-md font-medium text-gray-900 mb-6">帳號資訊</h3>
+              <h3 className="text-md font-medium text-gold-100 mb-6">帳號資訊</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
                   <label className="label">會員等級</label>
@@ -436,7 +436,7 @@ const Profile = () => {
                 
                 <div className="space-y-2">
                   <label className="label">所屬分會</label>
-                  <p className="mt-2 text-sm text-gray-900">{user?.chapterName || '未設定'}</p>
+                  <p className="mt-2 text-sm text-gold-200">{user?.chapterName || '未設定'}</p>
                 </div>
                 
                 <div className="space-y-2">
@@ -448,7 +448,7 @@ const Profile = () => {
                 
                 <div className="space-y-2">
                   <label className="label">註冊時間</label>
-                  <p className="mt-2 text-sm text-gray-900">
+                  <p className="mt-2 text-sm text-gold-200">
                     {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-TW') : '未知'}
                   </p>
                 </div>
@@ -459,9 +459,9 @@ const Profile = () => {
 
             {/* Personal QR Code Section */}
             <div className="border-t pt-8">
-              <h3 className="text-md font-medium text-gray-900 mb-6">個人 QR Code</h3>
-              <div className="text-center p-8 bg-gray-50 rounded-lg">
-                <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
+              <h3 className="text-md font-medium text-gold-100 mb-6">個人 QR Code</h3>
+              <div className="text-center p-8 bg-primary-700 rounded-lg">
+                <div className="inline-block p-4 bg-primary-800 border-2 border-gold-600 rounded-lg">
                   <img
                     src={`${axios.defaults.baseURL}/api/qrcode/member/${user?.id}`}
                     alt={`${user?.name} 的 QR Code`}
@@ -471,11 +471,11 @@ const Profile = () => {
                       e.target.nextSibling.style.display = 'block';
                     }}
                   />
-                  <div className="w-32 h-32 mx-auto flex items-center justify-center text-gray-400 text-sm" style={{display: 'none'}}>
+                  <div className="w-32 h-32 mx-auto flex items-center justify-center text-gold-400 text-sm" style={{display: 'none'}}>
                     QR Code 載入失敗
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-4">
+                <p className="text-sm text-gold-300 mt-4">
                   掃描此 QR Code 可快速獲取您的聯絡資訊
                 </p>
               </div>
@@ -504,39 +504,39 @@ const Profile = () => {
       {/* Interview Form Tab */}
       {activeTab === 'interview' && (
         <div className="card">
-          <div className="card-header bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <div className="card-header bg-gradient-to-r from-primary-700 to-primary-600 border-b border-gold-600">
             <div className="flex items-center space-x-3">
-              <ChatBubbleLeftRightIcon className="h-8 w-8 text-blue-600" />
+              <ChatBubbleLeftRightIcon className="h-8 w-8 text-gold-400" />
               <div>
-                <h2 className="text-xl font-bold text-gray-900">會員一對一面談表</h2>
-                <p className="text-sm text-gray-600 mt-1">🎯 透過深度交流，建立信任，創造精準引薦機會</p>
+                <h2 className="text-xl font-bold text-gold-100">會員一對一面談表</h2>
+                <p className="text-sm text-gold-300 mt-1">🎯 透過深度交流，建立信任，創造精準引薦機會</p>
               </div>
             </div>
             
             {/* 進度指示器 */}
             <div className="mt-4">
-              <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+              <div className="flex items-center justify-between text-xs text-gold-300 mb-2">
                 <span>填寫進度</span>
                 <span>完成後將大幅提升引薦成功率</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{width: '0%'}} id="progress-bar"></div>
+              <div className="w-full bg-primary-800 rounded-full h-2">
+                <div className="bg-gold-500 h-2 rounded-full transition-all duration-300" style={{width: '0%'}} id="progress-bar"></div>
               </div>
             </div>
           </div>
           
           <form onSubmit={handleSubmitInterview(onSubmitInterview)} className="space-y-10 p-6">
             {/* 第一部分：我的業務核心與價值主張 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-sm">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <StarIcon className="h-6 w-6 text-blue-600" />
+                  <div className="w-10 h-10 bg-gold-600 rounded-full flex items-center justify-center">
+                    <StarIcon className="h-6 w-6 text-primary-900" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">第一部分：我的業務核心與價值主張</h3>
-                  <p className="text-sm text-gray-600 mt-1">💼 讓大家清楚了解「我是誰，我做什麼」</p>
+                  <h3 className="text-xl font-bold text-gold-100">第一部分：我的業務核心與價值主張</h3>
+                  <p className="text-sm text-gold-300 mt-1">💼 讓大家清楚了解「我是誰，我做什麼」</p>
                 </div>
               </div>
               
@@ -544,7 +544,7 @@ const Profile = () => {
                 {/* 公司／品牌名稱 */}
                 <div className="space-y-2">
                   <label className="label font-semibold">
-                    <BuildingOfficeIcon className="h-5 w-5 mr-2 text-blue-600" />
+                    <BuildingOfficeIcon className="h-5 w-5 mr-2 text-gold-400" />
                     公司／品牌名稱
                   </label>
                   <input
@@ -553,7 +553,7 @@ const Profile = () => {
                     className={`input w-full ${interviewErrors.companyName ? 'input-error' : ''}`}
                     {...registerInterview('companyName')}
                   />
-                  <p className="text-xs text-gray-500">💡 填寫您的公司或個人品牌名稱（已自動從個人資料填入）</p>
+                  <p className="text-xs text-gold-400">💡 填寫您的公司或個人品牌名稱（已自動從個人資料填入）</p>
                   {interviewErrors.companyName && (
                     <p className="error-message">{interviewErrors.companyName.message}</p>
                   )}
@@ -562,7 +562,7 @@ const Profile = () => {
                 {/* 代表行業／職業 */}
                 <div className="space-y-2">
                   <label className="label font-semibold">
-                    <BriefcaseIcon className="h-5 w-5 mr-2 text-blue-600" />
+                    <BriefcaseIcon className="h-5 w-5 mr-2 text-gold-400" />
                     代表行業／職業
                   </label>
                   <input
@@ -571,7 +571,7 @@ const Profile = () => {
                     className={`input w-full ${interviewErrors.industry ? 'input-error' : ''}`}
                     {...registerInterview('industry')}
                   />
-                  <p className="text-xs text-gray-500">💡 讓人一眼就知道您的專業領域（已自動從個人資料填入）</p>
+                  <p className="text-xs text-gold-400">💡 讓人一眼就知道您的專業領域（已自動從個人資料填入）</p>
                   {interviewErrors.industry && (
                     <p className="error-message">{interviewErrors.industry.message}</p>
                   )}
@@ -581,12 +581,12 @@ const Profile = () => {
               {/* 核心產品／服務詳述 */}
               <div className="mt-8 space-y-2">
                 <label className="label font-semibold">
-                  <LightBulbIcon className="h-5 w-5 mr-2 text-blue-600" />
+                  <LightBulbIcon className="h-5 w-5 mr-2 text-gold-400" />
                   核心產品／服務詳述
                 </label>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-blue-800">📝 <strong>填寫提示：</strong>請具體說明您提供什麼產品或服務，讓人一看就懂</p>
-                  <p className="text-xs text-blue-600 mt-1">範例：「提供企業數位轉型顧問服務，包含系統導入、流程優化、員工培訓」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200">📝 <strong>填寫提示：</strong>請具體說明您提供什麼產品或服務，讓人一看就懂</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「提供企業數位轉型顧問服務，包含系統導入、流程優化、員工培訓」</p>
                 </div>
                 <textarea
                   rows={4}

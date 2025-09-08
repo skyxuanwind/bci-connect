@@ -150,26 +150,26 @@ const Members = () => {
     }
 
     return (
-      <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+      <div className="flex items-center justify-between border-t border-gold-600 bg-primary-800 px-4 py-3 sm:px-6">
         <div className="flex flex-1 justify-between sm:hidden">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="relative inline-flex items-center rounded-md border border-gold-600 bg-primary-700 px-4 py-2 text-sm font-medium text-gold-100 hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             上一頁
           </button>
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="relative ml-3 inline-flex items-center rounded-md border border-gold-600 bg-primary-700 px-4 py-2 text-sm font-medium text-gold-100 hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             下一頁
           </button>
         </div>
         <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-gold-100">
               顯示第 <span className="font-medium">{(currentPage - 1) * membersPerPage + 1}</span> 到{' '}
               <span className="font-medium">
                 {Math.min(currentPage * membersPerPage, totalMembers)}
@@ -182,7 +182,7 @@ const Members = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gold-300 ring-1 ring-inset ring-gold-600 hover:bg-primary-600 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeftIcon className="h-5 w-5" />
               </button>
@@ -192,8 +192,8 @@ const Members = () => {
                   onClick={() => handlePageChange(page)}
                   className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                     page === currentPage
-                      ? 'z-10 bg-primary-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600'
-                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                      ? 'z-10 bg-gold-600 text-primary-900 focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-600'
+                      : 'text-gold-100 ring-1 ring-inset ring-gold-600 hover:bg-primary-600 focus:z-20 focus:outline-offset-0'
                   }`}
                 >
                   {page}
@@ -202,7 +202,7 @@ const Members = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gold-300 ring-1 ring-inset ring-gold-600 hover:bg-primary-600 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRightIcon className="h-5 w-5" />
               </button>
@@ -218,8 +218,8 @@ const Members = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">會員目錄</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-gold-100">會員目錄</h1>
+          <p className="mt-1 text-sm text-gold-300">
             根據您的會員等級，您可以查看 {getVisibleMembershipLevels().map(level => getMembershipLevelText(level)).join('、')} 的會員資料
           </p>
         </div>
@@ -238,7 +238,7 @@ const Members = () => {
       {showFilters && (
         <div className="card">
           <div className="card-header">
-            <h3 className="text-lg font-medium text-gray-900">篩選條件</h3>
+            <h3 className="text-lg font-medium text-gold-100">篩選條件</h3>
           </div>
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -302,7 +302,7 @@ const Members = () => {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="text-sm text-gold-300 hover:text-gold-100"
               >
                 清除篩選
               </button>
@@ -323,9 +323,9 @@ const Members = () => {
         </div>
       ) : members.length === 0 ? (
         <div className="text-center py-12">
-          <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">沒有找到會員</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <UserIcon className="mx-auto h-12 w-12 text-gold-400" />
+          <h3 className="mt-2 text-sm font-medium text-gold-100">沒有找到會員</h3>
+          <p className="mt-1 text-sm text-gold-300">
             {searchTerm || selectedChapter || selectedMembershipLevel ? '請嘗試調整搜尋條件' : '目前沒有可顯示的會員'}
           </p>
         </div>
@@ -343,7 +343,7 @@ const Members = () => {
                       size="large"
                     />
                     <div className="ml-3 flex-1">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <h3 className="text-sm font-medium text-gold-100 truncate">
                         {member.name}
                       </h3>
                       <div className="mt-1">
@@ -354,11 +354,11 @@ const Members = () => {
 
                   {/* Company and Title */}
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-gold-300">
                       <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
                       <span className="truncate">{member.company}</span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-gold-300">
                       <BriefcaseIcon className="h-4 w-4 mr-2 flex-shrink-0" />
                       <span className="truncate">{member.title}</span>
                     </div>
@@ -367,7 +367,7 @@ const Members = () => {
                   {/* Chapter */}
                   {member.chapterName && (
                     <div className="mb-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gold-600 text-primary-900">
                         {member.chapterName}
                       </span>
                     </div>
@@ -376,7 +376,7 @@ const Members = () => {
                   {/* Contact Info (if available) */}
                   {member.contactNumber && canViewMember(member.membershipLevel) && (
                     <div className="mb-4">
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-gold-300">
                         <PhoneIcon className="h-4 w-4 mr-2 flex-shrink-0" />
                         <span className="truncate">{member.contactNumber}</span>
                       </div>

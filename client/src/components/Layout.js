@@ -340,7 +340,7 @@ const Layout = ({ children }) => {
         {testFeatures.length > 0 && testFeatures.some(item => item.name) && (
           <>
             <div className="pt-4 pb-2">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
                 測試功能
               </h3>
             </div>
@@ -369,7 +369,7 @@ const Layout = ({ children }) => {
         {isAdmin() && (
           <>
             <div className="pt-4 pb-2">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
                 系統管理
               </h3>
             </div>

@@ -1134,112 +1134,110 @@ const MemberCard = () => {
           <div className="content-block">
             <h3 className="block-title">我的商媒體</h3>
             <div className="space-y-3">
-              {businessMediaItems.map((it) => (
-                (() => {
-                  const embedUrl = getBusinessMediaEmbedUrl(it);
-                  const lowerUrl = (it.external_url || '').toLowerCase();
-                  const isInstagram = lowerUrl.includes('instagram.com') || it.platform === 'instagram';
-                  const canEmbed = (!!embedUrl || (isInstagram && it.embed_code)) && (it.content_type === 'video_long' || it.content_type === 'video_short');
+              {businessMediaItems.map((it) => {
+                const embedUrl = getBusinessMediaEmbedUrl(it);
+                const lowerUrl = (it.external_url || '').toLowerCase();
+                const isInstagram = lowerUrl.includes('instagram.com') || it.platform === 'instagram';
+                const canEmbed = (!!embedUrl || (isInstagram && it.embed_code)) && (it.content_type === 'video_long' || it.content_type === 'video_short');
 
-                  return (
-                    <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">{it.title}</div>
-                          <div className="mt-1 text-xs text-gray-500 space-x-2">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{it.content_type}</span>
-                            {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">{it.platform}</span>}
-                          </div>
+                return (
+                  <div key={it.id} className="p-3 border border-gray-200 rounded-lg bg-white">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">{it.title}</div>
+                        <div className="mt-1 text-xs text-gray-500 space-x-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{it.content_type}</span>
+                          {it.platform && <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">{it.platform}</span>}
                         </div>
-                      </div>
-
-                      {canEmbed && (
-                        <div className="mt-2" style={{ width: '100%' }}>
-                          {isInstagram && it.embed_code ? (
-                            <div 
-                              style={{ width: '100%', minHeight: '600px' }}
-                              dangerouslySetInnerHTML={{ 
-                                __html: it.embed_code + '<script async src="//www.instagram.com/embed.js"></script>'
-                              }} 
-                            />
-                          ) : it.embed_code ? (
-                            <div 
-                              style={{ width: '100%', minHeight: '315px' }}
-                              dangerouslySetInnerHTML={{ __html: it.embed_code }} 
-                            />
-                          ) : (
-                            <iframe
-                              title={it.title || 'Embedded Media'}
-                              src={embedUrl}
-                              allow={isInstagram ? 
-                                "clipboard-write; encrypted-media; picture-in-picture; web-share" : 
-                                "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                              }
-                              allowFullScreen
-                              loading="lazy"
-                              width="100%"
-                              height={isInstagram ? "600" : "315"}
-                              frameBorder="0"
-                              style={{ 
-                                border: 0,
-                                maxWidth: '100%'
-                              }}
-                            />
-                          )}
-                        </div>
-                      )}
-
-                      {it.summary && (
-                        <p className="mt-2 text-xs text-gray-600 line-clamp-3">{it.summary}</p>
-                      )}
-                      <div className="mt-2 flex items-center gap-2">
-                        {canEmbed && (
-                          <button
-                            onClick={async () => {
-                              try {
-                                await axios.post(`/api/business-media/${it.id}/track/view`, {}).catch(() => {});
-                              } catch {}
-                            }}
-                            className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
-                          >
-                            已播放
-                          </button>
-                        )}
-
-                        <button
-                          onClick={async () => {
-                            try {
-                              await axios.post(`/api/business-media/${it.id}/track/cta`, {
-                                ctaLabel: 'open_external',
-                                ctaUrl: it.external_url || '',
-                                targetMemberId: null,
-                              }).catch(() => {});
-                            } catch {}
-                            if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
-                          }}
-                          className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
-                        >
-                          前往原平台
-                        </button>
-
-                        <button
-                          onClick={async () => {
-                            try {
-                              await axios.post(`/api/business-media/${it.id}/track/card`, {
-                                targetMemberId: Number(memberId),
-                              }).catch(() => {});
-                            } catch {}
-                            navigate(`/member/${memberId}`);
-                          }}
-                          className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
-                        >
-                          我的名片
-                        </button>
                       </div>
                     </div>
-                  );
-                })()
-              ))}
+
+                    {canEmbed && (
+                      <div className="mt-2" style={{ width: '100%' }}>
+                        {isInstagram && it.embed_code ? (
+                          <div 
+                            style={{ width: '100%', minHeight: '600px' }}
+                            dangerouslySetInnerHTML={{ 
+                              __html: it.embed_code + '<script async src="//www.instagram.com/embed.js"></script>'
+                            }} 
+                          />
+                        ) : it.embed_code ? (
+                          <div 
+                            style={{ width: '100%', minHeight: '315px' }}
+                            dangerouslySetInnerHTML={{ __html: it.embed_code }} 
+                          />
+                        ) : (
+                          <iframe
+                            title={it.title || 'Embedded Media'}
+                            src={embedUrl}
+                            allow={isInstagram ? 
+                              "clipboard-write; encrypted-media; picture-in-picture; web-share" : 
+                              "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                            }
+                            allowFullScreen
+                            loading="lazy"
+                            width="100%"
+                            height={isInstagram ? "600" : "315"}
+                            frameBorder="0"
+                            style={{ 
+                              border: 0,
+                              maxWidth: '100%'
+                            }}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {it.summary && (
+                      <p className="mt-2 text-xs text-gray-600 line-clamp-3">{it.summary}</p>
+                    )}
+                    <div className="mt-2 flex items-center gap-2">
+                      {canEmbed && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await axios.post(`/api/business-media/${it.id}/track/view`, {}).catch(() => {});
+                            } catch (error) {}
+                          }}
+                          className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
+                        >
+                          已播放
+                        </button>
+                      )}
+
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.post(`/api/business-media/${it.id}/track/cta`, {
+                              ctaLabel: 'open_external',
+                              ctaUrl: it.external_url || '',
+                              targetMemberId: null,
+                            }).catch(() => {});
+                          } catch (error) {}
+                          if (it.external_url) window.open(it.external_url, '_blank', 'noopener,noreferrer');
+                        }}
+                        className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                      >
+                        前往原平台
+                      </button>
+
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.post(`/api/business-media/${it.id}/track/card`, {
+                              targetMemberId: Number(memberId),
+                            }).catch(() => {});
+                          } catch (error) {}
+                          navigate(`/member/${memberId}`);
+                        }}
+                        className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                      >
+                        我的名片
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
               {businessMediaItems.length >= 5 && (
                 <button
                   onClick={() => navigate(`/business-media?speakerId=${memberId}`)}
@@ -1251,7 +1249,6 @@ const MemberCard = () => {
             </div>
           </div>
         )}
-
 
       <button
         onClick={downloadVCard}
@@ -1284,6 +1281,7 @@ const MemberCard = () => {
         )}
       </button>
     </div>
+    )
 
     {imagePreviewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
