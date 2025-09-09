@@ -444,12 +444,12 @@ const CheckInScanner = () => {
 
             {/* 活動報名名單 */}
             {selectedEvent && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-black rounded-lg shadow-md p-6 border border-yellow-400">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-800">📋 活動報名名單</h2>
+                  <h2 className="text-xl font-semibold text-yellow-400">📋 活動報名名單</h2>
                   {loadingAttendance && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                    <div className="flex items-center text-sm text-yellow-300">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400 mr-2"></div>
                       載入中...
                     </div>
                   )}
@@ -459,21 +459,21 @@ const CheckInScanner = () => {
                   <div>
                     {/* 統計資訊 */}
                     <div className="grid grid-cols-4 gap-4 mb-6">
-                      <div className="text-center p-3 bg-blue-50 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">{eventAttendance.statistics.totalRegistered}</div>
-                        <div className="text-sm text-gray-600">總報名</div>
+                      <div className="text-center p-3 bg-gray-900 border border-yellow-400 rounded-lg">
+                        <div className="text-2xl font-bold text-yellow-400">{eventAttendance.statistics.totalRegistered}</div>
+                        <div className="text-sm text-yellow-300">總報名</div>
                       </div>
-                      <div className="text-center p-3 bg-green-50 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">{eventAttendance.statistics.totalAttended}</div>
-                        <div className="text-sm text-gray-600">已報到</div>
+                      <div className="text-center p-3 bg-gray-900 border border-green-400 rounded-lg">
+                        <div className="text-2xl font-bold text-green-400">{eventAttendance.statistics.totalAttended}</div>
+                        <div className="text-sm text-green-300">已報到</div>
                       </div>
-                      <div className="text-center p-3 bg-red-50 rounded-lg">
-                        <div className="text-2xl font-bold text-red-600">{eventAttendance.statistics.totalAbsent}</div>
-                        <div className="text-sm text-gray-600">未報到</div>
+                      <div className="text-center p-3 bg-gray-900 border border-red-400 rounded-lg">
+                        <div className="text-2xl font-bold text-red-400">{eventAttendance.statistics.totalAbsent}</div>
+                        <div className="text-sm text-red-300">未報到</div>
                       </div>
-                      <div className="text-center p-3 bg-purple-50 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">{eventAttendance.statistics.attendanceRate}%</div>
-                        <div className="text-sm text-gray-600">報到率</div>
+                      <div className="text-center p-3 bg-gray-900 border border-yellow-400 rounded-lg">
+                        <div className="text-2xl font-bold text-yellow-400">{eventAttendance.statistics.attendanceRate}%</div>
+                        <div className="text-sm text-yellow-300">報到率</div>
                       </div>
                     </div>
 
@@ -482,20 +482,20 @@ const CheckInScanner = () => {
                       {/* 已報到名單 */}
                       {eventAttendance.attendedMembers.length > 0 && (
                         <div>
-                          <h3 className="text-lg font-medium text-green-700 mb-3 flex items-center">
-                            <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                          <h3 className="text-lg font-medium text-green-400 mb-3 flex items-center">
+                            <span className="inline-block w-3 h-3 bg-green-400 rounded-full mr-2"></span>
                             已報到 ({eventAttendance.attendedMembers.length})
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {eventAttendance.attendedMembers.map((member) => (
-                              <div key={member.user_id} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <div key={member.user_id} className="flex items-center justify-between p-3 bg-gray-900 border border-green-400 rounded-lg">
                                 <div>
-                                  <div className="font-medium text-gray-900">{member.name}</div>
-                                  <div className="text-sm text-gray-600">{member.company}</div>
+                                  <div className="font-medium text-yellow-400">{member.name}</div>
+                                  <div className="text-sm text-yellow-300">{member.company}</div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-xs text-green-600 font-medium">✓ 已報到</div>
-                                  <div className="text-xs text-gray-500">
+                                  <div className="text-xs text-green-400 font-medium">✓ 已報到</div>
+                                  <div className="text-xs text-gray-400">
                                     {new Date(member.check_in_time).toLocaleString('zh-TW', {
                                       month: '2-digit',
                                       day: '2-digit',
@@ -513,20 +513,20 @@ const CheckInScanner = () => {
                       {/* 未報到名單 */}
                       {eventAttendance.absentMembers.length > 0 && (
                         <div>
-                          <h3 className="text-lg font-medium text-red-700 mb-3 flex items-center">
-                            <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                          <h3 className="text-lg font-medium text-red-400 mb-3 flex items-center">
+                            <span className="inline-block w-3 h-3 bg-red-400 rounded-full mr-2"></span>
                             未報到 ({eventAttendance.absentMembers.length})
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {eventAttendance.absentMembers.map((member) => (
-                              <div key={member.user_id} className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <div key={member.user_id} className="flex items-center justify-between p-3 bg-gray-900 border border-red-400 rounded-lg">
                                 <div>
-                                  <div className="font-medium text-gray-900">{member.name}</div>
-                                  <div className="text-sm text-gray-600">{member.company}</div>
+                                  <div className="font-medium text-yellow-400">{member.name}</div>
+                                  <div className="text-sm text-yellow-300">{member.company}</div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-xs text-red-600 font-medium">⏳ 未報到</div>
-                                  <div className="text-xs text-gray-500">等待報到</div>
+                                  <div className="text-xs text-red-400 font-medium">⏳ 未報到</div>
+                                  <div className="text-xs text-gray-400">等待報到</div>
                                 </div>
                               </div>
                             ))}
@@ -536,7 +536,7 @@ const CheckInScanner = () => {
 
                       {/* 無報名資料 */}
                       {eventAttendance.statistics.totalRegistered === 0 && (
-                        <div className="text-center py-8 text-gray-500">
+                        <div className="text-center py-8 text-yellow-300">
                           <div className="text-4xl mb-2">📝</div>
                           <div>此活動暫無報名資料</div>
                         </div>
@@ -544,7 +544,7 @@ const CheckInScanner = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-yellow-300">
                     <div className="text-4xl mb-2">📋</div>
                     <div>請選擇活動以查看報名名單</div>
                   </div>
