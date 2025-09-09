@@ -34,17 +34,17 @@ function sseBroadcast(event, dataObj) {
   broadcast(event, dataObj);
 }
 
+// 新增：當 MongoDB 不可用時，暫存最後一筆報到，供前端顯示
+let lastDegradedCheckin = null;
+
 // 接收來自本地 NFC Gateway Service 的報到資料
 router.post('/submit', async (req, res) => {
   try {
-    // 檢查 MongoDB 連接狀態
+    // 使用降級模式：若 MongoDB 未連接，仍然接收、同步 PostgreSQL 並透過 SSE 提示
     const mongoose = require('mongoose');
-    if (mongoose.connection.readyState !== 1) {
-      console.error('❌ MongoDB 未連接，無法處理 NFC 報到');
-      return res.status(503).json({
-        success: false,
-        message: 'NFC 服務暫時不可用，請稍後再試'
-      });
+    const degraded = mongoose.connection.readyState !== 1;
+    if (degraded) {
+      console.warn('⚠️ MongoDB 未連接，啟用降級模式：接受報到、同步 PostgreSQL、SSE 廣播，但不寫入 MongoDB');
     }
     
     const { cardUid, cardUrl, timestamp, readerName, source = 'nfc-gateway' } = req.body;
@@ -67,7 +67,7 @@ router.post('/submit', async (req, res) => {
       if (normalizedCardUrl) {
         // 先嘗試用網址查詢
         memberResult = await pool.query(
-          'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url FROM users WHERE nfc_card_url = $1',
+          'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url, nfc_card_id, nfc_uid FROM users WHERE nfc_card_url = $1',
           [normalizedCardUrl]
         );
         
@@ -76,7 +76,7 @@ router.post('/submit', async (req, res) => {
           const memberIdFromUrl = parseMemberIdFromUrl(normalizedCardUrl);
           if (memberIdFromUrl) {
             memberResult = await pool.query(
-              'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url FROM users WHERE id = $1',
+              'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url, nfc_card_id, nfc_uid FROM users WHERE id = $1',
               [memberIdFromUrl]
             );
             
@@ -93,14 +93,14 @@ router.post('/submit', async (req, res) => {
       } else {
         // 優先使用 nfc_uid 查詢，如果沒有結果再使用 nfc_card_id 查詢
         memberResult = await pool.query(
-          'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url, nfc_uid FROM users WHERE nfc_uid = $1',
+          'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url, nfc_uid, nfc_card_id FROM users WHERE nfc_uid = $1',
           [normalizedCardUid]
         );
         
         // 如果通過 nfc_uid 沒有找到會員，再嘗試使用 nfc_card_id 查詢（向後兼容）
         if (memberResult.rows.length === 0) {
           memberResult = await pool.query(
-            'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url, nfc_uid FROM users WHERE nfc_card_id = $1',
+            'SELECT id, name, email, company, industry, title, membership_level, status, nfc_card_url, nfc_uid, nfc_card_id FROM users WHERE nfc_card_id = $1',
             [normalizedCardUid]
           );
         }
@@ -118,26 +118,41 @@ router.post('/submit', async (req, res) => {
       // 繼續處理，不因為會員查詢失敗而中斷報到記錄
     }
     
-    // 創建新的報到記錄
+    // 以 UID 優先；若無 UID 而有會員資料，使用該會員的 nfc_card_id（再退而求其次用 nfc_uid）；若都沒有，最後才用 URL
+    const chosenCardUid = normalizedCardUid
+      || (memberInfo && (memberInfo.nfc_card_id ? String(memberInfo.nfc_card_id).toUpperCase() : (memberInfo.nfc_uid ? String(memberInfo.nfc_uid).toUpperCase() : null)))
+      || normalizedCardUrl;
+
+    // 創建新的報到記錄資料（若為降級模式，僅用於回應與 SSE）
     const identifier = normalizedCardUrl || normalizedCardUid;
     const checkinData = {
-      cardUid: identifier, // 存儲實際使用的識別符（網址或UID）
+      cardUid: chosenCardUid, // 優先使用 UID 或資料庫中的 nfc_card_id，避免將 URL 寫入 UID 欄位
       checkinTime: timestamp ? new Date(timestamp) : new Date(),
       readerName: readerName || null,
       source: source,
       ipAddress: req.ip || req.connection.remoteAddress,
       userAgent: req.get('User-Agent'),
-      notes: memberInfo ? `會員報到: ${memberInfo.name} (${memberInfo.company || '未設定公司'})` : '未識別會員'
+      notes: memberInfo ? `會員報到: ${memberInfo.name} (${memberInfo.company || '未設定公司'})` : (normalizedCardUrl ? `未識別會員（提供 URL）：${normalizedCardUrl}` : '未識別會員')
     };
     
-    const newCheckin = new NFCCheckin(checkinData);
-    const savedCheckin = await newCheckin.save();
+    let savedCheckin;
+    if (!degraded) {
+      const newCheckin = new NFCCheckin(checkinData);
+      savedCheckin = await newCheckin.save();
+      console.log(`✅ NFC 報到記錄已儲存: ${chosenCardUid || identifier} (ID: ${savedCheckin._id})`);
+    } else {
+      // 降級模式：不寫入 MongoDB，使用臨時對象供 SSE 與回應
+      savedCheckin = {
+        _id: `degraded_${Date.now()}`,
+        ...checkinData
+      };
+      lastDegradedCheckin = savedCheckin;
+      console.log(`✅ 已接收 NFC 報到（降級模式，不寫入 MongoDB）: ${chosenCardUid || identifier}`);
+    }
     
     const responseMessage = memberInfo 
-      ? `✅ ${memberInfo.name} 報到成功！`
-      : `✅ NFC 卡片報到成功（未識別會員）`;
-    
-    console.log(`✅ NFC 報到記錄已儲存: ${identifier} (ID: ${savedCheckin._id})`);
+      ? `✅ ${memberInfo.name} 報到成功！${degraded ? '（降級模式）' : ''}`
+      : `✅ NFC 卡片報到成功（未識別會員）${degraded ? '（降級模式）' : ''}`;
 
     // 自動同步到 PostgreSQL attendance_records 表（如果是已識別會員）
     if (memberInfo) {
@@ -191,16 +206,26 @@ router.post('/submit', async (req, res) => {
 
     // 即時推播給前端（SSE）
     try {
-      const formattedTime = typeof savedCheckin.getFormattedTime === 'function'
-        ? savedCheckin.getFormattedTime()
-        : (savedCheckin.formattedCheckinTime || (savedCheckin.checkinTime?.toISOString?.() || new Date().toISOString()));
+      const formattedTime = (savedCheckin.checkinTime instanceof Date)
+        ? savedCheckin.checkinTime.toLocaleString('zh-TW', {
+            timeZone: 'Asia/Taipei',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          })
+        : (typeof savedCheckin.getFormattedTime === 'function'
+            ? savedCheckin.getFormattedTime()
+            : (savedCheckin.formattedCheckinTime || (savedCheckin.checkinTime?.toISOString?.() || new Date().toISOString())));
       sseBroadcast('nfc-checkin', {
         id: savedCheckin._id,
         cardUid: savedCheckin.cardUid,
         checkinTime: formattedTime,
         readerName: savedCheckin.readerName,
         source: savedCheckin.source,
-        timestamp: savedCheckin.checkinTime.toISOString(),
+        timestamp: (savedCheckin.checkinTime instanceof Date) ? savedCheckin.checkinTime.toISOString() : new Date().toISOString(),
         member: memberInfo ? {
           id: memberInfo.id,
           name: memberInfo.name,
@@ -211,7 +236,8 @@ router.post('/submit', async (req, res) => {
           membershipLevel: memberInfo.membership_level,
           status: memberInfo.status
         } : null,
-        isRegisteredMember: !!memberInfo
+        isRegisteredMember: !!memberInfo,
+        degraded
       });
     } catch (e) {
       console.warn('SSE 廣播失敗（不影響報到流程）:', e?.message || e);
@@ -222,10 +248,20 @@ router.post('/submit', async (req, res) => {
       message: responseMessage,
       checkinId: savedCheckin._id,
       cardUid: savedCheckin.cardUid,
-      checkinTime: (typeof savedCheckin.getFormattedTime === 'function')
-        ? savedCheckin.getFormattedTime()
-        : (savedCheckin.formattedCheckinTime || (savedCheckin.checkinTime?.toISOString?.() || new Date().toISOString())),
-      timestamp: savedCheckin.checkinTime.toISOString(),
+      checkinTime: (savedCheckin.checkinTime instanceof Date)
+        ? savedCheckin.checkinTime.toLocaleString('zh-TW', {
+            timeZone: 'Asia/Taipei',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          })
+        : (typeof savedCheckin.getFormattedTime === 'function')
+          ? savedCheckin.getFormattedTime()
+          : (savedCheckin.formattedCheckinTime || (new Date().toISOString())),
+      timestamp: (savedCheckin.checkinTime instanceof Date) ? savedCheckin.checkinTime.toISOString() : new Date().toISOString(),
       member: memberInfo ? {
         id: memberInfo.id,
         name: memberInfo.name,
@@ -236,7 +272,8 @@ router.post('/submit', async (req, res) => {
         membershipLevel: memberInfo.membership_level,
         status: memberInfo.status
       } : null,
-      isRegisteredMember: !!memberInfo
+      isRegisteredMember: !!memberInfo,
+      degraded
     });
     
   } catch (error) {
@@ -252,6 +289,16 @@ router.post('/submit', async (req, res) => {
 // 獲取所有報到記錄（需要認證）
 router.get('/records', authenticateToken, async (req, res) => {
   try {
+    // 若 MongoDB 未連接，暫不提供查詢（保留一致性）
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: '資料庫服務降級中，暫無查詢功能',
+        degraded: true
+      });
+    }
+
     const { page = 1, limit = 50, cardUid, startDate, endDate } = req.query;
     
     // 建立查詢條件
@@ -357,15 +404,40 @@ router.get('/records', authenticateToken, async (req, res) => {
 // 獲取最後一筆報到記錄（公開端點，不需要認證）
 router.get('/last-checkin', async (req, res) => {
   try {
-    // 檢查 MongoDB 連接狀態
     const mongoose = require('mongoose');
     if (mongoose.connection.readyState !== 1) {
-      console.error('❌ MongoDB 未連接，無法查詢報到記錄');
+      console.warn('⚠️ MongoDB 未連接，使用降級暫存的最後一筆報到（若存在）');
+      if (lastDegradedCheckin) {
+        const lc = lastDegradedCheckin;
+        return res.json({
+          success: true,
+          degraded: true,
+          data: {
+            id: lc._id,
+            cardUid: lc.cardUid,
+            checkinTime: (lc.checkinTime instanceof Date)
+              ? lc.checkinTime.toLocaleString('zh-TW', {
+                  timeZone: 'Asia/Taipei',
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit'
+                })
+              : (lc.formattedCheckinTime || new Date().toISOString()),
+            readerName: lc.readerName,
+            source: lc.source,
+            timestamp: (lc.checkinTime instanceof Date) ? lc.checkinTime.toISOString() : new Date().toISOString()
+          }
+        });
+      }
       return res.status(503).json({
         success: false,
-        message: 'NFC 服務暫時不可用，請稍後再試'
+        message: 'NFC 服務暫時不可用（資料庫離線），且無暫存記錄'
       });
     }
+
     const lastCheckin = await NFCCheckin.findLastCheckin();
     
     if (!lastCheckin) {
