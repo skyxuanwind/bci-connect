@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Avatar from '../components/Avatar';
+import InfoButton from '../components/InfoButton';
 import {
   UserIcon,
   MagnifyingGlassIcon,
@@ -218,7 +219,10 @@ const Members = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gold-100">會員目錄</h1>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-bold text-gold-100">會員目錄</h1>
+            <InfoButton tooltip="會員目錄顯示所有可見的會員資料。您的查看權限基於會員等級：核心會員可查看所有等級，幹部會員可查看幹部和一般會員，一般會員只能查看同等級會員。" />
+          </div>
           <p className="mt-1 text-sm text-gold-300">
             根據您的會員等級，您可以查看 {getVisibleMembershipLevels().map(level => getMembershipLevelText(level)).join('、')} 的會員資料
           </p>

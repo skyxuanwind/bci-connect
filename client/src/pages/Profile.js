@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import AvatarUpload from '../components/AvatarUpload';
 import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
+import InfoButton from '../components/InfoButton';
 import {
   UserIcon,
   BuildingOfficeIcon,
@@ -288,7 +289,10 @@ const Profile = () => {
       {activeTab === 'profile' && (
         <div className="card">
           <div className="card-header">
-            <h2 className="text-lg font-semibold text-gold-100">個人資料</h2>
+            <div className="flex items-center space-x-2">
+              <h2 className="text-lg font-semibold text-gold-100">個人資料</h2>
+              <InfoButton tooltip="在這裡您可以更新個人基本資料，包括姓名、公司、職位、聯絡方式等資訊。這些資料將顯示在您的會員檔案中，幫助其他會員了解您的背景。" />
+            </div>
             <p className="text-sm text-gold-300 mt-1">更新您的個人資料和聯絡資訊</p>
           </div>
           

@@ -4,6 +4,7 @@ import axios from 'axios';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Avatar from '../../components/Avatar';
 import { toast } from 'react-hot-toast';
+import InfoButton from '../../components/InfoButton';
 import {
   UserIcon,
   MagnifyingGlassIcon,
@@ -439,7 +440,10 @@ const UserManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">用戶管理</h1>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-bold text-gray-900">用戶管理</h1>
+            <InfoButton tooltip="在此頁面您可以查看和管理所有用戶帳號，包括審核用戶狀態、修改會員等級、管理NFC卡片、查看用戶詳細資料等功能。您也可以使用篩選功能快速找到特定用戶。" />
+          </div>
           <p className="mt-1 text-sm text-gray-600">管理所有用戶帳號和狀態</p>
         </div>
         <div className="mt-4 sm:mt-0 flex space-x-3">

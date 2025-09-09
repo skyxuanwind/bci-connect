@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import InfoButton from '../components/InfoButton';
 
 const Events = () => {
   const { user, token } = useAuth();
@@ -72,7 +73,10 @@ const Events = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">活動報名</h1>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-3xl font-bold text-gray-900">活動報名</h1>
+            <InfoButton tooltip="這裡顯示所有可報名的商會活動，包括商務聚會、研討會、工作坊等。您可以查看活動詳情並進行報名，擴展您的商業人脈網絡。" />
+          </div>
           <p className="mt-2 text-gray-600">參與 GBC 商會的各種活動，擴展您的商業網絡</p>
         </div>
 

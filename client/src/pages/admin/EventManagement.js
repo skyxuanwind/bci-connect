@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from '../../config/axios';
+import InfoButton from '../../components/InfoButton';
 
 const EventManagement = () => {
   const { token } = useAuth();
@@ -309,7 +310,10 @@ const EventManagement = () => {
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">活動管理</h1>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-3xl font-bold text-gray-900">活動管理</h1>
+              <InfoButton tooltip="在此頁面您可以創建、編輯和管理所有商會活動，包括例會、擴大招商日等不同類型的活動。您可以設定活動詳情、管理報名人數、查看參與者名單等功能。" />
+            </div>
             <p className="mt-2 text-gray-600">管理 GBC 商會的所有活動</p>
           </div>
           <button

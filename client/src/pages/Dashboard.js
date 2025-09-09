@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
+import InfoButton from '../components/InfoButton';
 import {
   UserGroupIcon,
   UserIcon,
@@ -237,7 +238,10 @@ const Dashboard = () => {
         {/* User Actions */}
         <div className="card">
           <div className="card-header">
-            <h2 className="text-lg font-semibold text-gold-100">快速操作</h2>
+            <div className="flex items-center space-x-2">
+              <h2 className="text-lg font-semibold text-gold-100">快速操作</h2>
+              <InfoButton tooltip="這裡提供常用的功能快速入口，包括查看會員列表和編輯個人資料等基本操作。" />
+            </div>
           </div>
           <div className="space-y-4">
             {quickActions.map((action, index) => {
@@ -266,7 +270,10 @@ const Dashboard = () => {
         {isAdmin() && (
           <div className="card">
             <div className="card-header">
-              <h2 className="text-lg font-semibold text-gold-100">管理功能</h2>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-lg font-semibold text-gold-100">管理功能</h2>
+                <InfoButton tooltip="管理員專用功能區域，包括會員審核、用戶管理、分會設定和統計報告等高級管理工具。" />
+              </div>
             </div>
             <div className="space-y-4">
               {adminActions.map((action, index) => {

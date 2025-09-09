@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import InfoButton from '../../components/InfoButton';
 import {
   UserGroupIcon,
   UserIcon,
@@ -103,7 +104,10 @@ const AdminDashboard = () => {
       <div className="bg-gradient-primary text-white rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold mb-2">管理員儀表板</h1>
+            <div className="flex items-center space-x-2 mb-2">
+              <h1 className="text-2xl font-bold">管理員儀表板</h1>
+              <InfoButton tooltip="管理員儀表板提供系統整體概況，包括會員統計、待審核用戶提醒、快速管理功能等。您可以在這裡快速了解系統狀態並執行各種管理操作。" />
+            </div>
             <p className="text-blue-100">
               系統總覽和管理功能
             </p>
