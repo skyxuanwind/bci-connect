@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../config/axios';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   PlusIcon,
   TrashIcon,
@@ -63,6 +64,8 @@ const NFCCardEditor = () => {
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
   // 自動帶入個人資料控制，避免重複插入
   const [autoProfileApplied, setAutoProfileApplied] = useState(false);
+  // 提示視窗狀態
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
     fetchCardData();
@@ -457,6 +460,12 @@ const NFCCardEditor = () => {
     });
     
     setShowAddBlockModal(false);
+    
+    // 顯示成功提示
+    setShowSuccessToast(true);
+    setTimeout(() => {
+      setShowSuccessToast(false);
+    }, 1000);
   };
 
   const getDefaultContentData = (blockType) => {
@@ -804,6 +813,22 @@ const NFCCardEditor = () => {
             </div>
           </div>
       </div>
+
+      {/* 成功提示視窗 */}
+      <AnimatePresence>
+        {showSuccessToast && (
+          <motion.div
+            className="fixed top-5 right-5 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 0.3 }}
+          >
+            <span className="text-lg">✓</span>
+            <span>已添加</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
