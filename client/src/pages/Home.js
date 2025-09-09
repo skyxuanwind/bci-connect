@@ -55,23 +55,53 @@ const Home = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Original glowing orbs */}
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-yellow-400/20 to-amber-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -left-40 w-96 h-96 bg-gradient-to-tr from-amber-500/15 to-yellow-300/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-0 right-1/3 w-64 h-64 bg-gradient-to-t from-gold-500/20 to-transparent rounded-full blur-2xl animate-pulse delay-2000"></div>
+        {/* Flowing silk-like waves */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-full">
+            <div className="absolute top-1/4 -left-1/4 w-[150%] h-32 bg-gradient-to-r from-transparent via-gold-400/20 to-transparent transform -rotate-12 animate-[wave_8s_ease-in-out_infinite] blur-sm"></div>
+            <div className="absolute top-1/2 -right-1/4 w-[150%] h-24 bg-gradient-to-r from-transparent via-amber-500/15 to-transparent transform rotate-12 animate-[wave_10s_ease-in-out_infinite_reverse] blur-sm delay-1000"></div>
+            <div className="absolute top-3/4 -left-1/4 w-[150%] h-20 bg-gradient-to-r from-transparent via-gold-300/25 to-transparent transform -rotate-6 animate-[wave_12s_ease-in-out_infinite] blur-sm delay-2000"></div>
+          </div>
+        </div>
         
-        {/* Flowing light streams */}
-        <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-transparent via-gold-400/30 to-transparent transform rotate-12 animate-pulse delay-500"></div>
-        <div className="absolute top-0 right-1/4 w-1 h-full bg-gradient-to-b from-transparent via-amber-400/20 to-transparent transform -rotate-12 animate-pulse delay-1500"></div>
+        {/* Luxury flowing ribbons */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/3 w-96 h-full bg-gradient-to-b from-gold-400/10 via-transparent to-amber-500/10 transform rotate-45 animate-[float_15s_ease-in-out_infinite] blur-xl"></div>
+          <div className="absolute top-0 right-1/3 w-80 h-full bg-gradient-to-b from-amber-400/8 via-transparent to-gold-400/8 transform -rotate-45 animate-[float_18s_ease-in-out_infinite_reverse] blur-xl delay-3000"></div>
+        </div>
         
-        {/* Silk-like flowing elements */}
-        <div className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold-400/40 to-transparent animate-pulse delay-3000"></div>
-        <div className="absolute top-3/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent animate-pulse delay-4000"></div>
+        {/* Dynamic golden orbs */}
+        <div className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-gold-400/15 to-amber-600/8 rounded-full blur-3xl animate-[pulse_6s_ease-in-out_infinite]"></div>
+        <div className="absolute top-1/2 -left-32 w-80 h-80 bg-gradient-to-tr from-amber-500/12 to-gold-300/6 rounded-full blur-3xl animate-[pulse_8s_ease-in-out_infinite] delay-2000"></div>
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-gradient-to-t from-gold-500/18 to-transparent rounded-full blur-2xl animate-[pulse_10s_ease-in-out_infinite] delay-4000"></div>
         
-        {/* Additional luxury glow effects */}
-        <div className="absolute top-1/3 right-1/6 w-32 h-32 bg-gradient-to-br from-gold-300/10 to-amber-500/5 rounded-full blur-2xl animate-pulse delay-2500"></div>
-        <div className="absolute bottom-1/3 left-1/6 w-40 h-40 bg-gradient-to-tr from-amber-400/8 to-gold-300/4 rounded-full blur-3xl animate-pulse delay-3500"></div>
+        {/* Elegant light streams */}
+        <div className="absolute top-0 left-1/5 w-px h-full bg-gradient-to-b from-transparent via-gold-400/40 to-transparent animate-[shimmer_7s_ease-in-out_infinite] delay-1000"></div>
+        <div className="absolute top-0 right-1/5 w-px h-full bg-gradient-to-b from-transparent via-amber-400/35 to-transparent animate-[shimmer_9s_ease-in-out_infinite] delay-3000"></div>
+        
+        {/* Subtle luxury accents */}
+        <div className="absolute top-1/6 right-1/8 w-40 h-40 bg-gradient-to-br from-gold-300/8 to-amber-500/4 rounded-full blur-2xl animate-[float_20s_ease-in-out_infinite] delay-5000"></div>
+        <div className="absolute bottom-1/4 left-1/8 w-48 h-48 bg-gradient-to-tr from-amber-400/6 to-gold-300/3 rounded-full blur-3xl animate-[float_25s_ease-in-out_infinite] delay-7000"></div>
       </div>
+      
+      {/* Custom CSS animations */}
+      <style jsx>{`
+        @keyframes wave {
+          0%, 100% { transform: translateX(0) rotate(-12deg) scaleY(1); }
+          25% { transform: translateX(20px) rotate(-10deg) scaleY(1.1); }
+          50% { transform: translateX(-10px) rotate(-14deg) scaleY(0.9); }
+          75% { transform: translateX(15px) rotate(-8deg) scaleY(1.05); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(45deg) scale(1); }
+          33% { transform: translateY(-20px) rotate(47deg) scale(1.05); }
+          66% { transform: translateY(10px) rotate(43deg) scale(0.95); }
+        }
+        @keyframes shimmer {
+          0%, 100% { opacity: 0.3; transform: scaleY(1); }
+          50% { opacity: 0.8; transform: scaleY(1.2); }
+        }
+      `}</style>
       
       {/* Navigation */}
       <nav className="relative z-50 bg-black/40 backdrop-blur-xl border-b border-gold-500/30 shadow-2xl">
