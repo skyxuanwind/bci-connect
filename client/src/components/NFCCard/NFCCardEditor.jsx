@@ -34,12 +34,12 @@ const NFCCardEditor = () => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
+  const [showAddContentModal, setShowAddContentModal] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [cardUrl, setCardUrl] = useState('');
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [showAddContentModal, setShowAddContentModal] = useState(false);
-  const [uploadingFile, setUploadingFile] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -148,7 +148,14 @@ const NFCCardEditor = () => {
       ...cardData,
       content: [...cardData.content, newBlock]
     });
+
     setShowAddContentModal(false);
+    
+    // 顯示成功提示
+    setShowSuccessToast(true);
+    setTimeout(() => {
+      setShowSuccessToast(false);
+    }, 1000);
   };
 
   const getDefaultContentData = (type) => {
@@ -788,6 +795,24 @@ const NFCCardEditor = () => {
           </div>
         </div>
       )}
+
+      {/* 成功提示 */}
+      <AnimatePresence>
+        {showSuccessToast && (
+          <motion.div
+            className="success-toast"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="success-toast-content">
+              <span className="success-icon">✓</span>
+              <span>已添加</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

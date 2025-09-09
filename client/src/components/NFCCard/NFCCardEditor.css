@@ -766,3 +766,38 @@
     padding: 15px;
   }
 }
+
+/* 成功提示樣式 */
+.success-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.success-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+}
