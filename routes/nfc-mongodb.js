@@ -37,6 +37,16 @@ function sseBroadcast(event, dataObj) {
 // 接收來自本地 NFC Gateway Service 的報到資料
 router.post('/submit', async (req, res) => {
   try {
+    // 檢查 MongoDB 連接狀態
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      console.error('❌ MongoDB 未連接，無法處理 NFC 報到');
+      return res.status(503).json({
+        success: false,
+        message: 'NFC 服務暫時不可用，請稍後再試'
+      });
+    }
+    
     const { cardUid, cardUrl, timestamp, readerName, source = 'nfc-gateway' } = req.body;
     
     // 驗證必要欄位 - 優先使用名片網址，其次使用UID
@@ -344,9 +354,18 @@ router.get('/records', authenticateToken, async (req, res) => {
   }
 });
 
-// 獲取最後一筆報到記錄（公開訪問）
+// 獲取最後一筆報到記錄（公開端點，不需要認證）
 router.get('/last-checkin', async (req, res) => {
   try {
+    // 檢查 MongoDB 連接狀態
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      console.error('❌ MongoDB 未連接，無法查詢報到記錄');
+      return res.status(503).json({
+        success: false,
+        message: 'NFC 服務暫時不可用，請稍後再試'
+      });
+    }
     const lastCheckin = await NFCCheckin.findLastCheckin();
     
     if (!lastCheckin) {

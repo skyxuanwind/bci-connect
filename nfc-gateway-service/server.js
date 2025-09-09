@@ -93,7 +93,7 @@ app.post('/api/nfc-checkin/start-reader', async (req, res) => {
               console.log('Sending card UID:', uid);
             }
             
-            await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, payload, { timeout: 5000 });
+            await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, payload, { timeout: 30000 });
             console.log('Successfully forwarded to cloud');
           } catch (e) {
             console.error('Forward to cloud failed:', e?.message || e);
@@ -153,7 +153,7 @@ app.post('/api/nfc-checkin/simulate-scan', async (req, res) => {
       console.log('Simulating card UID:', cardUid);
     }
     
-    await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, payload, { timeout: 5000 });
+    await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, payload, { timeout: 30000 });
     res.json({ success: true, identifier: cardUrl || cardUid });
   } catch (e) {
     res.status(502).json({ success: false, message: 'Forward failed', error: e?.message });
