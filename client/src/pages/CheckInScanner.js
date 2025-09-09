@@ -33,6 +33,9 @@ const CheckInScanner = () => {
   // 新增：Gateway 下載區塊收合與複製反饋
   const [showGatewayDownloads, setShowGatewayDownloads] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState('');
+  // 新增：活動報名名單相關狀態
+  const [eventAttendance, setEventAttendance] = useState(null);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
 
   useEffect(() => {
     // 初始化讀取是否關閉過浮層
@@ -93,6 +96,11 @@ const CheckInScanner = () => {
             setSuccessModalData(null);
             setScanResult(null);
           }, 3000);
+          
+          // 刷新報名名單以顯示最新報到狀態
+          if (selectedEvent) {
+            fetchEventAttendance(selectedEvent);
+          }
         } catch (e) {
           addDebugInfo('解析 NFC SSE 事件失敗');
         }
@@ -148,11 +156,44 @@ const CheckInScanner = () => {
         
         if (todayEvent) {
           setSelectedEvent(todayEvent.id.toString());
+          fetchEventAttendance(todayEvent.id.toString());
         }
       }
     } catch (error) {
       console.error('獲取活動列表失敗:', error);
     }
+  };
+
+  // 獲取活動報名名單和報到狀態
+  const fetchEventAttendance = async (eventId) => {
+    if (!eventId) {
+      setEventAttendance(null);
+      return;
+    }
+
+    setLoadingAttendance(true);
+    try {
+      const response = await api.get(`/api/attendance/event/${eventId}`);
+      if (response.data.success) {
+        setEventAttendance(response.data);
+        addDebugInfo(`已載入活動報名名單：${response.data.statistics.totalRegistered} 人報名，${response.data.statistics.totalAttended} 人已報到`);
+      } else {
+        setEventAttendance(null);
+        addDebugInfo('無法載入活動報名名單');
+      }
+    } catch (error) {
+      console.error('獲取活動報名名單失敗:', error);
+      setEventAttendance(null);
+      addDebugInfo('載入活動報名名單失敗');
+    } finally {
+      setLoadingAttendance(false);
+    }
+  };
+
+  // 處理活動選擇變更
+  const handleEventChange = (eventId) => {
+    setSelectedEvent(eventId);
+    fetchEventAttendance(eventId);
   };
 
   const addDebugInfo = (message) => {
@@ -214,6 +255,11 @@ const CheckInScanner = () => {
       
       addDebugInfo(`✅ 報到成功: ${response.data.user?.name}`);
       
+      // 刷新報名名單以顯示最新報到狀態
+      if (selectedEvent) {
+        fetchEventAttendance(selectedEvent);
+      }
+      
     } catch (error) {
       console.error('QR Code 報到失敗:', error);
       setScanResult({
@@ -269,6 +315,11 @@ const CheckInScanner = () => {
       addDebugInfo(`✅ NFC 報到成功: ${response.data.user?.name}`);
       setNfcUrl('');
       if (nfcInputRef.current) nfcInputRef.current.focus();
+      
+      // 刷新報名名單以顯示最新報到狀態
+      if (selectedEvent) {
+        fetchEventAttendance(selectedEvent);
+      }
     } catch (error) {
       console.error('NFC URL 報到失敗:', error);
       setScanResult({
@@ -372,7 +423,7 @@ const CheckInScanner = () => {
               <div className="flex items-center gap-3">
                 <select
                   value={selectedEvent}
-                  onChange={(e) => setSelectedEvent(e.target.value)}
+                  onChange={(e) => handleEventChange(e.target.value)}
                   className="p-2 bg-black text-yellow-400 border border-yellow-400 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                 >
                   <option value="" className="bg-black text-yellow-400">不限活動</option>
@@ -390,6 +441,116 @@ const CheckInScanner = () => {
                 </button>
               </div>
             </div>
+
+            {/* 活動報名名單 */}
+            {selectedEvent && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-800">📋 活動報名名單</h2>
+                  {loadingAttendance && (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                      載入中...
+                    </div>
+                  )}
+                </div>
+                
+                {eventAttendance ? (
+                  <div>
+                    {/* 統計資訊 */}
+                    <div className="grid grid-cols-4 gap-4 mb-6">
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">{eventAttendance.statistics.totalRegistered}</div>
+                        <div className="text-sm text-gray-600">總報名</div>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">{eventAttendance.statistics.totalAttended}</div>
+                        <div className="text-sm text-gray-600">已報到</div>
+                      </div>
+                      <div className="text-center p-3 bg-red-50 rounded-lg">
+                        <div className="text-2xl font-bold text-red-600">{eventAttendance.statistics.totalAbsent}</div>
+                        <div className="text-sm text-gray-600">未報到</div>
+                      </div>
+                      <div className="text-center p-3 bg-purple-50 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">{eventAttendance.statistics.attendanceRate}%</div>
+                        <div className="text-sm text-gray-600">報到率</div>
+                      </div>
+                    </div>
+
+                    {/* 名單列表 */}
+                    <div className="space-y-4">
+                      {/* 已報到名單 */}
+                      {eventAttendance.attendedMembers.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-medium text-green-700 mb-3 flex items-center">
+                            <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                            已報到 ({eventAttendance.attendedMembers.length})
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {eventAttendance.attendedMembers.map((member) => (
+                              <div key={member.user_id} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div>
+                                  <div className="font-medium text-gray-900">{member.name}</div>
+                                  <div className="text-sm text-gray-600">{member.company}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xs text-green-600 font-medium">✓ 已報到</div>
+                                  <div className="text-xs text-gray-500">
+                                    {new Date(member.check_in_time).toLocaleString('zh-TW', {
+                                      month: '2-digit',
+                                      day: '2-digit',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 未報到名單 */}
+                      {eventAttendance.absentMembers.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-medium text-red-700 mb-3 flex items-center">
+                            <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                            未報到 ({eventAttendance.absentMembers.length})
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {eventAttendance.absentMembers.map((member) => (
+                              <div key={member.user_id} className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <div>
+                                  <div className="font-medium text-gray-900">{member.name}</div>
+                                  <div className="text-sm text-gray-600">{member.company}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xs text-red-600 font-medium">⏳ 未報到</div>
+                                  <div className="text-xs text-gray-500">等待報到</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 無報名資料 */}
+                      {eventAttendance.statistics.totalRegistered === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          <div className="text-4xl mb-2">📝</div>
+                          <div>此活動暫無報名資料</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="text-4xl mb-2">📋</div>
+                    <div>請選擇活動以查看報名名單</div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* QR Code 掃描 */}
             <div className="bg-white rounded-lg shadow-md p-6">
