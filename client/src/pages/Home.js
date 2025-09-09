@@ -9,8 +9,18 @@ import {
   ArrowRightIcon,
   SparklesIcon,
   TrophyIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  CrownIcon,
+  DiamondIcon,
+  ShieldExclamationIcon,
+  FireIcon
 } from '@heroicons/react/24/outline';
+import {
+  CrownIcon as CrownSolid,
+  FireIcon as FireSolid,
+  ShieldCheckIcon as ShieldSolid,
+  StarIcon as StarSolid
+} from '@heroicons/react/24/solid';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
@@ -28,12 +38,12 @@ const Home = () => {
       description: '分享國際商務經驗，拓展全球商業機會'
     },
     {
-      icon: ShieldCheckIcon,
+      icon: ShieldSolid,
       title: '資源共享',
       description: '會員間互相分享商業資源，創造合作機會'
     },
     {
-      icon: StarIcon,
+      icon: StarSolid,
       title: '精英聚會',
       description: '定期舉辦高品質的商務活動和交流聚會'
     }
@@ -45,9 +55,22 @@ const Home = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
+        {/* Original glowing orbs */}
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-yellow-400/20 to-amber-600/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-1/2 -left-40 w-96 h-96 bg-gradient-to-tr from-amber-500/15 to-yellow-300/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute bottom-0 right-1/3 w-64 h-64 bg-gradient-to-t from-gold-500/20 to-transparent rounded-full blur-2xl animate-pulse delay-2000"></div>
+        
+        {/* Flowing light streams */}
+        <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-transparent via-gold-400/30 to-transparent transform rotate-12 animate-pulse delay-500"></div>
+        <div className="absolute top-0 right-1/4 w-1 h-full bg-gradient-to-b from-transparent via-amber-400/20 to-transparent transform -rotate-12 animate-pulse delay-1500"></div>
+        
+        {/* Silk-like flowing elements */}
+        <div className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold-400/40 to-transparent animate-pulse delay-3000"></div>
+        <div className="absolute top-3/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent animate-pulse delay-4000"></div>
+        
+        {/* Additional luxury glow effects */}
+        <div className="absolute top-1/3 right-1/6 w-32 h-32 bg-gradient-to-br from-gold-300/10 to-amber-500/5 rounded-full blur-2xl animate-pulse delay-2500"></div>
+        <div className="absolute bottom-1/3 left-1/6 w-40 h-40 bg-gradient-to-tr from-amber-400/8 to-gold-300/4 rounded-full blur-3xl animate-pulse delay-3500"></div>
       </div>
       
       {/* Navigation */}
@@ -99,7 +122,6 @@ const Home = () => {
           <div className="text-center">
             {/* Premium Badge */}
             <div className="inline-flex items-center px-6 py-2 rounded-full bg-gradient-to-r from-gold-500/20 to-amber-600/20 border border-gold-400/30 backdrop-blur-sm mb-8">
-              <SparklesIcon className="h-5 w-5 text-gold-400 mr-2" />
               <span className="text-gold-300 font-semibold text-sm tracking-wide">PREMIUM BUSINESS NETWORK</span>
             </div>
             
@@ -149,7 +171,6 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-gold-500/10 to-amber-600/10 border border-gold-400/20 backdrop-blur-sm mb-6">
-              <BuildingOfficeIcon className="h-5 w-5 text-gold-400 mr-2" />
               <span className="text-gold-300 font-medium text-sm">ELITE ADVANTAGES</span>
             </div>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
@@ -199,7 +220,6 @@ const Home = () => {
             
             <div className="relative bg-gradient-to-br from-gray-800/40 to-gray-900/60 backdrop-blur-2xl rounded-3xl border border-gold-400/30 p-12 lg:p-16 text-center shadow-2xl">
               <div className="mb-8">
-                <SparklesIcon className="h-16 w-16 text-gold-400 mx-auto mb-6" />
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
                   <span className="bg-gradient-to-r from-gold-200 to-amber-300 bg-clip-text text-transparent">
                     準備加入
