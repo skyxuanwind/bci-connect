@@ -14,6 +14,13 @@ const mongoOptions = {
 
 // 連接到 MongoDB
 const connectMongoDB = async () => {
+  // 檢查 MONGODB_URI 是否為有效配置
+  if (!MONGODB_URI || MONGODB_URI.includes('your_mongodb_user') || MONGODB_URI.includes('your_mongodb_cluster')) {
+    console.log('⚠️ MongoDB URI 未配置或為佔位符，跳過 MongoDB 連接');
+    console.log('💡 如需啟用 NFC 功能，請在 Render Dashboard 中配置正確的 MONGODB_URI');
+    return;
+  }
+  
   try {
     await mongoose.connect(MONGODB_URI, mongoOptions);
     console.log('✅ MongoDB 連接成功');
