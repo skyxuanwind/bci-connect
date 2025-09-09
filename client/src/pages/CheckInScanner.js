@@ -359,7 +359,7 @@ const CheckInScanner = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Check-In Scanner</h1>
+          <h1 className="text-2xl font-bold text-gray-900">報到系統</h1>
           <p className="text-gray-600">使用 QR Code 或 NFC 名片進行快速報到</p>
         </div>
 
@@ -367,24 +367,24 @@ const CheckInScanner = () => {
           {/* 左側：掃描區域 */}
           <div className="lg:col-span-2 space-y-6">
             {/* 活動選擇 */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-blue-900 mb-4">選擇活動</h2>
+            <div className="bg-gradient-to-r from-black to-gray-800 rounded-lg shadow-md p-6 border border-yellow-400">
+              <h2 className="text-xl font-semibold text-yellow-400 mb-4">選擇活動</h2>
               <div className="flex items-center gap-3">
                 <select
                   value={selectedEvent}
                   onChange={(e) => setSelectedEvent(e.target.value)}
-                  className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="p-2 bg-black text-yellow-400 border border-yellow-400 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                 >
-                  <option value="">不限活動</option>
+                  <option value="" className="bg-black text-yellow-400">不限活動</option>
                   {events.map(event => (
-                    <option key={event.id} value={event.id}>
+                    <option key={event.id} value={event.id} className="bg-black text-yellow-400">
                       {event.title}（{formatDate(event.event_date)}）
                     </option>
                   ))}
                 </select>
                 <button
                   onClick={fetchEvents}
-                  className="btn-primary"
+                  className="px-4 py-2 bg-yellow-400 text-black font-semibold rounded-lg hover:bg-yellow-300 transition-colors"
                 >
                   重新載入活動
                 </button>
