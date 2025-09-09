@@ -118,7 +118,7 @@ const CheckInScanner = () => {
         sseRef.current = null;
       }
     };
-  }, [user]);
+  }, [user, selectedEvent]);
 
   // 檢查權限 - 僅限核心和管理員
   if (!user || (user.membershipLevel !== 1 && !isAdmin())) {
