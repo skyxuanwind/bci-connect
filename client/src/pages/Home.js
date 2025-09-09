@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -13,7 +13,8 @@ import {
   CrownIcon,
   DiamondIcon,
   ShieldExclamationIcon,
-  FireIcon
+  FireIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import {
   CrownIcon as CrownSolid,
@@ -25,27 +26,32 @@ import {
 const Home = () => {
   const { isAuthenticated } = useAuth();
   // 移除統計數據相關的狀態和 API 調用
+  const [activeTooltip, setActiveTooltip] = useState(null);
 
   const features = [
     {
       icon: UserGroupIcon,
       title: '專業網絡',
-      description: '連接各行業的商務精英，建立有價值的商業關係'
+      description: '連接各行業的商務精英，建立有價值的商業關係',
+      tooltip: '透過我們的平台，您可以與來自不同行業的商務領袖建立聯繫，擴展您的專業人脈網絡，發現新的商業合作機會。'
     },
     {
       icon: GlobeAltIcon,
       title: '全球視野',
-      description: '分享國際商務經驗，拓展全球商業機會'
+      description: '分享國際商務經驗，拓展全球商業機會',
+      tooltip: '參與國際商務討論，了解全球市場趨勢，與國際商務夥伴交流經驗，把握跨國合作商機。'
     },
     {
       icon: ShieldSolid,
       title: '資源共享',
-      description: '會員間互相分享商業資源，創造合作機會'
+      description: '會員間互相分享商業資源，創造合作機會',
+      tooltip: '會員可以分享行業資源、商業情報、合作夥伴推薦等，實現資源互補，創造雙贏局面。'
     },
     {
       icon: StarSolid,
       title: '精英聚會',
-      description: '定期舉辦高品質的商務活動和交流聚會'
+      description: '定期舉辦高品質的商務活動和交流聚會',
+      tooltip: '我們定期舉辦線上線下的商務聚會、研討會、工作坊等活動，提供面對面交流的機會。'
     }
   ];
 
@@ -225,9 +231,27 @@ const Home = () => {
                     <div className="w-20 h-20 bg-gradient-to-br from-gold-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-gold-400/30 group-hover:scale-110 transition-transform duration-300">
                       <Icon className="h-10 w-10 text-gold-400 group-hover:text-gold-300 transition-colors duration-300" />
                     </div>
-                    <h3 className="text-2xl font-bold text-gold-100 mb-4 group-hover:text-gold-200 transition-colors duration-300">
-                      {feature.title}
-                    </h3>
+                    <div className="flex items-center justify-center mb-4 relative">
+                      <h3 className="text-2xl font-bold text-gold-100 group-hover:text-gold-200 transition-colors duration-300">
+                        {feature.title}
+                      </h3>
+                      <div className="relative ml-2">
+                        <button
+                          className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50"
+                          onMouseEnter={() => setActiveTooltip(index)}
+                          onMouseLeave={() => setActiveTooltip(null)}
+                          onClick={() => setActiveTooltip(activeTooltip === index ? null : index)}
+                        >
+                          <InformationCircleIcon className="h-3 w-3 text-white" />
+                        </button>
+                        {activeTooltip === index && (
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-gray-900 text-white text-sm rounded-lg p-3 shadow-xl border border-gold-500/20 z-50">
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                            {feature.tooltip}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <p className="text-gray-300 leading-relaxed group-hover:text-gray-200 transition-colors duration-300">
                       {feature.description}
                     </p>
