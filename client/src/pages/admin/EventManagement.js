@@ -213,7 +213,7 @@ const EventManagement = () => {
     setFormData({
       title: event.title,
       description: event.description || '',
-      event_date: new Date(event.event_date).toISOString().slice(0, 16),
+      event_date: formatDateTimeLocal(new Date(event.event_date)),
       location: event.location || '',
       max_attendees: event.max_attendees || '',
       poster: null
@@ -267,15 +267,27 @@ const EventManagement = () => {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    // 直接從 ISO 字串建立 Date 物件，假設後端儲存的時間就是當地時間
+    // 不使用 UTC 轉換，避免時區偏移
+    const date = new Date(dateString.replace('Z', ''));
     return date.toLocaleString('zh-TW', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'Asia/Taipei'
+      minute: '2-digit'
     });
+  };
+
+  // 用於 <input type="datetime-local"> 的本地時間格式化，避免 UTC 偏移
+  const formatDateTimeLocal = (date) => {
+    const pad = (n) => String(n).padStart(2, '0');
+    const y = date.getFullYear();
+    const m = pad(date.getMonth() + 1);
+    const d = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const mm = pad(date.getMinutes());
+    return `${y}-${m}-${d}T${hh}:${mm}`;
   };
 
   const getStatusBadge = (status) => {

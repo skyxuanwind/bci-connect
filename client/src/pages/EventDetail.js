@@ -94,15 +94,15 @@ const EventDetail = () => {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    // 直接從 ISO 字串建立 Date 物件，假設後端儲存的時間就是當地時間
+    // 不使用 UTC 轉換，避免時區偏移
+    const date = new Date(dateString.replace('Z', ''));
     return date.toLocaleString('zh-TW', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit',
-      weekday: 'long',
-      timeZone: 'Asia/Taipei'
+      minute: '2-digit'
     });
   };
 

@@ -27,10 +27,25 @@ const AIProfilePage = () => {
   const [updating, setUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [showSourceDetails, setShowSourceDetails] = useState(false);
+  // 相似會員狀態
+  const [similarMembers, setSimilarMembers] = useState([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
+  const [similarError, setSimilarError] = useState('');
+  const [minScore, setMinScore] = useState(70);
+  const [limit, setLimit] = useState(8);
+  // 引薦稿 Dialog 狀態
+  const [referralDialogOpen, setReferralDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [referralSubject, setReferralSubject] = useState('');
+  const [referralMessage, setReferralMessage] = useState('');
+  const [referralAmount, setReferralAmount] = useState(0);
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [creatingReferral, setCreatingReferral] = useState(false);
 
   useEffect(() => {
     fetchProfile();
     fetchAnalysis();
+    fetchSimilarMembers();
   }, []);
 
   const fetchProfile = async () => {
@@ -62,6 +77,29 @@ const AIProfilePage = () => {
     }
   };
 
+  // 取得相似會員
+  const fetchSimilarMembers = async () => {
+    setSimilarLoading(true);
+    setSimilarError('');
+    try {
+      const resp = await axios.get('/api/ai-profiles/me/similar-members', {
+        params: { minScore, limit }
+      });
+      if (resp.data?.success) {
+        const list = resp.data?.data?.similarMembers || [];
+        setSimilarMembers(Array.isArray(list) ? list : []);
+      } else {
+        setSimilarMembers([]);
+      }
+    } catch (e) {
+      console.error('獲取相似會員失敗:', e);
+      setSimilarError('無法取得相似會員');
+      setSimilarMembers([]);
+    } finally {
+      setSimilarLoading(false);
+    }
+  };
+
   const handleUpdateProfile = async () => {
     setUpdating(true);
     try {
@@ -72,6 +110,7 @@ const AIProfilePage = () => {
         setProfile(response.data.data);
         toast.success('AI畫像更新成功');
         await fetchAnalysis();
+        await fetchSimilarMembers();
       }
     } catch (error) {
       console.error('更新AI畫像失敗:', error);
@@ -96,6 +135,85 @@ const AIProfilePage = () => {
     if (completeness >= 80) return 'bg-green-500';
     if (completeness >= 60) return 'bg-yellow-500';
     return 'bg-red-500';
+  };
+
+  // 開啟引薦稿對話框並一鍵生成草稿
+  const openReferralDialog = async (member) => {
+    setSelectedMember(member);
+    setReferralDialogOpen(true);
+    setReferralSubject('');
+    setReferralMessage('');
+    setReferralAmount(0);
+    await generateReferralDraft(member);
+  };
+
+  const closeReferralDialog = () => {
+    setReferralDialogOpen(false);
+    setSelectedMember(null);
+    setReferralSubject('');
+    setReferralMessage('');
+    setReferralAmount(0);
+    setGeneratingDraft(false);
+    setCreatingReferral(false);
+  };
+
+  const generateReferralDraft = async (member) => {
+    try {
+      setGeneratingDraft(true);
+      const payload = {
+        name: member?.name || '',
+        company: member?.company || '',
+        title: member?.title || '',
+        email: member?.email || '',
+        phone: member?.contact_number || member?.phone || '',
+        tags: Array.isArray(member?.skills) ? member.skills : [],
+        notes: '',
+        last_interaction: '',
+        goal: '請產生一段用於向該會員自我介紹並建立引薦合作的訊息草稿',
+        channelPreference: member?.email ? 'email' : ''
+      };
+      const resp = await axios.post('/api/ai/contacts/followup-suggestion', payload);
+      const data = resp?.data?.data || {};
+      const draft = data?.draft || {};
+      if (draft?.subject) setReferralSubject(draft.subject);
+      if (draft?.message) setReferralMessage(draft.message);
+      if (!draft?.message) {
+        setReferralMessage(`您好${member?.name ? '，' + member.name : ''}：\n\n我在 GBC 商務菁英會上看見您（${member?.company || ''}${member?.title ? '／' + member.title : ''}），覺得彼此背景可互補，期待先相互認識並探索可行合作或轉介機會。若您方便，想安排一個 20 分鐘的線上交流，時間可由您指定。\n\n謝謝，期待您的回覆！`);
+      }
+    } catch (e) {
+      console.warn('AI 生成引薦稿失敗，使用備援文案:', e?.message);
+      setReferralMessage(`您好${member?.name ? '，' + member.name : ''}：\n\n我在 GBC 商務菁英會上看見您（${member?.company || ''}${member?.title ? '／' + member.title : ''}），覺得彼此背景可互補，期待先相互認識並探索可行合作或轉介機會。若您方便，想安排一個 20 分鐘的線上交流，時間可由您指定。\n\n謝謝，期待您的回覆！`);
+    } finally {
+      setGeneratingDraft(false);
+    }
+  };
+
+  const submitReferral = async () => {
+    if (!selectedMember) return;
+    if (!referralMessage || referralMessage.trim().length < 10) {
+      toast.error('請先確認引薦稿內容');
+      return;
+    }
+    try {
+      setCreatingReferral(true);
+      const payload = {
+        referred_to_id: selectedMember.id,
+        referral_amount: Number.isFinite(Number(referralAmount)) ? Number(referralAmount) : 0,
+        description: referralMessage
+      };
+      const resp = await axios.post('/api/referrals/create', payload);
+      if (resp.status === 201) {
+        toast.success('引薦已發送');
+        closeReferralDialog();
+      } else {
+        toast.error(resp?.data?.error || '引薦發送失敗');
+      }
+    } catch (e) {
+      console.error('建立引薦失敗:', e);
+      toast.error(e?.response?.data?.error || '建立引薦失敗');
+    } finally {
+      setCreatingReferral(false);
+    }
   };
 
   if (loading) {
@@ -333,6 +451,64 @@ const AIProfilePage = () => {
           </ul>
         </div>
       )}
+
+      {/* 相似會員推薦 */}
+      <div className="bg-white shadow rounded-lg p-6 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-900">相似會員推薦</h3>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <span>最低分數</span>
+              <input type="number" min={0} max={100} value={minScore} onChange={(e) => setMinScore(parseInt(e.target.value || '0'))} className="w-16 px-2 py-1 border rounded" />
+            </div>
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <span>數量</span>
+              <input type="number" min={1} max={20} value={limit} onChange={(e) => setLimit(parseInt(e.target.value || '1'))} className="w-16 px-2 py-1 border rounded" />
+            </div>
+            <button onClick={fetchSimilarMembers} disabled={similarLoading} className="btn-gold px-3 py-1 disabled:opacity-50">
+              {similarLoading ? '載入中...' : '刷新結果'}
+            </button>
+          </div>
+        </div>
+        {similarError && (
+          <div className="text-red-600 text-sm mb-3">{similarError}</div>
+        )}
+        {similarLoading ? (
+          <div className="flex justify-center items-center h-24"><LoadingSpinner /></div>
+        ) : similarMembers.length === 0 ? (
+          <div className="text-gray-500 text-sm">尚無推薦結果，請嘗試降低分數門檻或更新畫像。</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {similarMembers.map((m, idx) => {
+              const mm = m?.member || m; // 後端可能返回 { member, score, reasons }
+              const score = m?.score ?? m?.matchingScore ?? 0;
+              const reasons = Array.isArray(m?.reasons) ? m.reasons : [];
+              return (
+                <div key={idx} className="border rounded-lg p-4 bg-black/40 border-yellow-500/30">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-yellow-300 font-semibold">{mm?.name || '未命名會員'}</div>
+                      <div className="text-sm text-gray-300">{[mm?.company, mm?.title].filter(Boolean).join(' / ')}</div>
+                    </div>
+                    <div className={`text-sm font-bold ${score >= 80 ? 'text-green-400' : score >= 60 ? 'text-yellow-300' : 'text-orange-300'}`}>{Math.round(score)} 分</div>
+                  </div>
+                  {reasons.length > 0 && (
+                    <ul className="mt-3 space-y-1 text-sm text-gray-200 list-disc pl-5">
+                      {reasons.slice(0, 3).map((r, i) => (
+                        <li key={i}>{r}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="mt-4 flex items-center gap-2">
+                    <a href={`/members/${mm?.id}`} className="px-3 py-1 rounded-md text-xs font-medium border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500/10">查看詳情</a>
+                    <button onClick={() => openReferralDialog(mm)} className="btn-gold px-3 py-1 text-xs">一鍵生成引薦稿</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* 使用說明：如何提升完整度與使用 AI 智慧合作網絡 */}
       <div className="bg-white shadow rounded-lg p-6 mb-8">
@@ -579,6 +755,84 @@ const AIProfilePage = () => {
           </button>
         </div>
       )}
+
+      {/* 引薦稿 Dialog */}
+      {referralDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={closeReferralDialog} />
+          <div className="relative z-10 w-full max-w-2xl mx-4 bg-white rounded-lg shadow-xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">建立引薦</h3>
+              <button onClick={closeReferralDialog} className="text-gray-500 hover:text-gray-700">×</button>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div className="bg-gray-50 rounded-md p-3 text-sm text-gray-700">
+                目標會員：
+                <span className="font-medium text-gray-900 ml-1">{selectedMember?.name || '未知'}</span>
+                {selectedMember && (
+                  <span className="ml-2 text-gray-600">{[selectedMember.company, selectedMember.title].filter(Boolean).join(' / ')}</span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">引薦價值（可選，數字）</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={referralAmount}
+                    onChange={(e) => setReferralAmount(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="例如 5000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">主旨（可選）</label>
+                  <input
+                    type="text"
+                    value={referralSubject}
+                    onChange={(e) => setReferralSubject(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="例如：合作引薦與自我介紹"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm text-gray-600">訊息內容（必要）</label>
+                  <button
+                    type="button"
+                    onClick={() => generateReferralDraft(selectedMember)}
+                    disabled={generatingDraft}
+                    className="text-xs px-2 py-1 rounded border border-yellow-400 text-yellow-700 hover:bg-yellow-50 disabled:opacity-50"
+                  >
+                    {generatingDraft ? '生成中...' : '重新生成草稿'}
+                  </button>
+                </div>
+                <textarea
+                  rows={8}
+                  value={referralMessage}
+                  onChange={(e) => setReferralMessage(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                  placeholder="輸入或編輯引薦訊息內容..."
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t flex items-center justify-end gap-3">
+              <button onClick={closeReferralDialog} className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">取消</button>
+              <button
+                onClick={submitReferral}
+                disabled={creatingReferral}
+                className="btn-gold px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {creatingReferral ? '送出中...' : '送出引薦'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
