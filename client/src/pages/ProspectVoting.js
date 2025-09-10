@@ -207,8 +207,8 @@ const ProspectVoting = () => {
           <p className="text-gray-300">審核待投票的申請人資料</p>
         </div>
 
-      {/* 標籤切換 */}
-      <div className="mb-6">
+        {/* 標籤切換 */}
+        <div className="mb-6">
         <div className="border-b border-yellow-500/30">
           <nav className="-mb-px flex space-x-8">
             <button
@@ -233,14 +233,14 @@ const ProspectVoting = () => {
             </button>
           </nav>
         </div>
-      </div>
-
-      {filteredProspects.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-lg">目前沒有待投票的申請</div>
         </div>
-      ) : (
-        <div className="space-y-6">
+
+        {filteredProspects.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-lg">目前沒有待投票的申請</div>
+          </div>
+        ) : (
+          <div className="space-y-6">
           {filteredProspects.map((prospect) => (
             <div key={prospect.id} className="bg-gradient-to-br from-black/85 to-gray-900/85 rounded-lg shadow-sm border border-yellow-500/30 overflow-hidden">
               {/* 申請人基本資訊 */}
@@ -529,8 +529,9 @@ const ProspectVoting = () => {
               </div>
             </div>
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* 投票模態框 */}
       {showVoteModal && selectedProspect && (
@@ -565,61 +566,61 @@ const ProspectVoting = () => {
                         {selectedProspect.parsedContactInfo.memberName && (
                           <div className="bg-white p-3 rounded border">
                             <div className="text-xs text-gray-400 font-medium">會員姓名</div>
-                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.memberName}</div>
+                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.memberName}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.referralChapter && (
                           <div className="bg-white p-3 rounded border">
                             <div className="text-xs text-gray-400 font-medium">引薦分會</div>
-                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.referralChapter}</div>
+                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.referralChapter}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.referralPartner && (
                           <div className="bg-white p-3 rounded border">
                             <div className="text-xs text-gray-400 font-medium">引薦夥伴</div>
-                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.referralPartner}</div>
+                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.referralPartner}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.primaryProfession && (
                           <div className="bg-white p-3 rounded border">
                             <div className="text-xs text-gray-400 font-medium">主要專業</div>
-                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.primaryProfession}</div>
+                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.primaryProfession}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.interviewer && (
                           <div className="bg-white p-3 rounded border">
                             <div className="text-xs text-gray-400 font-medium">面談人員</div>
-                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.interviewer}</div>
+                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.interviewer}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.interviewDate && (
                           <div className="bg-white p-3 rounded border">
                             <div className="text-xs text-gray-400 font-medium">面談日期</div>
-                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.interviewDate}</div>
+                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.interviewDate}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.companyInfo?.capital && (
                           <div className="bg-white p-3 rounded border">
                             <div className="text-xs text-gray-400 font-medium">資本額</div>
-                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.companyInfo.capital}</div>
+                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.companyInfo.capital}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.companyInfo?.established && (
                           <div className="bg-white p-3 rounded border">
                             <div className="text-xs text-gray-400 font-medium">成立時間</div>
-                            <div className="text-gray-100 font-semibold">{selectedProspect.parsedContactInfo.companyInfo.established}</div>
+                            <div className="text-gray-900 font-semibold">{selectedProspect.parsedContactInfo.companyInfo.established}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.interview?.mainBusiness && (
                           <div className="bg-white p-3 rounded border col-span-full">
                             <div className="text-xs text-gray-400 font-medium">主要業務</div>
-                            <div className="text-gray-100">{selectedProspect.parsedContactInfo.interview.mainBusiness}</div>
+                            <div className="text-gray-900">{selectedProspect.parsedContactInfo.interview.mainBusiness}</div>
                           </div>
                         )}
                         {selectedProspect.parsedContactInfo.interview?.bciExpectations && (
                           <div className="bg-white p-3 rounded border col-span-full">
                             <div className="text-xs text-gray-400 font-medium">GBC期望</div>
-                            <div className="text-gray-100">{selectedProspect.parsedContactInfo.interview.bciExpectations}</div>
+                            <div className="text-gray-900">{selectedProspect.parsedContactInfo.interview.bciExpectations}</div>
                           </div>
                         )}
                       </>
