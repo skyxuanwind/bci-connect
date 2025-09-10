@@ -200,11 +200,12 @@ const ProspectVoting = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-yellow-100 mb-2">商訪專區</h1>
-        <p className="text-gray-300">審核待投票的申請人資料</p>
-      </div>
+    <div className="min-h-screen bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-yellow-400 mb-2">商訪專區</h1>
+          <p className="text-gray-300">審核待投票的申請人資料</p>
+        </div>
 
       {/* 標籤切換 */}
       <div className="mb-6">
@@ -243,10 +244,10 @@ const ProspectVoting = () => {
           {filteredProspects.map((prospect) => (
             <div key={prospect.id} className="bg-gradient-to-br from-black/85 to-gray-900/85 rounded-lg shadow-sm border border-yellow-500/30 overflow-hidden">
               {/* 申請人基本資訊 */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+              <div className="bg-gray-800 border-b border-yellow-500/30 px-6 py-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-yellow-100 mb-2">{prospect.name}</h3>
+                    <h3 className="text-xl font-bold text-yellow-400 mb-2">{prospect.name}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {prospect.company && (
                         <div>
@@ -270,24 +271,24 @@ const ProspectVoting = () => {
                 {/* 統計資訊 */}
                 <div className="mb-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">創建者</div>
+                    <div className="bg-gray-700 p-3 rounded-lg border border-yellow-500/30">
+                      <div className="text-xs font-medium text-yellow-400 uppercase tracking-wide">創建者</div>
                       <div className="text-sm font-semibold text-gray-100 mt-1">{prospect.createdBy}</div>
                     </div>
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">創建時間</div>
+                    <div className="bg-gray-700 p-3 rounded-lg border border-yellow-500/30">
+                      <div className="text-xs font-medium text-yellow-400 uppercase tracking-wide">創建時間</div>
                       <div className="text-sm font-semibold text-gray-100 mt-1">{new Date(prospect.createdAt).toLocaleDateString('zh-TW')}</div>
                     </div>
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">投票統計</div>
+                    <div className="bg-gray-700 p-3 rounded-lg border border-yellow-500/30">
+                      <div className="text-xs font-medium text-yellow-400 uppercase tracking-wide mb-2">投票統計</div>
                       <div className="flex justify-between text-sm">
                         <span className="text-green-400 font-semibold">✓ {prospect.approveVotes}</span>
                         <span className="text-gray-400">總計 {prospect.totalVotes}</span>
                       </div>
                       {prospect.totalVotes > 0 && (
-                        <div className="mt-2 bg-gray-200 rounded-full h-2">
+                        <div className="mt-2 bg-gray-600 rounded-full h-2">
                           <div 
-                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                            className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
                             style={{width: `${(prospect.approveVotes / prospect.totalVotes) * 100}%`}}
                           ></div>
                         </div>
@@ -432,7 +433,7 @@ const ProspectVoting = () => {
                               {prospect.bciExpectations && (
                                 <div className="bg-white p-3 rounded border">
                                   <div className="text-xs text-gray-400 font-medium">GBC期望</div>
-                    <div className="text-sm text-gray-100">{prospect.bciExpectations}</div>
+                                  <div className="text-sm text-gray-100">{prospect.bciExpectations}</div>
                                 </div>
                               )}
                               {prospect.pastAchievements && (
@@ -618,7 +619,7 @@ const ProspectVoting = () => {
                         {selectedProspect.parsedContactInfo.interview?.bciExpectations && (
                           <div className="bg-white p-3 rounded border col-span-full">
                             <div className="text-xs text-gray-400 font-medium">GBC期望</div>
-                    <div className="text-gray-100">{selectedProspect.parsedContactInfo.interview.bciExpectations}</div>
+                            <div className="text-gray-100">{selectedProspect.parsedContactInfo.interview.bciExpectations}</div>
                           </div>
                         )}
                       </>

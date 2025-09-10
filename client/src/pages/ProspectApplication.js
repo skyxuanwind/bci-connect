@@ -935,37 +935,38 @@ const ProspectApplication = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">商訪申請表</h1>
-        <p className="text-gray-600">請詳細填寫以下資訊，系統將協助進行公司查詢和 AI 智能分析</p>
-      </div>
+    <div className="min-h-screen bg-gray-900 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-yellow-400 mb-2">商訪申請表</h1>
+          <p className="text-gray-300">請詳細填寫以下資訊，系統將協助進行公司查詢和 AI 智能分析</p>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="bg-white shadow rounded-lg p-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="bg-gray-800 border border-yellow-500 shadow-lg rounded-lg p-6">
           {/* 一、申請會員基本資料 */}
-          <div className="border-b border-gray-200 pb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">一、申請會員基本資料</h2>
+          <div className="border-b border-yellow-500 pb-8">
+            <h2 className="text-xl font-semibold text-yellow-400 mb-6">一、申請會員基本資料</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">申請會員姓名 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">申請會員姓名 *</label>
                 <input
                   type="text"
                   name="memberName"
                   value={formData.memberName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">引薦分會 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">引薦分會 *</label>
                 <select
                   name="referralChapter"
                   value={formData.referralChapter}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 >
                   <option value="">請選擇分會</option>
@@ -978,46 +979,46 @@ const ProspectApplication = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">引薦夥伴</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">引薦夥伴</label>
                 <input
                   type="text"
                   name="referralPartner"
                   value={formData.referralPartner}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">主要專業 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">主要專業 *</label>
                 <input
                   type="text"
                   name="primaryProfession"
                   value={formData.primaryProfession}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">次要專業</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">次要專業</label>
                 <input
                   type="text"
                   name="secondaryProfession"
                   value={formData.secondaryProfession}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">面談人 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">面談人 *</label>
                 <select
                   name="interviewer"
                   value={formData.interviewer}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 >
                   <option value="">請選擇面談人</option>
@@ -1030,13 +1031,13 @@ const ProspectApplication = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">面談日期 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">面談日期 *</label>
                 <input
                   type="date"
                   name="interviewDate"
                   value={formData.interviewDate}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 />
               </div>
@@ -1044,16 +1045,16 @@ const ProspectApplication = () => {
           </div>
 
           {/* 二、公司基本資料 */}
-          <div className="border-b border-gray-200 pb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">二、公司基本資料</h2>
+          <div className="border-b border-yellow-500 pb-8">
+            <h2 className="text-xl font-semibold text-yellow-400 mb-6">二、公司基本資料</h2>
             
             {/* 公司查詢功能 */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="bg-gray-800 border border-yellow-500 rounded-lg p-4 mb-6">
               <div className="flex items-center mb-3">
-                <MagnifyingGlassIcon className="h-5 w-5 text-blue-600 mr-2" />
-                <h3 className="text-lg font-medium text-blue-900">智能公司查詢</h3>
+                <MagnifyingGlassIcon className="h-5 w-5 text-yellow-400 mr-2" />
+                <h3 className="text-lg font-medium text-yellow-400">智能公司查詢</h3>
               </div>
-              <p className="text-blue-700 text-sm mb-4">
+              <p className="text-gray-300 text-sm mb-4">
                 輸入統一編號可自動帶入公司名稱，或輸入公司名稱可自動帶入統一編號
               </p>
               
@@ -1068,13 +1069,13 @@ const ProspectApplication = () => {
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookupCompanyByTaxId(); } }}
                       onBlur={() => { if (formData.companyTaxId && /^\d{8}$/.test(formData.companyTaxId.trim())) lookupCompanyByTaxId(); }}
                       placeholder="請輸入統一編號"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
                     <button
                       type="button"
                       onClick={lookupCompanyByTaxId}
                       disabled={companyLookupLoading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
+                      className="px-4 py-2 bg-yellow-600 text-black rounded-md hover:bg-yellow-500 disabled:bg-gray-600 flex items-center"
                     >
                       {companyLookupLoading ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -1095,13 +1096,13 @@ const ProspectApplication = () => {
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookupCompanyByName(); } }}
                       onBlur={() => { if (formData.companyName && formData.companyName.trim().length >= 2) lookupCompanyByName(); }}
                       placeholder="請輸入公司名稱"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
                     <button
                       type="button"
                       onClick={lookupCompanyByName}
                       disabled={companyLookupLoading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
+                      className="px-4 py-2 bg-yellow-600 text-black rounded-md hover:bg-yellow-500 disabled:bg-gray-600 flex items-center"
                     >
                       {companyLookupLoading ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -1115,12 +1116,12 @@ const ProspectApplication = () => {
               
               {/* 查詢結果顯示 */}
               {companyLookupResult && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <div className="mt-4 p-3 bg-green-900 border border-green-500 rounded-md">
                   <div className="flex items-center mb-2">
-                    <CheckCircleIcon className="h-5 w-5 text-green-600 mr-2" />
-                    <span className="text-green-800 font-medium">找到公司資料</span>
+                    <CheckCircleIcon className="h-5 w-5 text-green-400 mr-2" />
+                    <span className="text-green-300 font-medium">找到公司資料</span>
                   </div>
-                  <div className="text-sm text-green-700">
+                  <div className="text-sm text-green-200">
                     <p><strong>公司名稱：</strong>{companyLookupResult.companyName || companyLookupResult.Company_Name || companyLookupResult.name}</p>
                     <p><strong>統一編號：</strong>{companyLookupResult.unifiedBusinessNumber || companyLookupResult.Business_Accounting_NO || companyLookupResult.taxId}</p>
                     {(companyLookupResult.status || companyLookupResult.Company_Status) && (
@@ -1131,10 +1132,10 @@ const ProspectApplication = () => {
               )}
               
               {companyLookupError && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <div className="mt-4 p-3 bg-red-900 border border-red-500 rounded-md">
                   <div className="flex items-center">
-                    <ExclamationTriangleIcon className="h-5 w-5 text-red-600 mr-2" />
-                    <span className="text-red-800">{companyLookupError}</span>
+                    <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
+                    <span className="text-red-300">{companyLookupError}</span>
                   </div>
                 </div>
               )}
@@ -1142,75 +1143,75 @@ const ProspectApplication = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">公司名稱 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">公司名稱 *</label>
                 <input
                   type="text"
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">公司統編 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">公司統編 *</label>
                 <input
                   type="text"
                   name="companyTaxId"
                   value={formData.companyTaxId}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">公司資本額 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">公司資本額 *</label>
                 <input
                   type="text"
                   name="companyCapital"
                   value={formData.companyCapital}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   placeholder="例：新台幣 1,000 萬元"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">公司成立時間 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">公司成立時間 *</label>
                 <input
                   type="date"
                   name="companyEstablished"
                   value={formData.companyEstablished}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">個人專業年資 *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">個人專業年資 *</label>
                 <input
                   type="text"
                   name="professionalExperience"
                   value={formData.professionalExperience}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   placeholder="例：10年"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">公司認證/作品</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">公司認證/作品</label>
                 <textarea
                   name="companyCertifications"
                   value={formData.companyCertifications}
                   onChange={handleInputChange}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   placeholder="請描述公司相關認證或代表性作品"
                 />
               </div>
@@ -1218,21 +1219,21 @@ const ProspectApplication = () => {
           </div>
 
           {/* AI 智能分析 */}
-          <div className="border-b border-gray-200 pb-8">
+          <div className="border-b border-yellow-500 pb-8">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center">
-                <SparklesIcon className="h-6 w-6 text-purple-600 mr-2" />
-                <h2 className="text-xl font-semibold text-gray-900">AI 智能分析</h2>
+                <SparklesIcon className="h-6 w-6 text-yellow-400 mr-2" />
+                <h2 className="text-xl font-semibold text-yellow-400">AI 智能分析</h2>
               </div>
               <button
                 type="button"
                 onClick={performAiAnalysis}
                 disabled={aiAnalysisLoading || !formData.companyName}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 flex items-center"
+                className="px-4 py-2 bg-yellow-600 text-black rounded-md hover:bg-yellow-500 disabled:bg-gray-600 flex items-center"
               >
                 {aiAnalysisLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
                     分析中...
                   </>
                 ) : (
@@ -1244,29 +1245,29 @@ const ProspectApplication = () => {
               </button>
             </div>
             
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+            <div className="bg-gray-800 border border-yellow-500 rounded-lg p-4 mb-4">
               <div className="flex items-center mb-2">
-                <InformationCircleIcon className="h-5 w-5 text-purple-600 mr-2" />
-                <span className="text-purple-800 font-medium">AI 分析功能說明</span>
+                <InformationCircleIcon className="h-5 w-5 text-yellow-400 mr-2" />
+                <span className="text-yellow-400 font-medium">AI 分析功能說明</span>
               </div>
-              <p className="text-purple-700 text-sm">
+              <p className="text-gray-300 text-sm">
                 系統將自動分析公司的市場聲譽、產業衝突、GBC 契合度，並透過司法院判決書查詢評估法律風險，為入會決策提供參考。
               </p>
             </div>
             
             {/* AI 分析進度條 */}
             {aiAnalysisLoading && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="bg-gray-800 border border-yellow-500 rounded-lg p-4 mb-4">
                 <div className="flex items-center mb-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
-                  <span className="text-blue-800 font-medium">快速分析進行中</span>
-                  <span className="ml-auto text-blue-600 text-sm">{aiAnalysisProgress}%</span>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-400 mr-2"></div>
+                  <span className="text-yellow-400 font-medium">快速分析進行中</span>
+                  <span className="ml-auto text-yellow-400 text-sm">{aiAnalysisProgress}%</span>
                 </div>
                 
                 {/* 進度條 */}
-                <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
+                <div className="w-full bg-gray-600 rounded-full h-2 mb-3">
                   <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
+                    className="bg-yellow-400 h-2 rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${aiAnalysisProgress}%` }}
                   ></div>
                 </div>
@@ -1274,24 +1275,24 @@ const ProspectApplication = () => {
                 {/* 當前階段 */}
                 {aiAnalysisStage && (
                   <div className="mb-2">
-                    <p className="text-blue-800 font-medium text-sm">{aiAnalysisStage}</p>
+                    <p className="text-yellow-400 font-medium text-sm">{aiAnalysisStage}</p>
                   </div>
                 )}
                 
                 {/* 詳細描述 */}
                 {aiAnalysisDetails && (
-                  <div className="bg-white bg-opacity-60 rounded-md p-3 border border-blue-100">
-                    <p className="text-blue-700 text-sm leading-relaxed">{aiAnalysisDetails}</p>
+                  <div className="bg-gray-700 bg-opacity-60 rounded-md p-3 border border-gray-600">
+                    <p className="text-gray-300 text-sm leading-relaxed">{aiAnalysisDetails}</p>
                   </div>
                 )}
               </div>
             )}
             
             {aiAnalysisError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="bg-red-900 border border-red-500 rounded-lg p-4 mb-4">
                 <div className="flex items-center">
-                  <ExclamationTriangleIcon className="h-5 w-5 text-red-600 mr-2" />
-                  <span className="text-red-800">{aiAnalysisError}</span>
+                  <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
+                  <span className="text-red-300">{aiAnalysisError}</span>
                 </div>
               </div>
             )}
@@ -1851,18 +1852,18 @@ const ProspectApplication = () => {
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="px-6 py-2 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700"
           >
             取消
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
+            className="px-6 py-2 bg-yellow-600 text-black rounded-md hover:bg-yellow-500 disabled:bg-gray-600 flex items-center"
           >
             {isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
                 提交中...
               </>
             ) : (
@@ -1871,6 +1872,7 @@ const ProspectApplication = () => {
           </button>
         </div>
       </form>
+      </div>
     </div>
   );
 };

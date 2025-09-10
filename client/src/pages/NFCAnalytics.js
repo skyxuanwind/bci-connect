@@ -51,7 +51,8 @@ const NFCAnalytics = () => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('zh-TW', {
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'Asia/Taipei'
     });
   };
 

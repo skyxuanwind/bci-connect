@@ -86,7 +86,7 @@ const CheckInScanner = () => {
             user: successPayload.user,
             event: successPayload.event,
             method: 'NFC（Gateway）',
-            timestamp: new Date().toLocaleString('zh-TW')
+            timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
           });
           setShowSuccessModal(true);
   
@@ -240,7 +240,7 @@ const CheckInScanner = () => {
         user: response.data.user,
         event: response.data.event,
         method: 'QR Code',
-        timestamp: new Date().toLocaleString('zh-TW')
+        timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
       });
       setShowSuccessModal(true);
       
@@ -300,7 +300,7 @@ const CheckInScanner = () => {
         user: response.data.user,
         event: response.data.event,
         method: 'NFC 名片',
-        timestamp: new Date().toLocaleString('zh-TW')
+        timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
       });
       setShowSuccessModal(true);
 
@@ -500,7 +500,8 @@ const CheckInScanner = () => {
                                       month: '2-digit',
                                       day: '2-digit',
                                       hour: '2-digit',
-                                      minute: '2-digit'
+                                      minute: '2-digit',
+                                      timeZone: 'Asia/Taipei'
                                     })}
                                   </div>
                                 </div>

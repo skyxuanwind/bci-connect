@@ -101,7 +101,8 @@ const EventDetail = () => {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      weekday: 'long'
+      weekday: 'long',
+      timeZone: 'Asia/Taipei'
     });
   };
 
@@ -367,7 +368,7 @@ const EventDetail = () => {
                             {attendee.title || '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(attendee.registration_date).toLocaleString('zh-TW')}
+                            {new Date(attendee.registration_date).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                           </td>
                         </tr>
                       ))}

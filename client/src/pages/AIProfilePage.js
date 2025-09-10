@@ -83,7 +83,7 @@ const AIProfilePage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '尚未更新';
-    return new Date(dateString).toLocaleString('zh-TW');
+    return new Date(dateString).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
   };
 
   const getCompletenessColor = (completeness) => {

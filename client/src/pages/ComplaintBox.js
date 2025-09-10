@@ -201,7 +201,7 @@ const ComplaintBox = () => {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  className="px-6 py-2 bg-black border border-yellow-500 text-yellow-400 rounded-md hover:bg-yellow-500 hover:text-black transition-colors font-medium"
                 >
                   提交申訴
                 </button>
@@ -227,12 +227,12 @@ const ComplaintBox = () => {
 
   // 核心查看申訴頁面
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 頁面標題 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">申訴信箱管理</h1>
-          <p className="mt-2 text-gray-600">查看和管理會員申訴</p>
+          <h1 className="text-3xl font-bold text-yellow-400">申訴信箱管理</h1>
+          <p className="mt-2 text-gray-300">查看和管理會員申訴</p>
         </div>
 
         {/* 操作按鈕 */}
@@ -241,17 +241,17 @@ const ComplaintBox = () => {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 bg-black border border-yellow-500 text-yellow-400 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 hover:bg-gray-900 transition-colors"
             >
-              <option value="all">全部申訴</option>
-              <option value="unread">未讀</option>
-              <option value="read">已讀</option>
+              <option value="all" className="bg-black text-yellow-400">全部申訴</option>
+              <option value="unread" className="bg-black text-yellow-400">未讀</option>
+              <option value="read" className="bg-black text-yellow-400">已讀</option>
             </select>
           </div>
           
           <button
             onClick={() => setShowSubmitModal(true)}
-            className="btn-primary"
+            className="px-4 py-2 bg-black border border-yellow-500 text-yellow-400 rounded-md hover:bg-yellow-500 hover:text-black transition-colors font-medium"
           >
             提交申訴
           </button>
@@ -259,44 +259,44 @@ const ComplaintBox = () => {
 
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-gray-800 border border-yellow-500/30 rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-2 bg-yellow-500/20 rounded-lg">
+                <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">總申訴數</p>
-                <p className="text-2xl font-bold text-blue-600">{statistics.totalComplaints}</p>
+                <p className="text-sm font-medium text-gray-300">總申訴數</p>
+                <p className="text-2xl font-bold text-yellow-400">{statistics.totalComplaints}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-gray-800 border border-yellow-500/30 rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">未讀申訴</p>
-                <p className="text-2xl font-bold text-red-600">{statistics.unreadCount}</p>
+                <p className="text-sm font-medium text-gray-300">未讀申訴</p>
+                <p className="text-2xl font-bold text-red-400">{statistics.unreadCount}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-gray-800 border border-yellow-500/30 rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">已讀申訴</p>
-                <p className="text-2xl font-bold text-green-600">{statistics.readCount}</p>
+                <p className="text-sm font-medium text-gray-300">已讀申訴</p>
+                <p className="text-2xl font-bold text-green-400">{statistics.readCount}</p>
               </div>
             </div>
           </div>
@@ -305,9 +305,9 @@ const ComplaintBox = () => {
         </div>
 
         {/* 申訴列表 */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">申訴列表</h2>
+        <div className="bg-gray-800 border border-yellow-500/30 rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-yellow-500/30">
+            <h2 className="text-lg font-semibold text-yellow-400">申訴列表</h2>
           </div>
           
           {complaints.length === 0 ? (
@@ -315,7 +315,7 @@ const ComplaintBox = () => {
               <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-gray-500">目前沒有申訴記錄</p>
+              <p className="text-gray-400">目前沒有申訴記錄</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
@@ -407,7 +407,7 @@ const ComplaintBox = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-black border border-yellow-500 text-yellow-400 rounded-md hover:bg-yellow-500 hover:text-black transition-colors font-medium"
                   >
                     提交
                   </button>

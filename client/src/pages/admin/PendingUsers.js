@@ -90,7 +90,8 @@ const PendingUsers = () => {
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Asia/Taipei'
     });
   };
 

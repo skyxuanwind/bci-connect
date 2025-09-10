@@ -273,7 +273,8 @@ const EventManagement = () => {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Asia/Taipei'
     });
   };
 
@@ -448,14 +449,14 @@ const EventManagement = () => {
 
       {/* Create Event Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-6 border border-gold-600 w-96 shadow-2xl rounded-lg bg-gradient-to-br from-primary-800 to-primary-900">
             <form onSubmit={handleCreateEvent}>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">創建新活動</h3>
+              <h3 className="text-xl font-semibold text-gold-100 mb-6 text-center border-b border-gold-600 pb-3">創建新活動</h3>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="form-label">
                     活動名稱 *
                   </label>
                   <input
@@ -463,24 +464,24 @@ const EventManagement = () => {
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="form-input"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="form-label">
                     活動描述
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     rows={3}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="form-input"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="form-label">
                     活動日期時間 *
                   </label>
                   <input
@@ -488,24 +489,24 @@ const EventManagement = () => {
                     required
                     value={formData.event_date}
                     onChange={(e) => setFormData({...formData, event_date: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="form-input"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="form-label">
                     活動地點
                   </label>
                   <input
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="form-input"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="form-label">
                     最大報名人數 (0 = 無限制)
                   </label>
                   <input
@@ -513,18 +514,18 @@ const EventManagement = () => {
                     min="0"
                     value={formData.max_attendees}
                     onChange={(e) => setFormData({...formData, max_attendees: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="form-input"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="form-label">
                     活動標籤
                   </label>
                   <select
                     value={formData.tag || ''}
                     onChange={(e) => setFormData({...formData, tag: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="form-input"
                   >
                     <option value="">請選擇標籤</option>
                     {eventTags.map((tag, index) => (
@@ -534,23 +535,7 @@ const EventManagement = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    活動標籤
-                  </label>
-                  <select
-                    value={formData.tag || ''}
-                    onChange={(e) => setFormData({...formData, tag: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  >
-                    <option value="">請選擇標籤</option>
-                    {eventTags.map((tag, index) => (
-                      <option key={index} value={tag}>{tag}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="form-label">
                     活動海報
                   </label>
                   <div className="mt-1">
@@ -570,7 +555,7 @@ const EventManagement = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
+                      <div className="border-2 border-dashed border-gold-600 rounded-lg p-6 text-center bg-primary-700/50 hover:bg-primary-700/70 transition-colors">
                         <input
                           type="file"
                           accept="image/*"
@@ -582,11 +567,11 @@ const EventManagement = () => {
                           htmlFor="poster-upload"
                           className="cursor-pointer flex flex-col items-center"
                         >
-                          <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-8 h-8 text-gold-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                           </svg>
-                          <span className="text-sm text-gray-500">點擊上傳圖片</span>
-                          <span className="text-xs text-gray-400 mt-1">支援 JPG, PNG 格式，最大 5MB</span>
+                          <span className="text-sm text-gold-200">點擊上傳圖片</span>
+                          <span className="text-xs text-gold-300 mt-1">支援 JPG, PNG 格式，最大 5MB</span>
                         </label>
                       </div>
                     )}
@@ -598,13 +583,13 @@ const EventManagement = () => {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  className="px-4 py-2 bg-primary-600 text-gold-200 border border-gold-600 rounded-lg hover:bg-primary-500 transition-colors"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-gradient-to-r from-gold-500 to-gold-600 text-primary-900 font-semibold rounded-lg hover:from-gold-400 hover:to-gold-500 transition-all duration-200 shadow-lg"
                 >
                   創建
                 </button>
