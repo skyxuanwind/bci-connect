@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { sendApprovalNotification } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -83,14 +84,29 @@ router.put('/approve-user/:id', async (req, res) => {
       [parseInt(membershipLevel), qrCodeUrl, id]
     );
 
+    const user = result.rows[0];
+
+    // 發送審核通過通知郵件
+    try {
+      await sendApprovalNotification({
+        email: user.email,
+        name: user.name,
+        membershipLevel: user.membership_level
+      });
+      console.log(`Approval notification email sent to ${user.email}`);
+    } catch (emailError) {
+      console.error('Failed to send approval notification email:', emailError);
+      // 不因為郵件發送失敗而影響審核流程
+    }
+
     res.json({
-      message: '用戶審核通過',
+      message: '用戶審核通過，通知郵件已發送',
       user: {
-        id: result.rows[0].id,
-        name: result.rows[0].name,
-        email: result.rows[0].email,
-        membershipLevel: result.rows[0].membership_level,
-        status: result.rows[0].status
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        membershipLevel: user.membership_level,
+        status: user.status
       }
     });
 

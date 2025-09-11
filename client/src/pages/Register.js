@@ -552,9 +552,9 @@ const Register = () => {
         </div>
 
         {/* Notice */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-yellow-800 mb-2">註冊須知</h3>
-          <ul className="text-xs text-yellow-700 space-y-1">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gold-100 mb-2">註冊須知</h3>
+          <ul className="text-xs text-gold-300 space-y-1">
             <li>• 註冊後需等待管理員審核，審核通過後才能正式使用系統</li>
             <li>• 請確保提供的資訊真實有效，以便審核作業</li>
             <li>• 審核結果將透過電子郵件通知</li>

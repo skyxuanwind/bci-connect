@@ -537,6 +537,99 @@ const sendPasswordResetEmail = async ({ email, name, resetToken }) => {
   }
 };
 
+// 發送審核通過通知郵件
+const sendApprovalNotification = async ({ email, name, membershipLevel }) => {
+  try {
+    const transporter = createTransporter();
+    
+    // 驗證 SMTP 連接
+    await transporter.verify();
+    console.log('SMTP server connection verified successfully');
+    
+    const membershipLevelText = {
+      1: '核心會員 (Level 1)',
+      2: '一般會員 (Level 2)', 
+      3: '準會員 (Level 3)'
+    }[membershipLevel] || '會員';
+    
+    const mailOptions = {
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
+      to: email,
+      bcc: process.env.SMTP_BCC || process.env.SMTP_USER,
+      subject: 'GBC Connect - 帳號審核通過通知',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #1a1a1a;">
+          <div style="background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%); padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border: 1px solid #d4af37;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #d4af37; margin: 0; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">GBC Connect</h1>
+              <p style="color: #f5f5dc; margin: 5px 0 0 0; font-size: 14px;">商務菁英會</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <p style="color: #f5f5dc; font-size: 18px; line-height: 1.6;">親愛的 ${name}，</p>
+              <p style="color: #f5f5dc; font-size: 16px; line-height: 1.6;">恭喜您！您的 GBC 商務菁英會帳號已通過審核。</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <div style="display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%); color: #1a1a1a; padding: 20px 40px; border-radius: 10px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);">
+                ✅ 審核通過
+              </div>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #2c2c2c 0%, #1f1f1f 100%); border: 1px solid #d4af37; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #d4af37; margin: 0 0 15px 0; font-size: 16px;">您的會員資訊：</h3>
+              <ul style="color: #f5f5dc; margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li>會員等級：<strong style="color: #d4af37;">${membershipLevelText}</strong></li>
+                <li>帳號狀態：<strong style="color: #00ff00;">已啟用</strong></li>
+                <li>現在您可以正常使用系統所有功能</li>
+              </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.CLIENT_URL || 'https://bci-connect.onrender.com'}/login" 
+                 style="display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%); color: #1a1a1a; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);">
+                立即登入系統
+              </a>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #d4af37;">
+              <p style="color: #f5f5dc; font-size: 14px; line-height: 1.6;">歡迎加入 GBC 商務菁英會大家庭！如有任何問題，請隨時與我們聯繫。</p>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+              <p style="color: #888; font-size: 12px;">此郵件由 GBC Connect 系統自動發送，請勿回覆。</p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+    
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Approval notification email sent successfully:', {
+        accepted: info.accepted,
+        rejected: info.rejected,
+        response: info.response,
+        messageId: info.messageId
+      });
+      
+      return {
+        success: true,
+        messageId: info.messageId,
+        accepted: info.accepted,
+        rejected: info.rejected
+      };
+    } catch (sendError) {
+      console.error('Failed to send approval notification email:', sendError);
+      throw sendError;
+    }
+    
+  } catch (error) {
+    console.error('Approval notification email service error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   generateVerificationCode,
   sendEmailVerification,
@@ -544,5 +637,6 @@ module.exports = {
   sendReferralNotification,
   sendMeetingNotification,
   sendPasswordResetEmail,
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendApprovalNotification
 };
