@@ -230,12 +230,12 @@ router.post('/register', upload.single('avatar'), async (req, res) => {  try {
     }
 
     // 檢查Email是否已通過驗證
-    const [emailVerifications] = await pool.execute(
-      'SELECT * FROM email_verifications WHERE email = ? AND is_verified = TRUE',
+    const emailVerifications = await pool.query(
+      'SELECT * FROM email_verifications WHERE email = $1 AND is_verified = TRUE',
       [email]
     );
     
-    if (emailVerifications.length === 0) {
+    if (emailVerifications.rows.length === 0) {
       return res.status(400).json({ 
         success: false, 
         message: '請先完成Email驗證' 
@@ -326,8 +326,8 @@ router.post('/register', upload.single('avatar'), async (req, res) => {  try {
 
     // 清理Email驗證記錄
     try {
-      await pool.execute(
-        'DELETE FROM email_verifications WHERE email = ?',
+      await pool.query(
+        'DELETE FROM email_verifications WHERE email = $1',
         [email]
       );
     } catch (cleanupError) {
