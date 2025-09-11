@@ -37,8 +37,9 @@ const sendEmailVerification = async ({ email, name, verificationCode }) => {
     console.log('SMTP server connection verified successfully');
     
     const mailOptions = {
-      from: `"GBC商務菁英會" <gbc.notice@gmail.com>`,
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
       to: email,
+      bcc: process.env.SMTP_BCC || process.env.SMTP_USER,
       subject: 'GBC Connect - Email驗證碼',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -378,8 +379,9 @@ const sendWelcomeEmail = async ({ email, name }) => {
     }
 
     const mailOptions = {
-      from: process.env.SMTP_USER,
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
       to: email,
+      bcc: process.env.SMTP_BCC || process.env.SMTP_USER,
       subject: 'GBC Connect - 歡迎加入！',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -444,8 +446,9 @@ const sendPasswordResetEmail = async ({ email, name, resetToken }) => {
   const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
   const mailOptions = {
-    from: process.env.SMTP_USER,
+    from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
     to: email,
+    bcc: process.env.SMTP_BCC || process.env.SMTP_USER,
     subject: 'GBC Connect - 密碼重置請求',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
