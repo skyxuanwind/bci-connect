@@ -133,103 +133,103 @@ const ReferralSystem = () => {
   // 檢查用戶權限
   if (!user || user.membershipLevel > 3) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-primary-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">權限不足</h2>
-          <p className="text-gray-600">只有會員以上才能使用引薦系統</p>
+          <h2 className="text-2xl font-bold text-gold-100 mb-4">權限不足</h2>
+          <p className="text-gold-300">只有會員以上才能使用引薦系統</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-primary-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">會員引薦系統</h1>
-          <p className="mt-2 text-gray-600">管理您的引薦記錄和統計</p>
+          <h1 className="text-3xl font-bold text-gold-100">會員引薦系統</h1>
+          <p className="mt-2 text-gold-300">管理您的引薦記錄和統計</p>
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-4 bg-red-900 border border-red-700 text-red-300 px-4 py-3 rounded">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+          <div className="mb-4 bg-green-900 border border-green-700 text-green-300 px-4 py-3 rounded">
             {success}
           </div>
         )}
 
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-primary-800 border border-gold-600 overflow-hidden shadow-xl rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">收</span>
+                  <div className="w-8 h-8 bg-gold-600 rounded-md flex items-center justify-center">
+                    <span className="text-primary-900 text-sm font-medium">收</span>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">確認引薦總額</dt>
-                    <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.total_received)}</dd>
+                    <dt className="text-sm font-medium text-gold-300 truncate">確認引薦總額</dt>
+                    <dd className="text-lg font-medium text-gold-100">{formatCurrency(stats.total_received)}</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-primary-800 border border-gold-600 overflow-hidden shadow-xl rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">發</span>
+                  <div className="w-8 h-8 bg-gold-500 rounded-md flex items-center justify-center">
+                    <span className="text-primary-900 text-sm font-medium">發</span>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">發出引薦總額</dt>
-                    <dd className="text-lg font-medium text-gray-900">{formatCurrency(stats.total_sent)}</dd>
+                    <dt className="text-sm font-medium text-gold-300 truncate">發出引薦總額</dt>
+                    <dd className="text-lg font-medium text-gold-100">{formatCurrency(stats.total_sent)}</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-primary-800 border border-gold-600 overflow-hidden shadow-xl rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">{stats.pending_received}</span>
+                  <div className="w-8 h-8 bg-gold-400 rounded-md flex items-center justify-center">
+                    <span className="text-primary-900 text-sm font-medium">{stats.pending_received}</span>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">待處理引薦</dt>
-                    <dd className="text-lg font-medium text-gray-900">收到 {stats.pending_received} 筆</dd>
+                    <dt className="text-sm font-medium text-gold-300 truncate">待處理引薦</dt>
+                    <dd className="text-lg font-medium text-gold-100">收到 {stats.pending_received} 筆</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-primary-800 border border-gold-600 overflow-hidden shadow-xl rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">{stats.pending_sent}</span>
+                  <div className="w-8 h-8 bg-gold-300 rounded-md flex items-center justify-center">
+                    <span className="text-primary-900 text-sm font-medium">{stats.pending_sent}</span>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">等待回覆</dt>
-                    <dd className="text-lg font-medium text-gray-900">發出 {stats.pending_sent} 筆</dd>
+                    <dt className="text-sm font-medium text-gold-300 truncate">等待回覆</dt>
+                    <dd className="text-lg font-medium text-gold-100">發出 {stats.pending_sent} 筆</dd>
                   </dl>
                 </div>
               </div>
@@ -238,25 +238,25 @@ const ReferralSystem = () => {
         </div>
 
         {/* 標籤頁 */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="border-b border-gray-200">
+        <div className="bg-primary-800 shadow-lg rounded-lg border border-gold-600">
+          <div className="border-b border-gold-600">
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('create')}
                 className={`py-3 px-4 border-b-2 font-semibold text-base rounded-t-lg transition-all duration-200 ${
                   activeTab === 'create'
-                    ? 'border-green-500 text-green-700 bg-green-50 shadow-sm'
-                    : 'border-transparent text-gray-500 hover:text-green-600 hover:border-green-300 hover:bg-green-50'
+                    ? 'border-gold-500 text-gold-100 bg-gold-600 shadow-sm'
+                    : 'border-transparent text-gold-300 hover:text-gold-100 hover:border-gold-400 hover:bg-primary-700'
                 }`}
               >
-                🚀 發起引薦
+                發起引薦
               </button>
               <button
                 onClick={() => setActiveTab('received')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'received'
-                    ? 'border-gold-500 text-gold-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-gold-500 text-gold-100'
+                    : 'border-transparent text-gold-300 hover:text-gold-100 hover:border-gold-400'
                 }`}
               >
                 收到的引薦 ({stats.pending_received})
@@ -265,8 +265,8 @@ const ReferralSystem = () => {
                 onClick={() => setActiveTab('sent')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'sent'
-                    ? 'border-gold-500 text-gold-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-gold-500 text-gold-100'
+                    : 'border-transparent text-gold-300 hover:text-gold-100 hover:border-gold-400'
                 }`}
               >
                 發出的引薦
@@ -278,16 +278,16 @@ const ReferralSystem = () => {
             {/* 發起引薦標籤 */}
             {activeTab === 'create' && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">發起新引薦</h3>
+                <h3 className="text-lg font-medium text-gold-100 mb-4">發起新引薦</h3>
                 <form onSubmit={handleCreateReferral} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gold-300 mb-2">
                       選擇被引薦會員
                     </label>
                     <select
                       value={newReferral.referred_to_id}
                       onChange={(e) => setNewReferral({ ...newReferral, referred_to_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                      className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                       required
                     >
                       <option value="">請選擇會員</option>
@@ -300,7 +300,7 @@ const ReferralSystem = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gold-300 mb-2">
                       引薦金額
                     </label>
                     <input
@@ -309,21 +309,21 @@ const ReferralSystem = () => {
                       step="0.01"
                       value={newReferral.referral_amount}
                       onChange={(e) => setNewReferral({ ...newReferral, referral_amount: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                      className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                       placeholder="請輸入引薦金額"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gold-300 mb-2">
                       引薦說明
                     </label>
                     <textarea
                       value={newReferral.description}
                       onChange={(e) => setNewReferral({ ...newReferral, description: e.target.value })}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                      className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                       placeholder="請描述引薦的詳細內容..."
                     />
                   </div>
@@ -331,9 +331,9 @@ const ReferralSystem = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-50 transform hover:scale-105 transition-all duration-200"
+                    className="w-full bg-gradient-to-r from-gold-600 to-gold-700 text-primary-900 py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-gold-700 hover:to-gold-800 focus:outline-none focus:ring-4 focus:ring-gold-300 disabled:opacity-50 transform hover:scale-105 transition-all duration-200"
                   >
-                    {loading ? '🔄 發送中...' : '🚀 發起引薦'}
+                    {loading ? '發送中...' : '發起引薦'}
                   </button>
                 </form>
               </div>
@@ -342,39 +342,39 @@ const ReferralSystem = () => {
             {/* 收到的引薦標籤 */}
             {activeTab === 'received' && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">收到的引薦</h3>
+                <h3 className="text-lg font-medium text-gold-100 mb-4">收到的引薦</h3>
                 {receivedReferrals.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">暫無收到的引薦</p>
+                  <p className="text-gold-300 text-center py-8">暫無收到的引薦</p>
                 ) : (
                   <div className="space-y-4">
                     {receivedReferrals.map(referral => (
-                      <div key={referral.id} className="border border-gray-200 rounded-lg p-4">
+                      <div key={referral.id} className="border border-gold-600 bg-primary-700 rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className="font-medium text-gold-100">
                               來自：{referral.referrer_name} ({referral.referrer_company})
                             </h4>
-                            <p className="text-sm text-gray-600">金額：{formatCurrency(referral.referral_amount)}</p>
-                            <p className="text-sm text-gray-600">時間：{formatDate(referral.created_at)}</p>
+                            <p className="text-sm text-gold-300">金額：{formatCurrency(referral.referral_amount)}</p>
+                            <p className="text-sm text-gold-300">時間：{formatDate(referral.created_at)}</p>
                           </div>
                           <div className="flex items-center space-x-2">
                             {getStatusBadge(referral.status)}
                           </div>
                         </div>
                         {referral.description && (
-                          <p className="text-sm text-gray-700 mb-3">{referral.description}</p>
+                          <p className="text-sm text-gold-200 mb-3">{referral.description}</p>
                         )}
                         {referral.status === 'pending' && (
                           <div className="flex space-x-2">
                             <button
                               onClick={() => handleRespondToReferral(referral.id, 'confirmed')}
-                              className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                              className="bg-gold-600 text-primary-900 px-3 py-1 rounded text-sm hover:bg-gold-700 font-medium"
                             >
                               確認
                             </button>
                             <button
                               onClick={() => handleRespondToReferral(referral.id, 'rejected')}
-                              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
                             >
                               拒絕
                             </button>
@@ -390,27 +390,27 @@ const ReferralSystem = () => {
             {/* 發出的引薦標籤 */}
             {activeTab === 'sent' && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">發出的引薦</h3>
+                <h3 className="text-lg font-medium text-gold-100 mb-4">發出的引薦</h3>
                 {sentReferrals.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">暫無發出的引薦</p>
+                  <p className="text-gold-300 text-center py-8">暫無發出的引薦</p>
                 ) : (
                   <div className="space-y-4">
                     {sentReferrals.map(referral => (
-                      <div key={referral.id} className="border border-gray-200 rounded-lg p-4">
+                      <div key={referral.id} className="border border-gold-600 bg-primary-700 rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className="font-medium text-gold-100">
                               發給：{referral.referred_name} ({referral.referred_company})
                             </h4>
-                            <p className="text-sm text-gray-600">金額：{formatCurrency(referral.referral_amount)}</p>
-                            <p className="text-sm text-gray-600">時間：{formatDate(referral.created_at)}</p>
+                            <p className="text-sm text-gold-300">金額：{formatCurrency(referral.referral_amount)}</p>
+                            <p className="text-sm text-gold-300">時間：{formatDate(referral.created_at)}</p>
                           </div>
                           <div className="flex items-center space-x-2">
                             {getStatusBadge(referral.status)}
                           </div>
                         </div>
                         {referral.description && (
-                          <p className="text-sm text-gray-700">{referral.description}</p>
+                          <p className="text-sm text-gold-200">{referral.description}</p>
                         )}
                       </div>
                     ))}

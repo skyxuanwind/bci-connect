@@ -508,12 +508,12 @@ const Profile = () => {
       {/* Interview Form Tab */}
       {activeTab === 'interview' && (
         <div className="card">
-          <div className="card-header bg-gradient-to-r from-primary-700 to-primary-600 border-b border-gold-600">
+          <div className="card-header bg-gradient-to-r from-primary-800 to-primary-700 border-b border-gold-600">
             <div className="flex items-center space-x-3">
               <ChatBubbleLeftRightIcon className="h-8 w-8 text-gold-400" />
               <div>
                 <h2 className="text-xl font-bold text-gold-100">會員一對一面談表</h2>
-                <p className="text-sm text-gold-300 mt-1">🎯 透過深度交流，建立信任，創造精準引薦機會</p>
+                <p className="text-sm text-gold-300 mt-1">透過深度交流，建立信任，創造精準引薦機會</p>
               </div>
             </div>
             
@@ -523,7 +523,7 @@ const Profile = () => {
                 <span>填寫進度</span>
                 <span>完成後將大幅提升引薦成功率</span>
               </div>
-              <div className="w-full bg-primary-800 rounded-full h-2">
+              <div className="w-full bg-primary-900 rounded-full h-2">
                 <div className="bg-gold-500 h-2 rounded-full transition-all duration-300" style={{width: '0%'}} id="progress-bar"></div>
               </div>
             </div>
@@ -540,7 +540,7 @@ const Profile = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gold-100">第一部分：我的業務核心與價值主張</h3>
-                  <p className="text-sm text-gold-300 mt-1">💼 讓大家清楚了解「我是誰，我做什麼」</p>
+                  <p className="text-sm text-gold-300 mt-1">讓大家清楚了解「我是誰，我做什麼」</p>
                 </div>
               </div>
               
@@ -557,7 +557,7 @@ const Profile = () => {
                     className={`input w-full ${interviewErrors.companyName ? 'input-error' : ''}`}
                     {...registerInterview('companyName')}
                   />
-                  <p className="text-xs text-gold-400">💡 填寫您的公司或個人品牌名稱（已自動從個人資料填入）</p>
+                  <p className="text-xs text-gold-400">填寫您的公司或個人品牌名稱（已自動從個人資料填入）</p>
                   {interviewErrors.companyName && (
                     <p className="error-message">{interviewErrors.companyName.message}</p>
                   )}
@@ -575,7 +575,7 @@ const Profile = () => {
                     className={`input w-full ${interviewErrors.industry ? 'input-error' : ''}`}
                     {...registerInterview('industry')}
                   />
-                  <p className="text-xs text-gold-400">💡 讓人一眼就知道您的專業領域（已自動從個人資料填入）</p>
+                  <p className="text-xs text-gold-400">讓人一眼就知道您的專業領域（已自動從個人資料填入）</p>
                   {interviewErrors.industry && (
                     <p className="error-message">{interviewErrors.industry.message}</p>
                   )}
@@ -589,7 +589,7 @@ const Profile = () => {
                   核心產品／服務詳述
                 </label>
                 <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-gold-200">📝 <strong>填寫提示：</strong>請具體說明您提供什麼產品或服務，讓人一看就懂</p>
+                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>請具體說明您提供什麼產品或服務，讓人一看就懂</p>
                   <p className="text-xs text-gold-300 mt-1">範例：「提供企業數位轉型顧問服務，包含系統導入、流程優化、員工培訓」</p>
                 </div>
                 <textarea
@@ -606,12 +606,12 @@ const Profile = () => {
               {/* 我與競爭者的最大差異 */}
               <div className="mt-8 space-y-2">
                 <label className="label font-semibold">
-                  <FlagIcon className="h-5 w-5 mr-2 text-blue-600" />
+                  <FlagIcon className="h-5 w-5 mr-2 text-gold-400" />
                   我與競爭者的最大差異
                 </label>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-green-800">🎯 <strong>填寫提示：</strong>說明您的獨特優勢，為什麼客戶要選擇您？</p>
-                  <p className="text-xs text-green-600 mt-1">範例：「15年實戰經驗 + 客製化解決方案 + 24小時技術支援」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>說明您的獨特優勢，為什麼客戶要選擇您？</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「15年實戰經驗 + 客製化解決方案 + 24小時技術支援」</p>
                 </div>
                 <textarea
                   rows={3}
@@ -626,28 +626,28 @@ const Profile = () => {
             </div>
 
             {/* 第二部分：我的理想客戶與市場 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-sm">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <UsersIcon className="h-6 w-6 text-purple-600" />
+                  <div className="w-10 h-10 bg-gold-600 rounded-full flex items-center justify-center">
+                    <UsersIcon className="h-6 w-6 text-primary-900" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">第二部分：我的理想客戶與市場</h3>
-                  <p className="text-sm text-gray-600 mt-1">🎯 幫助其他會員快速了解您的目標客群</p>
+                  <h3 className="text-xl font-bold text-gold-100">第二部分：我的理想客戶與市場</h3>
+                  <p className="text-sm text-gold-300 mt-1">幫助其他會員快速了解您的目標客群</p>
                 </div>
               </div>
               
               {/* 主力目標客群／市場 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <FlagIcon className="h-5 w-5 mr-2 text-purple-600" />
+                  <FlagIcon className="h-5 w-5 mr-2 text-gold-400" />
                   主力目標客群／市場
                 </label>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-purple-800">🎯 <strong>填寫提示：</strong>描述您最想服務的客戶群體</p>
-                  <p className="text-xs text-purple-600 mt-1">範例：「中小企業主、科技業、台北地區製造業」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>描述您最想服務的客戶群體</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「中小企業主、科技業、台北地區製造業」</p>
                 </div>
                 <textarea
                   rows={3}
@@ -663,12 +663,12 @@ const Profile = () => {
               {/* 理想的客戶樣貌 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <UsersIcon className="h-5 w-5 mr-2 text-purple-600" />
+                  <UsersIcon className="h-5 w-5 mr-2 text-gold-400" />
                   理想的客戶樣貌
                 </label>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-blue-800">👥 <strong>填寫提示：</strong>具體描述您理想客戶的特徵，幫助夥伴識別</p>
-                  <p className="text-xs text-blue-600 mt-1">範例：「年營收1000萬以上的貿易公司，正在尋求數位轉型的企業主」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>具體描述您理想客戶的特徵，幫助夥伴識別</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「年營收1000萬以上的貿易公司，正在尋求數位轉型的企業主」</p>
                 </div>
                 <textarea
                   rows={3}
@@ -684,12 +684,12 @@ const Profile = () => {
               {/* 代表性客戶舉例 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <BuildingOfficeIcon className="h-5 w-5 mr-2 text-purple-600" />
+                  <BuildingOfficeIcon className="h-5 w-5 mr-2 text-gold-400" />
                   代表性客戶舉例
                 </label>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-green-800">🏢 <strong>填寫提示：</strong>舉出具體的客戶類型或公司名稱（可匿名）</p>
-                  <p className="text-xs text-green-600 mt-1">範例：「某知名連鎖餐廳、傳統製造業龍頭、新創科技公司」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>舉出具體的客戶類型或公司名稱（可匿名）</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「某知名連鎖餐廳、傳統製造業龍頭、新創科技公司」</p>
                 </div>
                 <textarea
                   rows={2}
@@ -705,12 +705,12 @@ const Profile = () => {
               {/* 他們通常具備的「共同特質」 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <StarIcon className="h-5 w-5 mr-2 text-purple-600" />
+                  <StarIcon className="h-5 w-5 mr-2 text-gold-400" />
                   客戶的共同特質
                 </label>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-yellow-800">⭐ <strong>填寫提示：</strong>您的客戶通常有什麼共同點？</p>
-                  <p className="text-xs text-yellow-600 mt-1">範例：「重視品質勝過價格、願意投資長期合作、注重創新」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>您的客戶通常有什麼共同點？</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「重視品質勝過價格、願意投資長期合作、注重創新」</p>
                 </div>
                 <textarea
                   rows={2}
@@ -761,40 +761,40 @@ const Profile = () => {
             </div>
 
             {/* 第三部分：如何為我引薦 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-sm">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <UserGroupIcon className="h-6 w-6 text-orange-600" />
+                  <div className="w-10 h-10 bg-gold-600 rounded-full flex items-center justify-center">
+                    <UserGroupIcon className="h-6 w-6 text-primary-900" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">第三部分：如何為我引薦</h3>
-                  <p className="text-sm text-gray-600 mt-1">🤝 讓夥伴知道如何有效地推薦您</p>
+                  <h3 className="text-xl font-bold text-gold-100">第三部分：如何為我引薦</h3>
+                  <p className="text-sm text-gold-300 mt-1">讓夥伴知道如何有效地推薦您</p>
                 </div>
               </div>
               
               {/* 黃金引薦開場白 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <MegaphoneIcon className="h-5 w-5 mr-2 text-orange-600" />
+                  <MegaphoneIcon className="h-5 w-5 mr-2 text-gold-400" />
                   黃金引薦開場白
                 </label>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-orange-800">🎤 <strong>填寫提示：</strong>教會夥伴一句最棒的開場白，讓客戶立刻想認識您</p>
-                  <p className="text-xs text-orange-600 mt-1">範例：「我認識一位數位轉型專家，他可以協助您處理系統整合的問題」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>教會夥伴一句最棒的開場白，讓客戶立刻想認識您</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「我認識一位數位轉型專家，他可以協助您處理系統整合的問題」</p>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-700 font-medium">請完成這句引薦開場白：</p>
-                  <div className="flex items-center space-x-2 text-sm bg-gray-50 p-3 rounded-lg flex-wrap">
-                    <span className="text-gray-700">「我認識一位</span>
+                  <p className="text-sm text-gold-200 font-medium">請完成這句引薦開場白：</p>
+                  <div className="flex items-center space-x-2 text-sm bg-primary-700 border border-gold-600 p-3 rounded-lg flex-wrap">
+                    <span className="text-gold-200">「我認識一位</span>
                     <input
                       type="text"
                       className={`input flex-1 min-w-[120px] ${interviewErrors.referralOpening ? 'input-error' : ''}`}
                       placeholder="您的專業領域，如：財務顧問、行銷專家"
                       {...registerInterview('referralOpening')}
                     />
-                    <span className="text-gray-700">，他/她可以協助您處理</span>
+                    <span className="text-gold-200">，他/她可以協助您處理</span>
                     <input
                       type="text"
                       className={`input flex-1 min-w-[120px] ${interviewErrors.referralProblem ? 'input-error' : ''}`}

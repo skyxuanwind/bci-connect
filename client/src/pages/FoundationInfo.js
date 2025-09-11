@@ -81,22 +81,22 @@ const FoundationInfo = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-primary-900 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 頁面標題 */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <DocumentTextIcon className="h-8 w-8 text-blue-600 mr-3" />
+              <DocumentTextIcon className="h-8 w-8 text-gold-400 mr-3" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">商會地基</h1>
-                <p className="mt-2 text-gray-600">商會基礎資訊與核心理念</p>
+                <h1 className="text-3xl font-bold text-gold-100">商會地基</h1>
+                <p className="mt-2 text-gold-300">商會基礎資訊與核心理念</p>
               </div>
             </div>
             {isAdmin() && !editMode && (
               <button
                 onClick={() => setEditMode(true)}
-                className="btn-primary"
+                className="bg-gold-600 hover:bg-gold-700 text-primary-900 font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
               >
                 編輯內容
               </button>
@@ -106,34 +106,34 @@ const FoundationInfo = () => {
 
         {/* 錯誤和成功訊息 */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 bg-red-900 border border-red-700 text-red-300 px-4 py-3 rounded">
             {error}
           </div>
         )}
         
         {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+          <div className="mb-6 bg-green-900 border border-green-700 text-green-300 px-4 py-3 rounded">
             {success}
           </div>
         )}
 
         {/* 內容區域 */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg shadow-xl">
           {editMode ? (
             // 編輯模式
             <div className="p-6">
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gold-300 mb-2">
                   商會地基內容
                 </label>
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   rows={20}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-primary-700 border border-gold-600 text-gold-100 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-400 placeholder-gold-400"
                   placeholder="請輸入商會地基內容..."
                 />
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gold-400">
                   支援基本的HTML標籤，如 &lt;p&gt;、&lt;br&gt;、&lt;strong&gt;、&lt;em&gt; 等
                 </p>
               </div>
@@ -141,14 +141,14 @@ const FoundationInfo = () => {
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={handleCancel}
-                  className="btn-secondary"
+                  className="bg-primary-700 hover:bg-primary-600 text-gold-300 border border-gold-600 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                   disabled={saving}
                 >
                   取消
                 </button>
                 <button
                   onClick={handleSave}
-                  className="btn-primary"
+                  className="bg-gold-600 hover:bg-gold-700 text-primary-900 font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
                   disabled={saving}
                 >
                   {saving ? '儲存中...' : '儲存'}
@@ -160,14 +160,14 @@ const FoundationInfo = () => {
             <div className="p-6">
               {content ? (
                 <div 
-                  className="prose max-w-none"
+                  className="prose prose-invert max-w-none text-gold-100"
                   dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }}
                 />
               ) : (
                 <div className="text-center py-12">
-                  <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">暫無內容</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <DocumentTextIcon className="mx-auto h-12 w-12 text-gold-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gold-100">暫無內容</h3>
+                  <p className="mt-1 text-sm text-gold-300">
                     {isAdmin() ? '點擊「編輯內容」開始添加商會地基資訊' : '管理員尚未設定商會地基內容'}
                   </p>
                 </div>
@@ -178,16 +178,16 @@ const FoundationInfo = () => {
 
         {/* 權限說明 */}
         {!isAdmin() && (
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="mt-6 bg-primary-800 border border-gold-600 rounded-md p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <DocumentTextIcon className="h-5 w-5 text-blue-400" />
+                <DocumentTextIcon className="h-5 w-5 text-gold-400" />
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">
+                <h3 className="text-sm font-medium text-gold-200">
                   內容管理權限
                 </h3>
-                <div className="mt-2 text-sm text-blue-700">
+                <div className="mt-2 text-sm text-gold-300">
                   <p>此頁面內容僅限管理員編輯，所有會員均可查看。</p>
                 </div>
               </div>

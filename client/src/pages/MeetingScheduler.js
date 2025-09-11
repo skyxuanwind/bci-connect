@@ -180,55 +180,55 @@ const MeetingScheduler = () => {
   // 檢查用戶權限
   if (!user || user.membershipLevel > 3) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-primary-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">權限不足</h2>
-          <p className="text-gray-600">只有會員以上才能使用會議預約系統</p>
+          <h2 className="text-2xl font-bold text-gold-100 mb-4">權限不足</h2>
+          <p className="text-gold-300">只有會員以上才能使用會議預約系統</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-primary-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">商務面談預約</h1>
-          <p className="mt-2 text-gray-600">安排和管理您的商務會議</p>
+          <h1 className="text-3xl font-bold text-gold-100">商務面談預約</h1>
+          <p className="mt-2 text-gold-300">安排和管理您的商務會議</p>
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-4 bg-red-900 border border-red-600 text-red-200 px-4 py-3 rounded">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+          <div className="mb-4 bg-green-900 border border-green-600 text-green-200 px-4 py-3 rounded">
             {success}
           </div>
         )}
 
         {/* 標籤頁 */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="border-b border-gray-200">
+        <div className="bg-primary-800 shadow-lg rounded-lg border border-gold-600">
+          <div className="border-b border-gold-600">
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('schedule')}
                 className={`py-3 px-4 border-b-2 font-semibold text-base rounded-t-lg transition-all duration-200 ${
                   activeTab === 'schedule'
-                    ? 'border-purple-500 text-purple-700 bg-purple-50 shadow-sm'
-                    : 'border-transparent text-gray-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50'
+                    ? 'border-gold-500 text-gold-100 bg-gold-600 shadow-sm'
+                    : 'border-transparent text-gold-300 hover:text-gold-100 hover:border-gold-400 hover:bg-primary-700'
                 }`}
               >
-                📅 預約會議
+                預約會議
               </button>
               <button
                 onClick={() => setActiveTab('meetings')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'meetings'
-                    ? 'border-gold-500 text-gold-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-gold-500 text-gold-100'
+                    : 'border-transparent text-gold-300 hover:text-gold-100 hover:border-gold-400'
                 }`}
               >
                 我的會議
@@ -242,16 +242,16 @@ const MeetingScheduler = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* 預約表單 */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">預約新會議</h3>
+                  <h3 className="text-lg font-medium text-gold-100 mb-4">預約新會議</h3>
                   <form onSubmit={handleCreateMeeting} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gold-300 mb-2">
                         選擇會員
                       </label>
                       <select
                         value={newMeeting.attendee_id}
                         onChange={(e) => handleMemberSelect(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                        className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                         required
                       >
                         <option value="">請選擇會員</option>
@@ -264,7 +264,7 @@ const MeetingScheduler = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gold-300 mb-2">
                         會議日期
                       </label>
                       <input
@@ -272,33 +272,33 @@ const MeetingScheduler = () => {
                         value={newMeeting.meeting_date}
                         onChange={(e) => setNewMeeting({ ...newMeeting, meeting_date: e.target.value })}
                         min={new Date().toISOString().split('T')[0]}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                        className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                         required
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gold-300 mb-2">
                           開始時間
                         </label>
                         <input
                           type="time"
                           value={newMeeting.start_time}
                           onChange={(e) => setNewMeeting({ ...newMeeting, start_time: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                          className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gold-300 mb-2">
                           結束時間
                         </label>
                         <input
                           type="time"
                           value={newMeeting.end_time}
                           onChange={(e) => setNewMeeting({ ...newMeeting, end_time: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                          className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                           required
                         />
                       </div>
@@ -307,20 +307,20 @@ const MeetingScheduler = () => {
                     {/* 時間衝突警告 */}
                     {newMeeting.meeting_date && newMeeting.start_time && newMeeting.end_time && 
                      isTimeSlotBusy(newMeeting.meeting_date, newMeeting.start_time, newMeeting.end_time) && (
-                      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-3 py-2 rounded text-sm">
-                        ⚠️ 該時間段與對方已有會議衝突
+                      <div className="bg-yellow-900 border border-yellow-600 text-yellow-200 px-3 py-2 rounded text-sm">
+                        該時間段與對方已有會議衝突
                       </div>
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gold-300 mb-2">
                         會議備註
                       </label>
                       <textarea
                         value={newMeeting.notes}
                         onChange={(e) => setNewMeeting({ ...newMeeting, notes: e.target.value })}
                         rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+                        className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                         placeholder="請描述會議目的或其他備註..."
                       />
                     </div>
@@ -329,9 +329,9 @@ const MeetingScheduler = () => {
                       type="submit"
                       disabled={loading || (newMeeting.meeting_date && newMeeting.start_time && newMeeting.end_time && 
                                isTimeSlotBusy(newMeeting.meeting_date, newMeeting.start_time, newMeeting.end_time))}
-                      className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50 transform hover:scale-105 transition-all duration-200"
+                      className="w-full bg-gradient-to-r from-gold-600 to-gold-700 text-primary-900 py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-gold-700 hover:to-gold-800 focus:outline-none focus:ring-4 focus:ring-gold-300 disabled:opacity-50 transform hover:scale-105 transition-all duration-200"
                     >
-                      {loading ? '🔄 發送中...' : '📅 預約會議'}
+                      {loading ? '發送中...' : '預約會議'}
                     </button>
                   </form>
                 </div>
@@ -340,19 +340,19 @@ const MeetingScheduler = () => {
                 <div>
                   {selectedMember && memberAvailability ? (
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      <h3 className="text-lg font-medium text-gold-100 mb-4">
                         {selectedMember.name} 的日程安排
                       </h3>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm text-gray-600 mb-3">
+                      <div className="bg-primary-700 border border-gold-600 rounded-lg p-4">
+                        <p className="text-sm text-gold-300 mb-3">
                           以下是 {selectedMember.name} 未來7天的已確認會議時間：
                         </p>
                         {memberAvailability.busy_times.length === 0 ? (
-                          <p className="text-sm text-green-600">該會員未來7天暫無已確認的會議</p>
+                          <p className="text-sm text-green-400">該會員未來7天暫無已確認的會議</p>
                         ) : (
                           <div className="space-y-2">
                             {memberAvailability.busy_times.map((busyTime, index) => (
-                              <div key={index} className="bg-red-100 text-red-800 px-3 py-2 rounded text-sm">
+                              <div key={index} className="bg-red-900 text-red-200 px-3 py-2 rounded text-sm">
                                 {formatDateTime(busyTime.meeting_time_start)} - {formatDateTime(busyTime.meeting_time_end)}
                               </div>
                             ))}
@@ -361,7 +361,7 @@ const MeetingScheduler = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center text-gray-500 py-8">
+                    <div className="text-center text-gold-300 py-8">
                       <p>請先選擇會員以查看其日程安排</p>
                     </div>
                   )}
@@ -372,19 +372,19 @@ const MeetingScheduler = () => {
             {/* 我的會議標籤 */}
             {activeTab === 'meetings' && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">我的會議</h3>
+                <h3 className="text-lg font-medium text-gold-100 mb-4">我的會議</h3>
                 {meetings.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">暫無會議記錄</p>
+                  <p className="text-gold-300 text-center py-8">暫無會議記錄</p>
                 ) : (
                   <div className="space-y-4">
                     {meetings.map(meeting => (
-                      <div key={meeting.id} className="border border-gray-200 rounded-lg p-4">
+                      <div key={meeting.id} className="border border-gold-600 bg-primary-700 rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className="font-medium text-gold-100">
                               與 {meeting.other_party_name} ({meeting.other_party_company}) 的會議
                             </h4>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gold-300">
                               時間：{formatDateTime(meeting.meeting_time_start)} - {formatDateTime(meeting.meeting_time_end)}
                             </p>
                           </div>
@@ -394,7 +394,7 @@ const MeetingScheduler = () => {
                           </div>
                         </div>
                         {meeting.notes && (
-                          <p className="text-sm text-gray-700 mb-3">{meeting.notes}</p>
+                          <p className="text-sm text-gold-200 mb-3">{meeting.notes}</p>
                         )}
                         {meeting.status === 'pending' && (
                           <div className="flex space-x-2">
@@ -402,13 +402,13 @@ const MeetingScheduler = () => {
                               <>
                                 <button
                                   onClick={() => handleRespondToMeeting(meeting.id, 'confirmed')}
-                                  className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                                  className="bg-gold-600 text-primary-900 px-3 py-1 rounded text-sm hover:bg-gold-700 font-medium"
                                 >
                                   確認
                                 </button>
                                 <button
                                   onClick={() => handleRespondToMeeting(meeting.id, 'cancelled')}
-                                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
                                 >
                                   拒絕
                                 </button>
@@ -416,7 +416,7 @@ const MeetingScheduler = () => {
                             ) : (
                               <button
                                 onClick={() => handleCancelMeeting(meeting.id)}
-                                className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                                className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
                               >
                                 取消會議
                               </button>

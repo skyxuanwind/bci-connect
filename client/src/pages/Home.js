@@ -53,53 +53,98 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
-      {/* Animated Background Elements */}
+      {/* Premium Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Flowing silk-like waves */}
+        {/* Flowing Light Streams - Irregular and Elegant */}
         <div className="absolute inset-0">
+          {/* Main flowing light ribbons */}
           <div className="absolute top-0 left-0 w-full h-full">
-            <div className="absolute top-1/4 -left-1/4 w-[150%] h-32 bg-gradient-to-r from-transparent via-gold-400/20 to-transparent transform -rotate-12 animate-[wave_8s_ease-in-out_infinite] blur-sm"></div>
-            <div className="absolute top-1/2 -right-1/4 w-[150%] h-24 bg-gradient-to-r from-transparent via-amber-500/15 to-transparent transform rotate-12 animate-[wave_10s_ease-in-out_infinite_reverse] blur-sm delay-1000"></div>
-            <div className="absolute top-3/4 -left-1/4 w-[150%] h-20 bg-gradient-to-r from-transparent via-gold-300/25 to-transparent transform -rotate-6 animate-[wave_12s_ease-in-out_infinite] blur-sm delay-2000"></div>
+            <div className="absolute top-1/6 -left-1/3 w-[200%] h-2 bg-gradient-to-r from-transparent via-gold-400/30 via-amber-500/40 via-gold-300/35 to-transparent transform -rotate-12 animate-[luxuryFlow_12s_cubic-bezier(0.4,0,0.2,1)_infinite] blur-sm"></div>
+            <div className="absolute top-2/5 -right-1/3 w-[180%] h-3 bg-gradient-to-r from-transparent via-amber-400/25 via-gold-500/45 via-amber-300/30 to-transparent transform rotate-8 animate-[luxuryFlow_15s_cubic-bezier(0.4,0,0.2,1)_infinite_reverse] blur-sm delay-2000"></div>
+            <div className="absolute top-3/5 -left-1/4 w-[160%] h-1 bg-gradient-to-r from-transparent via-gold-300/35 via-amber-400/50 to-transparent transform -rotate-6 animate-[luxuryFlow_18s_cubic-bezier(0.4,0,0.2,1)_infinite] blur-sm delay-4000"></div>
+            <div className="absolute top-4/5 -right-1/4 w-[140%] h-2 bg-gradient-to-r from-transparent via-amber-500/20 via-gold-400/40 to-transparent transform rotate-15 animate-[luxuryFlow_20s_cubic-bezier(0.4,0,0.2,1)_infinite_reverse] blur-sm delay-6000"></div>
+          </div>
+          
+          {/* Particle-like flowing elements */}
+          <div className="absolute inset-0">
+            <div className="absolute top-1/8 left-1/4 w-1 h-1 bg-gold-400 rounded-full animate-[particle_25s_linear_infinite] blur-[0.5px]"></div>
+            <div className="absolute top-1/3 right-1/3 w-0.5 h-0.5 bg-amber-300 rounded-full animate-[particle_30s_linear_infinite] blur-[0.5px] delay-3000"></div>
+            <div className="absolute top-2/3 left-1/6 w-1.5 h-1.5 bg-gold-500 rounded-full animate-[particle_35s_linear_infinite] blur-[0.5px] delay-7000"></div>
+            <div className="absolute top-3/4 right-1/5 w-0.5 h-0.5 bg-amber-400 rounded-full animate-[particle_28s_linear_infinite] blur-[0.5px] delay-10000"></div>
+            <div className="absolute top-1/2 left-3/4 w-1 h-1 bg-gold-300 rounded-full animate-[particle_32s_linear_infinite] blur-[0.5px] delay-5000"></div>
           </div>
         </div>
         
-        {/* Luxury flowing ribbons */}
+        {/* Luxury Flowing Silk Ribbons */}
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/3 w-96 h-full bg-gradient-to-b from-gold-400/10 via-transparent to-amber-500/10 transform rotate-45 animate-[float_15s_ease-in-out_infinite] blur-xl"></div>
-          <div className="absolute top-0 right-1/3 w-80 h-full bg-gradient-to-b from-amber-400/8 via-transparent to-gold-400/8 transform -rotate-45 animate-[float_18s_ease-in-out_infinite_reverse] blur-xl delay-3000"></div>
+          <div className="absolute top-0 left-1/5 w-[120px] h-full bg-gradient-to-b from-gold-400/8 via-transparent via-amber-500/12 via-transparent to-gold-300/6 transform rotate-35 animate-[silkFlow_22s_ease-in-out_infinite] blur-xl"></div>
+          <div className="absolute top-0 right-1/4 w-[100px] h-full bg-gradient-to-b from-amber-400/6 via-transparent via-gold-400/10 via-transparent to-amber-300/8 transform -rotate-25 animate-[silkFlow_28s_ease-in-out_infinite_reverse] blur-xl delay-8000"></div>
+          <div className="absolute top-0 left-2/3 w-[80px] h-full bg-gradient-to-b from-gold-500/5 via-transparent via-amber-400/8 to-transparent transform rotate-45 animate-[silkFlow_35s_ease-in-out_infinite] blur-2xl delay-12000"></div>
         </div>
         
-        {/* Dynamic golden orbs */}
-        <div className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-gold-400/15 to-amber-600/8 rounded-full blur-3xl animate-[pulse_6s_ease-in-out_infinite]"></div>
-        <div className="absolute top-1/2 -left-32 w-80 h-80 bg-gradient-to-tr from-amber-500/12 to-gold-300/6 rounded-full blur-3xl animate-[pulse_8s_ease-in-out_infinite] delay-2000"></div>
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-gradient-to-t from-gold-500/18 to-transparent rounded-full blur-2xl animate-[pulse_10s_ease-in-out_infinite] delay-4000"></div>
+        {/* Dynamic Luxury Orbs with Irregular Movement */}
+        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-gradient-to-br from-gold-400/12 via-amber-500/8 to-gold-600/6 rounded-full blur-3xl animate-[luxuryOrb_16s_cubic-bezier(0.25,0.46,0.45,0.94)_infinite]"></div>
+        <div className="absolute top-1/3 -left-40 w-[400px] h-[400px] bg-gradient-to-tr from-amber-500/10 via-gold-300/6 to-amber-400/8 rounded-full blur-3xl animate-[luxuryOrb_20s_cubic-bezier(0.25,0.46,0.45,0.94)_infinite_reverse] delay-5000"></div>
+        <div className="absolute bottom-1/4 right-1/6 w-[300px] h-[300px] bg-gradient-to-t from-gold-500/15 via-amber-400/10 to-transparent rounded-full blur-2xl animate-[luxuryOrb_24s_cubic-bezier(0.25,0.46,0.45,0.94)_infinite] delay-10000"></div>
+        <div className="absolute top-1/6 left-1/3 w-[200px] h-[200px] bg-gradient-to-br from-amber-300/8 via-gold-400/12 to-amber-500/6 rounded-full blur-3xl animate-[luxuryOrb_18s_cubic-bezier(0.25,0.46,0.45,0.94)_infinite_reverse] delay-15000"></div>
         
-        {/* Elegant light streams */}
-        <div className="absolute top-0 left-1/5 w-px h-full bg-gradient-to-b from-transparent via-gold-400/40 to-transparent animate-[shimmer_7s_ease-in-out_infinite] delay-1000"></div>
-        <div className="absolute top-0 right-1/5 w-px h-full bg-gradient-to-b from-transparent via-amber-400/35 to-transparent animate-[shimmer_9s_ease-in-out_infinite] delay-3000"></div>
+        {/* Elegant Vertical Light Streams */}
+        <div className="absolute top-0 left-1/8 w-0.5 h-full bg-gradient-to-b from-transparent via-gold-400/35 via-transparent via-amber-400/40 to-transparent animate-[verticalShimmer_14s_ease-in-out_infinite] delay-2000"></div>
+        <div className="absolute top-0 right-1/6 w-0.5 h-full bg-gradient-to-b from-transparent via-amber-400/30 via-transparent via-gold-300/35 to-transparent animate-[verticalShimmer_18s_ease-in-out_infinite] delay-6000"></div>
+        <div className="absolute top-0 left-3/4 w-0.5 h-full bg-gradient-to-b from-transparent via-gold-500/25 via-transparent via-amber-500/30 to-transparent animate-[verticalShimmer_22s_ease-in-out_infinite] delay-10000"></div>
         
-        {/* Subtle luxury accents */}
-        <div className="absolute top-1/6 right-1/8 w-40 h-40 bg-gradient-to-br from-gold-300/8 to-amber-500/4 rounded-full blur-2xl animate-[float_20s_ease-in-out_infinite] delay-5000"></div>
-        <div className="absolute bottom-1/4 left-1/8 w-48 h-48 bg-gradient-to-tr from-amber-400/6 to-gold-300/3 rounded-full blur-3xl animate-[float_25s_ease-in-out_infinite] delay-7000"></div>
+        {/* Subtle Luxury Accent Elements */}
+        <div className="absolute top-1/5 right-1/12 w-[180px] h-[180px] bg-gradient-to-br from-gold-300/6 via-amber-400/4 to-gold-500/8 rounded-full blur-2xl animate-[accentFloat_26s_ease-in-out_infinite] delay-8000"></div>
+        <div className="absolute bottom-1/3 left-1/12 w-[220px] h-[220px] bg-gradient-to-tr from-amber-400/5 via-gold-300/7 to-amber-500/4 rounded-full blur-3xl animate-[accentFloat_32s_ease-in-out_infinite_reverse] delay-14000"></div>
+        <div className="absolute top-2/3 right-2/3 w-[160px] h-[160px] bg-gradient-to-b from-gold-400/8 via-amber-300/6 to-transparent rounded-full blur-2xl animate-[accentFloat_28s_ease-in-out_infinite] delay-18000"></div>
       </div>
       
-      {/* Custom CSS animations */}
+      {/* Premium CSS Animations */}
       <style jsx>{`
-        @keyframes wave {
-          0%, 100% { transform: translateX(0) rotate(-12deg) scaleY(1); }
-          25% { transform: translateX(20px) rotate(-10deg) scaleY(1.1); }
-          50% { transform: translateX(-10px) rotate(-14deg) scaleY(0.9); }
-          75% { transform: translateX(15px) rotate(-8deg) scaleY(1.05); }
+        @keyframes luxuryFlow {
+          0% { transform: translateX(-100px) translateY(0) rotate(-12deg) scaleX(0.8) scaleY(1); opacity: 0; }
+          15% { opacity: 0.6; }
+          25% { transform: translateX(50px) translateY(-20px) rotate(-8deg) scaleX(1.2) scaleY(1.1); opacity: 0.8; }
+          50% { transform: translateX(-30px) translateY(15px) rotate(-15deg) scaleX(0.9) scaleY(0.95); opacity: 1; }
+          75% { transform: translateX(80px) translateY(-10px) rotate(-6deg) scaleX(1.1) scaleY(1.05); opacity: 0.7; }
+          85% { opacity: 0.4; }
+          100% { transform: translateX(200px) translateY(0) rotate(-12deg) scaleX(0.8) scaleY(1); opacity: 0; }
         }
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(45deg) scale(1); }
-          33% { transform: translateY(-20px) rotate(47deg) scale(1.05); }
-          66% { transform: translateY(10px) rotate(43deg) scale(0.95); }
+        @keyframes silkFlow {
+          0%, 100% { transform: translateY(0) translateX(0) rotate(35deg) scale(1) skewY(0deg); }
+          20% { transform: translateY(-40px) translateX(20px) rotate(38deg) scale(1.08) skewY(2deg); }
+          40% { transform: translateY(25px) translateX(-15px) rotate(32deg) scale(0.92) skewY(-1deg); }
+          60% { transform: translateY(-20px) translateX(30px) rotate(40deg) scale(1.05) skewY(3deg); }
+          80% { transform: translateY(35px) translateX(-10px) rotate(30deg) scale(0.95) skewY(-2deg); }
         }
-        @keyframes shimmer {
-          0%, 100% { opacity: 0.3; transform: scaleY(1); }
-          50% { opacity: 0.8; transform: scaleY(1.2); }
+        @keyframes luxuryOrb {
+          0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.8; }
+          15% { transform: translate(30px, -50px) scale(1.1) rotate(45deg); opacity: 1; }
+          35% { transform: translate(-20px, 40px) scale(0.9) rotate(90deg); opacity: 0.6; }
+          55% { transform: translate(50px, 20px) scale(1.15) rotate(180deg); opacity: 0.9; }
+          75% { transform: translate(-40px, -30px) scale(0.85) rotate(270deg); opacity: 0.7; }
+          90% { transform: translate(15px, 10px) scale(1.05) rotate(315deg); opacity: 0.8; }
+        }
+        @keyframes particle {
+          0% { transform: translate(0, 100vh) scale(0); opacity: 0; }
+          10% { opacity: 1; transform: translate(20px, 90vh) scale(1); }
+          25% { transform: translate(-30px, 75vh) scale(1.2); }
+          50% { transform: translate(40px, 50vh) scale(0.8); }
+          75% { transform: translate(-20px, 25vh) scale(1.1); }
+          90% { opacity: 1; transform: translate(10px, 10vh) scale(0.9); }
+          100% { transform: translate(0, -10vh) scale(0); opacity: 0; }
+        }
+        @keyframes verticalShimmer {
+          0%, 100% { opacity: 0.2; transform: scaleY(1) scaleX(1); }
+          25% { opacity: 0.8; transform: scaleY(1.3) scaleX(1.5); }
+          50% { opacity: 1; transform: scaleY(0.8) scaleX(2); }
+          75% { opacity: 0.6; transform: scaleY(1.2) scaleX(1.2); }
+        }
+        @keyframes accentFloat {
+          0%, 100% { transform: translateY(0) translateX(0) rotate(0deg) scale(1); }
+          25% { transform: translateY(-60px) translateX(40px) rotate(90deg) scale(1.15); }
+          50% { transform: translateY(30px) translateX(-50px) rotate(180deg) scale(0.85); }
+          75% { transform: translateY(-40px) translateX(30px) rotate(270deg) scale(1.1); }
         }
       `}</style>
       

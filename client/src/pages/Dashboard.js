@@ -133,218 +133,222 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-primary text-white rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">
-              歡迎回來，{user?.name}！
-            </h1>
-            <p className="text-gold-200 mb-4">
-              {user?.company && `${user.company} • `}
-              {user?.title}
-            </p>
-            <div className="flex items-center space-x-4">
-              {user?.membershipLevel ? getMembershipLevelBadge(user.membershipLevel) : null}
-              {user?.chapterName && (
-                <span className="text-gold-300 text-sm">
-                  {user.chapterName}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="hidden md:block">
-            <StarIcon className="h-16 w-16 text-gold-400" />
-          </div>
-        </div>
-      </div>
-
-      {/* Statistics Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {/* 總引薦金額 - 所有用戶都能看到 */}
-          <div className="card">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <CurrencyDollarIcon className="h-6 w-6 text-emerald-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gold-300">總引薦金額</p>
-                <p className="text-2xl font-bold text-gold-100">
-                  NT$ {stats.totalReferralAmount ? stats.totalReferralAmount.toLocaleString() : '0'}
+    <div className="min-h-screen bg-primary-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Welcome Section */}
+          <div className="bg-primary-800 border border-gold-600 text-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2 text-gold-100">
+                  歡迎回來，{user?.name}！
+                </h1>
+                <p className="text-gold-300 mb-4">
+                  {user?.company && `${user.company} • `}
+                  {user?.title}
                 </p>
+                <div className="flex items-center space-x-4">
+                  {user?.membershipLevel ? getMembershipLevelBadge(user.membershipLevel) : null}
+                  {user?.chapterName && (
+                    <span className="text-gold-300 text-sm">
+                      {user.chapterName}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="hidden md:block">
+                <StarIcon className="h-16 w-16 text-gold-400" />
               </div>
             </div>
           </div>
-          
-          {/* 管理員統計 */}
-          {isAdmin() && (
-            <>
-              <div className="card">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <UserGroupIcon className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gold-300">總會員數</p>
-                    <p className="text-2xl font-bold text-gold-100">{stats.totalUsers}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="card">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <UserIcon className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gold-300">活躍會員</p>
-                    <p className="text-2xl font-bold text-gold-100">{stats.activeUsers}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="card">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <ClockIcon className="h-6 w-6 text-yellow-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gold-300">待審核</p>
-                    <p className="text-2xl font-bold text-gold-100">{stats.pendingUsers}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="card">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <BuildingOfficeIcon className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gold-300">分會數量</p>
-                    <p className="text-2xl font-bold text-gold-100">{stats.totalChapters}</p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* User Actions */}
-        <div className="card">
-          <div className="card-header">
-            <div className="flex items-center space-x-2">
-              <h2 className="text-lg font-semibold text-gold-100">快速操作</h2>
-              <InfoButton tooltip="這裡提供常用的功能快速入口，包括查看會員列表和編輯個人資料等基本操作。" />
-            </div>
-          </div>
-          <div className="space-y-4">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-              return (
-                <Link
-                  key={index}
-                  to={action.href}
-                  className="flex items-center p-4 bg-primary-700 hover:bg-primary-600 rounded-lg transition-colors duration-200"
-                >
-                  <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center`}>
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <h3 className="text-sm font-medium text-gold-100">{action.title}</h3>
-                    <p className="text-xs text-gold-300">{action.description}</p>
-                  </div>
-                  <ArrowRightIcon className="h-4 w-4 text-gold-400" />
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Admin Actions */}
-        {isAdmin() && (
-          <div className="card">
-            <div className="card-header">
-              <div className="flex items-center space-x-2">
-                <h2 className="text-lg font-semibold text-gold-100">管理功能</h2>
-                <InfoButton tooltip="管理員專用功能區域，包括會員審核、用戶管理、分會設定和統計報告等高級管理工具。" />
-              </div>
-            </div>
-            <div className="space-y-4">
-              {adminActions.map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <Link
-                    key={index}
-                    to={action.href}
-                    className="flex items-center p-4 bg-primary-700 hover:bg-primary-600 rounded-lg transition-colors duration-200"
-                  >
-                    <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center relative`}>
-                      <Icon className="h-5 w-5 text-white" />
-                      {action.badge > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {action.badge}
-                        </span>
-                      )}
-                    </div>
-                    <div className="ml-4 flex-1">
-                      <h3 className="text-sm font-medium text-gold-100">{action.title}</h3>
-                      <p className="text-xs text-gold-300">{action.description}</p>
-                    </div>
-                    <ArrowRightIcon className="h-4 w-4 text-gold-400" />
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Recent Members */}
-      {recentMembers.length > 0 && (
-        <div className="card">
-          <div className="card-header flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gold-100">最近加入的會員</h2>
-            <Link
-              to="/members"
-              className="text-sm text-gold-400 hover:text-gold-300 font-medium"
-            >
-              查看全部
-            </Link>
-          </div>
-          <div className="space-y-4">
-            {recentMembers.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 bg-primary-700 rounded-lg">
+          {/* Statistics Cards */}
+          {stats && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {/* 總引薦金額 - 所有用戶都能看到 */}
+              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-gold-600 rounded-full flex items-center justify-center">
-                    <UserIcon className="h-5 w-5 text-primary-900" />
+                  <div className="w-12 h-12 bg-gold-600 rounded-lg flex items-center justify-center">
+                    <CurrencyDollarIcon className="h-6 w-6 text-primary-900" />
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-sm font-medium text-gold-100">{member.name}</h3>
-                    <p className="text-xs text-gold-300">
-                      {member.company} • {member.title}
+                    <p className="text-sm font-medium text-gold-300">總引薦金額</p>
+                    <p className="text-2xl font-bold text-gold-100">
+                      NT$ {stats.totalReferralAmount ? stats.totalReferralAmount.toLocaleString() : '0'}
                     </p>
                   </div>
                 </div>
+              </div>
+              
+              {/* 管理員統計 */}
+              {isAdmin() && (
+                <>
+                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gold-500 rounded-lg flex items-center justify-center">
+                        <UserGroupIcon className="h-6 w-6 text-primary-900" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gold-300">總會員數</p>
+                        <p className="text-2xl font-bold text-gold-100">{stats.totalUsers}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gold-400 rounded-lg flex items-center justify-center">
+                        <UserIcon className="h-6 w-6 text-primary-900" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gold-300">活躍會員</p>
+                        <p className="text-2xl font-bold text-gold-100">{stats.activeUsers}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gold-700 rounded-lg flex items-center justify-center">
+                        <ClockIcon className="h-6 w-6 text-gold-100" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gold-300">待審核</p>
+                        <p className="text-2xl font-bold text-gold-100">{stats.pendingUsers}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gold-600 rounded-lg flex items-center justify-center">
+                        <BuildingOfficeIcon className="h-6 w-6 text-primary-900" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gold-300">分會數量</p>
+                        <p className="text-2xl font-bold text-gold-100">{stats.totalChapters}</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* User Actions */}
+            <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+              <div className="border-b border-gold-600 pb-4 mb-6">
                 <div className="flex items-center space-x-2">
-                  {getMembershipLevelBadge(member.membershipLevel)}
-                  <Link
-                    to={`/members/${member.id}`}
-                    className="text-gold-400 hover:text-gold-300"
-                  >
-                    <ArrowRightIcon className="h-4 w-4" />
-                  </Link>
+                  <h2 className="text-lg font-semibold text-gold-100">快速操作</h2>
+                  <InfoButton tooltip="這裡提供常用的功能快速入口，包括查看會員列表和編輯個人資料等基本操作。" />
                 </div>
               </div>
-            ))}
+              <div className="space-y-4">
+                {quickActions.map((action, index) => {
+                  const Icon = action.icon;
+                  return (
+                    <Link
+                      key={index}
+                      to={action.href}
+                      className="flex items-center p-4 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-lg transition-all duration-200"
+                    >
+                      <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center`}>
+                        <Icon className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="ml-4 flex-1">
+                        <h3 className="text-sm font-medium text-gold-100">{action.title}</h3>
+                        <p className="text-xs text-gold-300">{action.description}</p>
+                      </div>
+                      <ArrowRightIcon className="h-4 w-4 text-gold-400" />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Admin Actions */}
+            {isAdmin() && (
+              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                <div className="border-b border-gold-600 pb-4 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-lg font-semibold text-gold-100">管理功能</h2>
+                    <InfoButton tooltip="管理員專用功能區域，包括會員審核、用戶管理、分會設定和統計報告等高級管理工具。" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {adminActions.map((action, index) => {
+                    const Icon = action.icon;
+                    return (
+                      <Link
+                        key={index}
+                        to={action.href}
+                        className="flex items-center p-4 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-lg transition-all duration-200"
+                      >
+                        <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center relative`}>
+                          <Icon className="h-5 w-5 text-white" />
+                          {action.badge > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                              {action.badge}
+                            </span>
+                          )}
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <h3 className="text-sm font-medium text-gold-100">{action.title}</h3>
+                          <p className="text-xs text-gold-300">{action.description}</p>
+                        </div>
+                        <ArrowRightIcon className="h-4 w-4 text-gold-400" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Recent Members */}
+          {recentMembers.length > 0 && (
+            <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+              <div className="border-b border-gold-600 pb-4 mb-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gold-100">最近加入的會員</h2>
+                <Link
+                  to="/members"
+                  className="text-sm text-gold-400 hover:text-gold-300 font-medium"
+                >
+                  查看全部
+                </Link>
+              </div>
+              <div className="space-y-4">
+                {recentMembers.map((member) => (
+                  <div key={member.id} className="flex items-center justify-between p-4 bg-primary-700 border border-gold-700 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-gold-600 rounded-full flex items-center justify-center">
+                        <UserIcon className="h-5 w-5 text-primary-900" />
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gold-100">{member.name}</h3>
+                        <p className="text-xs text-gold-300">
+                          {member.company} • {member.title}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {getMembershipLevelBadge(member.membershipLevel)}
+                      <Link
+                        to={`/members/${member.id}`}
+                        className="text-gold-400 hover:text-gold-300"
+                      >
+                        <ArrowRightIcon className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
