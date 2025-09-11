@@ -18,7 +18,10 @@ const createTransporter = () => {
     // 添加額外的配置以提高兼容性
     tls: {
       rejectUnauthorized: false
-    }
+    },
+    // 更詳細的SMTP除錯日誌（預設僅在非生產環境啟用）
+    logger: process.env.SMTP_DEBUG === 'true' || process.env.NODE_ENV !== 'production',
+    debug: process.env.SMTP_DEBUG === 'true' || process.env.NODE_ENV !== 'production'
   });
 };
 
@@ -76,7 +79,48 @@ const sendEmailVerification = async ({ email, name, verificationCode }) => {
       `
     };
     
-    await transporter.sendMail(mailOptions);
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Verification email sendMail result:', {
+        accepted: info.accepted,
+        rejected: info.rejected,
+        response: info.response,
+        messageId: info.messageId
+      });
+
+      // 若部份收件者被拒絕，嘗試將副本寄送到備援信箱
+      if (info.rejected && info.rejected.length > 0) {
+        const fallback = process.env.SMTP_BCC;
+        if (fallback && !info.accepted.includes(fallback)) {
+          console.warn('Primary recipient rejected. Sending fallback copy to SMTP_BCC:', fallback);
+          await transporter.sendMail({
+            from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
+            to: fallback,
+            subject: '【副本】GBC Connect - Email驗證碼（原收件者被拒絕）',
+            html: `<p>原收件者：${email}</p>` + mailOptions.html
+          });
+        }
+      }
+    } catch (sendErr) {
+      console.error('發送Email驗證碼失敗（主送）:', sendErr);
+      // 失敗時嘗試寄送到備援信箱，方便追蹤
+      const fallback = process.env.SMTP_BCC;
+      if (fallback) {
+        try {
+          await transporter.sendMail({
+            from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
+            to: fallback,
+            subject: '【副本】GBC Connect - Email驗證碼（主送失敗）',
+            html: `<p>原收件者：${email}</p>` + mailOptions.html
+          });
+          console.log('已將驗證碼副本寄送至備援信箱（主送失敗後的備援）：', fallback);
+        } catch (fallbackErr) {
+          console.error('備援信箱寄送也失敗：', fallbackErr);
+        }
+      }
+      throw sendErr; // 讓上層路由感知錯誤
+    }
+
     console.log(`Email驗證碼已發送至: ${email}`);
   } catch (error) {
     console.error('發送Email驗證碼失敗:', error);

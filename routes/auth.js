@@ -79,6 +79,8 @@ const upload = multer({
 router.post('/send-verification', async (req, res) => {
   try {
     const { email, name } = req.body;
+
+    console.log('[SendVerification] Incoming request', { email, name });
     
     // 驗證必要參數
     if (!email || !name) {
@@ -112,6 +114,7 @@ router.post('/send-verification', async (req, res) => {
     
     // 生成驗證碼
     const verificationCode = generateVerificationCode();
+    const maskedCode = verificationCode.slice(0, 2) + '****';
     
     // 刪除舊的驗證碼記錄（如果存在）
     await pool.query(
@@ -125,6 +128,8 @@ router.post('/send-verification', async (req, res) => {
       'INSERT INTO email_verifications (email, verification_code, name, expires_at) VALUES ($1, $2, $3, $4)',
       [email, verificationCode, name, expiresAt]
     );
+
+    console.log('[SendVerification] Code generated and saved', { email, code: maskedCode, expiresAt });
     
     // 發送驗證碼Email
     await sendEmailVerification({
@@ -132,6 +137,8 @@ router.post('/send-verification', async (req, res) => {
       name,
       verificationCode
     });
+
+    console.log('[SendVerification] Email dispatch completed', { email });
     
     res.json({ 
       success: true, 
@@ -139,7 +146,12 @@ router.post('/send-verification', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('發送驗證碼錯誤:', error);
+    console.error('[SendVerification] Error:', {
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      stack: error.stack
+    });
     res.status(500).json({ 
       success: false, 
       message: '發送驗證碼失敗，請稍後再試' 
