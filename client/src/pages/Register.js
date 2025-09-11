@@ -6,6 +6,7 @@ import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AvatarUpload from '../components/AvatarUpload';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 const Register = () => {
   const { register: registerUser, isAuthenticated } = useAuth();
@@ -18,6 +19,13 @@ const Register = () => {
   const [loadingChapters, setLoadingChapters] = useState(true);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const [verifiedEmail, setVerifiedEmail] = useState('');
   
   const {
     register,
@@ -28,6 +36,8 @@ const Register = () => {
   } = useForm();
 
   const password = watch('password');
+  const email = watch('email');
+  const name = watch('name');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -35,6 +45,22 @@ const Register = () => {
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  // Reset verification state if email changes after verification
+  useEffect(() => {
+    if (emailVerified && email && email !== verifiedEmail) {
+      setEmailVerified(false);
+      setVerificationSent(false);
+      setVerificationCode('');
+    }
+  }, [email, emailVerified, verifiedEmail]);
+
+  // Handle resend countdown timer
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const t = setTimeout(() => setResendCountdown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCountdown]);
 
   // Check for invite parameters
   useEffect(() => {
@@ -63,7 +89,68 @@ const Register = () => {
     loadChapters();
   }, []);
 
+  const handleSendVerification = async () => {
+    // Basic email validation before sending
+    if (!email) {
+      setError('email', { type: 'manual', message: '請先輸入電子郵件' });
+      toast.error('請先輸入電子郵件');
+      return;
+    }
+    const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+    if (!emailPattern.test(email)) {
+      setError('email', { type: 'manual', message: '請輸入有效的電子郵件格式' });
+      toast.error('請輸入有效的電子郵件格式');
+      return;
+    }
+    try {
+      setSendingCode(true);
+      const payload = { email, name: name || '會員' };
+      await axios.post('/api/auth/send-verification', payload, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      setVerificationSent(true);
+      setResendCountdown(60);
+      toast.success('驗證碼已寄出，請至信箱查收');
+    } catch (error) {
+      const message = error.response?.data?.message || '驗證碼寄送失敗，請稍後再試';
+      toast.error(message);
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast.error('請輸入6位數驗證碼');
+      return;
+    }
+    try {
+      setVerifyingCode(true);
+      await axios.post('/api/auth/verify-email', {
+        email,
+        verificationCode
+      }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      setEmailVerified(true);
+      setVerifiedEmail(email);
+      setVerificationCode('');
+      setVerificationSent(false);
+      toast.success('Email 驗證成功');
+    } catch (error) {
+      const message = error.response?.data?.message || '驗證失敗，請確認驗證碼是否正確或已逾時';
+      toast.error(message);
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
   const onSubmit = async (data) => {
+    if (!emailVerified) {
+      setError('email', { type: 'manual', message: '請先完成Email驗證' });
+      toast.error('請先完成Email驗證');
+      return;
+    }
     setIsLoading(true);
     
     try {
@@ -210,6 +297,49 @@ const Register = () => {
                 {errors.email && (
                   <p className="form-error">{errors.email.message}</p>
                 )}
+                <div className="mt-2 space-y-2">
+                  {emailVerified ? (
+                    <p className="text-green-600 text-sm">此信箱已完成驗證</p>
+                  ) : (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={handleSendVerification}
+                          disabled={sendingCode || resendCountdown > 0 || !email}
+                          className="px-3 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {sendingCode ? '寄送中...' : resendCountdown > 0 ? `重新寄送 (${resendCountdown}s)` : '發送驗證碼'}
+                        </button>
+                        {verificationSent && !emailVerified && (
+                          <span className="text-gray-500 text-sm">驗證碼已寄出，請查收郵件</span>
+                        )}
+                      </div>
+                      {verificationSent && !emailVerified && (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={6}
+                            value={verificationCode}
+                            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                            className="form-input w-32"
+                            placeholder="輸入6位數碼"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleVerifyCode}
+                            disabled={verifyingCode || verificationCode.length !== 6}
+                            className="px-3 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {verifyingCode ? '驗證中...' : '驗證'}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -386,7 +516,7 @@ const Register = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !emailVerified}
               className="btn-primary w-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
