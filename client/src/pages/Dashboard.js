@@ -69,7 +69,7 @@ const Dashboard = () => {
     };
     
     return (
-      <span className={`badge ${badges[level] || 'bg-gray-500'} text-xs px-2 py-1 rounded-full font-medium text-white`}>
+      <span className={`badge ${badges[level] || 'bg-gray-500'} text-xs px-2 py-1 rounded-full font-medium text-white whitespace-nowrap`}>
         {getMembershipLevelText(level)}
       </span>
     );
@@ -164,16 +164,16 @@ const Dashboard = () => {
 
           {/* Statistics Cards */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
               {/* 總引薦金額 - 所有用戶都能看到 */}
-              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gold-600 rounded-lg flex items-center justify-center">
-                    <CurrencyDollarIcon className="h-6 w-6 text-primary-900" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CurrencyDollarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-900" />
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gold-300">總引薦金額</p>
-                    <p className="text-2xl font-bold text-gold-100">
+                  <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gold-300">總引薦金額</p>
+                    <p className="text-lg sm:text-2xl font-bold text-gold-100 truncate">
                       NT$ {stats.totalReferralAmount ? stats.totalReferralAmount.toLocaleString() : '0'}
                     </p>
                   </div>
@@ -183,50 +183,50 @@ const Dashboard = () => {
               {/* 管理員統計 */}
               {isAdmin() && (
                 <>
-                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gold-500 rounded-lg flex items-center justify-center">
-                        <UserGroupIcon className="h-6 w-6 text-primary-900" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <UserGroupIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-900" />
                       </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gold-300">總會員數</p>
-                        <p className="text-2xl font-bold text-gold-100">{stats.totalUsers}</p>
+                      <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium text-gold-300">總會員數</p>
+                        <p className="text-lg sm:text-2xl font-bold text-gold-100">{stats.totalUsers}</p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gold-400 rounded-lg flex items-center justify-center">
-                        <UserIcon className="h-6 w-6 text-primary-900" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <UserIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-900" />
                       </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gold-300">活躍會員</p>
-                        <p className="text-2xl font-bold text-gold-100">{stats.activeUsers}</p>
+                      <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium text-gold-300">活躍會員</p>
+                        <p className="text-lg sm:text-2xl font-bold text-gold-100">{stats.activeUsers}</p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gold-700 rounded-lg flex items-center justify-center">
-                        <ClockIcon className="h-6 w-6 text-gold-100" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <ClockIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gold-100" />
                       </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gold-300">待審核</p>
-                        <p className="text-2xl font-bold text-gold-100">{stats.pendingUsers}</p>
+                      <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium text-gold-300">待審核</p>
+                        <p className="text-lg sm:text-2xl font-bold text-gold-100">{stats.pendingUsers}</p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
+                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gold-600 rounded-lg flex items-center justify-center">
-                        <BuildingOfficeIcon className="h-6 w-6 text-primary-900" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <BuildingOfficeIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-900" />
                       </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gold-300">分會數量</p>
-                        <p className="text-2xl font-bold text-gold-100">{stats.totalChapters}</p>
+                      <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium text-gold-300">分會數量</p>
+                        <p className="text-lg sm:text-2xl font-bold text-gold-100">{stats.totalChapters}</p>
                       </div>
                     </div>
                   </div>
@@ -236,44 +236,43 @@ const Dashboard = () => {
           )}
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* User Actions */}
-            <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
-              <div className="border-b border-gold-600 pb-4 mb-6">
+            <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
+              <div className="border-b border-gold-600 pb-4 mb-4 sm:mb-6">
                 <div className="flex items-center space-x-2">
-                  <h2 className="text-lg font-semibold text-gold-100">快速操作</h2>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gold-100">快速操作</h2>
                   <InfoButton tooltip="這裡提供常用的功能快速入口，包括查看會員列表和編輯個人資料等基本操作。" />
                 </div>
               </div>
               <div className="space-y-4">
                 {quickActions.map((action, index) => {
-                  const Icon = action.icon;
-                  return (
-                    <Link
-                      key={index}
-                      to={action.href}
-                      className="flex items-center p-4 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-lg transition-all duration-200"
-                    >
-                      <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center`}>
-                        <Icon className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="ml-4 flex-1">
-                        <h3 className="text-sm font-medium text-gold-100">{action.title}</h3>
-                        <p className="text-xs text-gold-300">{action.description}</p>
-                      </div>
-                      <ArrowRightIcon className="h-4 w-4 text-gold-400" />
-                    </Link>
-                  );
-                })}
+                    const Icon = action.icon;
+                    return (
+                      <Link
+                        to={action.href}
+                        key={action.title}
+                        className="flex items-center p-3 sm:p-4 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-lg transition-all duration-200"
+                      >
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 ${action.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                          <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                        </div>
+                        <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                          <h3 className="text-sm font-medium text-gold-100 truncate">{action.title}</h3>
+                          <p className="text-xs text-gray-400 truncate">{action.description}</p>
+                        </div>
+                      </Link>
+                    );
+                  })}
               </div>
             </div>
 
             {/* Admin Actions */}
             {isAdmin() && (
-              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
-                <div className="border-b border-gold-600 pb-4 mb-6">
+              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
+                <div className="border-b border-gold-600 pb-4 mb-4 sm:mb-6">
                   <div className="flex items-center space-x-2">
-                    <h2 className="text-lg font-semibold text-gold-100">管理功能</h2>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gold-100">管理功能</h2>
                     <InfoButton tooltip="管理員專用功能區域，包括會員審核、用戶管理、分會設定和統計報告等高級管理工具。" />
                   </div>
                 </div>
@@ -282,24 +281,23 @@ const Dashboard = () => {
                     const Icon = action.icon;
                     return (
                       <Link
-                        key={index}
-                        to={action.href}
-                        className="flex items-center p-4 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-lg transition-all duration-200"
-                      >
-                        <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center relative`}>
-                          <Icon className="h-5 w-5 text-white" />
-                          {action.badge > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                              {action.badge}
-                            </span>
-                          )}
-                        </div>
-                        <div className="ml-4 flex-1">
-                          <h3 className="text-sm font-medium text-gold-100">{action.title}</h3>
-                          <p className="text-xs text-gold-300">{action.description}</p>
-                        </div>
-                        <ArrowRightIcon className="h-4 w-4 text-gold-400" />
-                      </Link>
+                          to={action.href}
+                          key={action.title}
+                          className="flex items-center p-3 sm:p-4 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-lg transition-all duration-200"
+                        >
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 ${action.color} rounded-lg flex items-center justify-center flex-shrink-0 relative`}>
+                            <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                            {action.badge > 0 && (
+                              <span className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
+                                {action.badge}
+                              </span>
+                            )}
+                          </div>
+                          <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                            <h3 className="text-sm font-medium text-gold-100 truncate">{action.title}</h3>
+                            <p className="text-xs text-gray-400 truncate">{action.description}</p>
+                          </div>
+                        </Link>
                     );
                   })}
                 </div>
@@ -309,9 +307,9 @@ const Dashboard = () => {
 
           {/* Recent Members */}
           {recentMembers.length > 0 && (
-            <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-6">
-              <div className="border-b border-gold-600 pb-4 mb-6 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gold-100">最近加入的會員</h2>
+            <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
+              <div className="border-b border-gold-600 pb-4 mb-4 sm:mb-6 flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-semibold text-gold-100">最近加入的會員</h2>
                 <Link
                   to="/members"
                   className="text-sm text-gold-400 hover:text-gold-300 font-medium"
@@ -321,19 +319,19 @@ const Dashboard = () => {
               </div>
               <div className="space-y-4">
                 {recentMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-4 bg-primary-700 border border-gold-700 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gold-600 rounded-full flex items-center justify-center">
-                        <UserIcon className="h-5 w-5 text-primary-900" />
+                  <div key={member.id} className="flex items-center justify-between p-3 sm:p-4 bg-primary-700 border border-gold-700 rounded-lg">
+                    <div className="flex items-center min-w-0 flex-1">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gold-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary-900" />
                       </div>
-                      <div className="ml-4">
-                        <h3 className="text-sm font-medium text-gold-100">{member.name}</h3>
-                        <p className="text-xs text-gold-300">
+                      <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                        <h3 className="text-sm font-medium text-gold-100 truncate">{member.name}</h3>
+                        <p className="text-xs text-gold-300 truncate">
                           {member.company} • {member.title}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
                       {getMembershipLevelBadge(member.membershipLevel)}
                       <Link
                         to={`/members/${member.id}`}

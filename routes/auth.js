@@ -5,7 +5,12 @@ const crypto = require('crypto');
 const multer = require('multer');
 const { pool } = require('../config/database');
 const { generateToken, authenticateToken } = require('../middleware/auth');
-const { sendPasswordResetEmail, sendWelcomeEmail } = require('../services/emailService');
+const { 
+  generateVerificationCode, 
+  sendEmailVerification, 
+  sendPasswordResetEmail, 
+  sendWelcomeEmail 
+} = require('../services/emailService');
 const { cloudinary } = require('../config/cloudinary');
 
 const router = express.Router();
@@ -70,9 +75,126 @@ const upload = multer({
 
 // @route   POST /api/auth/register
 // @desc    Register a new user
-// @access  Public
-router.post('/register', upload.single('avatar'), async (req, res) => {
+// @access  Public// 發送Email驗證碼
+router.post('/send-verification', async (req, res) => {
   try {
+    const { email, name } = req.body;
+    
+    // 驗證必要參數
+    if (!email || !name) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email和姓名為必填項目' 
+      });
+    }
+    
+    // 驗證Email格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email格式不正確' 
+      });
+    }
+    
+    // 檢查Email是否已被註冊
+    const [existingUsers] = await pool.execute(
+      'SELECT id FROM users WHERE email = ?',
+      [email]
+    );
+    
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '此Email已被註冊' 
+      });
+    }
+    
+    // 生成驗證碼
+    const verificationCode = generateVerificationCode();
+    
+    // 刪除舊的驗證碼記錄（如果存在）
+    await pool.execute(
+      'DELETE FROM email_verifications WHERE email = ?',
+      [email]
+    );
+    
+    // 儲存驗證碼到資料庫
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10分鐘後過期
+    await pool.execute(
+      'INSERT INTO email_verifications (email, verification_code, name, expires_at) VALUES (?, ?, ?, ?)',
+      [email, verificationCode, name, expiresAt]
+    );
+    
+    // 發送驗證碼Email
+    await sendEmailVerification({
+      email,
+      name,
+      verificationCode
+    });
+    
+    res.json({ 
+      success: true, 
+      message: '驗證碼已發送至您的Email信箱，請查收' 
+    });
+    
+  } catch (error) {
+    console.error('發送驗證碼錯誤:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '發送驗證碼失敗，請稍後再試' 
+    });
+  }
+});
+
+// 驗證Email驗證碼
+router.post('/verify-email', async (req, res) => {
+  try {
+    const { email, verificationCode } = req.body;
+    
+    // 驗證必要參數
+    if (!email || !verificationCode) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email和驗證碼為必填項目' 
+      });
+    }
+    
+    // 查找驗證碼記錄
+    const [verifications] = await pool.execute(
+      'SELECT * FROM email_verifications WHERE email = ? AND verification_code = ? AND expires_at > NOW() AND is_verified = FALSE',
+      [email, verificationCode]
+    );
+    
+    if (verifications.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '驗證碼無效或已過期' 
+      });
+    }
+    
+    // 標記為已驗證
+    await pool.execute(
+      'UPDATE email_verifications SET is_verified = TRUE WHERE email = ? AND verification_code = ?',
+      [email, verificationCode]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Email驗證成功' 
+    });
+    
+  } catch (error) {
+    console.error('驗證Email錯誤:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '驗證失敗，請稍後再試' 
+    });
+  }
+});
+
+// 註冊路由
+router.post('/register', upload.single('avatar'), async (req, res) => {  try {
     const {
       name,
       email,
@@ -105,6 +227,19 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
 
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: '此電子郵件已被註冊' });
+    }
+
+    // 檢查Email是否已通過驗證
+    const [emailVerifications] = await pool.execute(
+      'SELECT * FROM email_verifications WHERE email = ? AND is_verified = TRUE',
+      [email]
+    );
+    
+    if (emailVerifications.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '請先完成Email驗證' 
+      });
     }
 
     // Validate chapter exists
@@ -187,6 +322,17 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
       // Continue execution - don't fail the registration if email fails
+    }
+
+    // 清理Email驗證記錄
+    try {
+      await pool.execute(
+        'DELETE FROM email_verifications WHERE email = ?',
+        [email]
+      );
+    } catch (cleanupError) {
+      console.error('清理Email驗證記錄失敗:', cleanupError);
+      // 不影響註冊流程，只記錄錯誤
     }
 
     res.status(201).json({

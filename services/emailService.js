@@ -7,7 +7,7 @@ const createTransporter = () => {
     throw new Error('Email configuration missing: SMTP_USER and SMTP_PASS are required');
   }
   
-  return nodemailer.createTransport({
+  return nodemailer.createTransporter({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 587,
     secure: false, // true for 465, false for other ports
@@ -20,6 +20,170 @@ const createTransporter = () => {
       rejectUnauthorized: false
     }
   });
+};
+
+// 生成6位數驗證碼
+const generateVerificationCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// 發送Email驗證碼
+const sendEmailVerification = async ({ email, name, verificationCode }) => {
+  try {
+    const transporter = createTransporter();
+    
+    // 驗證 SMTP 連接
+    await transporter.verify();
+    console.log('SMTP server connection verified successfully');
+    
+    const mailOptions = {
+      from: `"GBC商務菁英會" <gbc.notice@gmail.com>`,
+      to: email,
+      subject: 'GBC Connect - Email驗證碼',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2c3e50; margin: 0;">GBC Connect</h1>
+              <p style="color: #7f8c8d; margin: 5px 0 0 0;">Email驗證</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">親愛的 ${name}，</p>
+              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">感謝您註冊 GBC 商務菁英會！請使用以下驗證碼完成Email驗證：</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <div style="display: inline-block; background-color: #3498db; color: white; padding: 20px 40px; border-radius: 10px; font-size: 32px; font-weight: bold; letter-spacing: 8px;">
+                ${verificationCode}
+              </div>
+            </div>
+            
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="color: #856404; margin: 0; font-size: 14px;">⚠️ 此驗證碼將在10分鐘後失效，請盡快完成驗證。</p>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
+              <p style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">如果您沒有註冊 GBC Connect 帳號，請忽略此郵件。</p>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+              <p style="color: #7f8c8d; font-size: 12px;">此郵件由 GBC Connect 系統自動發送，請勿回覆。</p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+    
+    await transporter.sendMail(mailOptions);
+    console.log(`Email驗證碼已發送至: ${email}`);
+  } catch (error) {
+    console.error('發送Email驗證碼失敗:', error);
+    throw error;
+  }
+};
+
+// 發送AI智慧通知
+const sendAINotification = async ({ email, name, notificationType, content }) => {
+  try {
+    const transporter = createTransporter();
+    
+    // 驗證 SMTP 連接
+    await transporter.verify();
+    console.log('SMTP server connection verified successfully');
+    
+    let subject, html;
+    
+    switch (notificationType) {
+      case 'business_match':
+        subject = 'GBC Connect - AI智慧商務配對通知';
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #2c3e50; margin: 0;">🤖 AI智慧配對</h1>
+                <p style="color: #7f8c8d; margin: 5px 0 0 0;">為您找到了潛在的商務夥伴</p>
+              </div>
+              
+              <div style="margin-bottom: 30px;">
+                <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">親愛的 ${name}，</p>
+                <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">我們的AI系統為您分析了最新的商務機會：</p>
+              </div>
+              
+              <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                ${content}
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" style="display: inline-block; background-color: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">查看詳情</a>
+              </div>
+            </div>
+          </div>
+        `;
+        break;
+        
+      case 'event_recommendation':
+        subject = 'GBC Connect - AI活動推薦';
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #2c3e50; margin: 0;">🎯 AI活動推薦</h1>
+                <p style="color: #7f8c8d; margin: 5px 0 0 0;">為您推薦合適的活動</p>
+              </div>
+              
+              <div style="margin-bottom: 30px;">
+                <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">親愛的 ${name}，</p>
+                <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">根據您的興趣和專業領域，我們為您推薦以下活動：</p>
+              </div>
+              
+              <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                ${content}
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/events" style="display: inline-block; background-color: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">查看活動</a>
+              </div>
+            </div>
+          </div>
+        `;
+        break;
+        
+      default:
+        subject = 'GBC Connect - AI智慧通知';
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #2c3e50; margin: 0;">🔔 智慧通知</h1>
+                <p style="color: #7f8c8d; margin: 5px 0 0 0;">來自GBC Connect的智慧提醒</p>
+              </div>
+              
+              <div style="margin-bottom: 30px;">
+                <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">親愛的 ${name}，</p>
+              </div>
+              
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                ${content}
+              </div>
+            </div>
+          </div>
+        `;
+    }
+    
+    const mailOptions = {
+      from: `"GBC商務菁英會" <gbc.notice@gmail.com>`,
+      to: email,
+      subject: subject,
+      html: html
+    };
+    
+    await transporter.sendMail(mailOptions);
+    console.log(`AI智慧通知已發送至: ${email}`);
+  } catch (error) {
+    console.error('發送AI智慧通知失敗:', error);
+    throw error;
+  }
 };
 
 // 發送引薦通知Email
@@ -86,8 +250,8 @@ const sendReferralNotification = async (type, referralData) => {
     }
     
     const mailOptions = {
-      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
-      to: to,
+      from: `"GBC商務菁英會" <gbc.notice@gmail.com>`,
+      to: toEmail,
       subject: subject,
       html: html
     };
@@ -176,8 +340,8 @@ const sendMeetingNotification = async (type, meetingData) => {
     }
     
     const mailOptions = {
-      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
-      to: to,
+      from: `"GBC商務菁英會" <gbc.notice@gmail.com>`,
+      to: attendeeEmail,
       subject: subject,
       html: html
     };
@@ -327,6 +491,9 @@ const sendPasswordResetEmail = async ({ email, name, resetToken }) => {
 };
 
 module.exports = {
+  generateVerificationCode,
+  sendEmailVerification,
+  sendAINotification,
   sendReferralNotification,
   sendMeetingNotification,
   sendPasswordResetEmail,

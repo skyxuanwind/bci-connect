@@ -148,6 +148,31 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create email_verifications table for email verification during registration
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS email_verifications (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        verification_code VARCHAR(6) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        is_verified BOOLEAN DEFAULT FALSE,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create unique index for email_verifications
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS unique_email_verification ON email_verifications (email)
+    `);
+
+    // Create indexes for email_verifications
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_email_code ON email_verifications (email, verification_code);
+      CREATE INDEX IF NOT EXISTS idx_expires_at ON email_verifications (expires_at)
+    `);
+
     // Create events table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS events (
