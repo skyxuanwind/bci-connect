@@ -98,12 +98,12 @@ router.post('/send-verification', async (req, res) => {
     }
     
     // 檢查Email是否已被註冊
-    const [existingUsers] = await pool.execute(
-      'SELECT id FROM users WHERE email = ?',
+    const existingUsers = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
       [email]
     );
     
-    if (existingUsers.length > 0) {
+    if (existingUsers.rows.length > 0) {
       return res.status(400).json({ 
         success: false, 
         message: '此Email已被註冊' 
@@ -114,15 +114,15 @@ router.post('/send-verification', async (req, res) => {
     const verificationCode = generateVerificationCode();
     
     // 刪除舊的驗證碼記錄（如果存在）
-    await pool.execute(
-      'DELETE FROM email_verifications WHERE email = ?',
+    await pool.query(
+      'DELETE FROM email_verifications WHERE email = $1',
       [email]
     );
     
     // 儲存驗證碼到資料庫
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10分鐘後過期
-    await pool.execute(
-      'INSERT INTO email_verifications (email, verification_code, name, expires_at) VALUES (?, ?, ?, ?)',
+    await pool.query(
+      'INSERT INTO email_verifications (email, verification_code, name, expires_at) VALUES ($1, $2, $3, $4)',
       [email, verificationCode, name, expiresAt]
     );
     
@@ -161,12 +161,12 @@ router.post('/verify-email', async (req, res) => {
     }
     
     // 查找驗證碼記錄
-    const [verifications] = await pool.execute(
-      'SELECT * FROM email_verifications WHERE email = ? AND verification_code = ? AND expires_at > NOW() AND is_verified = FALSE',
+    const verifications = await pool.query(
+      'SELECT * FROM email_verifications WHERE email = $1 AND verification_code = $2 AND expires_at > NOW() AND is_verified = FALSE',
       [email, verificationCode]
     );
     
-    if (verifications.length === 0) {
+    if (verifications.rows.length === 0) {
       return res.status(400).json({ 
         success: false, 
         message: '驗證碼無效或已過期' 
@@ -174,8 +174,8 @@ router.post('/verify-email', async (req, res) => {
     }
     
     // 標記為已驗證
-    await pool.execute(
-      'UPDATE email_verifications SET is_verified = TRUE WHERE email = ? AND verification_code = ?',
+    await pool.query(
+      'UPDATE email_verifications SET is_verified = TRUE WHERE email = $1 AND verification_code = $2',
       [email, verificationCode]
     );
     
