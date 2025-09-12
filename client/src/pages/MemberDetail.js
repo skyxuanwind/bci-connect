@@ -96,6 +96,11 @@ const MemberDetail = () => {
     });
   };
 
+  const handleSendMessage = () => {
+    if (member?.id) {
+      navigate(`/meetings?schedule_with=${member.id}`);
+    }
+  };
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -323,14 +328,15 @@ const MemberDetail = () => {
         )}
         
         {/* Meeting Schedule Button */}
-        {user?.id !== member.id && user?.membershipLevel <= 3 && (
-          <Link 
-            to={`/meetings/schedule/${member.id}`}
-            className="btn-primary inline-flex items-center"
-          >
-            <CalendarIcon className="h-4 w-4 mr-2" />
-            預約會議
-          </Link>
+        {user?.id !== member.id && (
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onClick={handleSendMessage} className="btn-primary w-full flex items-center justify-center">
+              傳送訊息
+            </button>
+            <button onClick={() => navigate(`/meetings?schedule_with=${member.id}`)} className="btn-secondary w-full flex items-center justify-center">
+              安排會議
+            </button>
+          </div>
         )}
       </div>
     </div>

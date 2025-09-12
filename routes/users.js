@@ -354,30 +354,14 @@ router.get('/members', async (req, res) => {
   try {
     const { page = 1, limit = 20, chapterId = 'all', search = '' } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Determine accessible membership levels based on user's level
-    let accessibleLevels = [];
-    switch (req.user.membership_level) {
-      case 1: // Level 1 can see all levels
-        accessibleLevels = [1, 2, 3];
-        break;
-      case 2: // Level 2 can see level 2 and 3
-        accessibleLevels = [2, 3];
-        break;
-      case 3: // Level 3 can only see level 3
-        accessibleLevels = [3];
-        break;
-      default:
-        return res.status(403).json({ message: '無權限查看會員列表' });
-    }
 
+    // 取消會員等級限制：所有會員皆可查看所有等級
     let whereConditions = [
       'u.status = $1',
-      `u.membership_level = ANY($2)`,
       `NOT (u.membership_level = 1 AND u.email LIKE '%admin%')`  // 排除系統管理員
     ];
-    let queryParams = ['active', accessibleLevels];
-    let paramIndex = 3;
+    let queryParams = ['active'];
+    let paramIndex = 2;
 
     if (chapterId !== 'all') {
       whereConditions.push(`u.chapter_id = $${paramIndex}`);
@@ -399,7 +383,7 @@ router.get('/members', async (req, res) => {
       FROM users u
       ${whereClause}
     `;
-    
+
     const countResult = await pool.query(countQuery, queryParams);
     const totalMembers = parseInt(countResult.rows[0].total);
 
@@ -414,7 +398,7 @@ router.get('/members', async (req, res) => {
       ORDER BY u.membership_level ASC, u.name ASC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
-    
+
     queryParams.push(parseInt(limit), offset);
     const membersResult = await pool.query(membersQuery, queryParams);
 
@@ -469,16 +453,7 @@ router.get('/member/:id/interview', async (req, res) => {
 
     const member = result.rows[0];
 
-    // Check access permission based on membership level
-    const canAccess = (
-      (req.user.membership_level === 1) || // Level 1 can see all
-      (req.user.membership_level === 2 && member.membership_level >= 2) || // Level 2 can see 2,3
-      (req.user.membership_level === 3 && member.membership_level === 3) // Level 3 can see only 3
-    );
-
-    if (!canAccess) {
-      return res.status(403).json({ message: '無權限查看此會員的面談表' });
-    }
+    // 取消會員等級限制：所有會員皆可查看該會員的面談資料
 
     // Check if interview form exists
     if (!member.interview_form) {
@@ -545,16 +520,8 @@ router.get('/member/:id', async (req, res) => {
 
     const member = result.rows[0];
 
-    // Check access permission based on membership level
-    const canAccess = (
-      (req.user.membership_level === 1) || // Level 1 can see all
-      (req.user.membership_level === 2 && member.membership_level >= 2) || // Level 2 can see 2,3
-      (req.user.membership_level === 3 && member.membership_level === 3) // Level 3 can see only 3
-    );
+    // 取消會員等級限制：所有會員皆可查看會員詳細資料
 
-    if (!canAccess) {
-      return res.status(403).json({ message: '無權限查看此會員資料' });
-    }
 
     res.json({
       member: {

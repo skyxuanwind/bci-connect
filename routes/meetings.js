@@ -10,30 +10,24 @@ router.post('/create', authenticateToken, async (req, res) => {
     const { attendee_id, meeting_time_start, meeting_time_end, notes } = req.body;
     const requester_id = req.user.id;
 
-    // 檢查發起人是否為會員以上
-    const requesterCheck = await pool.query(
-      'SELECT membership_level FROM users WHERE id = $1',
-      [requester_id]
-    );
-
-    if (!requesterCheck.rows[0] || requesterCheck.rows[0].membership_level > 3) {
-      return res.status(403).json({ error: '只有會員以上才能預約會議' });
+    // 基本參數驗證，避免資料庫類型錯誤導致 500
+    if (!attendee_id || isNaN(parseInt(attendee_id, 10))) {
+      return res.status(400).json({ error: '請選擇受邀者' });
+    }
+    if (!meeting_time_start || !meeting_time_end) {
+      return res.status(400).json({ error: '請選擇會議開始與結束時間' });
     }
 
-    // 檢查受邀者是否存在且為活躍會員
-    const attendeeCheck = await pool.query(
-      'SELECT id, name FROM users WHERE id = $1 AND status = $2',
-      [attendee_id, 'active']
-    );
-
-    if (!attendeeCheck.rows[0]) {
-      return res.status(404).json({ error: '受邀會員不存在或非活躍狀態' });
-    }
-
-    // 檢查時間格式
     const startTime = new Date(meeting_time_start);
     const endTime = new Date(meeting_time_end);
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+      return res.status(400).json({ error: '會議時間格式不正確' });
+    }
+    if (requester_id === parseInt(attendee_id, 10)) {
+      return res.status(400).json({ error: '不能邀請自己作為受邀者' });
+    }
 
+    // 檢查時間先後
     if (startTime >= endTime) {
       return res.status(400).json({ error: '結束時間必須晚於開始時間' });
     }
@@ -41,6 +35,29 @@ router.post('/create', authenticateToken, async (req, res) => {
     if (startTime < new Date()) {
       return res.status(400).json({ error: '會議時間不能是過去時間' });
     }
+
+    const attendeeId = parseInt(attendee_id, 10);
+
+    // 取消會員等級限制，任何會員皆可預約會議，只需驗證受邀者存在與狀態
+
+    // 檢查受邀者是否存在且為活躍會員
+    const attendeeCheck = await pool.query(
+      'SELECT id, name, email, company FROM users WHERE id = $1 AND status = $2',
+      [attendeeId, 'active']
+    );
+
+    if (!attendeeCheck.rows[0]) {
+      return res.status(404).json({ error: '受邀會員不存在或非活躍狀態' });
+    }
+
+    const attendeeUser = attendeeCheck.rows[0];
+
+    // 取得發起人資訊用於Email
+    const requesterInfo = await pool.query(
+      'SELECT id, name, email, company FROM users WHERE id = $1',
+      [requester_id]
+    );
+    const requesterUser = requesterInfo.rows[0];
 
     // 檢查發起人時間衝突
     const requesterConflict = await pool.query(
@@ -69,7 +86,7 @@ router.post('/create', authenticateToken, async (req, res) => {
          (meeting_time_start < $3 AND meeting_time_end >= $3) OR
          (meeting_time_start >= $2 AND meeting_time_end <= $3)
        )`,
-      [attendee_id, meeting_time_start, meeting_time_end]
+      [attendeeId, meeting_time_start, meeting_time_end]
     );
 
     if (attendeeConflict.rows.length > 0) {
@@ -81,17 +98,17 @@ router.post('/create', authenticateToken, async (req, res) => {
       `INSERT INTO meetings (requester_id, attendee_id, meeting_time_start, meeting_time_end, notes, status, created_at)
        VALUES ($1, $2, $3, $4, $5, 'pending', CURRENT_TIMESTAMP)
        RETURNING *`,
-      [req.user.id, attendeeUser.id, meetingTimeStart, meetingTimeEnd, notes]
+      [requester_id, attendeeUser.id, meeting_time_start, meeting_time_end, notes]
     );
 
     // 發送Email通知給受邀者
     const meetingData = {
-      requester_name: req.user.name,
-      requester_company: req.user.company,
+      requester_name: requesterUser?.name || req.user.name,
+      requester_company: requesterUser?.company || req.user.company,
       attendee_name: attendeeUser.name,
       attendee_email: attendeeUser.email,
-      meeting_time_start: meetingTimeStart,
-      meeting_time_end: meetingTimeEnd,
+      meeting_time_start: meeting_time_start,
+      meeting_time_end: meeting_time_end,
       notes: notes
     };
     

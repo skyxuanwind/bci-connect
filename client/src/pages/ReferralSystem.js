@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const ReferralSystem = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('stats');
   const [stats, setStats] = useState({
     total_received: 0,
@@ -131,15 +133,11 @@ const ReferralSystem = () => {
   };
 
   // 檢查用戶權限
-  if (!user || user.membershipLevel > 3) {
-    return (
-      <div className="min-h-screen bg-primary-900 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gold-100 mb-4">權限不足</h2>
-          <p className="text-gold-300">只有會員以上才能使用引薦系統</p>
-        </div>
-      </div>
-    );
+  // 移除會員等級限制，所有會員都可使用引薦功能
+  // 原先：if (!user || user.membershipLevel > 3) { return navigate('/'); }
+  if (!user) {
+    navigate('/');
+    return null;
   }
 
   return (

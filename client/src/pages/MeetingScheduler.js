@@ -12,6 +12,9 @@ const MeetingScheduler = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  // 新增：表單錯誤與高亮新建會議
+  const [formErrors, setFormErrors] = useState({});
+  const [highlightedMeetingId, setHighlightedMeetingId] = useState(null);
 
   // 新增會議表單狀態
   const [newMeeting, setNewMeeting] = useState({
@@ -56,22 +59,92 @@ const MeetingScheduler = () => {
     }
   };
 
+  // 新增：表單校驗
+  const validateForm = () => {
+    const errors = {};
+    const { attendee_id, meeting_date, start_time, end_time } = newMeeting;
+
+    if (!attendee_id) {
+      errors.attendee_id = '請選擇受邀者';
+    } else if (parseInt(attendee_id, 10) === user?.id) {
+      errors.attendee_id = '不能邀請自己作為受邀者';
+    }
+
+    if (!meeting_date) {
+      errors.meeting_date = '請選擇日期';
+    }
+    if (!start_time) {
+      errors.start_time = '請選擇開始時間';
+    }
+    if (!end_time) {
+      errors.end_time = '請選擇結束時間';
+    }
+
+    if (meeting_date && start_time && end_time) {
+      const start = new Date(`${meeting_date}T${start_time}:00`);
+      const end = new Date(`${meeting_date}T${end_time}:00`);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        errors.time_format = '時間格式不正確';
+      } else {
+        if (start >= end) {
+          errors.time_order = '結束時間必須晚於開始時間';
+        }
+        const now = new Date();
+        if (start < now) {
+          errors.time_past = '會議時間不能是過去時間';
+        }
+      }
+
+      // 衝突檢查（僅在已選擇會員且有可用性資料時）
+      if (
+        selectedMember &&
+        memberAvailability &&
+        memberAvailability.busy_times &&
+        memberAvailability.busy_times.length > 0
+      ) {
+        const conflict = isTimeSlotBusy(meeting_date, start_time, end_time);
+        if (conflict) {
+          errors.time_conflict = '該時間段與對方已有會議衝突';
+        }
+      }
+    }
+
+    return { valid: Object.keys(errors).length === 0, errors };
+  };
+
+  // 即時校驗：當表單任何一項變更時，更新錯誤
+  useEffect(() => {
+    const { errors } = validateForm();
+    setFormErrors(errors);
+  }, [newMeeting, selectedMember, memberAvailability]);
+
   const handleCreateMeeting = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     setSuccess('');
 
+    const { valid, errors } = validateForm();
+    if (!valid) {
+      setFormErrors(errors);
+      // 顯示第一條錯誤作為頂部提示
+      const firstError = Object.values(errors)[0];
+      if (firstError) setError(firstError);
+      return;
+    }
+
+    setLoading(true);
     try {
       const meetingTimeStart = `${newMeeting.meeting_date}T${newMeeting.start_time}:00`;
       const meetingTimeEnd = `${newMeeting.meeting_date}T${newMeeting.end_time}:00`;
 
-      await axios.post('/api/meetings/create', {
+      const { data } = await axios.post('/api/meetings/create', {
         attendee_id: newMeeting.attendee_id,
         meeting_time_start: meetingTimeStart,
         meeting_time_end: meetingTimeEnd,
         notes: newMeeting.notes
       });
+
+      const createdId = data?.meeting?.id;
 
       setSuccess('會議邀請已成功發送！');
       setNewMeeting({
@@ -81,14 +154,38 @@ const MeetingScheduler = () => {
         end_time: '',
         notes: ''
       });
-      fetchMeetings();
+      setSelectedMember(null);
+      setMemberAvailability(null);
+
+      // 先抓取最新清單，再切到「我的會議」，並高亮新項
+      await fetchMeetings();
       setActiveTab('meetings');
+
+      if (createdId) {
+        setHighlightedMeetingId(createdId);
+        // 滾動到新建的會議卡片
+        setTimeout(() => {
+          try {
+            const el = document.getElementById(`meeting-${createdId}`);
+            if (el && typeof el.scrollIntoView === 'function') {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          } catch (_) {}
+        }, 150);
+      }
     } catch (error) {
       setError(error.response?.data?.error || '創建會議失敗');
     } finally {
       setLoading(false);
     }
   };
+
+  // 高亮效果在幾秒後自動移除
+  useEffect(() => {
+    if (!highlightedMeetingId) return;
+    const t = setTimeout(() => setHighlightedMeetingId(null), 6000);
+    return () => clearTimeout(t);
+  }, [highlightedMeetingId]);
 
   const handleRespondToMeeting = async (meetingId, status) => {
     try {
@@ -178,16 +275,20 @@ const MeetingScheduler = () => {
   };
 
   // 檢查用戶權限
-  if (!user || user.membershipLevel > 3) {
+  // 允許所有會員使用會議預約
+  // 原先：if (!user || user.membershipLevel > 3) {...}
+  if (!user) {
     return (
       <div className="min-h-screen bg-primary-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gold-100 mb-4">權限不足</h2>
-          <p className="text-gold-300">只有會員以上才能使用會議預約系統</p>
+          <h2 className="text-2xl font-bold text-gold-100 mb-4">請先登入</h2>
+          <p className="text-gold-300">登入後即可使用會議預約功能</p>
         </div>
       </div>
     );
   }
+
+  const hasErrors = Object.keys(formErrors).length > 0;
 
   return (
     <div className="min-h-screen bg-primary-900">
@@ -261,6 +362,9 @@ const MeetingScheduler = () => {
                           </option>
                         ))}
                       </select>
+                      {formErrors.attendee_id && (
+                        <p className="mt-1 text-xs text-red-400">{formErrors.attendee_id}</p>
+                      )}
                     </div>
 
                     <div>
@@ -275,6 +379,9 @@ const MeetingScheduler = () => {
                         className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                         required
                       />
+                      {formErrors.meeting_date && (
+                        <p className="mt-1 text-xs text-red-400">{formErrors.meeting_date}</p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -289,6 +396,9 @@ const MeetingScheduler = () => {
                           className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                           required
                         />
+                        {formErrors.start_time && (
+                          <p className="mt-1 text-xs text-red-400">{formErrors.start_time}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gold-300 mb-2">
@@ -301,14 +411,16 @@ const MeetingScheduler = () => {
                           className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
                           required
                         />
+                        {formErrors.end_time && (
+                          <p className="mt-1 text-xs text-red-400">{formErrors.end_time}</p>
+                        )}
                       </div>
                     </div>
 
-                    {/* 時間衝突警告 */}
-                    {newMeeting.meeting_date && newMeeting.start_time && newMeeting.end_time && 
-                     isTimeSlotBusy(newMeeting.meeting_date, newMeeting.start_time, newMeeting.end_time) && (
+                    {/* 時間衝突與其他時間錯誤 */}
+                    {(formErrors.time_order || formErrors.time_past || formErrors.time_conflict || formErrors.time_format) && (
                       <div className="bg-yellow-900 border border-yellow-600 text-yellow-200 px-3 py-2 rounded text-sm">
-                        該時間段與對方已有會議衝突
+                        {formErrors.time_order || formErrors.time_past || formErrors.time_conflict || formErrors.time_format}
                       </div>
                     )}
 
@@ -327,9 +439,8 @@ const MeetingScheduler = () => {
 
                     <button
                       type="submit"
-                      disabled={loading || (newMeeting.meeting_date && newMeeting.start_time && newMeeting.end_time && 
-                               isTimeSlotBusy(newMeeting.meeting_date, newMeeting.start_time, newMeeting.end_time))}
-                      className="w-full bg-gradient-to-r from-gold-600 to-gold-700 text-primary-900 py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-gold-700 hover:to-gold-800 focus:outline-none focus:ring-4 focus:ring-gold-300 disabled:opacity-50 transform hover:scale-105 transition-all duration-200"
+                      disabled={loading || hasErrors}
+                      className="w-full bg-gradient-to-r from-gold-600 to-gold-700 text-primary-900 py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-gold-700 hover:to-gold-800 focus:outline-none focus:ring-4 focus:ring-gold-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200"
                     >
                       {loading ? '發送中...' : '預約會議'}
                     </button>
@@ -378,7 +489,15 @@ const MeetingScheduler = () => {
                 ) : (
                   <div className="space-y-4">
                     {meetings.map(meeting => (
-                      <div key={meeting.id} className="border border-gold-600 bg-primary-700 rounded-lg p-4">
+                      <div
+                        key={meeting.id}
+                        id={`meeting-${meeting.id}`}
+                        className={`border ${
+                          meeting.id === highlightedMeetingId
+                            ? 'border-gold-400 ring-2 ring-gold-500 shadow-lg animate-pulse'
+                            : 'border-gold-600'
+                        } bg-primary-700 rounded-lg p-4`}
+                      >
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <h4 className="font-medium text-gold-100">

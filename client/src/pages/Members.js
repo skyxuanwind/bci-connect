@@ -119,20 +119,9 @@ const Members = () => {
     );
   };
 
-  const canViewMember = (memberLevel) => {
-    if (!user?.membershipLevel) return false;
-    return user.membershipLevel <= memberLevel;
-  };
+  const canViewMember = () => true;
 
-  const getVisibleMembershipLevels = () => {
-    if (!user?.membershipLevel) return [];
-    
-    const levels = [];
-    for (let i = user.membershipLevel; i <= 3; i++) {
-      levels.push(i);
-    }
-    return levels;
-  };
+  const getVisibleMembershipLevels = () => [1, 2, 3];
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -221,10 +210,10 @@ const Members = () => {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-2xl font-bold text-gold-100">會員目錄</h1>
-            <InfoButton tooltip="會員目錄顯示所有可見的會員資料。您的查看權限基於會員等級：核心會員可查看所有等級，幹部會員可查看幹部和一般會員，一般會員只能查看同等級會員。" />
+            <InfoButton tooltip="會員目錄顯示所有會員資料。為了促進交流，所有會員均可查看所有等級的會員。" />
           </div>
           <p className="mt-1 text-sm text-gold-300">
-            根據您的會員等級，您可以查看 {getVisibleMembershipLevels().map(level => getMembershipLevelText(level)).join('、')} 的會員資料
+            您可以查看 核心會員、幹部會員、一般會員 的會員資料
           </p>
         </div>
         <div className="mt-4 sm:mt-0">

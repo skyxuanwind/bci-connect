@@ -173,7 +173,7 @@ const Dashboard = () => {
                   </div>
                   <div className="ml-3 sm:ml-4 min-w-0 flex-1">
                     <p className="text-xs sm:text-sm font-medium text-gold-300">總引薦金額</p>
-                    <p className="text-lg sm:text-2xl font-bold text-gold-100 truncate">
+                    <p className="text-lg sm:text-2xl font-bold text-gold-100 break-all whitespace-normal">
                       NT$ {stats.totalReferralAmount ? stats.totalReferralAmount.toLocaleString() : '0'}
                     </p>
                   </div>

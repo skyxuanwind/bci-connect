@@ -10,19 +10,11 @@ router.post('/create', authenticateToken, async (req, res) => {
     const { referred_to_id, referral_amount, description } = req.body;
     const referrer_id = req.user.id;
 
-    // 檢查引薦人是否為會員以上
-    const referrerCheck = await pool.query(
-      'SELECT membership_level FROM users WHERE id = $1',
-      [referrer_id]
-    );
-
-    if (!referrerCheck.rows[0] || referrerCheck.rows[0].membership_level > 3) {
-      return res.status(403).json({ error: '只有會員以上才能發起引薦' });
-    }
+    // 取消會員等級限制：任何會員皆可發起引薦
 
     // 檢查被引薦人是否存在且為活躍會員
     const referredCheck = await pool.query(
-      'SELECT id, name FROM users WHERE id = $1 AND status = $2',
+      'SELECT id, name, email, company FROM users WHERE id = $1 AND status = $2',
       [referred_to_id, 'active']
     );
 
@@ -49,9 +41,15 @@ router.post('/create', authenticateToken, async (req, res) => {
     );
 
     // 發送Email通知給被引薦人
+    // 取得引薦者資訊（名稱、公司）
+    const referrerInfo = await pool.query(
+      'SELECT name, company FROM users WHERE id = $1',
+      [referrer_id]
+    );
+
     const referralData = {
-      referrer_name: req.user.name,
-      referrer_company: req.user.company,
+      referrer_name: referrerInfo.rows[0]?.name || req.user.name,
+      referrer_company: referrerInfo.rows[0]?.company || req.user.company,
       referred_name: referredCheck.rows[0].name,
       referred_email: referredCheck.rows[0].email,
       referral_amount: referral_amount,

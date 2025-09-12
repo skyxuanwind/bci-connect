@@ -191,8 +191,8 @@ const Login = () => {
         </div>
 
         {/* Registration Notice */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="text-sm text-blue-700 text-center">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg p-4">
+          <div className="text-sm text-gold-100 text-center">
             <p>註冊後需等待管理員審核才能登入</p>
           </div>
         </div>

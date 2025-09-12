@@ -248,16 +248,14 @@ const Layout = ({ children }) => {
         })}
         
         {/* Member Features (Level 3+) */}
-        {user?.membershipLevel <= 3 && (
+        {user && (
           <>
             <div className="pt-4 pb-2">
               <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
                 會員功能
               </h3>
             </div>
-            {memberFeatures
-              .filter(item => user?.membershipLevel <= item.minLevel)
-              .map((item) => {
+            {memberFeatures.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link

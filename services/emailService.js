@@ -241,6 +241,7 @@ const sendReferralNotification = async (type, referralData) => {
     console.log('SMTP server connection verified successfully');
     
     let subject, html, to;
+    const frontendUrl = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://bci-connect.onrender.com' : 'http://localhost:3001');
     
     if (type === 'new_referral') {
       // 收到新引薦通知
@@ -251,12 +252,12 @@ const sendReferralNotification = async (type, referralData) => {
           <h2 style="color: #2563eb;">您收到了一個新的引薦</h2>
           <p>親愛的 ${referralData.referred_name}，</p>
           <p>${referralData.referrer_name} (${referralData.referrer_company}) 向您發送了一個引薦：</p>
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <div style=\"background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;\">
             <p><strong>引薦金額：</strong>NT$ ${referralData.referral_amount.toLocaleString()}</p>
             <p><strong>說明：</strong>${referralData.description}</p>
           </div>
           <p>請登入系統查看詳情並回應此引薦。</p>
-          <a href="${process.env.FRONTEND_URL}/referrals" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看引薦</a>
+          <a href="${frontendUrl}/referrals" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看引薦</a>
         </div>
       `;
     } else if (type === 'referral_confirmed') {
@@ -268,12 +269,12 @@ const sendReferralNotification = async (type, referralData) => {
           <h2 style="color: #059669;">您的引薦已被確認</h2>
           <p>親愛的 ${referralData.referrer_name}，</p>
           <p>${referralData.referred_name} 已確認了您的引薦：</p>
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <div style=\"background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;\">
             <p><strong>引薦金額：</strong>NT$ ${referralData.referral_amount.toLocaleString()}</p>
             <p><strong>確認時間：</strong>${new Date().toLocaleString('zh-TW')}</p>
           </div>
           <p>恭喜您成功完成引薦！</p>
-          <a href="${process.env.FRONTEND_URL}/referrals" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
+          <a href="${frontendUrl}/referrals" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
         </div>
       `;
     } else if (type === 'referral_rejected') {
@@ -285,18 +286,19 @@ const sendReferralNotification = async (type, referralData) => {
           <h2 style="color: #dc2626;">您的引薦已被拒絕</h2>
           <p>親愛的 ${referralData.referrer_name}，</p>
           <p>${referralData.referred_name} 拒絕了您的引薦：</p>
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <div style=\"background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;\">
             <p><strong>引薦金額：</strong>NT$ ${referralData.referral_amount.toLocaleString()}</p>
             <p><strong>拒絕時間：</strong>${new Date().toLocaleString('zh-TW')}</p>
           </div>
-          <a href="${process.env.FRONTEND_URL}/referrals" style="background-color: #6b7280; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
+          <a href="${frontendUrl}/referrals" style="background-color: #6b7280; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
         </div>
       `;
     }
     
     const mailOptions = {
-      from: `"GBC商務菁英會" <gbc.notice@gmail.com>`,
-      to: toEmail,
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
+      to: to,
+      bcc: process.env.SMTP_BCC || process.env.SMTP_USER,
       subject: subject,
       html: html
     };
@@ -331,6 +333,7 @@ const sendMeetingNotification = async (type, meetingData) => {
     console.log('SMTP server connection verified successfully');
     
     let subject, html, to;
+    const frontendUrl = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://bci-connect.onrender.com' : 'http://localhost:3001');
     
     if (type === 'new_meeting') {
       // 收到新會議邀請通知
@@ -346,7 +349,7 @@ const sendMeetingNotification = async (type, meetingData) => {
             <p><strong>備註：</strong>${meetingData.notes || '無'}</p>
           </div>
           <p>請登入系統查看詳情並回應此邀請。</p>
-          <a href="${process.env.FRONTEND_URL}/meetings" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看邀請</a>
+          <a href="${frontendUrl}/meetings" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看邀請</a>
         </div>
       `;
     } else if (type === 'meeting_confirmed') {
@@ -363,7 +366,7 @@ const sendMeetingNotification = async (type, meetingData) => {
             <p><strong>確認時間：</strong>${new Date().toLocaleString('zh-TW')}</p>
           </div>
           <p>請準時參加會議！</p>
-          <a href="${process.env.FRONTEND_URL}/meetings" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
+          <a href="${frontendUrl}/meetings" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
         </div>
       `;
     } else if (type === 'meeting_cancelled') {
@@ -379,14 +382,15 @@ const sendMeetingNotification = async (type, meetingData) => {
             <p><strong>原定會議時間：</strong>${new Date(meetingData.meeting_time_start).toLocaleString('zh-TW')} - ${new Date(meetingData.meeting_time_end).toLocaleString('zh-TW')}</p>
             <p><strong>取消時間：</strong>${new Date().toLocaleString('zh-TW')}</p>
           </div>
-          <a href="${process.env.FRONTEND_URL}/meetings" style="background-color: #6b7280; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
+          <a href="${frontendUrl}/meetings" style="background-color: #6b7280; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
         </div>
       `;
     }
     
     const mailOptions = {
-      from: `"GBC商務菁英會" <gbc.notice@gmail.com>`,
-      to: attendeeEmail,
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
+      to: to,
+      bcc: process.env.SMTP_BCC || process.env.SMTP_USER,
       subject: subject,
       html: html
     };
