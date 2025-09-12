@@ -815,7 +815,7 @@ const Profile = () => {
               {/* 一個「優質引薦」的樣貌 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <CheckCircleIcon className="h-5 w-5 mr-2 text-orange-600" />
+                  <CheckCircleIcon className="h-5 w-5 mr-2 text-gold-400" />
                   一個「優質引薦」的樣貌
                 </label>
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
@@ -836,7 +836,7 @@ const Profile = () => {
               {/* 一個「不適合引薦」的樣貌 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-orange-600" />
+                  <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-gold-400" />
                   一個「不適合引薦」的樣貌
                 </label>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
@@ -857,7 +857,7 @@ const Profile = () => {
               {/* 我正在尋找的「合作」夥伴 */}
               <div className="mb-6 space-y-2">
                 <label className="label font-semibold">
-                  <UserGroupIcon className="h-5 w-5 mr-2 text-orange-600" />
+                  <UserGroupIcon className="h-5 w-5 mr-2 text-gold-400" />
                   我正在尋找的「合作」夥伴
                 </label>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
@@ -877,23 +877,23 @@ const Profile = () => {
             </div>
 
             {/* 第四部分：建立更多連結 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-sm">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                    <HeartIcon className="h-6 w-6 text-pink-600" />
+                  <div className="w-10 h-10 bg-gold-600 rounded-full flex items-center justify-center">
+                    <HeartIcon className="h-6 w-6 text-primary-900" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">第四部分：建立更多連結</h3>
-                  <p className="text-sm text-gray-600 mt-1">❤️ 不只是生意，展現您的個人魅力，建立更深層的連結</p>
+                  <h3 className="text-xl font-bold text-gold-100">第四部分：建立更多連結</h3>
+                  <p className="text-sm text-gold-300 mt-1">不只是生意，展現您的個人魅力，建立更深層的連結</p>
                 </div>
               </div>
               
               {/* 近期的事業／個人目標 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <FlagIcon className="h-5 w-5 mr-2 text-pink-600" />
+                  <FlagIcon className="h-5 w-5 mr-2 text-gold-400" />
                   近期的事業／個人目標
                 </label>
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
@@ -914,7 +914,7 @@ const Profile = () => {
               {/* 工作之餘的興趣與愛好 */}
               <div className="mb-8 space-y-2">
                 <label className="label font-semibold">
-                  <HeartIcon className="h-5 w-5 mr-2 text-pink-600" />
+                  <HeartIcon className="h-5 w-5 mr-2 text-gold-400" />
                   工作之餘的興趣與愛好
                 </label>
                 <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-3">
@@ -933,17 +933,17 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="mt-10 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+            <div className="mt-10 p-6 bg-primary-800 rounded-lg border border-gold-600">
               <div className="text-center mb-4">
-                <CheckCircleIcon className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h4 className="text-lg font-semibold text-gray-900">完成您的會員面談表</h4>
-                <p className="text-sm text-gray-600 mt-1">讓其他會員更了解您，開啟更多合作機會！</p>
+                <CheckCircleIcon className="h-8 w-8 text-gold-400 mx-auto mb-2" />
+                <h4 className="text-lg font-semibold text-gold-100">完成您的會員面談表</h4>
+                <p className="text-sm text-gold-300 mt-1">讓其他會員更了解您，開啟更多合作機會！</p>
               </div>
               <div className="flex justify-center">
                 <button
                   type="submit"
                   disabled={isSavingInterview}
-                  className="btn-primary px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="px-8 py-3 bg-black border border-yellow-500 text-yellow-400 rounded-md hover:bg-yellow-500 hover:text-black transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   {isSavingInterview ? (
                     <>
@@ -954,7 +954,7 @@ const Profile = () => {
                       儲存中...
                     </>
                   ) : (
-                    '🚀 儲存面談表單'
+                    '儲存面談表單'
                   )}
                 </button>
               </div>

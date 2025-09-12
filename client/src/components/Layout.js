@@ -225,7 +225,7 @@ const Layout = ({ children }) => {
         {/* AI 智慧合作網絡 */}
         <div className="pt-4 pb-2">
           <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
-            🤖 AI 智慧合作網絡
+            AI 智慧合作網絡
           </h3>
         </div>
         {aiFeatures.map((item) => {

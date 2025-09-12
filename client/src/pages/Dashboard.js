@@ -166,14 +166,14 @@ const Dashboard = () => {
           {stats && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
               {/* 總引薦金額 - 所有用戶都能看到 */}
-              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
+              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6 col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-2">
                 <div className="flex items-center">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-600 rounded-lg flex items-center justify-center flex-shrink-0">
                     <CurrencyDollarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-900" />
                   </div>
                   <div className="ml-3 sm:ml-4 min-w-0 flex-1">
                     <p className="text-xs sm:text-sm font-medium text-gold-300">總引薦金額</p>
-                    <p className="text-lg sm:text-2xl font-bold text-gold-100 break-all whitespace-normal">
+                    <p className="text-lg sm:text-2xl font-bold text-gold-100 whitespace-nowrap">
                       NT$ {stats.totalReferralAmount ? stats.totalReferralAmount.toLocaleString() : '0'}
                     </p>
                   </div>
@@ -254,8 +254,8 @@ const Dashboard = () => {
                         key={action.title}
                         className="flex items-center p-3 sm:p-4 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-lg transition-all duration-200"
                       >
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 ${action.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 bg-black border border-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                          <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
                         </div>
                         <div className="ml-3 sm:ml-4 flex-1 min-w-0">
                           <h3 className="text-sm font-medium text-gold-100 truncate">{action.title}</h3>
