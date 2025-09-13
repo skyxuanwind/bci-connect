@@ -54,6 +54,7 @@ const UserManagement = () => {
       await axios.put(`/api/admin/users/${user.id}/coach`, { isCoach: next });
       toast.success(next ? '已設定為教練' : '已取消教練資格');
       await loadUsers();
+      await loadCoaches(); // 切換後同步刷新指派教練下拉清單
     } catch (error) {
       console.error('Failed to toggle coach flag:', error);
       toast.error(error.response?.data?.message || '更新教練資格失敗');
@@ -235,6 +236,14 @@ const UserManagement = () => {
       const res = await axios.get('/api/admin/coaches');
       const list = res.data?.coaches || res.data || [];
       setCoaches(list);
+      // 若指派視窗開啟，且目前選中的教練已不在清單中，則自動切回「未指派」
+      if (showAssignCoachModal && selectedCoachId) {
+        const exists = list.some(c => String(c.id) === String(selectedCoachId));
+        if (!exists) {
+          setSelectedCoachId('');
+          // 可選：提示使用者（避免干擾，先不彈 Toast）
+        }
+      }
     } catch (error) {
       console.error('Failed to load coaches:', error);
       toast.error(error.response?.data?.message || '載入教練清單失敗');
