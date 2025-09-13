@@ -256,33 +256,34 @@ const Layout = ({ children }) => {
         })}
         
         {/* 教練功能 */}
-        {isCoach && isCoach() && (
-          <>
-            <div className="pt-4 pb-2">
-              <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
-                教練功能
-              </h3>
-            </div>
-            {coachFeatures.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`${
-                    isCurrentPath(item.href)
-                      ? 'nav-link-active'
-                      : 'nav-link'
-                  } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
-                  onClick={() => mobile && setSidebarOpen(false)}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </>
-        )}
+-        {isCoach && isCoach() && (
++        {((isCoach && isCoach()) || (isAdmin && isAdmin())) && (
+           <>
+             <div className="pt-4 pb-2">
+               <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
+                 教練功能
+               </h3>
+             </div>
+             {coachFeatures.map((item) => {
+               const Icon = item.icon;
+               return (
+                 <Link
+                   key={item.name}
+                   to={item.href}
+                   className={`${
+                     isCurrentPath(item.href)
+                       ? 'nav-link-active'
+                       : 'nav-link'
+                   } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
+                   onClick={() => mobile && setSidebarOpen(false)}
+                 >
+                   <Icon className="mr-3 h-5 w-5" />
+                   {item.name}
+                 </Link>
+               );
+             })}
+           </>
+         )}
         
         {/* Member Features (Level 3+) */}
         {user && (
