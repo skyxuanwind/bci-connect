@@ -256,8 +256,7 @@ const Layout = ({ children }) => {
         })}
         
         {/* 教練功能 */}
--        {isCoach && isCoach() && (
-+        {((isCoach && isCoach()) || (isAdmin && isAdmin())) && (
+        {((isCoach && isCoach()) || (isAdmin && isAdmin())) && (
            <>
              <div className="pt-4 pb-2">
                <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
