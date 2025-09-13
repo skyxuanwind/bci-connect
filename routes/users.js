@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const multer = require('multer');
 const { pool } = require('../config/database');
-const { authenticateToken, requireMembershipLevel } = require('../middleware/auth');
+const { authenticateToken, requireMembershipLevel, requireCoach } = require('../middleware/auth');
 const { cloudinary } = require('../config/cloudinary');
 
 const router = express.Router();
@@ -427,6 +427,75 @@ router.get('/members', async (req, res) => {
   } catch (error) {
     console.error('Get member error:', error);
     res.status(500).json({ message: '獲取會員資料時發生錯誤' });
+  }
+});
+
+// 新增：我的學員列表（教練專用）
+// @route   GET /api/users/my-coachees
+// @desc    列出指派給目前教練的學員（支援搜尋與分頁）
+// @access  Private (Coach or Admin)
+router.get('/my-coachees', requireCoach, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '' } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let whereConditions = [
+      'u.status = $1',
+      'u.coach_user_id = $2',
+      `NOT (u.membership_level = 1 AND u.email LIKE '%admin%')`
+    ];
+    let params = ['active', req.user.id];
+    let idx = 3;
+
+    if (search && search.trim()) {
+      whereConditions.push(`(u.name ILIKE $${idx} OR u.company ILIKE $${idx} OR u.title ILIKE $${idx})`);
+      params.push(`%${search.trim()}%`);
+      idx++;
+    }
+
+    const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+
+    const countQuery = `SELECT COUNT(*) AS total FROM users u ${whereClause}`;
+    const countResult = await pool.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total, 10) || 0;
+
+    const listQuery = `
+      SELECT u.id, u.name, u.company, u.industry, u.title,
+             u.profile_picture_url, u.contact_number, u.membership_level,
+             u.interview_form, c.name as chapter_name
+      FROM users u
+      LEFT JOIN chapters c ON u.chapter_id = c.id
+      ${whereClause}
+      ORDER BY u.name ASC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `;
+    params.push(parseInt(limit), offset);
+
+    const listResult = await pool.query(listQuery, params);
+
+    res.json({
+      coachees: listResult.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        company: row.company,
+        industry: row.industry,
+        title: row.title,
+        profilePictureUrl: row.profile_picture_url,
+        contactNumber: row.contact_number,
+        membershipLevel: row.membership_level,
+        chapterName: row.chapter_name,
+        interviewData: row.interview_form ? true : false
+      })),
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalMembers: total,
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get coachees error:', error);
+    res.status(500).json({ message: '獲取學員列表時發生錯誤' });
   }
 });
 

@@ -453,7 +453,9 @@ router.post('/login', async (req, res) => {
         membershipLevel: user.membership_level,
         status: user.status,
         nfcCardId: user.nfc_card_id,
-        qrCodeUrl: user.qr_code_url
+        qrCodeUrl: user.qr_code_url,
+        isCoach: !!user.is_coach,
+        coachUserId: user.coach_user_id
       }
     });
 
@@ -515,7 +517,9 @@ router.get('/me', authenticateToken, async (req, res) => {
         nfcCardUrl: user.nfc_card_url,
         qrCodeUrl: `/api/qrcode/member/${user.id}`,
         interviewForm: interviewForm,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        isCoach: !!user.is_coach,
+        coachUserId: user.coach_user_id
       }
     });
 

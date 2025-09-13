@@ -210,6 +210,15 @@ export const AuthProvider = ({ children }) => {
     return user && user.membershipLevel === 1 && user.email && user.email.includes('admin');
   };
 
+  // Helper function to check if user is coach
+  const isCoach = () => {
+    return !!(user && user.isCoach);
+  };
+
+  const coachUserId = () => {
+    return user?.coachUserId || null;
+  };
+
   // Helper function to check membership level access
   const hasAccess = (requiredLevel) => {
     if (!user || !user.membershipLevel) return false;
@@ -228,6 +237,8 @@ export const AuthProvider = ({ children }) => {
     changePassword,
     checkAuthStatus,
     isAdmin,
+    isCoach,
+    coachUserId,
     hasAccess
   };
 

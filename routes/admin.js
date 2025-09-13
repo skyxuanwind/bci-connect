@@ -560,4 +560,191 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/coaches
+// @desc    Get all users who are coaches
+// @access  Private (Admin only)
+router.get('/coaches', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
+             u.membership_level, u.profile_picture_url, c.name as chapter_name,
+             COALESCE(cc.coachee_count, 0) AS coachee_count
+      FROM users u
+      LEFT JOIN chapters c ON u.chapter_id = c.id
+      LEFT JOIN (
+        SELECT coach_user_id, COUNT(*) AS coachee_count
+        FROM users
+        WHERE coach_user_id IS NOT NULL
+        GROUP BY coach_user_id
+      ) cc ON cc.coach_user_id = u.id
+      WHERE u.is_coach = TRUE
+      ORDER BY u.name ASC
+    `);
+
+    res.json({
+      coaches: result.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        company: row.company,
+        industry: row.industry,
+        title: row.title,
+        membershipLevel: row.membership_level,
+        profilePictureUrl: row.profile_picture_url,
+        chapterName: row.chapter_name,
+        coacheeCount: parseInt(row.coachee_count, 10) || 0
+      }))
+    });
+  } catch (error) {
+    console.error('Get coaches error:', error);
+    res.status(500).json({ message: '獲取教練列表時發生錯誤' });
+  }
+});
+
+// @route   PUT /api/admin/users/:id/coach
+// @desc    Set or unset user as coach
+// @access  Private (Admin only)
+router.put('/users/:id/coach', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isCoach } = req.body;
+
+    if (typeof isCoach !== 'boolean') {
+      return res.status(400).json({ message: 'isCoach 參數必須為布林值' });
+    }
+
+    // Check user exists
+    const userCheck = await pool.query('SELECT id, name, is_coach FROM users WHERE id = $1', [id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ message: '用戶不存在' });
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET is_coach = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, name, is_coach',
+      [isCoach, id]
+    );
+
+    res.json({
+      message: isCoach ? '已設定為教練' : '已取消教練資格',
+      user: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        isCoach: result.rows[0].is_coach
+      }
+    });
+  } catch (error) {
+    console.error('Update coach flag error:', error);
+    res.status(500).json({ message: '更新教練狀態時發生錯誤' });
+  }
+});
+
+// @route   PUT /api/admin/users/:id/assign-coach
+// @desc    Assign a coach to a user (or remove by sending null)
+// @access  Private (Admin only)
+router.put('/users/:id/assign-coach', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { coachUserId } = req.body;
+
+    // Normalize null/undefined
+    if (coachUserId === undefined) {
+      return res.status(400).json({ message: '缺少 coachUserId 參數（可為數字或 null）' });
+    }
+
+    // Check user exists
+    const userCheck = await pool.query('SELECT id, name FROM users WHERE id = $1', [id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ message: '用戶不存在' });
+    }
+
+    if (coachUserId === null) {
+      const result = await pool.query(
+        'UPDATE users SET coach_user_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, name, coach_user_id',
+        [id]
+      );
+      return res.json({
+        message: '已移除教練指派',
+        user: {
+          id: result.rows[0].id,
+          name: result.rows[0].name,
+          coachUserId: result.rows[0].coach_user_id
+        }
+      });
+    }
+
+    // Validate coachUserId
+    if (!Number.isInteger(coachUserId)) {
+      coachUserId = parseInt(coachUserId, 10);
+      if (isNaN(coachUserId)) {
+        return res.status(400).json({ message: 'coachUserId 必須為有效數字或 null' });
+      }
+    }
+
+    if (coachUserId === parseInt(id, 10)) {
+      return res.status(400).json({ message: '不可將自己指派為自己的教練' });
+    }
+
+    const coachCheck = await pool.query('SELECT id, name, is_coach FROM users WHERE id = $1', [coachUserId]);
+    if (coachCheck.rows.length === 0) {
+      return res.status(404).json({ message: '指定的教練用戶不存在' });
+    }
+
+    if (!coachCheck.rows[0].is_coach) {
+      return res.status(400).json({ message: '指定的用戶尚未被設定為教練' });
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET coach_user_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, name, coach_user_id',
+      [coachUserId, id]
+    );
+
+    res.json({
+      message: '教練指派成功',
+      user: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        coachUserId: result.rows[0].coach_user_id
+      }
+    });
+  } catch (error) {
+    console.error('Assign coach error:', error);
+    res.status(500).json({ message: '指派教練時發生錯誤' });
+  }
+});
+
+// @route   GET /api/admin/users/:id/coach
+// @desc    Get assigned coach info for a user
+// @access  Private (Admin only)
+router.get('/users/:id/coach', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT u.coach_user_id, c.id as coach_id, c.name as coach_name, c.email as coach_email,
+              c.company as coach_company, c.profile_picture_url as coach_profile_picture_url
+       FROM users u
+       LEFT JOIN users c ON u.coach_user_id = c.id
+       WHERE u.id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: '用戶不存在' });
+    }
+
+    const row = result.rows[0];
+    res.json({
+      coach: row.coach_user_id ? {
+        id: row.coach_id,
+        name: row.coach_name,
+        email: row.coach_email,
+        company: row.coach_company,
+        profilePictureUrl: row.coach_profile_picture_url
+      } : null
+    });
+  } catch (error) {
+    console.error('Get user coach error:', error);
+    res.status(500).json({ message: '獲取用戶教練資訊時發生錯誤' });
+  }
+});
+
 module.exports = router;

@@ -18,7 +18,8 @@ import {
   XCircleIcon,
   ClockIcon,
   CreditCardIcon,
-  TrashIcon
+  TrashIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline';
 
 const UserManagement = () => {
@@ -40,7 +41,10 @@ const UserManagement = () => {
   const [showNfcModal, setShowNfcModal] = useState(false);
   const [newNfcCardId, setNewNfcCardId] = useState('');
 
-  
+  const [showAssignCoachModal, setShowAssignCoachModal] = useState(false);
+  const [coaches, setCoaches] = useState([]);
+  const [selectedCoachId, setSelectedCoachId] = useState('');
+
   const usersPerPage = 20;
 
   useEffect(() => {
@@ -185,6 +189,51 @@ const UserManagement = () => {
   };
 
 
+
+  const openAssignCoachModal = (user) => {
+    setSelectedUser(user);
+    setSelectedCoachId('');
+    setShowAssignCoachModal(true);
+    if (coaches.length === 0) {
+      loadCoaches();
+    }
+  };
+
+  const closeAssignCoachModal = () => {
+    setShowAssignCoachModal(false);
+    setSelectedUser(null);
+    setSelectedCoachId('');
+  };
+
+  const loadCoaches = async () => {
+    try {
+      const res = await axios.get('/api/admin/coaches');
+      const list = res.data?.coaches || res.data || [];
+      setCoaches(list);
+    } catch (error) {
+      console.error('Failed to load coaches:', error);
+      toast.error(error.response?.data?.message || '載入教練清單失敗');
+    }
+  };
+
+  const assignCoach = async () => {
+    if (!selectedUser) return;
+    setUpdatingUser(selectedUser.id);
+    try {
+      const coachUserId = selectedCoachId ? Number(selectedCoachId) : null;
+      await axios.put(`/api/admin/users/${selectedUser.id}/assign-coach`, {
+        coachUserId,
+      });
+      toast.success(coachUserId ? '指派教練成功' : '已移除教練');
+      loadUsers();
+      closeAssignCoachModal();
+    } catch (error) {
+      console.error('Failed to assign coach:', error);
+      toast.error(error.response?.data?.message || '指派教練失敗');
+    } finally {
+      setUpdatingUser(null);
+    }
+  };
 
   const deleteUser = async (user) => {
     // 防止刪除系統管理員
@@ -668,6 +717,14 @@ const UserManagement = () => {
                                 <CreditCardIcon className="h-4 w-4" />
                               </button>
 
+                              <button
+                                onClick={() => openAssignCoachModal(user)}
+                                className="text-purple-600 hover:text-purple-900"
+                                title="指派教練"
+                              >
+                                <UserPlusIcon className="h-4 w-4" />
+                              </button>
+
                               {user.id !== 1 && (
                                 <button
                                   onClick={() => deleteUser(user)}
@@ -850,8 +907,76 @@ const UserManagement = () => {
         </div>
       )}
 
+      {/* Assign Coach Modal */}
+      {showAssignCoachModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">指派教練</h3>
+                <button
+                  onClick={closeAssignCoachModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircleIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              {selectedUser && (
+                <div className="mb-4">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                      <UserPlusIcon className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{selectedUser.name}</div>
+                      <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="label">選擇教練</label>
+                    <select
+                      value={selectedCoachId}
+                      onChange={(e) => setSelectedCoachId(e.target.value)}
+                      className="input mt-1"
+                    >
+                      <option value="">未指派（移除教練）</option>
+                      {coaches.map((coach) => (
+                        <option key={coach.id} value={coach.id}>
+                          {coach.name}
+                          {coach.chapterName ? `・${coach.chapterName}` : ''}
+                          {typeof coach.coacheeCount === 'number' ? `・帶領 ${coach.coacheeCount} 人` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      選擇一位教練指派給該用戶；選擇「未指派」可移除其教練關係
+                    </p>
+                  </div>
+
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={assignCoach}
+                      disabled={updatingUser === selectedUser.id}
+                      className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {updatingUser === selectedUser.id ? '更新中...' : '確認指派'}
+                    </button>
+                    <button
+                      onClick={closeAssignCoachModal}
+                      className="btn-secondary flex-1"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
-
-export default UserManagement;

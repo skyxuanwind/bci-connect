@@ -48,6 +48,9 @@ import NotificationsPage from './pages/NotificationsPage';
 
 import AIProfilePage from './pages/AIProfilePage';
 import AINotificationTestPage from './pages/AINotificationTestPage';
+import CoachRoute from './components/CoachRoute';
+import CoachDashboard from './pages/coach/CoachDashboard';
+import CoachOnboarding from './pages/coach/CoachOnboarding';
 
 // NFC 電子名片系統組件
 import NFCCardEditor from './pages/NFCCardEditor';
@@ -199,6 +202,23 @@ function App() {
                 <AINotificationTestPage />
               </Layout>
             </ProtectedRoute>
+          } />
+          
+          {/* Coach Routes */}
+          <Route path="/coach" element={
+            <CoachRoute>
+              <Layout>
+                <CoachDashboard />
+              </Layout>
+            </CoachRoute>
+          } />
+
+          <Route path="/coach/onboarding" element={
+            <CoachRoute>
+              <Layout>
+                <CoachOnboarding />
+              </Layout>
+            </CoachRoute>
           } />
           
 

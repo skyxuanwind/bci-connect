@@ -31,7 +31,7 @@ const authenticateToken = async (req, res, next) => {
     
     // Get user from database
     const result = await pool.query(
-      'SELECT id, name, email, company, industry, title, membership_level, status, chapter_id FROM users WHERE id = $1',
+      'SELECT id, name, email, company, industry, title, membership_level, status, chapter_id, is_coach, coach_user_id FROM users WHERE id = $1',
       [decoded.userId]
     );
 
@@ -51,6 +51,9 @@ const authenticateToken = async (req, res, next) => {
       ...user, 
       // Admin: highest membership level
       is_admin: user.membership_level === 1,
+      // Coach flags
+      is_coach: !!user.is_coach,
+      coach_user_id: user.coach_user_id,
     };
     next();
   } catch (error) {
@@ -76,6 +79,19 @@ const requireAdmin = (req, res, next) => {
   // Admin check via computed flag
   if (!req.user.is_admin) {
     return res.status(403).json({ message: '需要管理員權限' });
+  }
+
+  next();
+};
+
+// Coach or Admin access
+const requireCoach = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: '需要認證' });
+  }
+
+  if (!req.user.is_coach && !req.user.is_admin) {
+    return res.status(403).json({ message: '需要教練或管理員權限' });
   }
 
   next();
@@ -109,6 +125,7 @@ const generateToken = (userId) => {
 module.exports = {
   authenticateToken,
   requireAdmin,
+  requireCoach,
   requireMembershipLevel,
   generateToken
 };

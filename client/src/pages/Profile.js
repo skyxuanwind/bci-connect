@@ -646,7 +646,7 @@ const Profile = () => {
                   主力目標客群／市場
                 </label>
                 <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>描述您最想服務的客戶群體</p>
+                  <p className="text-sm text-gold-200">描述您最想服務的客戶群體</p>
                   <p className="text-xs text-gold-300 mt-1">範例：「中小企業主、科技業、台北地區製造業」</p>
                 </div>
                 <textarea
@@ -667,7 +667,7 @@ const Profile = () => {
                   理想的客戶樣貌
                 </label>
                 <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-gold-200"><strong>填寫提示：</strong>具體描述您理想客戶的特徵，幫助夥伴識別</p>
+                  <p className="text-sm text-gold-200">具體描述您理想客戶的特徵，幫助夥伴識別</p>
                   <p className="text-xs text-gold-300 mt-1">範例：「年營收1000萬以上的貿易公司，正在尋求數位轉型的企業主」</p>
                 </div>
                 <textarea
@@ -818,9 +818,9 @@ const Profile = () => {
                   <CheckCircleIcon className="h-5 w-5 mr-2 text-gold-400" />
                   一個「優質引薦」的樣貌
                 </label>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-green-800">✅ <strong>填寫提示：</strong>越具體越好，幫助夥伴識別高品質的引薦機會</p>
-                  <p className="text-xs text-green-600 mt-1">範例：「已經確認有預算、決策權在手、時間急迫性高的企業主」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200">✅ <strong>填寫提示：</strong>越具體越好，幫助夥伴識別高品質的引薦機會</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「已經確認有預算、決策權在手、時間急迫性高的企業主」</p>
                 </div>
                 <textarea
                   rows={3}
@@ -839,9 +839,9 @@ const Profile = () => {
                   <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-gold-400" />
                   一個「不適合引薦」的樣貌
                 </label>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-red-800">⚠️ <strong>填寫提示：</strong>幫助夥伴初步篩選，避免無效引薦</p>
-                  <p className="text-xs text-red-600 mt-1">範例：「只是想免費諮詢、預算不足、決策流程冗長的客戶」</p>
+                <div className="bg-primary-900 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200">⚠️ <strong>填寫提示：</strong>幫助夥伴初步篩選，避免無效引薦</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「只是想免費諮詢、預算不足、決策流程冗長的客戶」</p>
                 </div>
                 <textarea
                   rows={3}
@@ -860,9 +860,9 @@ const Profile = () => {
                   <UserGroupIcon className="h-5 w-5 mr-2 text-gold-400" />
                   我正在尋找的「合作」夥伴
                 </label>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-blue-800">🤝 <strong>填寫提示：</strong>能與您互補、共同服務客戶的行業夥伴</p>
-                  <p className="text-xs text-blue-600 mt-1">範例：「會計師、律師、室內設計師 - 可以互相引薦客戶」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200">🤝 <strong>填寫提示：</strong>能與您互補、共同服務客戶的行業夥伴</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「會計師、律師、室內設計師 - 可以互相引薦客戶」</p>
                 </div>
                 <textarea
                   rows={2}
@@ -896,9 +896,9 @@ const Profile = () => {
                   <FlagIcon className="h-5 w-5 mr-2 text-gold-400" />
                   近期的事業／個人目標
                 </label>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-purple-800">🎯 <strong>填寫提示：</strong>讓夥伴知道如何幫助您達成目標</p>
-                  <p className="text-xs text-purple-600 mt-1">範例：「今年希望拓展海外市場、學習新技能、建立更多策略夥伴關係」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200">🎯 <strong>填寫提示：</strong>讓夥伴知道如何幫助您達成目標</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「今年希望拓展海外市場、學習新技能、建立更多策略夥伴關係」</p>
                 </div>
                 <textarea
                   rows={3}
@@ -917,9 +917,9 @@ const Profile = () => {
                   <HeartIcon className="h-5 w-5 mr-2 text-gold-400" />
                   工作之餘的興趣與愛好
                 </label>
-                <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-pink-800">❤️ <strong>填寫提示：</strong>分享您的興趣愛好，建立更多話題與連結</p>
-                  <p className="text-xs text-pink-600 mt-1">範例：「喜歡登山健行、品酒、閱讀商業書籍、學習新語言」</p>
+                <div className="bg-primary-700 border border-gold-600 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gold-200">❤️ <strong>填寫提示：</strong>分享您的興趣愛好，建立更多話題與連結</p>
+                  <p className="text-xs text-gold-300 mt-1">範例：「喜歡登山健行、品酒、閱讀商業書籍、學習新語言」</p>
                 </div>
                 <textarea
                   rows={3}

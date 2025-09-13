@@ -119,6 +119,22 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS nfc_uid VARCHAR(50) UNIQUE
     `);
 
+    // Add coaching related columns
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS is_coach BOOLEAN DEFAULT FALSE
+    `);
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS coach_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_is_coach ON users(is_coach)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_coach_user_id ON users(coach_user_id)
+    `);
+
     // Create referrals table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS referrals (

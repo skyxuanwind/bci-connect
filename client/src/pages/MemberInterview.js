@@ -61,12 +61,12 @@ const MemberInterview = () => {
 
   const getMembershipLevelBadge = (level) => {
     const badges = {
-      1: { text: '核心', class: 'bg-red-100 text-red-800' },
-      2: { text: '幹部', class: 'bg-blue-100 text-blue-800' },
-      3: { text: '會員', class: 'bg-green-100 text-green-800' }
+      1: { text: '核心', class: 'bg-primary-700 text-gold-200 border border-gold-600' },
+      2: { text: '幹部', class: 'bg-primary-700 text-gold-200 border border-gold-600' },
+      3: { text: '會員', class: 'bg-primary-700 text-gold-200 border border-gold-600' }
     };
     
-    const badge = badges[level] || { text: '未設定', class: 'bg-gray-100 text-gray-800' };
+    const badge = badges[level] || { text: '未設定', class: 'bg-primary-700 text-gold-200 border border-gold-600' };
     
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.class}`}>
@@ -86,12 +86,12 @@ const MemberInterview = () => {
   if (error) {
     return (
       <div className="max-w-2xl mx-auto p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <div className="text-red-600 mb-4">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 text-center">
+          <div className="text-gold-400 mb-4">
             <UserIcon className="h-12 w-12 mx-auto" />
           </div>
-          <h2 className="text-lg font-semibold text-red-800 mb-2">載入失敗</h2>
-          <p className="text-red-600 mb-4">{error}</p>
+          <h2 className="text-lg font-semibold text-gold-100 mb-2">載入失敗</h2>
+          <p className="text-gold-300 mb-4">{error}</p>
           <div className="space-x-4">
             <button
               onClick={() => navigate('/members')}
@@ -114,12 +114,12 @@ const MemberInterview = () => {
   if (!member || !interviewData) {
     return (
       <div className="max-w-2xl mx-auto p-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <div className="text-yellow-600 mb-4">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 text-center">
+          <div className="text-gold-400 mb-4">
             <ChatBubbleLeftRightIcon className="h-12 w-12 mx-auto" />
           </div>
-          <h2 className="text-lg font-semibold text-yellow-800 mb-2">面談表未填寫</h2>
-          <p className="text-yellow-600 mb-4">此會員尚未填寫一對一面談表</p>
+          <h2 className="text-lg font-semibold text-gold-100 mb-2">面談表未填寫</h2>
+          <p className="text-gold-300 mb-4">此會員尚未填寫一對一面談表</p>
           <button
             onClick={() => navigate('/members')}
             className="btn-secondary"
@@ -154,11 +154,11 @@ const MemberInterview = () => {
             <div className="ml-4 flex-1">
               <h1 className="text-2xl font-bold">{member.name}</h1>
               <div className="flex items-center space-x-4 mt-2">
-                <div className="flex items-center text-blue-100">
+                <div className="flex items-center text-gold-300">
                   <BuildingOfficeIcon className="h-4 w-4 mr-1" />
                   <span className="text-sm">{member.company}</span>
                 </div>
-                <div className="flex items-center text-blue-100">
+                <div className="flex items-center text-gold-300">
                   <BriefcaseIcon className="h-4 w-4 mr-1" />
                   <span className="text-sm">{member.title}</span>
                 </div>
@@ -174,11 +174,11 @@ const MemberInterview = () => {
         <div className="card-header">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <StarIcon className="h-6 w-6 text-blue-600" />
+              <StarIcon className="h-6 w-6 text-primary-900" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">第一部分：業務核心與價值主張</h2>
-              <p className="text-sm text-gray-600">了解 {member.name} 的業務核心與價值主張</p>
+              <h2 className="text-xl font-bold text-gold-100">第一部分：業務核心與價值主張</h2>
+              <p className="text-sm text-gold-300">了解 {member.name} 的業務核心與價值主張</p>
             </div>
           </div>
         </div>
@@ -190,8 +190,8 @@ const MemberInterview = () => {
               <BuildingOfficeIcon className="h-4 w-4 inline mr-2" />
               公司/品牌名稱
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900">{interviewData.companyName || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200">{interviewData.companyName || '未提供'}</p>
             </div>
           </div>
 
@@ -201,8 +201,8 @@ const MemberInterview = () => {
               <BriefcaseIcon className="h-4 w-4 inline mr-2" />
               代表行業/職業
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900">{interviewData.industry || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200">{interviewData.industry || '未提供'}</p>
             </div>
           </div>
 
@@ -212,8 +212,8 @@ const MemberInterview = () => {
               <LightBulbIcon className="h-4 w-4 inline mr-2" />
               核心產品/服務詳述
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.coreServices || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.coreServices || '未提供'}</p>
             </div>
           </div>
 
@@ -223,8 +223,8 @@ const MemberInterview = () => {
               <FlagIcon className="h-4 w-4 inline mr-2" />
               與競爭者的最大差異
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.competitiveAdvantage || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.competitiveAdvantage || '未提供'}</p>
             </div>
           </div>
         </div>
@@ -238,8 +238,8 @@ const MemberInterview = () => {
               <UsersIcon className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">第二部分：理想客戶與市場</h2>
-              <p className="text-sm text-gray-600">{member.name} 的目標客群與市場定位</p>
+              <h2 className="text-xl font-bold text-gold-100">第二部分：理想客戶與市場</h2>
+              <p className="text-sm text-gold-300">{member.name} 的目標客群與市場定位</p>
             </div>
           </div>
         </div>
@@ -251,8 +251,8 @@ const MemberInterview = () => {
               <FlagIcon className="h-4 w-4 inline mr-2" />
               主力目標客群/市場
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.targetMarket || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.targetMarket || '未提供'}</p>
             </div>
           </div>
 
@@ -262,8 +262,8 @@ const MemberInterview = () => {
               <UsersIcon className="h-4 w-4 inline mr-2" />
               理想的客戶樣貌
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.idealCustomer || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.idealCustomer || '未提供'}</p>
             </div>
           </div>
 
@@ -273,8 +273,8 @@ const MemberInterview = () => {
               <StarIcon className="h-4 w-4 inline mr-2" />
               客戶實際案例
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.customerExamples || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.customerExamples || '未提供'}</p>
             </div>
           </div>
 
@@ -284,8 +284,8 @@ const MemberInterview = () => {
               <UserIcon className="h-4 w-4 inline mr-2" />
               客戶特質
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.customerTraits || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.customerTraits || '未提供'}</p>
             </div>
           </div>
 
@@ -295,8 +295,8 @@ const MemberInterview = () => {
               <HeartIcon className="h-4 w-4 inline mr-2" />
               客戶痛點
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.customerPainPoints || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.customerPainPoints || '未提供'}</p>
             </div>
           </div>
         </div>
@@ -307,11 +307,11 @@ const MemberInterview = () => {
         <div className="card-header">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <MegaphoneIcon className="h-6 w-6 text-green-600" />
+              <MegaphoneIcon className="h-6 w-6 text-primary-900" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">第三部分：推薦與合作</h2>
-              <p className="text-sm text-gray-600">如何與 {member.name} 建立合作關係</p>
+              <h2 className="text-xl font-bold text-gold-100">第三部分：推薦與合作</h2>
+              <p className="text-sm text-gold-300">如何與 {member.name} 建立合作關係</p>
             </div>
           </div>
         </div>
@@ -323,8 +323,8 @@ const MemberInterview = () => {
               <LightBulbIcon className="h-4 w-4 inline mr-2" />
               推薦觸發點
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.referralTrigger || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.referralTrigger || '未提供'}</p>
             </div>
           </div>
 
@@ -334,8 +334,8 @@ const MemberInterview = () => {
               <ChatBubbleLeftRightIcon className="h-4 w-4 inline mr-2" />
               推薦開場白
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.referralOpening || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.referralOpening || '未提供'}</p>
             </div>
           </div>
 
@@ -345,8 +345,8 @@ const MemberInterview = () => {
               <StarIcon className="h-4 w-4 inline mr-2" />
               優質推薦
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.qualityReferral || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.qualityReferral || '未提供'}</p>
             </div>
           </div>
 
@@ -356,8 +356,8 @@ const MemberInterview = () => {
               <UserIcon className="h-4 w-4 inline mr-2" />
               不適合推薦
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.unsuitableReferral || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.unsuitableReferral || '未提供'}</p>
             </div>
           </div>
 
@@ -367,8 +367,8 @@ const MemberInterview = () => {
               <UserGroupIcon className="h-4 w-4 inline mr-2" />
               合作夥伴類型
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.partnerTypes || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.partnerTypes || '未提供'}</p>
             </div>
           </div>
 
@@ -378,8 +378,8 @@ const MemberInterview = () => {
               <FlagIcon className="h-4 w-4 inline mr-2" />
               商業目標
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.businessGoals || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.businessGoals || '未提供'}</p>
             </div>
           </div>
 
@@ -389,8 +389,8 @@ const MemberInterview = () => {
               <HeartIcon className="h-4 w-4 inline mr-2" />
               個人興趣
             </label>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-900 whitespace-pre-wrap">{interviewData.personalInterests || '未提供'}</p>
+            <div className="bg-primary-700 border border-gold-600 rounded-lg p-3">
+              <p className="text-gold-200 whitespace-pre-wrap">{interviewData.personalInterests || '未提供'}</p>
             </div>
           </div>
         </div>
