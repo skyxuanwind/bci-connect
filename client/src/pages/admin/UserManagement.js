@@ -44,7 +44,32 @@ const UserManagement = () => {
   const [showAssignCoachModal, setShowAssignCoachModal] = useState(false);
   const [coaches, setCoaches] = useState([]);
   const [selectedCoachId, setSelectedCoachId] = useState('');
+  const [togglingCoachId, setTogglingCoachId] = useState(null);
 
+  // 教練資格切換
+  const toggleCoachFlag = async (user) => {
+    try {
+      setTogglingCoachId(user.id);
+      const next = !user.isCoach;
+      await axios.put(`/api/admin/users/${user.id}/coach`, { isCoach: next });
+      toast.success(next ? '已設定為教練' : '已取消教練資格');
+      await loadUsers();
+    } catch (error) {
+      console.error('Failed to toggle coach flag:', error);
+      toast.error(error.response?.data?.message || '更新教練資格失敗');
+    } finally {
+      setTogglingCoachId(null);
+    }
+  };
+
+  const renderCoachBadge = (user) => {
+    if (!user.isCoach) return null;
+    return (
+      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+        教練
+      </span>
+    );
+  };
   const usersPerPage = 20;
 
   useEffect(() => {
@@ -645,7 +670,9 @@ const UserManagement = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       狀態
                     </th>
-
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      教練資格
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       註冊時間
                     </th>
@@ -665,7 +692,10 @@ const UserManagement = () => {
                             size="medium"
                           />
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                            <div className="text-sm font-medium text-gray-900 flex items-center">
+                              {user.name}
+                              {renderCoachBadge(user)}
+                            </div>
                             <div className="text-sm text-gray-500">{user.email}</div>
                           </div>
                         </div>
@@ -685,7 +715,16 @@ const UserManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(user.status)}
                       </td>
-
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => toggleCoachFlag(user)}
+                          className={`px-2 py-1 text-xs rounded border ${user.isCoach ? 'text-purple-700 border-purple-300 bg-purple-50 hover:bg-purple-100' : 'text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                          disabled={togglingCoachId === user.id}
+                          title={user.isCoach ? '取消教練資格' : '設為教練'}
+                        >
+                          {togglingCoachId === user.id ? '更新中...' : (user.isCoach ? '取消教練' : '設為教練')}
+                        </button>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(user.createdAt)}
                       </td>

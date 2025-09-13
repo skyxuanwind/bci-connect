@@ -212,7 +212,7 @@ router.get('/users', async (req, res) => {
     // Get users with pagination
     const usersQuery = `
       SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
-             u.contact_number, u.membership_level, u.status, u.created_at,
+             u.contact_number, u.membership_level, u.status, u.is_coach, u.created_at,
              u.profile_picture_url, u.nfc_card_id, c.name as chapter_name
       FROM users u
       LEFT JOIN chapters c ON u.chapter_id = c.id
@@ -238,7 +238,8 @@ router.get('/users', async (req, res) => {
         profilePictureUrl: user.profile_picture_url,
         chapterName: user.chapter_name,
         createdAt: user.created_at,
-        nfcCardId: user.nfc_card_id || null
+        nfcCardId: user.nfc_card_id || null,
+        isCoach: user.is_coach
       })),
       pagination: {
         currentPage: parseInt(page),
