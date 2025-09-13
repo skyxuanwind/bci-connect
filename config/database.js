@@ -164,6 +164,54 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create meeting_feedbacks table (雙向回饋問卷)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS meeting_feedbacks (
+        id SERIAL PRIMARY KEY,
+        meeting_id INTEGER NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+        rater_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        ratee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        rating INTEGER CHECK (rating BETWEEN 1 AND 5),
+        answers JSONB,
+        comments TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(meeting_id, rater_id)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_meeting_feedbacks_meeting_id ON meeting_feedbacks(meeting_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_meeting_feedbacks_ratee_id ON meeting_feedbacks(ratee_id)`);
+
+    // Create onboarding tasks table for members
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_onboarding_tasks (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(200) NOT NULL,
+        description TEXT,
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
+        due_date TIMESTAMP,
+        completed_at TIMESTAMP,
+        created_by_coach_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_onboarding_tasks_user ON user_onboarding_tasks(user_id)`);
+
+    // Create coach logs table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS coach_logs (
+        id SERIAL PRIMARY KEY,
+        coach_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        member_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_coach_logs_member ON coach_logs(member_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_coach_logs_coach ON coach_logs(coach_id)`);
+
     // Create email_verifications table for email verification during registration
     await pool.query(`
       CREATE TABLE IF NOT EXISTS email_verifications (
@@ -761,6 +809,48 @@ const initializeDatabase = async () => {
         user_agent TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Create honor badges tables (榮譽徽章)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS honor_badges (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) NOT NULL UNIQUE,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        icon VARCHAR(50),
+        color_class VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_honor_badges (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        badge_id INTEGER NOT NULL REFERENCES honor_badges(id) ON DELETE CASCADE,
+        awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        source_type VARCHAR(50),
+        source_id INTEGER,
+        notes TEXT,
+        UNIQUE(user_id, badge_id)
+      )
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_honor_badges_user_id ON user_honor_badges(user_id);
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_honor_badges_badge_id ON user_honor_badges(badge_id);
+    `);
+
+    // Seed default badges
+    await pool.query(`
+      INSERT INTO honor_badges (code, name, description, icon, color_class) VALUES
+        ('gbc_profile_complete','GBC 檔案完成','完成 GBC 深度交流表','🏅','badge-success'),
+        ('first_task_completed','首個任務完成','完成第一個入職任務','✅','badge-info'),
+        ('referral_confirmed_first','首筆引薦成交','第一筆已確認的引薦','🤝','badge-warning')
+      ON CONFLICT (code) DO NOTHING
     `);
 
     // Create ai_notifications table (AI智慧通知)

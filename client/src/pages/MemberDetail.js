@@ -23,10 +23,104 @@ const MemberDetail = () => {
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [taskForm, setTaskForm] = useState({ title: '', description: '', dueDate: '' });
+  const [logContent, setLogContent] = useState('');
+  const [savingTask, setSavingTask] = useState(false);
+  const [savingLog, setSavingLog] = useState(false);
+  const [badges, setBadges] = useState([]);
 
   useEffect(() => {
     loadMemberDetail();
   }, [id]);
+
+  useEffect(() => {
+    if (member?.id) {
+      fetchOnboardingTasks();
+      fetchCoachLogs();
+      fetchBadges();
+    }
+  }, [member?.id]);
+
+  const fetchOnboardingTasks = async () => {
+    try {
+      const resp = await axios.get(`/api/users/member/${id}/onboarding-tasks`);
+      setTasks(resp.data.tasks || []);
+    } catch (e) {
+      console.error('Failed to load onboarding tasks', e);
+    }
+  };
+
+  const fetchCoachLogs = async () => {
+    try {
+      const resp = await axios.get(`/api/users/member/${id}/coach-logs`);
+      setLogs(resp.data.logs || []);
+    } catch (e) {
+      console.error('Failed to load coach logs', e);
+    }
+  };
+
+  const fetchBadges = async () => {
+    try {
+      const resp = await axios.get(`/api/users/member/${id}/badges`);
+      setBadges(Array.isArray(resp.data) ? resp.data : []);
+    } catch (err) {
+      console.error('Failed to load honor badges:', err);
+    }
+  };
+
+  const canCreateCoachItems = user?.isCoach || user?.isAdmin;
+  const isSelf = user?.id === member?.id;
+  const canUpdateTaskStatus = isSelf || canCreateCoachItems;
+
+  const createTask = async (e) => {
+    e.preventDefault();
+    if (!taskForm.title.trim()) return;
+    setSavingTask(true);
+    try {
+      const payload = {
+        title: taskForm.title.trim(),
+        description: taskForm.description?.trim() || undefined,
+        dueDate: taskForm.dueDate || undefined,
+      };
+      const resp = await axios.post(`/api/users/member/${id}/onboarding-tasks`, payload);
+      setTasks([resp.data.task, ...tasks]);
+      setTaskForm({ title: '', description: '', dueDate: '' });
+    } catch (e) {
+      console.error('Create task failed', e);
+    } finally {
+      setSavingTask(false);
+    }
+  };
+
+  const updateTaskStatus = async (taskId, status) => {
+    try {
+      const resp = await axios.put(`/api/users/onboarding-tasks/${taskId}`, { status });
+      setTasks(tasks.map(t => t.id === taskId ? resp.data.task : t));
+      // 若任務完成，可能觸發授予徽章，刷新徽章列表
+      if (status === 'completed') {
+        fetchBadges();
+      }
+    } catch (e) {
+      console.error('Update task status failed', e);
+    }
+  };
+
+  const createLog = async (e) => {
+    e.preventDefault();
+    if (!logContent.trim()) return;
+    setSavingLog(true);
+    try {
+      const resp = await axios.post(`/api/users/member/${id}/coach-logs`, { content: logContent.trim() });
+      setLogs([resp.data.log, ...logs]);
+      setLogContent('');
+    } catch (e) {
+      console.error('Create log failed', e);
+    } finally {
+      setSavingLog(false);
+    }
+  };
 
   const loadMemberDetail = async () => {
     try {
@@ -101,6 +195,43 @@ const MemberDetail = () => {
       navigate(`/meetings?schedule_with=${member.id}`);
     }
   };
+
+  // GBC 任務識別（以標題包含關鍵字為過渡方案）
+  const isGbcTask = (t) => typeof t?.title === 'string' && t.title.includes('GBC 深度交流表');
+  const sortedTasks = React.useMemo(() => {
+    if (!Array.isArray(tasks)) return [];
+    const arr = [...tasks];
+    // 置頂：GBC 任務排最前
+    arr.sort((a, b) => {
+      const aG = isGbcTask(a) ? 1 : 0;
+      const bG = isGbcTask(b) ? 1 : 0;
+      if (aG !== bG) return bG - aG;
+      // 其次：未完成優先（pending / in_progress 排前，completed 排後）
+      const order = { pending: 0, in_progress: 1, completed: 2 };
+      const sa = order[a.status] ?? 9;
+      const sb = order[b.status] ?? 9;
+      if (sa !== sb) return sa - sb;
+      // 再次：截止日近者在前；無截止日排後
+      const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      return da - db;
+    });
+    return arr;
+  }, [tasks]);
+
+  const getBadgeVariant = (code) => {
+    switch (code) {
+      case 'FIRST_TASK_COMPLETED':
+        return 'badge-success';
+      case 'PROFILE_COMPLETED':
+        return 'badge-info';
+      case 'FIRST_CONFIRMED_REFERRAL':
+        return 'badge-warning';
+      default:
+        return '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -290,7 +421,96 @@ const MemberDetail = () => {
         </div>
       </div>
 
-      {/* QR Code Section removed as requested */}
+      {/* Honor Badges */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="text-lg font-semibold text-gray-900">榮譽徽章</h2>
+        </div>
+        <div className="p-6">
+          {badges && badges.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {badges.map((b) => (
+                <div key={b.id} className={`badge ${getBadgeVariant(b.code)}`} title={b.description || ''}>
+                  <span className="font-semibold">{b.name}</span>
+                  {b.awardedAt && (
+                    <span className="ml-2 text-xs opacity-80">{new Date(b.awardedAt).toLocaleDateString('zh-TW')}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-600 text-sm">尚未獲得徽章</div>
+          )}
+        </div>
+      </div>
+
+      {/* Onboarding Tasks */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="text-lg font-semibold text-gray-900">入職任務</h2>
+        </div>
+        <div className="p-6 space-y-4">
+          {canCreateCoachItems && (
+            <form onSubmit={createTask} className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  className="input col-span-1 md:col-span-1"
+                  placeholder="任務標題"
+                  value={taskForm.title}
+                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                  required
+                />
+                <input
+                  type="text"
+                  className="input col-span-1 md:col-span-1"
+                  placeholder="描述（可選）"
+                  value={taskForm.description}
+                  onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                />
+                <input
+                  type="date"
+                  className="input col-span-1 md:col-span-1"
+                  value={taskForm.dueDate}
+                  onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
+                />
+              </div>
+              <button className="btn-primary" disabled={savingTask}>
+                {savingTask ? '建立中...' : '新增任務'}
+              </button>
+            </form>
+          )}
+
+          <div className="space-y-3">
+            {sortedTasks.length === 0 && <p className="text-sm text-gray-600">目前沒有任務</p>}
+            {sortedTasks.map(t => {
+              const gbc = isGbcTask(t);
+              return (
+                <div key={t.id} className={`p-4 border rounded-lg flex items-center justify-between ${gbc ? 'border-gold-600 bg-primary-900' : ''}`}>
+                  <div>
+                    <p className="font-medium text-gray-900 flex items-center">
+                      {gbc && <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gold-600 text-primary-900 mr-2">核心</span>}
+                      {t.title}
+                    </p>
+                    {t.description && <p className="text-sm text-gray-600 mt-1">{t.description}</p>}
+                    <div className="text-xs text-gray-500 mt-1">
+                      狀態：{t.status === 'pending' ? '未開始' : t.status === 'in_progress' ? '進行中' : '已完成'}
+                      {t.dueDate && <span className="ml-3">截止：{new Date(t.dueDate).toLocaleDateString('zh-TW')}</span>}
+                    </div>
+                  </div>
+                  {canUpdateTaskStatus && (
+                    <div className="flex items-center space-x-2">
+                      <button className="btn-secondary" onClick={() => updateTaskStatus(t.id, 'pending')}>未開始</button>
+                      <button className="btn-secondary" onClick={() => updateTaskStatus(t.id, 'in_progress')}>進行中</button>
+                      <button className="btn-primary" onClick={() => updateTaskStatus(t.id, 'completed')}>完成</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* One-on-One Meeting Schedule */}
       {member.interviewData && (
@@ -310,6 +530,39 @@ const MemberDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Coach Logs */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="text-lg font-semibold text-gray-900">教練紀錄</h2>
+        </div>
+        <div className="p-6 space-y-4">
+          {canCreateCoachItems && (
+            <form onSubmit={createLog} className="space-y-3">
+              <textarea
+                className="input w-full h-24"
+                placeholder="輸入教練紀錄..."
+                value={logContent}
+                onChange={(e) => setLogContent(e.target.value)}
+              />
+              <button className="btn-primary" disabled={savingLog}>
+                {savingLog ? '新增中...' : '新增紀錄'}
+              </button>
+            </form>
+          )}
+
+          <div className="space-y-3">
+            {logs.length === 0 && <p className="text-sm text-gray-600">尚無教練紀錄</p>}
+            {logs.map(l => (
+              <div key={l.id} className="p-4 border rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">{new Date(l.createdAt).toLocaleString('zh-TW')}</div>
+                <p className="text-gray-900 whitespace-pre-line">{l.content}</p>
+                {l.coachName && <div className="text-xs text-gray-500 mt-2">由 {l.coachName} 建立</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Actions */}
       <div className="flex justify-center space-x-4">

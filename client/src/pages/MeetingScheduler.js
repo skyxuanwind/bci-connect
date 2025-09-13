@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../config/axios';
 
 const MeetingScheduler = () => {
   const { user } = useAuth();
@@ -16,6 +16,17 @@ const MeetingScheduler = () => {
   const [formErrors, setFormErrors] = useState({});
   const [highlightedMeetingId, setHighlightedMeetingId] = useState(null);
 
+  // 新增：會議回饋 Modal 狀態
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState('');
+  const [feedbackMeeting, setFeedbackMeeting] = useState(null);
+  const [feedbackStatus, setFeedbackStatus] = useState(null); // { canSubmit, alreadySubmitted, myFeedback, otherFeedback }
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComments, setFeedbackComments] = useState('');
+  // 會議回饋摘要（每個會議：{ my: number|null, other: number|null }）
+  const [feedbackSummaries, setFeedbackSummaries] = useState({});
   // 新增會議表單狀態
   const [newMeeting, setNewMeeting] = useState({
     attendee_id: '',
@@ -30,6 +41,45 @@ const MeetingScheduler = () => {
     fetchMembers();
   }, []);
 
+  // 批次載入每個會議的回饋摘要
+  useEffect(() => {
+    let cancelled = false;
+    const loadFeedbackSummaries = async () => {
+      try {
+        if (!meetings || meetings.length === 0) {
+          if (!cancelled) setFeedbackSummaries({});
+          return;
+        }
+        const results = await Promise.all(
+          meetings.map(async (m) => {
+            try {
+              const { data } = await axios.get(`/api/feedback/meeting/${m.id}/status`);
+              return [
+                m.id,
+                {
+                  my: data.myFeedback?.rating ?? null,
+                  other: data.otherFeedback?.rating ?? null,
+                },
+              ];
+            } catch (e) {
+              return [m.id, { my: null, other: null }];
+            }
+          })
+        );
+        if (!cancelled) {
+          const map = {};
+          results.forEach(([id, summary]) => {
+            map[id] = summary;
+          });
+          setFeedbackSummaries(map);
+        }
+      } catch (_) {}
+    };
+    loadFeedbackSummaries();
+    return () => {
+      cancelled = true;
+    };
+  }, [meetings.length]);
   const fetchMeetings = async () => {
     try {
       const response = await axios.get('/api/meetings/my-meetings');
@@ -274,6 +324,71 @@ const MeetingScheduler = () => {
     });
   };
 
+  // 會議回饋：工具與動作（移至 JSX 之外）
+  const isMeetingEnded = (meeting) => {
+    try {
+      return new Date(meeting.meeting_time_end) <= new Date();
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const openFeedbackModal = async (meeting) => {
+    setFeedbackError('');
+    setFeedbackMeeting(meeting);
+    setFeedbackModalOpen(true);
+    setFeedbackLoading(true);
+    try {
+      const { data } = await axios.get(`/api/feedback/meeting/${meeting.id}/status`);
+      setFeedbackStatus(data);
+      if (data?.myFeedback) {
+        setFeedbackRating(data.myFeedback.rating || 0);
+        setFeedbackComments(data.myFeedback.comments || '');
+      } else {
+        setFeedbackRating(0);
+        setFeedbackComments('');
+      }
+    } catch (err) {
+      setFeedbackError(err.response?.data?.error || '取得回饋狀態失敗');
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  const closeFeedbackModal = () => {
+    setFeedbackModalOpen(false);
+    setFeedbackLoading(false);
+    setFeedbackSubmitting(false);
+    setFeedbackError('');
+    setFeedbackMeeting(null);
+    setFeedbackStatus(null);
+    setFeedbackRating(0);
+    setFeedbackComments('');
+  };
+
+  const submitFeedback = async () => {
+    if (!feedbackMeeting) return;
+    if (!feedbackRating || feedbackRating < 1 || feedbackRating > 5) {
+      setFeedbackError('請提供 1-5 的評分');
+      return;
+    }
+    setFeedbackSubmitting(true);
+    setFeedbackError('');
+    try {
+      const payload = {
+        rating: Math.round(feedbackRating),
+        answers: null,
+        comments: feedbackComments?.trim() || null
+      };
+      const { data } = await axios.post(`/api/feedback/meeting/${feedbackMeeting.id}/submit`, payload);
+      setFeedbackStatus({ ...(feedbackStatus || {}), alreadySubmitted: true, myFeedback: data?.feedback || { rating: payload.rating, comments: payload.comments } });
+    } catch (err) {
+      setFeedbackError(err.response?.data?.error || '提交回饋失敗');
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+
   // 檢查用戶權限
   // 允許所有會員使用會議預約
   // 原先：if (!user || user.membershipLevel > 3) {...}
@@ -488,7 +603,7 @@ const MeetingScheduler = () => {
                   <p className="text-gold-300 text-center py-8">暫無會議記錄</p>
                 ) : (
                   <div className="space-y-4">
-                    {meetings.map(meeting => (
+                    {meetings.map((meeting) => (
                       <div
                         key={meeting.id}
                         id={`meeting-${meeting.id}`}
@@ -506,47 +621,148 @@ const MeetingScheduler = () => {
                             <p className="text-sm text-gold-300">
                               時間：{formatDateTime(meeting.meeting_time_start)} - {formatDateTime(meeting.meeting_time_end)}
                             </p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {getMeetingTypeBadge(meeting.meeting_type)}
-                            {getStatusBadge(meeting.status)}
-                          </div>
-                        </div>
-                        {meeting.notes && (
-                          <p className="text-sm text-gold-200 mb-3">{meeting.notes}</p>
-                        )}
-                        {meeting.status === 'pending' && (
-                          <div className="flex space-x-2">
-                            {meeting.meeting_type === 'received' ? (
-                              <>
+                            {/* 回饋摘要 */}
+                            {feedbackSummaries[meeting.id] && (
+                              <p className="text-sm text-gold-300 mt-1">
+                                回饋摘要：我給：{feedbackSummaries[meeting.id].my ?? '—'} 分／對方給：{feedbackSummaries[meeting.id].other ?? '—'} 分
+                              </p>
+                            )}
+                            {meeting.notes && (
+                              <p className="text-sm text-gold-200 mb-3">{meeting.notes}</p>
+                            )}
+                            {meeting.status === 'pending' && (
+                              <div className="flex space-x-2">
+                                {meeting.meeting_type === 'received' ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleRespondToMeeting(meeting.id, 'confirmed')}
+                                      className="bg-gold-600 text-primary-900 px-3 py-1 rounded text-sm hover:bg-gold-700 font-medium"
+                                    >
+                                      確認
+                                    </button>
+                                    <button
+                                      onClick={() => handleRespondToMeeting(meeting.id, 'cancelled')}
+                                      className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
+                                    >
+                                      拒絕
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => handleCancelMeeting(meeting.id)}
+                                    className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
+                                  >
+                                    取消會議
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            {/* 已確認且已結束：顯示回饋按鈕 */}
+                            {meeting.status === 'confirmed' && isMeetingEnded(meeting) && (
+                              <div className="mt-3">
                                 <button
-                                  onClick={() => handleRespondToMeeting(meeting.id, 'confirmed')}
-                                  className="bg-gold-600 text-primary-900 px-3 py-1 rounded text-sm hover:bg-gold-700 font-medium"
+                                  onClick={() => openFeedbackModal(meeting)}
+                                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-medium"
                                 >
-                                  確認
+                                  填寫/查看回饋
                                 </button>
-                                <button
-                                  onClick={() => handleRespondToMeeting(meeting.id, 'cancelled')}
-                                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
-                                >
-                                  拒絕
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => handleCancelMeeting(meeting.id)}
-                                className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
-                              >
-                                取消會議
-                              </button>
+                              </div>
                             )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+            )}
+
+            {/* 會議回饋 Modal */}
+            {feedbackModalOpen && (
+              <>
+                <div className="fixed inset-0 bg-black/50 z-40" onClick={closeFeedbackModal} />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <div className="w-full max-w-lg bg-primary-700 border border-gold-600 rounded-lg shadow-xl p-5">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-gold-100 text-lg font-semibold">會議回饋</h3>
+                      <button onClick={closeFeedbackModal} className="text-gold-300 hover:text-gold-100">×</button>
+                    </div>
+                    {feedbackMeeting && (
+                      <p className="text-sm text-gold-300 mb-3">
+                        與 {feedbackMeeting.other_party_name} 的會議：
+                        {formatDateTime(feedbackMeeting.meeting_time_start)} - {formatDateTime(feedbackMeeting.meeting_time_end)}
+                      </p>
+                    )}
+                    {feedbackError && (
+                      <div className="mb-3 text-red-400 text-sm">{feedbackError}</div>
+                    )}
+                    {feedbackLoading ? (
+                      <div className="text-gold-300">載入中...</div>
+                    ) : (
+                      <div className="space-y-4">
+                        {feedbackStatus && (
+                          <div className="text-sm text-gold-300">
+                            {feedbackStatus.canSubmit ? (
+                              <span className="text-green-400">可提交回饋</span>
+                            ) : (
+                              <span className="text-yellow-400">目前不可提交回饋（僅能在會議結束後且已確認的會議提交）</span>
+                            )}
+                            {feedbackStatus.otherFeedback && (
+                              <div className="mt-1">對方已提交：評分 {feedbackStatus.otherFeedback.rating} 分</div>
+                            )}
+                            {feedbackStatus.myFeedback && (
+                              <div className="mt-1">我的回饋：評分 {feedbackStatus.myFeedback.rating} 分</div>
+                            )}
+                          </div>
+
+                        )}
+                        <div>
+                          <label className="block text-sm text-gold-200 mb-1">評分（1-5）</label>
+                            <div className="flex items-center space-x-2">
+                            {[1,2,3,4,5].map(n => (
+                              <button
+                                key={n}
+                                onClick={() => setFeedbackRating(n)}
+                                className={`w-10 h-10 rounded-full border ${feedbackRating >= n ? 'bg-gold-600 text-primary-900 border-gold-500' : 'bg-primary-800 text-gold-300 border-gold-700'} hover:bg-gold-500 hover:text-primary-900`}
+                              >
+                                {n}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm text-gold-200 mb-1">評語（選填）</label>
+                          <textarea
+                            rows={4}
+                            value={feedbackComments}
+                            onChange={(e) => setFeedbackComments(e.target.value)}
+                            className="w-full bg-primary-800 border border-gold-700 rounded-md p-2 text-gold-100 placeholder-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-500"
+                            placeholder="可描述本次會議的感受與建議..."
+                          />
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-2">
+                          <button
+                            onClick={closeFeedbackModal}
+                            className="px-4 py-2 rounded-md border border-gold-700 text-gold-200 hover:bg-primary-600"
+                            disabled={feedbackSubmitting}
+                          >
+                            取消
+                          </button>
+                          <button
+                            onClick={submitFeedback}
+                            disabled={feedbackSubmitting || (feedbackStatus && !feedbackStatus.canSubmit)}
+                            className={`px-4 py-2 rounded-md ${feedbackSubmitting ? 'opacity-60 cursor-not-allowed' : 'bg-gold-600 hover:bg-gold-700 text-primary-900'}`}
+                          >
+                            {feedbackSubmitting ? '提交中...' : (feedbackStatus?.alreadySubmitted ? '更新回饋' : '提交回饋')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

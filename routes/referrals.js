@@ -3,6 +3,8 @@ const router = express.Router();
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const { sendReferralNotification } = require('../services/emailService');
+const { AINotificationService } = require('../services/aiNotificationService');
+const aiNotificationService = new AINotificationService();
 
 // 創建引薦
 router.post('/create', authenticateToken, async (req, res) => {
@@ -163,6 +165,45 @@ router.put('/:id/respond', authenticateToken, async (req, res) => {
     sendReferralNotification(notificationType, notificationData).catch(err => {
       console.error('發送引薦回應通知Email失敗:', err);
     });
+
+    // 授予徽章：首筆引薦成交（給引薦人）
+    if (status === 'confirmed') {
+      try {
+        const referrerId = referral.referrer_id;
+        // 計算此引薦人的已成交引薦數
+        const cnt = await pool.query(
+          `SELECT COUNT(*)::int AS c FROM referrals WHERE referrer_id = $1 AND status = 'confirmed'`,
+          [referrerId]
+        );
+        const confirmedCount = cnt.rows[0]?.c || 0;
+
+        if (confirmedCount === 1) {
+          // 這是該用戶的首筆成交引薦 → 授予徽章
+          const badgeRes = await pool.query(`SELECT id, name FROM honor_badges WHERE code = $1`, ['referral_confirmed_first']);
+          if (badgeRes.rows.length > 0) {
+            const badgeId = badgeRes.rows[0].id;
+            const insBadge = await pool.query(
+              `INSERT INTO user_honor_badges (user_id, badge_id, source_type, source_id, notes)
+               VALUES ($1, $2, $3, $4, $5)
+               ON CONFLICT (user_id, badge_id) DO NOTHING
+               RETURNING id`,
+              [referrerId, badgeId, 'referral', parseInt(id, 10), '完成首筆成交引薦']
+            );
+
+            if (insBadge.rows.length > 0) {
+              // 發送AI通知
+              await aiNotificationService.createNotification(referrerId, 'badge_awarded', {
+                title: '🎉 恭喜獲得榮譽徽章',
+                content: `您完成了首筆成交引薦，獲得徽章「${badgeRes.rows[0].name}」！`,
+                priority: 2
+              });
+            }
+          }
+        }
+      } catch (badgeErr) {
+        console.error('授予首筆引薦成交徽章失敗:', badgeErr);
+      }
+    }
 
     res.json({
       message: status === 'confirmed' ? '引薦已確認' : '引薦已拒絕',

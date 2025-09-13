@@ -29,6 +29,7 @@ const nfcAnalyticsRoutes = require('./routes/nfc-analytics');
 const ocrScannerRoutes = require('./routes/ocr-scanner');
 const digitalWalletRoutes = require('./routes/digital-wallet');
 const businessMediaRoutes = require('./routes/business-media');
+const feedbackRoutes = require('./routes/feedback');
 
 const wishesRoutes = require('./routes/wishes');
 const notificationsRoutes = require('./routes/notifications');
@@ -142,6 +143,7 @@ app.use('/api/nfc-analytics', nfcAnalyticsRoutes);
 app.use('/api/ocr', ocrScannerRoutes);
 app.use('/api/digital-wallet', digitalWalletRoutes);
 app.use('/api/business-media', businessMediaRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/notifications', notificationsRoutes);

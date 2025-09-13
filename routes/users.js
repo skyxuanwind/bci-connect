@@ -5,8 +5,10 @@ const multer = require('multer');
 const { pool } = require('../config/database');
 const { authenticateToken, requireMembershipLevel, requireCoach } = require('../middleware/auth');
 const { cloudinary } = require('../config/cloudinary');
+const { AINotificationService } = require('../services/aiNotificationService');
 
 const router = express.Router();
+const aiNotificationService = new AINotificationService();
 
 // Configure multer for avatar upload
 const upload = multer({
@@ -462,9 +464,22 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
     const listQuery = `
       SELECT u.id, u.name, u.company, u.industry, u.title,
              u.profile_picture_url, u.contact_number, u.membership_level,
-             u.interview_form, c.name as chapter_name
+             u.interview_form, c.name as chapter_name,
+             COALESCE(t.pending_tasks, 0) AS pending_tasks,
+             COALESCE(t.in_progress_tasks, 0) AS in_progress_tasks,
+             COALESCE(t.completed_tasks, 0) AS completed_tasks,
+             COALESCE(t.overdue_tasks, 0) AS overdue_tasks
       FROM users u
       LEFT JOIN chapters c ON u.chapter_id = c.id
+      LEFT JOIN (
+        SELECT user_id,
+               SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_tasks,
+               SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_tasks,
+               SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks,
+               SUM(CASE WHEN due_date IS NOT NULL AND due_date < NOW() AND status <> 'completed' THEN 1 ELSE 0 END) AS overdue_tasks
+        FROM user_onboarding_tasks
+        GROUP BY user_id
+      ) t ON t.user_id = u.id
       ${whereClause}
       ORDER BY u.name ASC
       LIMIT $${idx} OFFSET $${idx + 1}
@@ -484,7 +499,13 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
         contactNumber: row.contact_number,
         membershipLevel: row.membership_level,
         chapterName: row.chapter_name,
-        interviewData: row.interview_form ? true : false
+        interviewData: row.interview_form ? true : false,
+        taskCounts: {
+          pending: Number(row.pending_tasks || 0),
+          inProgress: Number(row.in_progress_tasks || 0),
+          completed: Number(row.completed_tasks || 0),
+          overdue: Number(row.overdue_tasks || 0)
+        }
       })),
       pagination: {
         currentPage: parseInt(page),
@@ -496,6 +517,42 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
   } catch (error) {
     console.error('Get coachees error:', error);
     res.status(500).json({ message: '獲取學員列表時發生錯誤' });
+  }
+});
+
+// @route   GET /api/users/my-coachees/task-stats
+// @access  Private (Coach or Admin)
+router.get('/my-coachees/task-stats', requireCoach, async (req, res) => {
+  try {
+    const isAdmin = !!req.user.is_admin;
+    const coachId = req.user.id;
+
+    const statsQuery = `
+      SELECT
+        COUNT(t.id) AS total,
+        SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
+        SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed,
+        SUM(CASE WHEN t.due_date IS NOT NULL AND t.due_date < NOW() AND t.status <> 'completed' THEN 1 ELSE 0 END) AS overdue
+      FROM user_onboarding_tasks t
+      JOIN users u ON u.id = t.user_id
+      WHERE u.status = 'active' ${isAdmin ? '' : 'AND u.coach_user_id = $1'}
+    `;
+
+    const args = isAdmin ? [] : [coachId];
+    const result = await pool.query(statsQuery, args);
+    const row = result.rows[0] || {};
+
+    res.json({
+      total: Number(row.total || 0),
+      pending: Number(row.pending || 0),
+      inProgress: Number(row.in_progress || 0),
+      completed: Number(row.completed || 0),
+      overdue: Number(row.overdue || 0)
+    });
+  } catch (error) {
+    console.error('Get my-coachees task stats error:', error);
+    res.status(500).json({ message: '取得任務統計時發生錯誤' });
   }
 });
 
@@ -521,8 +578,6 @@ router.get('/member/:id/interview', async (req, res) => {
     }
 
     const member = result.rows[0];
-
-    // 取消會員等級限制：所有會員皆可查看該會員的面談資料
 
     // Check if interview form exists
     if (!member.interview_form) {
@@ -574,9 +629,9 @@ router.get('/member/:id', async (req, res) => {
     const { id } = req.params;
 
     const result = await pool.query(
-      `SELECT u.id, u.name, u.company, u.industry, u.title,
+      `SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
               u.profile_picture_url, u.contact_number, u.membership_level,
-              u.qr_code_url, c.name as chapter_name
+              u.qr_code_url, u.coach_user_id, u.created_at, u.interview_form, c.name as chapter_name
        FROM users u
        LEFT JOIN chapters c ON u.chapter_id = c.id
        WHERE u.id = $1 AND u.status = 'active'`,
@@ -589,13 +644,11 @@ router.get('/member/:id', async (req, res) => {
 
     const member = result.rows[0];
 
-    // 取消會員等級限制：所有會員皆可查看會員詳細資料
-
-
     res.json({
       member: {
         id: member.id,
         name: member.name,
+        email: member.email,
         company: member.company,
         industry: member.industry,
         title: member.title,
@@ -603,13 +656,476 @@ router.get('/member/:id', async (req, res) => {
         contactNumber: member.contact_number,
         membershipLevel: member.membership_level,
         qrCodeUrl: `/api/qrcode/member/${member.id}`,
-        chapterName: member.chapter_name
+        chapterName: member.chapter_name,
+        createdAt: member.created_at,
+        coachUserId: member.coach_user_id,
+        interviewData: !!member.interview_form
       }
     });
 
   } catch (error) {
     console.error('Get member details error:', error);
     res.status(500).json({ message: '獲取會員詳細資料時發生錯誤' });
+  }
+});
+
+// -------- Onboarding Tasks Endpoints (for MemberDetail page) --------
+// GET: 列出學員的入職任務（任何登入者可見）
+router.get('/member/:id/onboarding-tasks', async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    const result = await pool.query(
+      `SELECT id, user_id, title, description, status, due_date, completed_at, created_at
+       FROM user_onboarding_tasks
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [memberId]
+    );
+
+    const tasks = result.rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      title: r.title,
+      description: r.description,
+      status: r.status,
+      dueDate: r.due_date,
+      completedAt: r.completed_at,
+      createdAt: r.created_at
+    }));
+
+    res.json({ tasks });
+  } catch (error) {
+    console.error('Get onboarding tasks error:', error);
+    res.status(500).json({ message: '獲取入職任務時發生錯誤' });
+  }
+});
+
+// POST: 新增學員的入職任務（僅教練或管理員）
+router.post('/member/:id/onboarding-tasks', requireCoach, async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    const { title, description, dueDate } = req.body || {};
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ message: '請提供任務標題' });
+    }
+
+    const trimmedTitle = title.trim().slice(0, 200);
+    const desc = typeof description === 'string' ? description : null;
+    let due = null;
+    if (dueDate) {
+      const d = new Date(dueDate);
+      if (isNaN(d.getTime())) {
+        return res.status(400).json({ message: '截止日期格式不正確' });
+      }
+      due = d.toISOString();
+    }
+
+    // 權限驗證：教練只能指派給自己的學員；管理員不受限制
+    const isAdmin = !!req.user.is_admin;
+    if (!isAdmin) {
+      const checkRes = await pool.query(
+        `SELECT id FROM users WHERE id = $1 AND coach_user_id = $2 AND status = 'active'`,
+        [memberId, req.user.id]
+      );
+      if (checkRes.rows.length === 0) {
+        return res.status(403).json({ message: '僅能為指派給您的學員新增任務' });
+      }
+    }
+
+    const insertRes = await pool.query(
+      `INSERT INTO user_onboarding_tasks (user_id, title, description, due_date, created_by_coach_id)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, user_id, title, description, status, due_date, completed_at, created_at`,
+      [memberId, trimmedTitle, desc, due, req.user.id]
+    );
+
+    const r = insertRes.rows[0];
+    const task = {
+      id: r.id,
+      userId: r.user_id,
+      title: r.title,
+      description: r.description,
+      status: r.status,
+      dueDate: r.due_date,
+      completedAt: r.completed_at,
+      createdAt: r.created_at
+    };
+
+    res.json({ message: '任務已新增', task });
+  } catch (error) {
+    console.error('Create onboarding task error:', error);
+    res.status(500).json({ message: '新增入職任務時發生錯誤' });
+  }
+});
+
+// PUT: 更新任務狀態（本人、其教練或管理員可更新）
+router.put('/onboarding-tasks/:taskId', async (req, res) => {
+  try {
+    const taskId = parseInt(req.params.taskId, 10);
+    const { status } = req.body || {};
+    if (!Number.isInteger(taskId)) return res.status(400).json({ message: '任務 ID 無效' });
+    const validStatuses = ['pending', 'in_progress', 'completed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: '狀態不正確' });
+    }
+
+    // 取得任務及會員資料
+    const taskRes = await pool.query(
+      `SELECT t.*, u.name as member_name, u.coach_user_id
+       FROM user_onboarding_tasks t
+       JOIN users u ON u.id = t.user_id
+       WHERE t.id = $1`,
+      [taskId]
+    );
+    if (taskRes.rows.length === 0) return res.status(404).json({ message: '任務不存在' });
+    const taskRow = taskRes.rows[0];
+
+    // 權限：本人、其教練或管理員
+    const isOwner = taskRow.user_id === req.user.id;
+    const isCoach = !!req.user.is_coach && req.user.id === taskRow.coach_user_id;
+    const isAdmin = !!req.user.is_admin;
+    if (!(isOwner || isCoach || isAdmin)) {
+      return res.status(403).json({ message: '沒有權限更新此任務' });
+    }
+
+    // 更新任務狀態
+    const completedAt = status === 'completed' ? new Date().toISOString() : null;
+    const updateRes = await pool.query(
+      `UPDATE user_onboarding_tasks
+       SET status = $1, completed_at = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING id, user_id, title, description, status, due_date, completed_at, created_at`,
+      [status, completedAt, taskId]
+    );
+
+    const r = updateRes.rows[0];
+    const updatedTask = {
+      id: r.id,
+      userId: r.user_id,
+      title: r.title,
+      description: r.description,
+      status: r.status,
+      dueDate: r.due_date,
+      completedAt: r.completed_at,
+      createdAt: r.created_at
+    };
+
+    // 事件觸發：完成任務時
+    if (status === 'completed') {
+      try {
+        // 建立教練紀錄（若有教練）
+        const coachId = taskRow.coach_user_id || (req.user.is_coach ? req.user.id : null);
+        if (coachId) {
+          await pool.query(
+            `INSERT INTO coach_logs (coach_id, member_id, content) VALUES ($1, $2, $3)`,
+            [coachId, taskRow.user_id, `【系統】會員 ${taskRow.member_name} 完成任務：「${taskRow.title}」`]
+          );
+        }
+
+        // 通知：發送任務完成通知給學員
+        await aiNotificationService.createNotification(
+          taskRow.user_id,
+          'task_completed',
+          {
+            title: '✅ 任務已完成',
+            content: `您已完成任務：「${taskRow.title}」。`,
+            priority: 1
+          }
+        );
+
+        // 通知：發送任務完成通知給教練
+        if (taskRow.coach_user_id) {
+          await aiNotificationService.createNotification(
+            taskRow.coach_user_id,
+            'member_task_completed',
+            {
+              title: '🎉 學員完成任務',
+              content: `您的學員 ${taskRow.member_name} 已完成任務：「${taskRow.title}」。`,
+              relatedUserId: taskRow.user_id,
+              priority: 1
+            }
+          );
+        }
+
+        // 授予榮譽徽章：首個任務完成
+        try {
+          const countRes = await pool.query(
+            `SELECT COUNT(*)::int AS cnt FROM user_onboarding_tasks WHERE user_id = $1 AND status = 'completed'`,
+            [taskRow.user_id]
+          );
+          const completedCount = countRes.rows[0]?.cnt || 0;
+          if (completedCount === 1) {
+            const badgeRes = await pool.query(`SELECT id, name FROM honor_badges WHERE code = $1`, ['first_task_completed']);
+            if (badgeRes.rows.length > 0) {
+              const badgeId = badgeRes.rows[0].id;
+              const insBadge = await pool.query(
+                `INSERT INTO user_honor_badges (user_id, badge_id, source_type, source_id, notes)
+                 VALUES ($1, $2, $3, $4, $5)
+                 ON CONFLICT (user_id, badge_id) DO NOTHING
+                 RETURNING id`,
+                [taskRow.user_id, badgeId, 'onboarding_task', taskRow.id, `完成首個任務：「${taskRow.title}」`]
+              );
+              if (insBadge.rows.length > 0) {
+                await aiNotificationService.createNotification(
+                  taskRow.user_id,
+                  'badge_awarded',
+                  {
+                    title: '🏅 獲得榮譽徽章',
+                    content: '恭喜！您已獲得「首個任務完成」徽章。',
+                    priority: 1
+                  }
+                );
+              }
+            }
+          }
+        } catch (badgeErr) {
+          console.error('授予首個任務完成徽章失敗:', badgeErr);
+        }
+
+        // 若為 GBC 深度交流表，觸發 AI 掃描與智慧引薦 + 授予徽章
+        const isGbc = typeof taskRow.title === 'string' && taskRow.title.includes('GBC 深度交流表');
+        if (isGbc) {
+          try {
+            await aiNotificationService.scanAndNotifyOpportunities(taskRow.user_id);
+          } catch (scanErr) {
+            console.error('AI 掃描與智慧引薦失敗:', scanErr);
+          }
+          // 授予 GBC 檔案完成徽章
+          try {
+            const badgeRes2 = await pool.query(`SELECT id, name FROM honor_badges WHERE code = $1`, ['gbc_profile_complete']);
+            if (badgeRes2.rows.length > 0) {
+              const badgeId2 = badgeRes2.rows[0].id;
+              const insBadge2 = await pool.query(
+                `INSERT INTO user_honor_badges (user_id, badge_id, source_type, source_id, notes)
+                 VALUES ($1, $2, $3, $4, $5)
+                 ON CONFLICT (user_id, badge_id) DO NOTHING
+                 RETURNING id`,
+                [taskRow.user_id, badgeId2, 'onboarding_task', taskRow.id, '完成 GBC 深度交流表']
+              );
+              if (insBadge2.rows.length > 0) {
+                await aiNotificationService.createNotification(
+                  taskRow.user_id,
+                  'badge_awarded',
+                  {
+                    title: '🏅 獲得榮譽徽章',
+                    content: '恭喜！您已獲得「GBC 檔案完成」徽章。',
+                    priority: 1
+                  }
+                );
+              }
+            }
+          } catch (gbcBadgeErr) {
+            console.error('授予 GBC 檔案完成徽章失敗:', gbcBadgeErr);
+          }
+        }
+      } catch (evtErr) {
+        console.error('完成任務事件觸發失敗:', evtErr);
+      }
+    }
+
+    res.json({ message: '任務已更新', task: updatedTask });
+  } catch (error) {
+    console.error('Update onboarding task error:', error);
+    res.status(500).json({ message: '更新入職任務時發生錯誤' });
+  }
+});
+
+// -------- Coach Logs Endpoints (for MemberDetail page) --------
+// GET: 取得學員的教練紀錄（本人可見；其教練與管理員可見）
+router.get('/member/:id/coach-logs', async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
+    const coachUserId = userRes.rows[0].coach_user_id;
+
+    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
+    if (!allow) return res.status(403).json({ message: '沒有權限查看教練紀錄' });
+
+    const logsRes = await pool.query(
+      `SELECT cl.id, cl.content, cl.created_at, u.name AS coach_name
+       FROM coach_logs cl
+       JOIN users u ON u.id = cl.coach_id
+       WHERE cl.member_id = $1
+       ORDER BY cl.created_at DESC`,
+      [memberId]
+    );
+
+    const logs = logsRes.rows.map(r => ({
+      id: r.id,
+      content: r.content,
+      createdAt: r.created_at,
+      coachName: r.coach_name
+    }));
+
+    res.json({ logs });
+  } catch (error) {
+    console.error('Get coach logs error:', error);
+    res.status(500).json({ message: '獲取教練紀錄時發生錯誤' });
+  }
+});
+
+// POST: 新增教練紀錄（僅該學員之教練或管理員）
+router.post('/member/:id/coach-logs', requireCoach, async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+    const { content } = req.body || {};
+    if (!content || !content.trim()) return res.status(400).json({ message: '請輸入紀錄內容' });
+
+    const isAdmin = !!req.user.is_admin;
+    if (!isAdmin) {
+      const checkRes = await pool.query('SELECT id FROM users WHERE id = $1 AND coach_user_id = $2', [memberId, req.user.id]);
+      if (checkRes.rows.length === 0) return res.status(403).json({ message: '僅能為指派給您的學員新增教練紀錄' });
+    }
+
+    const insertRes = await pool.query(
+      `INSERT INTO coach_logs (coach_id, member_id, content) VALUES ($1, $2, $3)`,
+      [req.user.id, memberId, content.trim()]
+    );
+
+    const coachRes = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+    const log = {
+      id: insertRes.rows[0].id,
+      content: insertRes.rows[0].content,
+      createdAt: insertRes.rows[0].created_at,
+      coachName: coachRes.rows[0]?.name || '教練'
+    };
+
+    res.json({ message: '教練紀錄已新增', log });
+  } catch (error) {
+    console.error('Create coach log error:', error);
+    res.status(500).json({ message: '新增教練紀錄時發生錯誤' });
+  }
+});
+
+// 新增：批量分配入職任務給多位學員
+router.post('/onboarding-tasks/bulk', requireCoach, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { memberIds, title, description, dueDate } = req.body || {};
+    if (!Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.status(400).json({ message: '請提供至少一位學員 ID' });
+    }
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ message: '請提供任務標題' });
+    }
+
+    const trimmedTitle = title.trim().slice(0, 200);
+    const desc = typeof description === 'string' ? description : null;
+    let due = null;
+    if (dueDate) {
+      const d = new Date(dueDate);
+      if (isNaN(d.getTime())) {
+        return res.status(400).json({ message: '截止日期格式不正確' });
+      }
+      due = d.toISOString();
+    }
+
+    // 權限驗證：教練只能分配給自己的學員；管理員不受此限制
+    const isAdmin = !!req.user.is_admin;
+    const coachId = req.user.id;
+
+    if (!isAdmin) {
+      const checkRes = await pool.query(
+        `SELECT id FROM users WHERE id = ANY($1) AND coach_user_id = $2 AND status = 'active'`,
+        [memberIds.map(id => parseInt(id, 10)).filter(Boolean), coachId]
+      );
+      if (checkRes.rows.length !== memberIds.length) {
+        return res.status(403).json({ message: '包含未指派給您的學員，無法批量分配' });
+      }
+    }
+
+    await client.query('BEGIN');
+
+    // 動態批量 INSERT
+    const values = [];
+    const params = [];
+    let idx = 1;
+
+    memberIds.forEach((uid) => {
+      const userId = parseInt(uid, 10);
+      if (!Number.isInteger(userId)) return;
+      values.push(`($${idx++}, $${idx++}, $${idx++}, $${idx++})`);
+      params.push(userId, trimmedTitle, desc, due);
+    });
+
+    if (values.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: '沒有有效的學員 ID' });
+    }
+
+    const insertSql = `
+      INSERT INTO user_onboarding_tasks (user_id, title, description, due_date, created_by_coach_id)
+      SELECT v.user_id, v.title, v.description, v.due_date, $${idx}
+      FROM (
+        VALUES ${values.join(',')}
+      ) AS v(user_id, title, description, due_date)
+      RETURNING id
+    `;
+    params.push(coachId);
+
+    const insertResult = await client.query(insertSql, params);
+
+    await client.query('COMMIT');
+
+    res.json({ message: '批量分配成功', createdCount: insertResult.rowCount || 0 });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Bulk create onboarding tasks error:', error);
+    res.status(500).json({ message: '批量分配任務時發生錯誤' });
+  } finally {
+    client.release();
+  }
+});
+
+// Ensure export at the very end of file
+// ... existing code ...
+// GET: 取得會員榮譽徽章（本人、其教練或管理員可見）
+router.get('/member/:id/badges', async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
+    const coachUserId = userRes.rows[0].coach_user_id;
+    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
+    if (!allow) return res.status(403).json({ message: '沒有權限查看此會員的徽章' });
+
+    const badgesRes = await pool.query(
+      `SELECT ub.id, ub.awarded_at, ub.source_type, ub.source_id, ub.notes,
+              b.code, b.name, b.description, b.icon, b.color_class
+       FROM user_honor_badges ub
+       JOIN honor_badges b ON b.id = ub.badge_id
+       WHERE ub.user_id = $1
+       ORDER BY ub.awarded_at DESC`,
+      [memberId]
+    );
+
+    const badges = badgesRes.rows.map(r => ({
+      id: r.id,
+      code: r.code,
+      name: r.name,
+      description: r.description,
+      icon: r.icon,
+      colorClass: r.color_class,
+      awardedAt: r.awarded_at,
+      sourceType: r.source_type,
+      sourceId: r.source_id,
+      notes: r.notes,
+    }));
+
+    res.json({ badges });
+  } catch (error) {
+    console.error('Get member badges error:', error);
+    res.status(500).json({ message: '獲取會員徽章時發生錯誤' });
   }
 });
 
@@ -648,7 +1164,7 @@ router.get('/referral-stats', async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // 獲取我確認的引薦總金額（作為被引薦人）
+    // 我確認的引薦總金額（作為被引薦人）
     const receivedStats = await pool.query(
       `SELECT COALESCE(SUM(referral_amount), 0) as total_received
        FROM referrals
@@ -656,7 +1172,7 @@ router.get('/referral-stats', async (req, res) => {
       [userId]
     );
 
-    // 獲取我發出且被確認的引薦總金額（作為引薦人）
+    // 我發出且被確認的引薦總金額（作為引薦人）
     const sentStats = await pool.query(
       `SELECT COALESCE(SUM(referral_amount), 0) as total_sent
        FROM referrals
@@ -664,7 +1180,7 @@ router.get('/referral-stats', async (req, res) => {
       [userId]
     );
 
-    // 獲取待處理的引薦數量
+    // 待處理的引薦數量
     const pendingReceived = await pool.query(
       `SELECT COUNT(*) as pending_received
        FROM referrals
