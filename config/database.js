@@ -212,6 +212,13 @@ const initializeDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Safety migrations for existing deployments (e.g., Render) where the table may exist without newer columns
+    await pool.query(`
+      ALTER TABLE user_onboarding_tasks
+      ADD COLUMN IF NOT EXISTS created_by_coach_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+    `);
+
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_onboarding_tasks_user ON user_onboarding_tasks(user_id)`);
 
     // Create coach logs table
