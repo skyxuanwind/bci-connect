@@ -5,18 +5,18 @@ import Avatar from '../../components/Avatar';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { toast } from 'react-toastify';
 import {
-  MagnifyingGlassIcon,
   BuildingOfficeIcon,
   BriefcaseIcon,
   PhoneIcon,
   EyeIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  CheckCircleIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline';
 
 const CoachDashboard = () => {
-  // 搜尋與分頁狀態
-  const [search, setSearch] = useState('');
+  // 分頁狀態（已移除搜尋）
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
 
@@ -71,7 +71,7 @@ const CoachDashboard = () => {
       setLoading(true);
       setError('');
       const params = { page, limit };
-      if (search && search.trim()) params.search = search.trim();
+      // 套用篩選與排序參數（搜尋已移除）
       if (filterNoInterview) params.noInterview = 'true';
       if (filterNoNfc) params.noNfc = 'true';
       if (sortKey && sortKey !== 'default') params.sort = sortKey;
@@ -142,17 +142,6 @@ const CoachDashboard = () => {
     try { localStorage.setItem('coachSortKey', sortKey || 'default'); } catch {}
   }, [filterNoInterview, filterNoNfc, sortKey]);
 
-  const onSubmitSearch = (e) => {
-    e.preventDefault();
-    setPage(1);
-    fetchCoachees();
-  };
-
-  const clearSearch = () => {
-    setSearch('');
-    setPage(1);
-    fetchCoachees();
-  };
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) => {
@@ -290,55 +279,36 @@ const CoachDashboard = () => {
 
       {/* 搜尋列 */}
       <div className="bg-primary-800 border border-gold-600 rounded-lg p-4">
-        <form onSubmit={onSubmitSearch} className="space-y-3">
-          <div>
-            <label className="label">
-              <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
-              搜尋學員
-            </label>
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="flex-1 flex gap-3">
-                <input
-                  type="text"
-                  placeholder="搜尋姓名、公司或職稱..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="input flex-1"
-                />
-                <button type="submit" className="btn-primary">搜尋</button>
-                <button type="button" onClick={clearSearch} className="btn-secondary">清除</button>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <input id="filter-no-interview" type="checkbox" className="h-4 w-4" checked={filterNoInterview} onChange={(e) => { setFilterNoInterview(e.target.checked); setPage(1); }} />
-                  <label htmlFor="filter-no-interview" className="text-sm text-gold-200">僅看未完成面談</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input id="filter-no-nfc" type="checkbox" className="h-4 w-4" checked={filterNoNfc} onChange={(e) => { setFilterNoNfc(e.target.checked); setPage(1); }} />
-                  <label htmlFor="filter-no-nfc" className="text-sm text-gold-200">僅看未有NFC卡</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gold-200">排序</label>
-                  <select className="input py-1" value={sortKey} onChange={(e) => { setSortKey(e.target.value); setPage(1); }}>
-                    <option value="default">預設</option>
-                    <option value="overdue_desc">逾期任務數（多→少）</option>
-                    <option value="meetings_desc">會議次數（多→少）</option>
-                  </select>
-                </div>
-                {(filterNoInterview || filterNoNfc || sortKey !== 'default') && (
-                  <button
-                    type="button"
-                    onClick={() => { setFilterNoInterview(false); setFilterNoNfc(false); setSortKey('default'); setPage(1); fetchCoachees(); }}
-                    className="btn-secondary py-1 px-2"
-                  >重置篩選/排序</button>
-                )}
-              </div>
+        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <input id="filter-no-interview" type="checkbox" className="h-4 w-4" checked={filterNoInterview} onChange={(e) => { setFilterNoInterview(e.target.checked); setPage(1); }} />
+              <label htmlFor="filter-no-interview" className="text-sm text-gold-200">僅看未完成面談</label>
             </div>
+            <div className="flex items-center gap-2">
+              <input id="filter-no-nfc" type="checkbox" className="h-4 w-4" checked={filterNoNfc} onChange={(e) => { setFilterNoNfc(e.target.checked); setPage(1); }} />
+              <label htmlFor="filter-no-nfc" className="text-sm text-gold-200">僅看未有NFC卡</label>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-gold-200">排序</label>
+            <select className="input py-1" value={sortKey} onChange={(e) => { setSortKey(e.target.value); setPage(1); }}>
+              <option value="default">預設</option>
+              <option value="overdue_desc">逾期任務數（多→少）</option>
+              <option value="meetings_desc">會議次數（多→少）</option>
+            </select>
             {(filterNoInterview || filterNoNfc || sortKey !== 'default') && (
-              <div className="mt-2 text-xs text-gold-300">已套用過濾/排序（跨頁生效）。</div>
+              <button
+                type="button"
+                onClick={() => { setFilterNoInterview(false); setFilterNoNfc(false); setSortKey('default'); setPage(1); fetchCoachees(); }}
+                className="btn-secondary py-1 px-2"
+              >重置</button>
             )}
           </div>
-        </form>
+        </div>
+        {(filterNoInterview || filterNoNfc || sortKey !== 'default') && (
+          <div className="mt-2 text-xs text-gold-300">已套用過濾/排序（跨頁生效）。</div>
+        )}
       </div>
 
       {/* 學員列表 */}
@@ -450,16 +420,36 @@ const CoachDashboard = () => {
                           {progressById[member.id] && (
                             <>
                               <div className="mt-2 flex flex-wrap gap-1">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.hasInterview ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
+                                <span className={`${progressById[member.id]?.hasInterview ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
+                                  {progressById[member.id]?.hasInterview ? (
+                                    <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                  ) : (
+                                    <XCircleIcon className="h-3 w-3 mr-1" />
+                                  )}
                                   面談
                                 </span>
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.hasMbtiType ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
+                                <span className={`${progressById[member.id]?.hasMbtiType ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
+                                  {progressById[member.id]?.hasMbtiType ? (
+                                    <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                  ) : (
+                                    <XCircleIcon className="h-3 w-3 mr-1" />
+                                  )}
                                   MBTI
                                 </span>
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.hasNfcCard ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
+                                <span className={`${progressById[member.id]?.hasNfcCard ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
+                                  {progressById[member.id]?.hasNfcCard ? (
+                                    <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                  ) : (
+                                    <XCircleIcon className="h-3 w-3 mr-1" />
+                                  )}
                                   NFC
                                 </span>
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.foundationViewed ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
+                                <span className={`${progressById[member.id]?.foundationViewed ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
+                                  {progressById[member.id]?.foundationViewed ? (
+                                    <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                  ) : (
+                                    <XCircleIcon className="h-3 w-3 mr-1" />
+                                  )}
                                   地基
                                 </span>
                               </div>
