@@ -521,7 +521,10 @@ router.get('/me', authenticateToken, async (req, res) => {
         interviewForm: interviewForm,
         createdAt: user.created_at,
         mbti: user.mbti,
-        mbtiPublic: user.mbti_public
+        mbtiPublic: user.mbti_public,
+        // 新增：教練權限資訊，供前端保留教練狀態
+        isCoach: !!user.is_coach,
+        coachUserId: user.coach_user_id
       }
     });
 

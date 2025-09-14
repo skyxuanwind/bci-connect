@@ -1262,7 +1262,7 @@ router.post('/onboarding-tasks/bulk', requireCoach, async (req, res) => {
 
     if (!isAdmin) {
       const checkRes = await pool.query(
-        `SELECT id FROM users WHERE id = ANY($1) AND coach_user_id = $2 AND status = 'active'`,
+        `SELECT id FROM users WHERE id = ANY($1::int[]) AND coach_user_id = $2 AND status = 'active'`,
         [memberIds.map(id => parseInt(id, 10)).filter(Boolean), coachId]
       );
       if (checkRes.rows.length !== memberIds.length) {
@@ -1272,7 +1272,7 @@ router.post('/onboarding-tasks/bulk', requireCoach, async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 動態批量 INSERT
+    // 動態批量 INSERT（加入型別轉換避免 NULL 型別推斷錯誤）
     const values = [];
     const params = [];
     let idx = 1;
@@ -1280,7 +1280,7 @@ router.post('/onboarding-tasks/bulk', requireCoach, async (req, res) => {
     memberIds.forEach((uid) => {
       const userId = parseInt(uid, 10);
       if (!Number.isInteger(userId)) return;
-      values.push(`($${idx++}, $${idx++}, $${idx++}, $${idx++})`);
+      values.push(`($${idx++}::int, $${idx++}::varchar(200), $${idx++}::text, $${idx++}::timestamp)`);
       params.push(userId, trimmedTitle, desc, due);
     });
 
@@ -1291,7 +1291,7 @@ router.post('/onboarding-tasks/bulk', requireCoach, async (req, res) => {
 
     const insertSql = `
       INSERT INTO user_onboarding_tasks (user_id, title, description, due_date, created_by_coach_id)
-      SELECT v.user_id, v.title, v.description, v.due_date, $${idx}
+      SELECT v.user_id, v.title, v.description, v.due_date, $${idx}::int
       FROM (
         VALUES ${values.join(',')}
       ) AS v(user_id, title, description, due_date)
