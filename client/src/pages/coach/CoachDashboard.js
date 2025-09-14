@@ -29,6 +29,9 @@ const CoachDashboard = () => {
   // 任務統計
   const [taskStats, setTaskStats] = useState({ total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0 });
   const [statsLoading, setStatsLoading] = useState(false);
+  // 進度概況
+  const [progressById, setProgressById] = useState({});
+  // 已移除未使用的 progressLoading 以清理警告
 
   // 批量分配
   const [selectedIds, setSelectedIds] = useState([]);
@@ -36,6 +39,15 @@ const CoachDashboard = () => {
   const [bulkDescription, setBulkDescription] = useState('');
   const [bulkDueDate, setBulkDueDate] = useState('');
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  // 進度過濾與排序
+  const [filterNoInterview, setFilterNoInterview] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('coachFilterNoInterview') || 'false'); } catch { return false; }
+  });
+  const [filterNoNfc, setFilterNoNfc] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('coachFilterNoNfc') || 'false'); } catch { return false; }
+  });
+  const [sortKey, setSortKey] = useState(() => localStorage.getItem('coachSortKey') || 'default'); // default | overdue_desc | meetings_desc
 
   const canPrev = useMemo(() => page > 1, [page]);
   const canNext = useMemo(() => page < (pagination?.totalPages || 1), [page, pagination]);
@@ -60,6 +72,9 @@ const CoachDashboard = () => {
       setError('');
       const params = { page, limit };
       if (search && search.trim()) params.search = search.trim();
+      if (filterNoInterview) params.noInterview = 'true';
+      if (filterNoNfc) params.noNfc = 'true';
+      if (sortKey && sortKey !== 'default') params.sort = sortKey;
 
       const resp = await axios.get('/api/users/my-coachees', { params });
       const data = resp.data || {};
@@ -94,14 +109,38 @@ const CoachDashboard = () => {
     }
   };
 
+  const fetchProgress = async () => {
+    try {
+      const resp = await axios.get('/api/users/my-coachees/progress');
+      const list = resp.data?.progress || [];
+      const map = {};
+      list.forEach(item => {
+        if (item && item.userId != null) map[item.userId] = item;
+      });
+      setProgressById(map);
+    } catch (e) {
+      console.error('載入進度概況失敗:', e);
+    } finally {
+      // no-op
+    }
+  };
+
   useEffect(() => {
     fetchCoachees();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, filterNoInterview, filterNoNfc, sortKey]);
 
   useEffect(() => {
     fetchTaskStats();
+    fetchProgress();
   }, []);
+
+  // 持久化：篩選與排序
+  useEffect(() => {
+    try { localStorage.setItem('coachFilterNoInterview', JSON.stringify(filterNoInterview)); } catch {}
+    try { localStorage.setItem('coachFilterNoNfc', JSON.stringify(filterNoNfc)); } catch {}
+    try { localStorage.setItem('coachSortKey', sortKey || 'default'); } catch {}
+  }, [filterNoInterview, filterNoNfc, sortKey]);
 
   const onSubmitSearch = (e) => {
     e.preventDefault();
@@ -128,6 +167,42 @@ const CoachDashboard = () => {
   };
 
   const clearSelection = () => setSelectedIds([]);
+
+  // 派生：根據進度資料進行過濾與排序（僅作用於當前頁列表）
+  const visibleCoachees = useMemo(() => {
+    let list = Array.isArray(coachees) ? [...coachees] : [];
+
+    // 過濾條件
+    if (filterNoInterview) {
+      list = list.filter(m => {
+        const p = progressById[m.id];
+        return p ? !p.hasInterview : true; // 若進度未載入，暫時保留
+      });
+    }
+    if (filterNoNfc) {
+      list = list.filter(m => {
+        const p = progressById[m.id];
+        return p ? !p.hasNfcCard : true;
+      });
+    }
+
+    // 排序
+    if (sortKey === 'overdue_desc') {
+      list.sort((a, b) => {
+        const ao = Number(a?.taskCounts?.overdue ?? 0);
+        const bo = Number(b?.taskCounts?.overdue ?? 0);
+        return bo - ao;
+      });
+    } else if (sortKey === 'meetings_desc') {
+      list.sort((a, b) => {
+        const am = Number(progressById[a.id]?.meetingsCount ?? 0);
+        const bm = Number(progressById[b.id]?.meetingsCount ?? 0);
+        return bm - am;
+      });
+    }
+
+    return list;
+  }, [coachees, progressById, filterNoInterview, filterNoNfc, sortKey]);
 
   // GBC 模板工具：設定標準任務內容與預設截止時間（+7 天）
   const formatDateTimeLocal = (date) => {
@@ -221,17 +296,47 @@ const CoachDashboard = () => {
               <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
               搜尋學員
             </label>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                placeholder="搜尋姓名、公司或職稱..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="input flex-1"
-              />
-              <button type="submit" className="btn-primary">搜尋</button>
-              <button type="button" onClick={clearSearch} className="btn-secondary">清除</button>
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="flex-1 flex gap-3">
+                <input
+                  type="text"
+                  placeholder="搜尋姓名、公司或職稱..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="input flex-1"
+                />
+                <button type="submit" className="btn-primary">搜尋</button>
+                <button type="button" onClick={clearSearch} className="btn-secondary">清除</button>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <input id="filter-no-interview" type="checkbox" className="h-4 w-4" checked={filterNoInterview} onChange={(e) => { setFilterNoInterview(e.target.checked); setPage(1); }} />
+                  <label htmlFor="filter-no-interview" className="text-sm text-gold-200">僅看未完成面談</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input id="filter-no-nfc" type="checkbox" className="h-4 w-4" checked={filterNoNfc} onChange={(e) => { setFilterNoNfc(e.target.checked); setPage(1); }} />
+                  <label htmlFor="filter-no-nfc" className="text-sm text-gold-200">僅看未有NFC卡</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gold-200">排序</label>
+                  <select className="input py-1" value={sortKey} onChange={(e) => { setSortKey(e.target.value); setPage(1); }}>
+                    <option value="default">預設</option>
+                    <option value="overdue_desc">逾期任務數（多→少）</option>
+                    <option value="meetings_desc">會議次數（多→少）</option>
+                  </select>
+                </div>
+                {(filterNoInterview || filterNoNfc || sortKey !== 'default') && (
+                  <button
+                    type="button"
+                    onClick={() => { setFilterNoInterview(false); setFilterNoNfc(false); setSortKey('default'); setPage(1); fetchCoachees(); }}
+                    className="btn-secondary py-1 px-2"
+                  >重置篩選/排序</button>
+                )}
+              </div>
             </div>
+            {(filterNoInterview || filterNoNfc || sortKey !== 'default') && (
+              <div className="mt-2 text-xs text-gold-300">已套用過濾/排序（跨頁生效）。</div>
+            )}
           </div>
         </form>
       </div>
@@ -307,7 +412,7 @@ const CoachDashboard = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {coachees.map((member) => (
+              {visibleCoachees.map((member) => (
                 <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200">
                   <div className="p-6">
                     {/* Header: Name + Select */}
@@ -340,6 +445,42 @@ const CoachDashboard = () => {
                                 逾 {Number(member.taskCounts.overdue || 0)}
                               </span>
                             </div>
+                          )}
+                          {/* 進度概況徽章 */}
+                          {progressById[member.id] && (
+                            <>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.hasInterview ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
+                                  面談
+                                </span>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.hasMbtiType ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
+                                  MBTI
+                                </span>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.hasNfcCard ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
+                                  NFC
+                                </span>
+                              </div>
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
+                                  錢包 {Number(progressById[member.id]?.walletCount ?? 0)}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
+                                  會議 {Number(progressById[member.id]?.meetingsCount ?? 0)}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
+                                  推薦出 {Number(progressById[member.id]?.referralsSent ?? 0)}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
+                                  推薦成 {Number(progressById[member.id]?.referralsReceivedConfirmed ?? 0)}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
+                                  名片點擊 {Number(progressById[member.id]?.businessMedia?.cardClicks ?? 0)}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
+                                  CTA {Number(progressById[member.id]?.businessMedia?.ctaClicks ?? 0)}
+                                </span>
+                              </div>
+                            </>
                           )}
                         </div>
                       </div>

@@ -496,7 +496,7 @@ router.get('/members', async (req, res) => {
 // @access  Private (Coach or Admin)
 router.get('/my-coachees', requireCoach, async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '' } = req.query;
+    const { page = 1, limit = 20, search = '', noInterview, noNfc, sort } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     let whereConditions = [
@@ -513,11 +513,27 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
       idx++;
     }
 
+    // 新增：後端過濾條件
+    if (noInterview === 'true') {
+      whereConditions.push('u.interview_form IS NULL');
+    }
+    if (noNfc === 'true') {
+      whereConditions.push('(u.nfc_card_id IS NULL AND u.nfc_card_url IS NULL)');
+    }
+
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
 
     const countQuery = `SELECT COUNT(*) AS total FROM users u ${whereClause}`;
     const countResult = await pool.query(countQuery, params);
     const total = parseInt(countResult.rows[0].total, 10) || 0;
+
+    // 新增：排序子句與會議次數統計
+    let orderClause = 'ORDER BY u.name ASC';
+    if (sort === 'overdue_desc') {
+      orderClause = 'ORDER BY COALESCE(t.overdue_tasks, 0) DESC, u.name ASC';
+    } else if (sort === 'meetings_desc') {
+      orderClause = 'ORDER BY COALESCE(m.meetings_count, 0) DESC, u.name ASC';
+    }
 
     const listQuery = `
       SELECT u.id, u.name, u.company, u.industry, u.title,
@@ -538,8 +554,15 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
         FROM user_onboarding_tasks
         GROUP BY user_id
       ) t ON t.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS meetings_count FROM (
+          SELECT requester_id AS user_id FROM meetings
+          UNION ALL
+          SELECT attendee_id AS user_id FROM meetings
+        ) s GROUP BY user_id
+      ) m ON m.user_id = u.id
       ${whereClause}
-      ORDER BY u.name ASC
+      ${orderClause}
       LIMIT $${idx} OFFSET $${idx + 1}
     `;
     params.push(parseInt(limit), offset);
@@ -578,7 +601,109 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
   }
 });
 
-// @route   GET /api/users/my-coachees/task-stats
+// @route   GET /api/users/my-coachees/progress
+// @desc    取得指派給目前教練的學員之多維度進度概況
+// @access  Private (Coach or Admin)
+router.get('/my-coachees/progress', requireCoach, async (req, res) => {
+  try {
+    const isAdmin = !!req.user.is_admin;
+    const coachId = req.user.id;
+
+    const whereClause = isAdmin
+      ? "WHERE u.status = 'active'"
+      : "WHERE u.status = 'active' AND u.coach_user_id = $1";
+
+    const params = isAdmin ? [] : [coachId];
+
+    const query = `
+      SELECT
+        u.id AS user_id,
+        (u.interview_form IS NOT NULL) AS has_interview,
+        (u.mbti_type IS NOT NULL) AS has_mbti_type,
+        (u.nfc_card_id IS NOT NULL OR u.nfc_card_url IS NOT NULL) AS has_nfc_card,
+        COALESCE(w.wallet_count, 0) AS wallet_count,
+        COALESCE(m.meetings_count, 0) AS meetings_count,
+        COALESCE(rs.sent_count, 0) AS referrals_sent,
+        COALESCE(rr.received_confirmed, 0) AS referrals_received_confirmed,
+        COALESCE(t.pending, 0) AS pending_tasks,
+        COALESCE(t.in_progress, 0) AS in_progress_tasks,
+        COALESCE(t.completed, 0) AS completed_tasks,
+        COALESCE(t.overdue, 0) AS overdue_tasks,
+        COALESCE(bm.bm_card_clicks, 0) AS bm_card_clicks,
+        COALESCE(bm.bm_cta_clicks, 0) AS bm_cta_clicks
+      FROM users u
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS wallet_count
+        FROM nfc_card_collections
+        GROUP BY user_id
+      ) w ON w.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS meetings_count FROM (
+          SELECT requester_id AS user_id FROM meetings
+          UNION ALL
+          SELECT attendee_id AS user_id FROM meetings
+        ) s GROUP BY user_id
+      ) m ON m.user_id = u.id
+      LEFT JOIN (
+        SELECT referrer_id AS user_id, COUNT(*) AS sent_count
+        FROM referrals
+        GROUP BY referrer_id
+      ) rs ON rs.user_id = u.id
+      LEFT JOIN (
+        SELECT referred_to_id AS user_id, COUNT(*) AS received_confirmed
+        FROM referrals
+        WHERE status = 'confirmed'
+        GROUP BY referred_to_id
+      ) rr ON rr.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id,
+               SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+               SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
+               SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+               SUM(CASE WHEN due_date IS NOT NULL AND due_date < NOW() AND status <> 'completed' THEN 1 ELSE 0 END) AS overdue
+        FROM user_onboarding_tasks
+        GROUP BY user_id
+      ) t ON t.user_id = u.id
+      LEFT JOIN (
+        SELECT target_member_id AS user_id,
+               COUNT(*) FILTER (WHERE event_type = 'card_click') AS bm_card_clicks,
+               COUNT(*) FILTER (WHERE event_type = 'cta_click') AS bm_cta_clicks
+        FROM business_media_analytics
+        WHERE target_member_id IS NOT NULL
+        GROUP BY target_member_id
+      ) bm ON bm.user_id = u.id
+      ${whereClause}
+    `;
+
+    const result = await pool.query(query, params);
+
+    const progress = result.rows.map(r => ({
+      userId: r.user_id,
+      hasInterview: r.has_interview === true || r.has_interview === 't',
+      hasMbtiType: r.has_mbti_type === true || r.has_mbti_type === 't',
+      hasNfcCard: r.has_nfc_card === true || r.has_nfc_card === 't',
+      walletCount: Number(r.wallet_count || 0),
+      meetingsCount: Number(r.meetings_count || 0),
+      referralsSent: Number(r.referrals_sent || 0),
+      referralsReceivedConfirmed: Number(r.referrals_received_confirmed || 0),
+      taskCounts: {
+        pending: Number(r.pending_tasks || 0),
+        inProgress: Number(r.in_progress_tasks || 0),
+        completed: Number(r.completed_tasks || 0),
+        overdue: Number(r.overdue_tasks || 0)
+      },
+      businessMedia: {
+        cardClicks: Number(r.bm_card_clicks || 0),
+        ctaClicks: Number(r.bm_cta_clicks || 0)
+      }
+    }));
+
+    res.json({ progress });
+  } catch (error) {
+    console.error('Get my-coachees progress error:', error);
+    res.status(500).json({ message: '取得學員進度概況時發生錯誤' });
+  }
+});
 // @access  Private (Coach or Admin)
 router.get('/my-coachees/task-stats', requireCoach, async (req, res) => {
   try {
