@@ -455,7 +455,9 @@ router.post('/login', async (req, res) => {
         nfcCardId: user.nfc_card_id,
         qrCodeUrl: user.qr_code_url,
         isCoach: !!user.is_coach,
-        coachUserId: user.coach_user_id
+        coachUserId: user.coach_user_id,
+        mbti: user.mbti,
+        mbtiPublic: user.mbti_public
       }
     });
 
@@ -518,8 +520,8 @@ router.get('/me', authenticateToken, async (req, res) => {
         qrCodeUrl: `/api/qrcode/member/${user.id}`,
         interviewForm: interviewForm,
         createdAt: user.created_at,
-        isCoach: !!user.is_coach,
-        coachUserId: user.coach_user_id
+        mbti: user.mbti,
+        mbtiPublic: user.mbti_public
       }
     });
 

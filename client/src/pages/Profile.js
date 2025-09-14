@@ -52,7 +52,9 @@ const Profile = () => {
       industry: user?.industry || '',
       title: user?.title || '',
       contactNumber: user?.contactNumber || '',
-      nfcCardUrl: user?.nfcCardUrl || ''
+      nfcCardUrl: user?.nfcCardUrl || '',
+      mbti: user?.mbti || '',
+      mbtiPublic: !!user?.mbtiPublic
     }
   });
 
@@ -100,7 +102,9 @@ const Profile = () => {
       industry: user.industry || '',
       title: user.title || '',
       contactNumber: user.contactNumber || '',
-      nfcCardUrl: user.nfcCardUrl || ''
+      nfcCardUrl: user.nfcCardUrl || '',
+      mbti: user.mbti || '',
+      mbtiPublic: !!user.mbtiPublic
     });
   }, [user, resetProfile]);
 
@@ -156,7 +160,11 @@ const Profile = () => {
           }
         });
       } else {
-        await updateProfile(data);
+        await updateProfile({
+          ...data,
+          // 保證布林值在非 FormData 模式下也正確傳遞
+          mbtiPublic: !!data.mbtiPublic
+        });
       }
       
       toast.success('個人資料更新成功！');
@@ -422,13 +430,39 @@ const Profile = () => {
                 )}
               </div>
 
+              {/* MBTI */}
+              <div>
+                <label className="label">
+                  <LightBulbIcon className="h-4 w-4 mr-2" />
+                  MBTI 性格類型
+                </label>
+                <input
+                  type="text"
+                  className={`input w-full ${profileErrors.mbti ? 'input-error' : ''}`}
+                  placeholder="例如：INTJ、ENFP"
+                  {...registerProfile('mbti', {
+                    maxLength: { value: 10, message: '長度過長' },
+                    pattern: { value: /^[A-Za-z]{3,5}$/i, message: '請輸入 3-5 個英文字母，例如 INTJ' }
+                  })}
+                />
+                <p className="text-xs text-gold-400 mt-1">填寫後可協助他人更了解你的溝通風格</p>
+              </div>
 
-
-
-            </div>
-
-            {/* Additional Info (Read-only) */}
-            <div className="border-t pt-8">
+              {/* MBTI Public Toggle */}
+              <div className="flex items-center space-x-3">
+                <input
+                  id="mbtiPublic"
+                  type="checkbox"
+                  className="toggle toggle-warning"
+                  {...registerProfile('mbtiPublic')}
+                />
+                <label htmlFor="mbtiPublic" className="label !mb-0">公開顯示我的 MBTI</label>
+              </div>
++
++            </div>
+ 
+             {/* Additional Info (Read-only) */}
+             <div className="border-t pt-8">
               <h3 className="text-md font-medium text-gold-100 mb-6">帳號資訊</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">

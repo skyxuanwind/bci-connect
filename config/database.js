@@ -135,6 +135,16 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_users_coach_user_id ON users(coach_user_id)
     `);
 
+    // Add MBTI fields
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS mbti VARCHAR(10)
+    `);
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS mbti_public BOOLEAN DEFAULT FALSE
+    `);
+
     // Create referrals table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS referrals (

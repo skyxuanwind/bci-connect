@@ -31,7 +31,7 @@ router.get('/:id/public', async (req, res) => {
     const { id } = req.params;
     
     const result = await pool.query(
-      `SELECT id, name, company, title
+      `SELECT id, name, company, title, mbti, mbti_public
        FROM users 
        WHERE id = $1 AND status = 'active'`,
       [id]
@@ -44,9 +44,20 @@ router.get('/:id/public', async (req, res) => {
       });
     }
     
+    const row = result.rows[0];
+    const user = {
+      id: row.id,
+      name: row.name,
+      company: row.company,
+      title: row.title
+    };
+    if (row.mbti_public) {
+      user.mbti = row.mbti;
+    }
+    
     res.json({
       success: true,
-      user: result.rows[0]
+      user
     });
   } catch (error) {
     console.error('Error fetching public user info:', error);
@@ -69,6 +80,7 @@ router.get('/profile', async (req, res) => {
       `SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
               u.profile_picture_url, u.contact_number, u.membership_level,
               u.status, u.qr_code_url, u.interview_form, u.created_at,
+              u.mbti, u.mbti_public,
               c.name as chapter_name
        FROM users u
        LEFT JOIN chapters c ON u.chapter_id = c.id
@@ -112,7 +124,9 @@ router.get('/profile', async (req, res) => {
         qrCodeUrl: `/api/qrcode/member/${user.id}`,
         interviewForm: interviewForm,
         chapterName: user.chapter_name,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        mbti: user.mbti,
+        mbtiPublic: user.mbti_public
       }
     });
 
@@ -132,7 +146,9 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
       company,
       industry,
       title,
-      contactNumber
+      contactNumber,
+      mbti,
+      mbtiPublic
     } = req.body;
 
     // Validation
@@ -170,18 +186,22 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
       }
     }
 
+    // Normalize inputs
+    const mbtiValue = (mbti && typeof mbti === 'string') ? mbti.trim().toUpperCase() : null;
+    const mbtiPublicValue = typeof mbtiPublic === 'string' ? (mbtiPublic === 'true') : !!mbtiPublic;
+
     // Update user profile
     const updateQuery = profilePictureUrl 
       ? `UPDATE users 
          SET name = $1, company = $2, industry = $3, title = $4, 
-             contact_number = $5, profile_picture_url = $6, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $7
-         RETURNING id, name, company, industry, title, contact_number, profile_picture_url`
+             contact_number = $5, profile_picture_url = $6, mbti = $7, mbti_public = $8, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $9
+         RETURNING id, name, company, industry, title, contact_number, profile_picture_url, mbti, mbti_public`
       : `UPDATE users 
          SET name = $1, company = $2, industry = $3, title = $4, 
-             contact_number = $5, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $6
-         RETURNING id, name, company, industry, title, contact_number, profile_picture_url`;
+             contact_number = $5, mbti = $6, mbti_public = $7, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $8
+         RETURNING id, name, company, industry, title, contact_number, profile_picture_url, mbti, mbti_public`;
     
     const updateParams = profilePictureUrl 
       ? [
@@ -191,6 +211,8 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
           title?.trim() || null,
           contactNumber?.trim() || null,
           profilePictureUrl,
+          mbtiValue,
+          mbtiPublicValue,
           req.user.id
         ]
       : [
@@ -199,6 +221,8 @@ router.put('/profile', upload.single('avatar'), async (req, res) => {
           industry?.trim() || null,
           title?.trim() || null,
           contactNumber?.trim() || null,
+          mbtiValue,
+          mbtiPublicValue,
           req.user.id
         ];
 
