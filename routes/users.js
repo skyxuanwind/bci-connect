@@ -621,6 +621,8 @@ router.get('/my-coachees/progress', requireCoach, async (req, res) => {
         (u.interview_form IS NOT NULL) AS has_interview,
         (u.mbti_type IS NOT NULL) AS has_mbti_type,
         (u.nfc_card_id IS NOT NULL OR u.nfc_card_url IS NOT NULL) AS has_nfc_card,
+        (u.profile_picture_url IS NOT NULL AND u.profile_picture_url <> '') AS has_profile_picture,
+        (u.contact_number IS NOT NULL AND u.contact_number <> '') AS has_contact_number,
         COALESCE(w.wallet_count, 0) AS wallet_count,
         COALESCE(m.meetings_count, 0) AS meetings_count,
         COALESCE(rs.sent_count, 0) AS referrals_sent,
@@ -630,7 +632,9 @@ router.get('/my-coachees/progress', requireCoach, async (req, res) => {
         COALESCE(t.completed, 0) AS completed_tasks,
         COALESCE(t.overdue, 0) AS overdue_tasks,
         COALESCE(bm.bm_card_clicks, 0) AS bm_card_clicks,
-        COALESCE(bm.bm_cta_clicks, 0) AS bm_cta_clicks
+        COALESCE(bm.bm_cta_clicks, 0) AS bm_cta_clicks,
+        (COALESCE(fv.viewed, 0) > 0) AS foundation_viewed,
+        COALESCE(er.events_count, 0) AS events_count
       FROM users u
       LEFT JOIN (
         SELECT user_id, COUNT(*) AS wallet_count
@@ -672,31 +676,72 @@ router.get('/my-coachees/progress', requireCoach, async (req, res) => {
         WHERE target_member_id IS NOT NULL
         GROUP BY target_member_id
       ) bm ON bm.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, 1 AS viewed
+        FROM member_activities
+        WHERE activity_type = 'foundation_viewed'
+        GROUP BY user_id
+      ) fv ON fv.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS events_count
+        FROM event_registrations
+        GROUP BY user_id
+      ) er ON er.user_id = u.id
       ${whereClause}
     `;
 
     const result = await pool.query(query, params);
 
-    const progress = result.rows.map(r => ({
-      userId: r.user_id,
-      hasInterview: r.has_interview === true || r.has_interview === 't',
-      hasMbtiType: r.has_mbti_type === true || r.has_mbti_type === 't',
-      hasNfcCard: r.has_nfc_card === true || r.has_nfc_card === 't',
-      walletCount: Number(r.wallet_count || 0),
-      meetingsCount: Number(r.meetings_count || 0),
-      referralsSent: Number(r.referrals_sent || 0),
-      referralsReceivedConfirmed: Number(r.referrals_received_confirmed || 0),
-      taskCounts: {
-        pending: Number(r.pending_tasks || 0),
-        inProgress: Number(r.in_progress_tasks || 0),
-        completed: Number(r.completed_tasks || 0),
-        overdue: Number(r.overdue_tasks || 0)
-      },
-      businessMedia: {
-        cardClicks: Number(r.bm_card_clicks || 0),
-        ctaClicks: Number(r.bm_cta_clicks || 0)
-      }
-    }));
+    const progress = result.rows.map(r => {
+      const hasInterview = r.has_interview === true || r.has_interview === 't';
+      const hasMbtiType = r.has_mbti_type === true || r.has_mbti_type === 't';
+      const hasNfcCard = r.has_nfc_card === true || r.has_nfc_card === 't';
+      const hasProfilePicture = r.has_profile_picture === true || r.has_profile_picture === 't';
+      const hasContactNumber = r.has_contact_number === true || r.has_contact_number === 't';
+      const foundationViewed = r.foundation_viewed === true || r.foundation_viewed === 't';
+      const eventsCount = Number(r.events_count || 0);
+
+      // 計分規則（採用先前建議）：
+      // 基礎資料完成度（60分）：面談(40) + 大頭貼(10) + 聯絡方式(10)
+      // 系統理解度（40分）：地基勾選(15) + NFC卡(15) + 活動報名(>=1)(10)
+      // MBTI 選填加分：若填寫，整體 +10 分，上限 100
+      const profileScore = (hasInterview ? 40 : 0) + (hasProfilePicture ? 10 : 0) + (hasContactNumber ? 10 : 0);
+      const systemScore = (foundationViewed ? 15 : 0) + (hasNfcCard ? 15 : 0) + (eventsCount > 0 ? 10 : 0);
+      const baseScore = profileScore + systemScore; // 0 ~ 100
+      const bonusMbti = hasMbtiType ? 10 : 0;
+      const overallPercent = Math.min(100, baseScore + bonusMbti);
+
+      return {
+        userId: r.user_id,
+        hasInterview,
+        hasMbtiType,
+        hasNfcCard,
+        hasProfilePicture,
+        hasContactNumber,
+        foundationViewed,
+        walletCount: Number(r.wallet_count || 0),
+        meetingsCount: Number(r.meetings_count || 0),
+        referralsSent: Number(r.referrals_sent || 0),
+        referralsReceivedConfirmed: Number(r.referrals_received_confirmed || 0),
+        eventsCount,
+        taskCounts: {
+          pending: Number(r.pending_tasks || 0),
+          inProgress: Number(r.in_progress_tasks || 0),
+          completed: Number(r.completed_tasks || 0),
+          overdue: Number(r.overdue_tasks || 0)
+        },
+        businessMedia: {
+          cardClicks: Number(r.bm_card_clicks || 0),
+          ctaClicks: Number(r.bm_cta_clicks || 0)
+        },
+        progress: {
+          profileScore,
+          systemScore,
+          bonusMbti,
+          overallPercent
+        }
+      };
+    });
 
     res.json({ progress });
   } catch (error) {

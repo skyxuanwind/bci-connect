@@ -62,6 +62,44 @@ router.put('/foundation', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// 新增：地基閱讀狀態（會員自行勾選「已看過」）
+router.get('/foundation/view-status', authenticateToken, async (req, res) => {
+  try {
+    const q = await pool.query(
+      `SELECT 1 FROM member_activities WHERE user_id = $1 AND activity_type = 'foundation_viewed' LIMIT 1`,
+      [req.user.id]
+    );
+    const viewed = q.rows.length > 0;
+    res.json({ success: true, viewed });
+  } catch (err) {
+    console.error('Error fetching foundation view status:', err);
+    res.status(500).json({ success: false, message: '獲取閱讀狀態失敗' });
+  }
+});
+
+router.post('/foundation/viewed', authenticateToken, async (req, res) => {
+  try {
+    // Idempotent insert：已勾選的不重複插入
+    await pool.query(
+      `INSERT INTO member_activities (user_id, activity_type, activity_data, ip_address, user_agent)
+       SELECT $1, 'foundation_viewed', $2, $3, $4
+       WHERE NOT EXISTS (
+         SELECT 1 FROM member_activities WHERE user_id = $1 AND activity_type = 'foundation_viewed'
+       )`,
+      [
+        req.user.id,
+        JSON.stringify({ checkedAt: new Date().toISOString() }),
+        req.ip || null,
+        req.headers['user-agent'] || null
+      ]
+    );
+    res.json({ success: true, viewed: true });
+  } catch (err) {
+    console.error('Error marking foundation viewed:', err);
+    res.status(500).json({ success: false, message: '設定閱讀狀態失敗' });
+  }
+});
+
 // 獲取商會簡報URL - 所有會員可查看
 router.get('/presentation-url', authenticateToken, async (req, res) => {
   try {

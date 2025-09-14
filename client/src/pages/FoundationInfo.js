@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { DocumentTextIcon } from '@heroicons/react/24/outline';
-import axios from 'axios';
+import { DocumentTextIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import axios from '../config/axios';
 
 const FoundationInfo = () => {
   const { user } = useAuth();
@@ -12,9 +12,12 @@ const FoundationInfo = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [viewChecked, setViewChecked] = useState(false);
+  const [viewSaving, setViewSaving] = useState(false);
 
   useEffect(() => {
     fetchContent();
+    fetchViewStatus();
   }, []);
 
   const fetchContent = async () => {
@@ -30,6 +33,29 @@ const FoundationInfo = () => {
       setError('載入內容失敗');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchViewStatus = async () => {
+    try {
+      const res = await axios.get('/api/content/foundation/view-status');
+      setViewChecked(!!res.data?.viewed);
+    } catch (err) {
+      console.error('Error fetching foundation view status:', err);
+    }
+  };
+
+  const handleMarkViewed = async (e) => {
+    const checked = e.target.checked;
+    setViewChecked(checked);
+    if (!checked) return; // 目前僅支援勾選；取消不會刪除紀錄
+    try {
+      setViewSaving(true);
+      await axios.post('/api/content/foundation/viewed');
+    } catch (err) {
+      console.error('Error marking foundation viewed:', err);
+    } finally {
+      setViewSaving(false);
     }
   };
 
@@ -172,6 +198,24 @@ const FoundationInfo = () => {
                   </p>
                 </div>
               )}
+
+              {/* 已看過勾選 */}
+              <div className="mt-6 flex items-center bg-primary-900 border border-gold-600 rounded-md p-4">
+                <input
+                  id="foundation-viewed"
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={viewChecked}
+                  onChange={handleMarkViewed}
+                />
+                <label htmlFor="foundation-viewed" className="ml-3 text-sm text-gold-200 flex items-center">
+                  <CheckCircleIcon className="h-4 w-4 mr-1 text-gold-400" />
+                  我已完整閱讀「商會地基」內容（作為教練進度指標之一）
+                </label>
+                {viewSaving && (
+                  <span className="ml-3 text-xs text-gold-300">儲存中...</span>
+                )}
+              </div>
             </div>
           )}
         </div>

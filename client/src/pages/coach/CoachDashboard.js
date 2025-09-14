@@ -459,6 +459,9 @@ const CoachDashboard = () => {
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.hasNfcCard ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
                                   NFC
                                 </span>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${progressById[member.id]?.foundationViewed ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}>
+                                  地基
+                                </span>
                               </div>
                               <div className="mt-1 flex flex-wrap gap-1">
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
@@ -474,12 +477,41 @@ const CoachDashboard = () => {
                                   推薦成 {Number(progressById[member.id]?.referralsReceivedConfirmed ?? 0)}
                                 </span>
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
+                                  活動 {Number(progressById[member.id]?.eventsCount ?? 0)}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
                                   名片點擊 {Number(progressById[member.id]?.businessMedia?.cardClicks ?? 0)}
                                 </span>
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
                                   CTA {Number(progressById[member.id]?.businessMedia?.ctaClicks ?? 0)}
                                 </span>
                               </div>
+
+                              {/* 進度條 */}
+                              {(() => {
+                                const prog = progressById[member.id]?.progress;
+                                const percent = Math.round(Number(prog?.overallPercent ?? 0));
+                                const profileScore = Number(prog?.profileScore ?? 0);
+                                const systemScore = Number(prog?.systemScore ?? 0);
+                                const bonusMbti = Number(prog?.bonusMbti ?? 0);
+                                return (
+                                  <div className="mt-3">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-gold-300">進度</span>
+                                      <span className="text-xs text-gold-100 font-semibold">{percent}%</span>
+                                    </div>
+                                    <div className="w-full h-2 bg-primary-700 rounded">
+                                      <div
+                                        className={`h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                        style={{ width: `${percent}%` }}
+                                      />
+                                    </div>
+                                    <div className="mt-1 text-[11px] text-gold-400">
+                                      基礎 {profileScore}/60 ・ 系統 {systemScore}/40{bonusMbti > 0 ? ` ・ MBTI +${bonusMbti}` : ''}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </>
                           )}
                         </div>
