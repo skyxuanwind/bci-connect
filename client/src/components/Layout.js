@@ -94,7 +94,7 @@ const Layout = ({ children }) => {
   // 會員以上功能
   const memberFeatures = [
     { name: 'NFC 電子名片', href: '/nfc-card-editor', icon: IdentificationIcon, minLevel: 3 },
-    // 已移除：數位名片夾
+    { name: '數位名片夾', href: '/digital-wallet', icon: WalletIcon, minLevel: 3 },
     { name: '引薦系統', href: '/referrals', icon: HandRaisedIcon, minLevel: 3 },
     { name: '會議預約', href: '/meetings', icon: CalendarDaysIcon, minLevel: 3 },
   ];
