@@ -137,6 +137,10 @@ const AIProfilePage = () => {
     return 'bg-red-500';
   };
 
+  // 方便渲染的快捷存取
+  const aiInsights = profile?.profile?.ai_insights || {};
+  const commStyle = aiInsights?.communication_style || profile?.profile?.conversational_data?.communication_style || {};
+  const mbtiSummary = aiInsights?.mbti_summary || '';
   // 開啟引薦稿對話框並一鍵生成草稿
   const openReferralDialog = async (member) => {
     setSelectedMember(member);
@@ -599,6 +603,12 @@ const AIProfilePage = () => {
                   <span className="text-gray-600">職位:</span>
                   <span className="font-medium">{user?.title}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">MBTI:</span>
+                  <span className="font-medium">
+                    {user?.mbtiPublic ? (user?.mbti || '未填寫') : '未公開'}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -631,95 +641,74 @@ const AIProfilePage = () => {
           </div>
         )}
 
-        {activeTab === 'personality' && profile?.profile?.ai_insights?.personality_traits && (
+        {activeTab === 'personality' && (
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">個性特質分析</h3>
+            {/* MBTI 與摘要 */}
+            <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
+                <div className="text-sm text-gray-300 mb-1">MBTI</div>
+                <div className="text-2xl font-extrabold text-yellow-300 tracking-wider">
+                  {user?.mbtiPublic ? (user?.mbti || '未填寫') : '未公開'}
+                </div>
+              </div>
+              <div className="lg:col-span-2 bg-black/40 border border-yellow-500/30 rounded-lg p-4">
+                <div className="text-sm text-gray-300 mb-1">MBTI 商務互動摘要</div>
+                <p className="text-yellow-100 whitespace-pre-wrap">{mbtiSummary || '尚無摘要，請於個人檔案填寫 MBTI 並點擊「更新畫像」生成分析。'}</p>
+              </div>
+            </div>
+
+            {/* 溝通風格建議 */}
+            {(commStyle && (commStyle.tone || commStyle.dos || commStyle.donts || commStyle.meeting || commStyle.negotiation || commStyle.email)) && (
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {commStyle.tone && (
+                  <div className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
+                    <div className="font-semibold text-yellow-300 mb-1">溝通語氣</div>
+                    <p className="text-yellow-100 text-sm whitespace-pre-wrap">{commStyle.tone}</p>
+                  </div>
+                )}
+                {commStyle.email && (
+                  <div className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
+                    <div className="font-semibold text-yellow-300 mb-1">Email 建議</div>
+                    <p className="text-yellow-100 text-sm whitespace-pre-wrap">{Array.isArray(commStyle.email) ? commStyle.email.join('；') : commStyle.email}</p>
+                  </div>
+                )}
+                {commStyle.meeting && (
+                  <div className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
+                    <div className="font-semibold text-yellow-300 mb-1">會議互動</div>
+                    <p className="text-yellow-100 text-sm whitespace-pre-wrap">{Array.isArray(commStyle.meeting) ? commStyle.meeting.join('；') : commStyle.meeting}</p>
+                  </div>
+                )}
+                {commStyle.negotiation && (
+                  <div className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
+                    <div className="font-semibold text-yellow-300 mb-1">談判要點</div>
+                    <p className="text-yellow-100 text-sm whitespace-pre-wrap">{Array.isArray(commStyle.negotiation) ? commStyle.negotiation.join('；') : commStyle.negotiation}</p>
+                  </div>
+                )}
+                {commStyle.dos && (
+                  <div className="bg-black/40 border border-green-500/30 rounded-lg p-4">
+                    <div className="font-semibold text-green-300 mb-1">建議這樣做</div>
+                    <ul className="list-disc pl-5 text-green-100 text-sm space-y-1">
+                      {Array.isArray(commStyle.dos) ? commStyle.dos.map((d, i) => (<li key={i}>{d}</li>)) : <li>{commStyle.dos}</li>}
+                    </ul>
+                  </div>
+                )}
+                {commStyle.donts && (
+                  <div className="bg-black/40 border border-red-500/30 rounded-lg p-4">
+                    <div className="font-semibold text-red-300 mb-1">避免這樣做</div>
+                    <ul className="list-disc pl-5 text-red-100 text-sm space-y-1">
+                      {Array.isArray(commStyle.donts) ? commStyle.donts.map((d, i) => (<li key={i}>{d}</li>)) : <li>{commStyle.donts}</li>}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {profile.profile.ai_insights.personality_traits.map((trait, index) => (
+              {(profile?.profile?.ai_insights?.personality_traits || []).map((trait, index) => (
                 <div key={index} className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <TrophyIcon className="h-5 w-5 text-yellow-400" />
                     <span className="font-medium text-yellow-300">{trait}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'business' && profile?.profile?.ai_insights?.business_compatibility && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">商業相容性評估</h3>
-            <div className="space-y-4">
-              {Object.entries(profile.profile.ai_insights.business_compatibility).map(([industry, score]) => (
-                <div key={industry} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 sm:justify-between">
-                  <span className="text-gray-700 font-medium">{industry}</span>
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-1 sm:w-32 bg-yellow-900/30 rounded-full h-2">
-                      <div 
-                        className="bg-yellow-500 h-2 rounded-full"
-                        style={{ width: `${score}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-medium text-gold-100 w-12 text-right">{score}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'collaboration' && profile?.profile?.ai_insights?.collaboration_potential && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">合作潛力分析</h3>
-            <div className="space-y-4">
-              {Object.entries(profile.profile.ai_insights.collaboration_potential).map(([type, potential]) => (
-                <div key={type} className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-yellow-300">{type}</span>
-                    <span className="text-sm font-bold text-yellow-300">{potential}%</span>
-                  </div>
-                  <div className="w-full bg-yellow-900/30 rounded-full h-2">
-                    <div 
-                      className="bg-yellow-500 h-2 rounded-full"
-                      style={{ width: `${potential}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'opportunities' && profile?.profile?.ai_insights?.market_opportunities && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">市場機會識別</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profile.profile.ai_insights.market_opportunities.map((opportunity, index) => (
-                <div key={index} className="bg-black/40 border border-yellow-500/30 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <LightBulbIcon className="h-5 w-5 text-yellow-500 mt-0.5" />
-                    <div>
-                      <p className="text-yellow-300 font-medium">{opportunity}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'risks' && profile?.profile?.ai_insights?.risk_factors && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">風險因素評估</h3>
-            <div className="space-y-4">
-              {profile.profile.ai_insights.risk_factors.map((risk, index) => (
-                <div key={index} className="bg-black/40 border border-red-500/30 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mt-0.5" />
-                    <div>
-                      <p className="text-red-300">{risk}</p>
-                    </div>
                   </div>
                 </div>
               ))}

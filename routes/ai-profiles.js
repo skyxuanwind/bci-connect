@@ -85,7 +85,10 @@ router.post('/me/update', authenticateToken, async (req, res) => {
         company: user.company,
         industry: user.industry,
         title: user.title,
-        interviewForm: user.interview_form
+        interviewForm: user.interview_form,
+        // 新增：將會員的 MBTI 與公開設定帶入靜態資料
+        mbti: user.mbti || null,
+        mbtiPublic: !!user.mbti_public
       },
       behavioralData: {
         activities: activitiesResult.rows,

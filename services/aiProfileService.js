@@ -93,7 +93,9 @@ class AIProfileService {
         industries: [],
         expertise_areas: [],
         company_info: {},
-        professional_background: {}
+        professional_background: {},
+        // 新增：人格相關靜態資料
+        personality: { mbti: null, mbti_public: false }
       },
       behavioral_data: {
         activity_patterns: {},
@@ -114,7 +116,10 @@ class AIProfileService {
         business_compatibility: {},
         collaboration_potential: {},
         market_opportunities: [],
-        risk_factors: []
+        risk_factors: [],
+        // 新增：AI 生成的溝通風格與MBTI摘要
+        communication_style: {},
+        mbti_summary: ''
       },
       last_updated: new Date().toISOString(),
       data_sources: {
@@ -205,6 +210,13 @@ class AIProfileService {
         last_analysis: new Date().toISOString()
       };
       
+      // 若AI回傳了溝通風格，合併到對話資料中，方便前端或其他服務直接使用
+      if (insights && insights.communication_style) {
+        profile.conversational_data = this.mergeConversationalData(profile.conversational_data, {
+          communication_style: insights.communication_style
+        });
+      }
+      
       // 更新信心度
       this.updateConfidenceScores(profile, dataSource);
       
@@ -236,6 +248,8 @@ ${JSON.stringify(newData, null, 2)}
 3. collaboration_potential: 合作潛力分析（物件，包含合作類型和潛力分數）
 4. market_opportunities: 市場機會識別（陣列）
 5. risk_factors: 風險因素評估（陣列）
+6. communication_style: 基於會員MBTI與對話表現，輸出溝通風格建議（物件，建議包含 tone、dos、donts、meeting、negotiation、email 等鍵）
+7. mbti_summary: 以簡短段落說明該MBTI在商務互動上的特點與注意事項（若無MBTI則輸出空字串）
 
 請確保分析結果實用、準確且有助於商業媒合。
     `;
@@ -258,7 +272,9 @@ ${JSON.stringify(newData, null, 2)}
         business_compatibility: {},
         collaboration_potential: {},
         market_opportunities: [],
-        risk_factors: []
+        risk_factors: [],
+        communication_style: {},
+        mbti_summary: ''
       };
     } catch (error) {
       console.error('❌ 解析AI分析結果失敗:', error);
@@ -267,7 +283,9 @@ ${JSON.stringify(newData, null, 2)}
         business_compatibility: {},
         collaboration_potential: {},
         market_opportunities: [],
-        risk_factors: []
+        risk_factors: [],
+        communication_style: {},
+        mbti_summary: ''
       };
     }
   }
@@ -296,6 +314,11 @@ ${JSON.stringify(newData, null, 2)}
         industry: userData.industry,
         title: userData.title,
         experience_level: this.inferExperienceLevel(userData.title)
+      },
+      // 新增：MBTI 人格資訊（若有值）
+      personality: {
+        mbti: userData.mbti || null,
+        mbti_public: Boolean(userData.mbti_public)
       }
     };
     
@@ -532,6 +555,11 @@ ${JSON.stringify(newData, null, 2)}
             industry: updateData.staticData.industry,
             title: updateData.staticData.title,
             name: updateData.staticData.name
+          },
+          // 新增：MBTI 靜態資訊
+          personality: {
+            mbti: updateData.staticData.mbti || null,
+            mbti_public: Boolean(updateData.staticData.mbtiPublic)
           }
         };
 
