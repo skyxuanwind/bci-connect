@@ -60,6 +60,8 @@ import NFCAnalytics from './pages/NFCAnalytics';
 import BusinessMediaList from './pages/BusinessMediaList';
 import BusinessMediaAdmin from './pages/admin/BusinessMediaAdmin';
 
+import MBTIAssessment from './pages/MBTIAssessment';
+
 
 
 function App() {
@@ -88,6 +90,15 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Profile />
+              </Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* 新增：MBTI 測評頁面 */}
+          <Route path="/mbti-assessment" element={
+            <ProtectedRoute>
+              <Layout>
+                <MBTIAssessment />
               </Layout>
             </ProtectedRoute>
           } />

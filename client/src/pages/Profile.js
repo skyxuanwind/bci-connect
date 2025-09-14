@@ -28,6 +28,7 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 
 const Profile = () => {
   const { user, updateProfile, changePassword } = useAuth();
@@ -458,8 +459,18 @@ const Profile = () => {
                 />
                 <label htmlFor="mbtiPublic" className="label !mb-0">公開顯示我的 MBTI</label>
               </div>
-+
-+            </div>
+
+              {/* 前往 MBTI 測評 */}
+              <div className="mt-2">
+                <Link
+                  to="/mbti-assessment"
+                  className="inline-block px-4 py-2 rounded-md bg-yellow-400 hover:bg-yellow-300 text-primary-900 text-sm font-semibold"
+                >
+                  前往 MBTI 測評
+                </Link>
+              </div>
+
+            </div>
  
              {/* Additional Info (Read-only) */}
              <div className="border-t pt-8">

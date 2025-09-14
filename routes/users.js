@@ -71,6 +71,39 @@ router.get('/:id/public', async (req, res) => {
 // Apply authentication to all routes below
 router.use(authenticateToken);
 
+// 新增：儲存 MBTI 測評結果
+// @route   POST /api/users/mbti-type
+// @desc    Save MBTI assessment result to users.mbti_type
+// @access  Private
+router.post('/mbti-type', async (req, res) => {
+  try {
+    const { mbtiType } = req.body;
+    if (!mbtiType || typeof mbtiType !== 'string') {
+      return res.status(400).json({ message: '缺少 mbtiType' });
+    }
+    const type = mbtiType.trim().toUpperCase();
+    // 基本格式驗證：長度 4，且每個維度只允許特定字母
+    const isValid = type.length === 4 &&
+      'EI'.includes(type[0]) &&
+      'SN'.includes(type[1]) &&
+      'TF'.includes(type[2]) &&
+      'JP'.includes(type[3]);
+    if (!isValid) {
+      return res.status(400).json({ message: 'mbtiType 格式不正確' });
+    }
+
+    const update = await pool.query(
+      `UPDATE users SET mbti_type = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, mbti_type`,
+      [type, req.user.id]
+    );
+
+    return res.json({ success: true, mbtiType: update.rows[0]?.mbti_type || type, message: 'MBTI 測評結果已儲存' });
+  } catch (err) {
+    console.error('Save MBTI type error:', err);
+    return res.status(500).json({ message: '儲存 MBTI 結果失敗' });
+  }
+});
+
 // @route   GET /api/users/profile
 // @desc    Get current user profile
 // @access  Private
@@ -80,7 +113,7 @@ router.get('/profile', async (req, res) => {
       `SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
               u.profile_picture_url, u.contact_number, u.membership_level,
               u.status, u.qr_code_url, u.interview_form, u.created_at,
-              u.mbti, u.mbti_public,
+              u.mbti, u.mbti_public, u.mbti_type,
               c.name as chapter_name
        FROM users u
        LEFT JOIN chapters c ON u.chapter_id = c.id
@@ -126,7 +159,8 @@ router.get('/profile', async (req, res) => {
         chapterName: user.chapter_name,
         createdAt: user.created_at,
         mbti: user.mbti,
-        mbtiPublic: user.mbti_public
+        mbtiPublic: user.mbti_public,
+        mbtiType: user.mbti_type || null
       }
     });
 
@@ -1110,49 +1144,6 @@ router.post('/onboarding-tasks/bulk', requireCoach, async (req, res) => {
 });
 
 // Ensure export at the very end of file
-// ... existing code ...
-// GET: 取得會員榮譽徽章（本人、其教練或管理員可見）
-router.get('/member/:id/badges', async (req, res) => {
-  try {
-    const memberId = parseInt(req.params.id, 10);
-    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
-
-    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
-    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
-    const coachUserId = userRes.rows[0].coach_user_id;
-    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
-    if (!allow) return res.status(403).json({ message: '沒有權限查看此會員的徽章' });
-
-    const badgesRes = await pool.query(
-      `SELECT ub.id, ub.awarded_at, ub.source_type, ub.source_id, ub.notes,
-              b.code, b.name, b.description, b.icon, b.color_class
-       FROM user_honor_badges ub
-       JOIN honor_badges b ON b.id = ub.badge_id
-       WHERE ub.user_id = $1
-       ORDER BY ub.awarded_at DESC`,
-      [memberId]
-    );
-
-    const badges = badgesRes.rows.map(r => ({
-      id: r.id,
-      code: r.code,
-      name: r.name,
-      description: r.description,
-      icon: r.icon,
-      colorClass: r.color_class,
-      awardedAt: r.awarded_at,
-      sourceType: r.source_type,
-      sourceId: r.source_id,
-      notes: r.notes,
-    }));
-
-    res.json({ badges });
-  } catch (error) {
-    console.error('Get member badges error:', error);
-    res.status(500).json({ message: '獲取會員徽章時發生錯誤' });
-  }
-});
-
 // @route   GET /api/users/core-members
 // @desc    Get level 1 core members list
 // @access  Private

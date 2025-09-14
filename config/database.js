@@ -144,7 +144,12 @@ const initializeDatabase = async () => {
       ALTER TABLE users 
       ADD COLUMN IF NOT EXISTS mbti_public BOOLEAN DEFAULT FALSE
     `);
-
+    // 新增：MBTI 測評結果的標準欄位（與既有 mbti 欄位並存，向下相容）
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS mbti_type VARCHAR(10)
+    `);
+    
     // Create referrals table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS referrals (
