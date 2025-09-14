@@ -376,12 +376,14 @@ function App() {
           </ProtectedRoute>
         } />
         
+        {/* 故隱藏：/digital-wallet 路由已停用 */}
         <Route path="/digital-wallet" element={
-          <ProtectedRoute>
-            <Layout>
-              <DigitalWallet />
-            </Layout>
-          </ProtectedRoute>
+        -        <ProtectedRoute>
+        -          <Layout>
+        -            <DigitalWallet />
+        -          </Layout>
+        -        </ProtectedRoute>
+        +        {/* 故隱藏：/digital-wallet 路由已停用 */}
         } />
         
         <Route path="/nfc-analytics" element={

@@ -386,9 +386,6 @@ const CoachDashboard = () => {
                                 </div>
                                 <div className="mt-1 flex flex-wrap gap-1">
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
-                                    錢包 {Number(progressById[member.id]?.walletCount ?? 0)}
-                                  </span>
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
                                     會議 {Number(progressById[member.id]?.meetingsCount ?? 0)}
                                   </span>
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
@@ -579,71 +576,72 @@ const CoachDashboard = () => {
 
               {/* 快捷操作 */}
               <div className="mt-6">
-                <div className="text-sm font-semibold text-gold-100 mb-2">快捷操作</div>
-
-                {/* 一鍵指派任務 */}
-                <div className="bg-primary-700/40 rounded-md p-3 border border-gold-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ClipboardDocumentListIcon className="h-4 w-4 text-gold-300" />
-                    <div className="text-sm text-gold-100">一鍵指派任務</div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {['填寫面談表', '完成面談', '設定/更新 NFC 名片', '完成入會地基'].map((tpl) => (
-                      <button
-                        key={tpl}
-                        type="button"
-                        onClick={() => assignTask(tpl)}
-                        className="px-2 py-1 text-xs rounded-md bg-primary-600 hover:bg-primary-500 border border-gold-700 text-gold-100"
+                {/* 快捷操作 */}
+                <div className="text-xl font-bold text-gold-100 mb-3">快捷操作</div>
+                 
+                 {/* 一鍵指派任務 */}
+                 <div className="bg-primary-700/40 rounded-md p-3 border border-gold-700">
+                   <div className="flex items-center gap-2 mb-2">
+                     <ClipboardDocumentListIcon className="h-4 w-4 text-gold-300" />
+                    <div className="text-base font-semibold text-gold-100">一鍵指派任務</div>
+                   </div>
+                   <div className="flex flex-wrap gap-2 mb-2">
+                     {['填寫面談表', '完成面談', '設定/更新 NFC 名片', '完成入會地基'].map((tpl) => (
+                       <button
+                         key={tpl}
+                         type="button"
+                         onClick={() => assignTask(tpl)}
+                        className="px-3 py-1.5 text-sm rounded-md bg-primary-600 hover:bg-primary-500 border border-gold-700 text-gold-100"
                         disabled={actionLoading}
                       >
                         {tpl}
                       </button>
                     ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      className="input flex-1"
-                      placeholder="自訂任務標題（例如：補交名片連結）"
-                      value={quickTitle}
-                      onChange={(e) => setQuickTitle(e.target.value)}
-                    />
-                    <input
-                      type="date"
-                      className="input w-40"
-                      value={quickDue}
-                      onChange={(e) => setQuickDue(e.target.value)}
-                    />
-                    <button type="button" className="btn-primary whitespace-nowrap" onClick={() => assignTask()} disabled={actionLoading}>
-                      指派
-                    </button>
-                  </div>
-                </div>
-
-                {/* 安排會議 */}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <a
-                    href={`/meetings?schedule_with=${selectedMember.id}`}
-                    className="btn-secondary inline-flex items-center"
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-1" /> 安排會議
-                  </a>
-                  {/* 以教練紀錄替代「標記面談完成」的快速紀錄 */}
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => createCoachLog('已完成面談（快速標記於教練紀錄）')}
-                    disabled={actionLoading}
-                  >
-                    標記面談完成
-                  </button>
-                  <Link
-                    to={`/members/${selectedMember.id}`}
-                    className="btn-secondary"
-                  >
-                    查看詳情
-                  </Link>
-                </div>
-              </div>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <input
+                       className="input flex-1 text-base"
+                       placeholder="自訂任務標題（例如：補交名片連結）"
+                       value={quickTitle}
+                       onChange={(e) => setQuickTitle(e.target.value)}
+                     />
+                     <input
+                       type="date"
+                       className="input w-48 text-base"
+                       value={quickDue}
+                       onChange={(e) => setQuickDue(e.target.value)}
+                     />
+                     <button type="button" className="btn-primary whitespace-nowrap text-base px-4 py-2" onClick={() => assignTask()} disabled={actionLoading}>
+                       指派
+                     </button>
+                   </div>
+                 </div>
+ 
+                 {/* 安排會議 */}
+                 <div className="mt-3 flex flex-wrap gap-2">
+                   <a
+                     href={`/meetings?schedule_with=${selectedMember.id}`}
+                     className="btn-secondary inline-flex items-center text-base px-4 py-2"
+                   >
+                     <CalendarIcon className="h-5 w-5 mr-1" /> 安排會議
+                   </a>
+                   {/* 以教練紀錄替代「標記面談完成」的快速紀錄 */}
+                   <button
+                     type="button"
+                     className="btn-secondary text-base px-4 py-2"
+                     onClick={() => createCoachLog('已完成面談（快速標記於教練紀錄）')}
+                     disabled={actionLoading}
+                   >
+                     標記面談完成
+                   </button>
+                   <Link
+                     to={`/members/${selectedMember.id}`}
+                     className="btn-secondary text-base px-4 py-2"
+                   >
+                     查看詳情
+                   </Link>
+                 </div>
+               </div>
             </div>
           </div>
         </div>
