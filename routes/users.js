@@ -31,7 +31,7 @@ router.get('/:id/public', async (req, res) => {
     const { id } = req.params;
     
     const result = await pool.query(
-      `SELECT id, name, company, title, mbti, mbti_public
+      `SELECT id, name, company, title, mbti, mbti_public, email, profile_picture_url
        FROM users 
        WHERE id = $1 AND status = 'active'`,
       [id]
@@ -49,7 +49,9 @@ router.get('/:id/public', async (req, res) => {
       id: row.id,
       name: row.name,
       company: row.company,
-      title: row.title
+      title: row.title,
+      email: row.email,
+      profilePictureUrl: row.profile_picture_url
     };
     if (row.mbti_public) {
       user.mbti = row.mbti;
@@ -903,6 +905,13 @@ router.get('/member/:id/onboarding-tasks', async (req, res) => {
   try {
     const memberId = parseInt(req.params.id, 10);
     if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    // 權限：本人、其教練或管理員
+    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
+    const coachUserId = userRes.rows[0].coach_user_id;
+    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
+    if (!allow) return res.status(403).json({ message: '沒有權限查看入職任務' });
 
     const result = await pool.query(
       `SELECT id, user_id, title, description, status, due_date, completed_at, created_at

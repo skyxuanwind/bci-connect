@@ -48,9 +48,7 @@ import NotificationsPage from './pages/NotificationsPage';
 
 import AIProfilePage from './pages/AIProfilePage';
 import AINotificationTestPage from './pages/AINotificationTestPage';
-import CoachRoute from './components/CoachRoute';
 import CoachDashboard from './pages/coach/CoachDashboard';
-import CoachOnboarding from './pages/coach/CoachOnboarding';
 
 // NFC 電子名片系統組件
 import NFCCardEditor from './pages/NFCCardEditor';
@@ -215,24 +213,16 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Coach Routes */}
+          {/* Coach Routes - now visible to all authenticated users */}
           <Route path="/coach" element={
-            <CoachRoute>
+            <ProtectedRoute>
               <Layout>
                 <CoachDashboard />
               </Layout>
-            </CoachRoute>
+            </ProtectedRoute>
           } />
 
-          <Route path="/coach/onboarding" element={
-            <CoachRoute>
-              <Layout>
-                <CoachOnboarding />
-              </Layout>
-            </CoachRoute>
-          } />
           
-
           
           {/* Admin Routes */}
           <Route path="/admin" element={
@@ -285,135 +275,34 @@ function App() {
             </AdminRoute>
           } />
           
-          <Route path="/prospects/:id" element={
-            <Level1Route>
-              <Layout>
-                <ProspectDetail />
-              </Layout>
-            </Level1Route>
-          } />
-          
-          <Route path="/admin/content" element={
-            <AdminRoute>
-              <Layout>
-                <ContentManagement />
-              </Layout>
-            </AdminRoute>
-          } />
-          
-          <Route path="/prospect-voting" element={
-            <Level1Route>
-              <Layout>
-                <ProspectVoting />
-              </Layout>
-            </Level1Route>
-          } />
-          
-          <Route path="/prospect-application" element={
-            <Level1Route>
-              <Layout>
-                <ProspectApplication />
-              </Layout>
-            </Level1Route>
-          } />
-          
-          <Route path="/blacklist" element={
-            <Level1Route>
-              <Layout>
-                <BlacklistManagement />
-              </Layout>
-            </Level1Route>
-          } />
-          
-          <Route path="/financial" element={
+          {/* NFC Routes */}
+          <Route path="/nfc-card-editor" element={
             <ProtectedRoute>
               <Layout>
-                <FinancialStatement />
+                <NFCCardEditor />
               </Layout>
             </ProtectedRoute>
           } />
-          
-          <Route path="/complaints" element={
+          <Route path="/digital-wallet" element={
             <ProtectedRoute>
               <Layout>
-                <ComplaintBox />
+                <DigitalWallet />
               </Layout>
             </ProtectedRoute>
           } />
-          
-          <Route path="/checkin-scanner" element={
-            <Level1Route>
+          <Route path="/member-card/:id" element={<MemberCard />} />
+          <Route path="/nfc-analytics" element={
+            <ProtectedRoute>
               <Layout>
-                <CheckInScanner />
+                <NFCAnalytics />
               </Layout>
-            </Level1Route>
+            </ProtectedRoute>
           } />
-          
-          <Route path="/attendance-management" element={
-            <Level1Route>
-              <Layout>
-                <AttendanceManagement />
-              </Layout>
-            </Level1Route>
-          } />
-          
 
-
-        <Route path="/judgment-sync" element={
-          <Level1Route>
-            <Layout>
-              <JudgmentSync />
-            </Layout>
-          </Level1Route>
-        } />
-        
-        {/* NFC 電子名片路由 */}
-        <Route path="/nfc-card-editor" element={
-          <ProtectedRoute>
-            <Layout>
-              <NFCCardEditor />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        
-        {/* 數位名片夾路由 */}
-        <Route path="/digital-wallet" element={
-          <ProtectedRoute>
-            <Layout>
-              <DigitalWallet />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/nfc-analytics" element={
-          <ProtectedRoute>
-            <Layout>
-              <NFCAnalytics />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        
-        {/* 公開的會員名片頁面 - 無需登入 */}
-        <Route path="/member/:memberId" element={<MemberCard />} />
-          
-          {/* Catch all route */}
-          <Route path="/404" element={<NotFound />} />
-          <Route path="*" element={<Navigate to="/404" replace />} />
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-          toastClassName="!bg-primary-800 !text-gold-100 !border !border-gold-600"
-          progressClassName="!bg-gold-500"
-        />
+        <ToastContainer />
       </div>
     </AuthProvider>
   );
