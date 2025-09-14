@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import axios from '../../config/axios';
 import Avatar from '../../components/Avatar';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { toast } from 'react-toastify';
 import {
   BuildingOfficeIcon,
   BriefcaseIcon,
@@ -19,6 +18,7 @@ const CoachDashboard = () => {
   // 分頁狀態（已移除搜尋）
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
+  // const navigate = useNavigate();
 
   // 資料狀態
   const [loading, setLoading] = useState(false);
@@ -32,13 +32,6 @@ const CoachDashboard = () => {
   // 進度概況
   const [progressById, setProgressById] = useState({});
   // 已移除未使用的 progressLoading 以清理警告
-
-  // 批量分配
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [bulkTitle, setBulkTitle] = useState('');
-  const [bulkDescription, setBulkDescription] = useState('');
-  const [bulkDueDate, setBulkDueDate] = useState('');
-  const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
   // 進度過濾與排序
   const [filterNoInterview, setFilterNoInterview] = useState(() => {
@@ -143,21 +136,7 @@ const CoachDashboard = () => {
   }, [filterNoInterview, filterNoNfc, sortKey]);
 
 
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      return [...prev, id];
-    });
-  };
 
-  const selectAllCurrentPage = () => {
-    const ids = coachees.map((m) => m.id);
-    setSelectedIds(ids);
-  };
-
-  const clearSelection = () => setSelectedIds([]);
-
-  // 派生：根據進度資料進行過濾與排序（僅作用於當前頁列表）
   const visibleCoachees = useMemo(() => {
     let list = Array.isArray(coachees) ? [...coachees] : [];
 
@@ -193,52 +172,6 @@ const CoachDashboard = () => {
     return list;
   }, [coachees, progressById, filterNoInterview, filterNoNfc, sortKey]);
 
-  // GBC 模板工具：設定標準任務內容與預設截止時間（+7 天）
-  const formatDateTimeLocal = (date) => {
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  };
-  const applyGbcTemplate = () => {
-    setBulkTitle('完成 GBC 深度交流表');
-    setBulkDescription('請完成 GBC 深度交流表，內容將用於 AI 智慧合作網絡分析，協助快速媒合潛在合作夥伴。');
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    d.setHours(23, 59, 0, 0);
-    setBulkDueDate(formatDateTimeLocal(d));
-  };
-
-  const submitBulk = async (e) => {
-    e.preventDefault();
-    if (!bulkTitle.trim()) {
-      toast.error('請輸入任務標題');
-      return;
-    }
-    if (selectedIds.length === 0) {
-      toast.error('請至少選擇一位學員');
-      return;
-    }
-    try {
-      setBulkSubmitting(true);
-      await axios.post('/api/users/onboarding-tasks/bulk', {
-        memberIds: selectedIds,
-        title: bulkTitle.trim(),
-        description: bulkDescription || undefined,
-        dueDate: bulkDueDate || undefined,
-      });
-      toast.success('批量分配成功');
-      setBulkTitle('');
-      setBulkDescription('');
-      setBulkDueDate('');
-      setSelectedIds([]);
-      fetchCoachees();
-      fetchTaskStats();
-    } catch (e) {
-      console.error('批量分配失敗:', e);
-      toast.error(e.response?.data?.message || '批量分配任務失敗');
-    } finally {
-      setBulkSubmitting(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -315,57 +248,11 @@ const CoachDashboard = () => {
       <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-medium text-gold-100">我的學員</h2>
-          <div className="flex items-center gap-3 text-sm text-gold-300">
-            <span>共 {pagination?.totalMembers || 0} 位</span>
-            <span className="text-gold-400">｜已選 {selectedIds.length} 位</span>
-            <button type="button" onClick={selectAllCurrentPage} className="btn-secondary py-1 px-2">全選本頁</button>
-            <button type="button" onClick={clearSelection} className="btn-secondary py-1 px-2">清除選取</button>
+          <div className="text-sm text-gold-300">
+            共 {pagination?.totalMembers || 0} 位
           </div>
         </div>
 
-        {/* 批量分配區塊 */}
-        {selectedIds.length > 0 && (
-          <div className="mb-6 p-4 border border-gold-600 rounded-lg bg-primary-900">
-            <h3 className="text-gold-100 font-medium mb-3">批量分配入職任務</h3>
-            <form onSubmit={submitBulk} className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input
-                type="text"
-                className="input"
-                placeholder="任務標題（必填）"
-                value={bulkTitle}
-                onChange={(e) => setBulkTitle(e.target.value)}
-                required
-              />
-              <input
-                type="datetime-local"
-                className="input"
-                placeholder="截止日期（可選）"
-                value={bulkDueDate}
-                onChange={(e) => setBulkDueDate(e.target.value)}
-              />
-              <div className="flex gap-3">
-                <button type="submit" disabled={bulkSubmitting} className="btn-primary flex-1">
-                  {bulkSubmitting ? '分配中...' : '批量分配'}
-                </button>
-                <button type="button" onClick={clearSelection} className="btn-secondary">取消</button>
-              </div>
-              <div className="md:col-span-3">
-                <textarea
-                  className="input w-full h-20"
-                  placeholder="任務描述（可選）"
-                  value={bulkDescription}
-                  onChange={(e) => setBulkDescription(e.target.value)}
-                />
-              </div>
-              <div className="md:col-span-3 flex items-center gap-3">
-                <button type="button" onClick={applyGbcTemplate} className="btn-secondary">
-                  套用「GBC 深度交流表」模板
-                </button>
-                <span className="text-sm text-gold-300">一鍵帶入標題/描述，並預設 7 天後截止</span>
-              </div>
-            </form>
-          </div>
-        )}
 
         {loading ? (
           <div className="flex items-center justify-center h-48">
@@ -383,7 +270,7 @@ const CoachDashboard = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {visibleCoachees.map((member) => (
-                <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200">
+                <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer">
                   <div className="p-6">
                     {/* Header: Name + Select */}
                     <div className="flex items-start justify-between mb-4">
@@ -506,13 +393,6 @@ const CoachDashboard = () => {
                           )}
                         </div>
                       </div>
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        checked={selectedIds.includes(member.id)}
-                        onChange={() => toggleSelect(member.id)}
-                        aria-label={`選取 ${member.name}`}
-                      />
                     </div>
 
                     {/* Company and Title */}
@@ -551,15 +431,16 @@ const CoachDashboard = () => {
                       <Link
                         to={`/members/${member.id}`}
                         className="w-full btn-secondary flex items-center justify-center text-sm"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <EyeIcon className="h-4 w-4 mr-2" />
                         查看詳情
                       </Link>
-
                       {member.interviewData && (
                         <Link
                           to={`/member-interview/${member.id}`}
                           className="w-full btn-primary flex items-center justify-center text-sm"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           面談表
                         </Link>
