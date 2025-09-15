@@ -631,14 +631,9 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
 // @access  Private (Coach or Admin)
 router.get('/my-coachees/progress', requireCoach, async (req, res) => {
   try {
-    const isAdmin = !!req.user.is_admin;
     const coachId = req.user.id;
 
-    const whereClause = isAdmin
-      ? "WHERE u.status = 'active'"
-      : "WHERE u.status = 'active' AND u.coach_user_id = $1";
-
-    const params = isAdmin ? [] : [coachId];
+    const params = [coachId];
 
     const query = `
       SELECT
@@ -712,7 +707,7 @@ router.get('/my-coachees/progress', requireCoach, async (req, res) => {
         FROM event_registrations
         GROUP BY user_id
       ) er ON er.user_id = u.id
-      ${whereClause}
+      WHERE u.status = 'active' AND u.coach_user_id = $1
     `;
 
     const result = await pool.query(query, params);
@@ -777,7 +772,6 @@ router.get('/my-coachees/progress', requireCoach, async (req, res) => {
 // @access  Private (Coach or Admin)
 router.get('/my-coachees/task-stats', requireCoach, async (req, res) => {
   try {
-    const isAdmin = !!req.user.is_admin;
     const coachId = req.user.id;
 
     const statsQuery = `
@@ -789,10 +783,10 @@ router.get('/my-coachees/task-stats', requireCoach, async (req, res) => {
         SUM(CASE WHEN t.due_date IS NOT NULL AND t.due_date < NOW() AND t.status <> 'completed' THEN 1 ELSE 0 END) AS overdue
       FROM user_onboarding_tasks t
       JOIN users u ON u.id = t.user_id
-      WHERE u.status = 'active' ${isAdmin ? '' : 'AND u.coach_user_id = $1'}
+      WHERE u.status = 'active' AND u.coach_user_id = $1
     `;
 
-    const args = isAdmin ? [] : [coachId];
+    const args = [coachId];
     const result = await pool.query(statsQuery, args);
     const row = result.rows[0] || {};
 
