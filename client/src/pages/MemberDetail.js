@@ -15,6 +15,7 @@ import {
   MapPinIcon,
   TagIcon
 } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 
 const MemberDetail = () => {
   const { id } = useParams();
@@ -30,6 +31,9 @@ const MemberDetail = () => {
   const [savingTask, setSavingTask] = useState(false);
   const [savingLog, setSavingLog] = useState(false);
   const [badges, setBadges] = useState([]);
+  // 新增：專案計畫狀態
+  const [projectPlan, setProjectPlan] = useState(null);
+  const [loadingPlan, setLoadingPlan] = useState(false);
 
   useEffect(() => {
     loadMemberDetail();
@@ -40,6 +44,7 @@ const MemberDetail = () => {
       fetchOnboardingTasks();
       fetchCoachLogs();
       fetchBadges();
+      fetchProjectPlan();
     }
   }, [member?.id]);
 
@@ -58,6 +63,19 @@ const MemberDetail = () => {
       setLogs(resp.data.logs || []);
     } catch (e) {
       console.error('Failed to load coach logs', e);
+    }
+  };
+
+  // 新增：抓取專案計畫
+  const fetchProjectPlan = async () => {
+    try {
+      setLoadingPlan(true);
+      const resp = await axios.get(`/api/users/member/${id}/project-plan`);
+      setProjectPlan(resp.data || null);
+    } catch (e) {
+      console.error('Failed to load project plan', e);
+    } finally {
+      setLoadingPlan(false);
     }
   };
 
@@ -294,8 +312,8 @@ const MemberDetail = () => {
         <div className="flex items-center">
           <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full overflow-hidden">
              <Avatar 
-               src={member.profilePictureUrl} 
-               alt={member.name}
+               src={member?.profilePictureUrl} 
+               alt={member?.name}
                size="2xl"
                className="bg-white bg-opacity-20"
                fallbackIcon={UserIcon}
@@ -303,13 +321,59 @@ const MemberDetail = () => {
              />
            </div>
           <div className="ml-6 flex-1">
-            <h1 className="text-3xl font-bold">{member.name}</h1>
-            <p className="text-blue-100 mt-1">{member.email}</p>
+            <h1 className="text-3xl font-bold">{member?.name}</h1>
+            <p className="text-blue-100 mt-1">{member?.email}</p>
             <div className="flex items-center space-x-4 mt-3">
-              {member.membershipLevel ? getMembershipLevelBadge(member.membershipLevel) : null}
-            {member.status ? getStatusBadge(member.status) : null}
+              {member?.membershipLevel ? getMembershipLevelBadge(member.membershipLevel) : null}
+              {member?.status ? getStatusBadge(member.status) : null}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 新增：專案計畫 */}
+      <div className="card mt-6">
+        <div className="card-header">
+          <h2 className="text-lg font-semibold text-gray-900">專案計畫（12 項自動判定）</h2>
+        </div>
+        <div className="p-6">
+          {loadingPlan && (
+            <div className="flex items-center"><LoadingSpinner size="sm" /><span className="ml-3 text-gray-600">載入專案計畫中...</span></div>
+          )}
+          {!loadingPlan && projectPlan && (
+            <>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-gray-600">完成度</div>
+                  <div className="text-sm font-medium text-gray-900">{projectPlan.summary.percent}%</div>
+                </div>
+                <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-3 bg-primary-600" style={{ width: `${projectPlan.summary.percent}%` }} />
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {projectPlan.items.map((item) => (
+                  <div key={item.key} className="flex items-start p-3 border rounded-lg">
+                    {item.completed ? (
+                      <CheckCircleIcon className="h-5 w-5 text-green-600 mt-0.5" />
+                    ) : (
+                      <XCircleIcon className="h-5 w-5 text-gray-300 mt-0.5" />
+                    )}
+                    <div className="ml-3">
+                      <div className={`text-sm font-medium ${item.completed ? 'text-gray-900' : 'text-gray-500'}`}>{item.title}</div>
+                      {typeof item.value !== 'undefined' && (
+                        <div className="text-xs text-gray-500 mt-0.5">目前：{item.value}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {!loadingPlan && !projectPlan && (
+            <div className="text-sm text-gray-600">尚無可顯示的專案計畫資料</div>
+          )}
         </div>
       </div>
 

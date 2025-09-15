@@ -629,12 +629,12 @@ router.get('/my-coachees/progress', requireCoach, async (req, res) => {
         COALESCE(m.meetings_count, 0) AS meetings_count,
         COALESCE(rs.sent_count, 0) AS referrals_sent,
         COALESCE(rr.received_confirmed, 0) AS referrals_received_confirmed,
+        COALESCE(bm.bm_card_clicks, 0) AS bm_card_clicks,
+        COALESCE(bm.bm_cta_clicks, 0) AS bm_cta_clicks,
         COALESCE(t.pending, 0) AS pending_tasks,
         COALESCE(t.in_progress, 0) AS in_progress_tasks,
         COALESCE(t.completed, 0) AS completed_tasks,
         COALESCE(t.overdue, 0) AS overdue_tasks,
-        COALESCE(bm.bm_card_clicks, 0) AS bm_card_clicks,
-        COALESCE(bm.bm_cta_clicks, 0) AS bm_cta_clicks,
         (COALESCE(fv.viewed, 0) > 0) AS foundation_viewed,
         COALESCE(er.events_count, 0) AS events_count
       FROM users u
@@ -1398,6 +1398,142 @@ router.get('/referral-stats', async (req, res) => {
   } catch (error) {
     console.error('獲取引薦統計錯誤:', error);
     res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+// -------- Project Plan Endpoints (auto-evaluated 12-item plan) --------
+router.get('/member/:id/project-plan', async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    // 權限：本人、其教練或管理員
+    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
+    const coachUserId = userRes.rows[0].coach_user_id;
+    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
+    if (!allow) return res.status(403).json({ message: '沒有權限查看專案計畫' });
+
+    // 聚合該學員的多維度資料（重用 my-coachees/progress 的欄位邏輯）
+    const query = `
+      SELECT
+        u.id AS user_id,
+        (u.interview_form IS NOT NULL) AS has_interview,
+        (u.mbti_type IS NOT NULL) AS has_mbti_type,
+        (u.nfc_card_id IS NOT NULL OR u.nfc_card_url IS NOT NULL) AS has_nfc_card,
+        (u.profile_picture_url IS NOT NULL AND u.profile_picture_url <> '') AS has_profile_picture,
+        (u.contact_number IS NOT NULL AND u.contact_number <> '') AS has_contact_number,
+        COALESCE(w.wallet_count, 0) AS wallet_count,
+        COALESCE(m.meetings_count, 0) AS meetings_count,
+        COALESCE(rs.sent_count, 0) AS referrals_sent,
+        COALESCE(rr.received_confirmed, 0) AS referrals_received_confirmed,
+        COALESCE(bm.bm_card_clicks, 0) AS bm_card_clicks,
+        COALESCE(bm.bm_cta_clicks, 0) AS bm_cta_clicks,
+        (COALESCE(fv.viewed, 0) > 0) AS foundation_viewed,
+        COALESCE(er.events_count, 0) AS events_count
+      FROM users u
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS wallet_count
+        FROM nfc_card_collections
+        GROUP BY user_id
+      ) w ON w.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS meetings_count FROM (
+          SELECT requester_id AS user_id FROM meetings
+          UNION ALL
+          SELECT attendee_id AS user_id FROM meetings
+        ) s GROUP BY user_id
+      ) m ON m.user_id = u.id
+      LEFT JOIN (
+        SELECT referrer_id AS user_id, COUNT(*) AS sent_count
+        FROM referrals
+        GROUP BY referrer_id
+      ) rs ON rs.user_id = u.id
+      LEFT JOIN (
+        SELECT referred_to_id AS user_id, COUNT(*) AS received_confirmed
+        FROM referrals
+        WHERE status = 'confirmed'
+        GROUP BY referred_to_id
+      ) rr ON rr.user_id = u.id
+      LEFT JOIN (
+        SELECT target_member_id AS user_id,
+               COUNT(*) FILTER (WHERE event_type = 'card_click') AS bm_card_clicks,
+               COUNT(*) FILTER (WHERE event_type = 'cta_click') AS bm_cta_clicks
+        FROM business_media_analytics
+        WHERE target_member_id IS NOT NULL
+        GROUP BY target_member_id
+      ) bm ON bm.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, 1 AS viewed
+        FROM member_activities
+        WHERE activity_type = 'foundation_viewed'
+        GROUP BY user_id
+      ) fv ON fv.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS events_count
+        FROM event_registrations
+        GROUP BY user_id
+      ) er ON er.user_id = u.id
+      WHERE u.id = $1
+    `;
+
+    const result = await pool.query(query, [memberId]);
+    if (result.rows.length === 0) return res.status(404).json({ message: '會員不存在或未啟用' });
+    const r = result.rows[0];
+
+    const hasInterview = r.has_interview === true || r.has_interview === 't';
+    const hasMbtiType = r.has_mbti_type === true || r.has_mbti_type === 't';
+    const hasNfcCard = r.has_nfc_card === true || r.has_nfc_card === 't';
+    const hasProfilePicture = r.has_profile_picture === true || r.has_profile_picture === 't';
+    const hasContactNumber = r.has_contact_number === true || r.has_contact_number === 't';
+    const foundationViewed = r.foundation_viewed === true || r.foundation_viewed === 't';
+    const eventsCount = Number(r.events_count || 0);
+    const walletCount = Number(r.wallet_count || 0);
+    const meetingsCount = Number(r.meetings_count || 0);
+    const referralsSent = Number(r.referrals_sent || 0);
+    const referralsReceivedConfirmed = Number(r.referrals_received_confirmed || 0);
+    // const bmCardClicks = Number(r.bm_card_clicks || 0);
+    // const bmCtaClicks = Number(r.bm_cta_clicks || 0);
+
+    // GBC 深度交流表完成（以任務標題包含關鍵字且為完成狀態為準）
+    const gbcRes = await pool.query(
+      `SELECT 1 FROM user_onboarding_tasks WHERE user_id = $1 AND status = 'completed' AND title ILIKE '%GBC%深度交流表%' LIMIT 1`,
+      [memberId]
+    );
+    const gbcCompleted = gbcRes.rows.length > 0;
+
+    const items = [
+      { key: 'interview_form', title: '完成一對一面談表', auto: true, completed: hasInterview },
+      { key: 'profile_picture', title: '上傳個人頭像', auto: true, completed: hasProfilePicture },
+      { key: 'contact_number', title: '填寫聯絡電話', auto: true, completed: hasContactNumber },
+      { key: 'mbti_type', title: '完成 MBTI 測評', auto: true, completed: hasMbtiType },
+      { key: 'foundation_viewed', title: '閱讀「商會地基」', auto: true, completed: foundationViewed },
+      { key: 'nfc_card', title: '申請並啟用 NFC 名片', auto: true, completed: hasNfcCard },
+      { key: 'event_participation', title: '參加至少 1 場活動', auto: true, completed: eventsCount > 0, value: eventsCount },
+      { key: 'meeting', title: '進行至少 1 次會議', auto: true, completed: meetingsCount > 0, value: meetingsCount },
+      { key: 'referral_sent', title: '發出至少 1 次引薦', auto: true, completed: referralsSent > 0, value: referralsSent },
+      { key: 'referral_received_confirmed', title: '獲得 1 次確認之引薦', auto: true, completed: referralsReceivedConfirmed > 0, value: referralsReceivedConfirmed },
+      { key: 'wallet_collection', title: '數位錢包收錄至少 1 張名片', auto: true, completed: walletCount > 0, value: walletCount },
+      { key: 'gbc_profile', title: '完成 GBC 深度交流表', auto: true, completed: gbcCompleted }
+    ];
+
+    const total = items.length;
+    const completedCount = items.filter(i => i.completed).length;
+    const percent = Math.round((completedCount / total) * 100);
+
+    res.json({
+      memberId,
+      summary: {
+        total,
+        completedCount,
+        percent,
+        lastUpdated: new Date().toISOString()
+      },
+      items
+    });
+  } catch (error) {
+    console.error('Get project plan error:', error);
+    res.status(500).json({ message: '獲取專案計畫時發生錯誤' });
   }
 });
 
