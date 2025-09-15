@@ -516,13 +516,21 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
     const { page = 1, limit = 20, search = '', noInterview, noNfc, sort } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
+    const isAdmin = !!req.user.is_admin;
+
     let whereConditions = [
       'u.status = $1',
-      'u.coach_user_id = $2',
       `NOT (u.membership_level = 1 AND u.email LIKE '%admin%')`
     ];
-    let params = ['active', req.user.id];
-    let idx = 3;
+    let params = ['active'];
+    let idx = 2;
+
+    // 非管理員限定查看被指派的學員
+    if (!isAdmin) {
+      whereConditions.push(`u.coach_user_id = $${idx}`);
+      params.push(req.user.id);
+      idx++;
+    }
 
     if (search && search.trim()) {
       whereConditions.push(`(u.name ILIKE $${idx} OR u.company ILIKE $${idx} OR u.title ILIKE $${idx})`);
@@ -1506,6 +1514,15 @@ router.get('/member/:id/project-plan', async (req, res) => {
         WHERE status = 'confirmed'
         GROUP BY referred_to_id
       ) rr ON rr.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id,
+               SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+               SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
+               SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+               SUM(CASE WHEN due_date IS NOT NULL AND due_date < NOW() AND status <> 'completed' THEN 1 ELSE 0 END) AS overdue
+        FROM user_onboarding_tasks
+        GROUP BY user_id
+      ) t ON t.user_id = u.id
       LEFT JOIN (
         SELECT target_member_id AS user_id,
                COUNT(*) FILTER (WHERE event_type = 'card_click') AS bm_card_clicks,

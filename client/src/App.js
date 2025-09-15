@@ -6,6 +6,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import Level1Route from './components/Level1Route';
+// import Level2Route from './components/Level2Route';
+import CoachRoute from './components/CoachRoute';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -58,6 +60,7 @@ import BusinessMediaList from './pages/BusinessMediaList';
 import BusinessMediaAdmin from './pages/admin/BusinessMediaAdmin';
 
 import MBTIAssessment from './pages/MBTIAssessment';
+import CoacheeDirectory from './pages/coach/CoacheeDirectory';
 
 
 
@@ -219,6 +222,15 @@ function App() {
                 <CoachDashboard />
               </Layout>
             </ProtectedRoute>
+          } />
+
+          {/* Coach: Coachee Directory (coach/admin only) */}
+          <Route path="/coachees" element={
+            <CoachRoute>
+              <Layout>
+                <CoacheeDirectory />
+              </Layout>
+            </CoachRoute>
           } />
 
           {/* Management Features Routes - Admin & Level 1 */}

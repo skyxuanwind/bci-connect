@@ -102,7 +102,8 @@ const Layout = ({ children }) => {
   // 教練功能
   const coachFeatures = [
     { name: '教練儀表板', href: '/coach', icon: SparklesIcon },
-    // 已移除：{ name: '教練入職', href: '/coach/onboarding', icon: InformationCircleIcon },
+    { name: '學員目錄', href: '/coachees', icon: UsersIcon },
+    // 將「任務進度」合併到教練儀表板，保留入口至 /coach
     { name: '任務進度', href: '/coach', icon: RectangleStackIcon },
   ];
 
