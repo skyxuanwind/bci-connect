@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Avatar from './Avatar';
@@ -44,6 +44,21 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [versionInfo, setVersionInfo] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    axios
+      .get('/api/version')
+      .then((res) => {
+        if (mounted) setVersionInfo(res.data);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const [presentationUrl, setPresentationUrl] = useState('');
 
   // 獲取商會簡報URL
@@ -381,6 +396,12 @@ const Layout = ({ children }) => {
           <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
           登出
         </button>
+        {versionInfo && (
+          <div className="mt-3 text-[10px] leading-4 text-gold-400/70">
+            <div>版本 v{versionInfo.version}{versionInfo.commit ? ` · ${versionInfo.commit}` : ''}</div>
+            <div className="truncate" title={versionInfo.fullCommit || ''}>{versionInfo.fullCommit || ''}</div>
+          </div>
+        )}
       </div>
     </div>
   );

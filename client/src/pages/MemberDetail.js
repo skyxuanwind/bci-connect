@@ -332,7 +332,7 @@ const MemberDetail = () => {
       </div>
 
       {/* 新增：專案計畫 */}
-      <div className="card mt-6">
+      <div id="project-plan" className="card mt-6">
         <div className="card-header">
           <h2 className="text-lg font-semibold text-gray-900">專案計畫（12 項自動判定）</h2>
         </div>
