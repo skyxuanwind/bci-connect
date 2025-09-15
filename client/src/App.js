@@ -37,12 +37,11 @@ import ProspectDetail from './pages/ProspectDetail';
 import BlacklistManagement from './pages/BlacklistManagement';
 import FinancialStatement from './pages/FinancialStatement';
 import ComplaintBox from './pages/ComplaintBox';
-import FoundationInfo from './pages/FoundationInfo';
-import ContentManagement from './pages/admin/ContentManagement';
 import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
-
 import JudgmentSync from './pages/JudgmentSync';
+import FoundationInfo from './pages/FoundationInfo';
+import ContentManagement from './pages/admin/ContentManagement';
 import WishesPage from './pages/WishesPage';
 import NotificationsPage from './pages/NotificationsPage';
 
@@ -222,7 +221,47 @@ function App() {
             </ProtectedRoute>
           } />
 
+          {/* Management Features Routes - Admin & Level 1 */}
+          <Route path="/financial" element={
+            <Level1Route>
+              <Layout>
+                <FinancialStatement />
+              </Layout>
+            </Level1Route>
+          } />
           
+          <Route path="/complaints" element={
+            <Level1Route>
+              <Layout>
+                <ComplaintBox />
+              </Layout>
+            </Level1Route>
+          } />
+          
+          <Route path="/checkin-scanner" element={
+            <Level1Route>
+              <Layout>
+                <CheckInScanner />
+              </Layout>
+            </Level1Route>
+          } />
+          
+          <Route path="/attendance-management" element={
+            <Level1Route>
+              <Layout>
+                <AttendanceManagement />
+              </Layout>
+            </Level1Route>
+          } />
+          
+          <Route path="/judgment-sync" element={
+            <Level1Route>
+              <Layout>
+                <JudgmentSync />
+              </Layout>
+            </Level1Route>
+          } />
+
           
           {/* Admin Routes */}
           <Route path="/admin" element={
