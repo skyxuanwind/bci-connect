@@ -357,6 +357,35 @@ const Layout = ({ children }) => {
           </>
         )}
         
+        {/* Admin Backend Navigation */}
+        {isAdmin() && (
+          <>
+            <div className="pt-4 pb-2">
+              <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
+                系統管理
+              </h3>
+            </div>
+            {adminNavigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`${
+                    isCurrentPath(item.href)
+                      ? 'nav-link-active'
+                      : 'nav-link'
+                  } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
+                  onClick={() => mobile && setSidebarOpen(false)}
+                >
+                  <Icon className="mr-3 h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </>
+        )}
+        
         {/* Management Features (Admin & Level 1) */}
         {(user?.membershipLevel === 1 || isAdmin()) && (
           <>
