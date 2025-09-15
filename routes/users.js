@@ -25,6 +25,21 @@ const upload = multer({
   }
 });
 
+// Configure multer for coach log attachments (allow images, PDFs, and text)
+const uploadCoachLogs = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
+  fileFilter: (req, file, cb) => {
+    const allowed = (
+      file.mimetype.startsWith('image/') ||
+      file.mimetype === 'application/pdf' ||
+      file.mimetype === 'text/plain'
+    );
+    if (allowed) return cb(null, true);
+    return cb(new Error('僅允許上傳圖片、PDF 或純文字檔'), false);
+  }
+});
+
 // 獲取用戶公開資訊 (不需要認證)
 router.get('/:id/public', async (req, res) => {
   try {
@@ -1186,7 +1201,7 @@ router.get('/member/:id/coach-logs', async (req, res) => {
     if (!allow) return res.status(403).json({ message: '沒有權限查看教練紀錄' });
 
     const logsRes = await pool.query(
-      `SELECT cl.id, cl.content, cl.created_at, u.name AS coach_name
+      `SELECT cl.id, cl.content, cl.attachments, cl.created_at, u.name AS coach_name
        FROM coach_logs cl
        JOIN users u ON u.id = cl.coach_id
        WHERE cl.member_id = $1
@@ -1197,6 +1212,7 @@ router.get('/member/:id/coach-logs', async (req, res) => {
     const logs = logsRes.rows.map(r => ({
       id: r.id,
       content: r.content,
+      attachments: Array.isArray(r.attachments) ? r.attachments : [],
       createdAt: r.created_at,
       coachName: r.coach_name
     }));
@@ -1209,12 +1225,12 @@ router.get('/member/:id/coach-logs', async (req, res) => {
 });
 
 // POST: 新增教練紀錄（僅該學員之教練或管理員）
-router.post('/member/:id/coach-logs', requireCoach, async (req, res) => {
+router.post('/member/:id/coach-logs', requireCoach, uploadCoachLogs.array('files', 5), async (req, res) => {
   try {
     const memberId = parseInt(req.params.id, 10);
     if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
-    const { content } = req.body || {};
-    if (!content || !content.trim()) return res.status(400).json({ message: '請輸入紀錄內容' });
+    const content = (req.body?.content || '').trim();
+    if (!content) return res.status(400).json({ message: '請輸入紀錄內容' });
 
     const isAdmin = !!req.user.is_admin;
     if (!isAdmin) {
@@ -1222,16 +1238,51 @@ router.post('/member/:id/coach-logs', requireCoach, async (req, res) => {
       if (checkRes.rows.length === 0) return res.status(403).json({ message: '僅能為指派給您的學員新增教練紀錄' });
     }
 
+    // 上傳附件（允許圖片與PDF、TXT等；使用 resource_type: 'auto'）
+    let attachments = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: 'bci-connect/coach-logs',
+                resource_type: 'auto'
+              },
+              (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+              }
+            );
+            uploadStream.end(file.buffer);
+          });
+          attachments.push({
+            url: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
+            format: uploadResult.format,
+            resourceType: uploadResult.resource_type,
+            bytes: uploadResult.bytes,
+            originalFilename: file.originalname,
+            mimeType: file.mimetype
+          });
+        } catch (err) {
+          console.error('Attachment upload failed:', err);
+        }
+      }
+    }
+
     const insertRes = await pool.query(
-      `INSERT INTO coach_logs (coach_id, member_id, content) VALUES ($1, $2, $3)`,
-      [req.user.id, memberId, content.trim()]
+      `INSERT INTO coach_logs (coach_id, member_id, content, attachments) VALUES ($1, $2, $3, $4) RETURNING id, content, attachments, created_at`,
+      [req.user.id, memberId, content, JSON.stringify(attachments)]
     );
 
     const coachRes = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+    const row = insertRes.rows[0];
     const log = {
-      id: insertRes.rows[0].id,
-      content: insertRes.rows[0].content,
-      createdAt: insertRes.rows[0].created_at,
+      id: row.id,
+      content: row.content,
+      attachments: Array.isArray(row.attachments) ? row.attachments : row.attachments ? row.attachments : [],
+      createdAt: row.created_at,
       coachName: coachRes.rows[0]?.name || '教練'
     };
 

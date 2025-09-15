@@ -28,6 +28,7 @@ const MemberDetail = () => {
   const [logs, setLogs] = useState([]);
   const [taskForm, setTaskForm] = useState({ title: '', description: '', dueDate: '' });
   const [logContent, setLogContent] = useState('');
+  const [logFiles, setLogFiles] = useState([]);
   const [savingTask, setSavingTask] = useState(false);
   const [savingLog, setSavingLog] = useState(false);
   const [badges, setBadges] = useState([]);
@@ -127,12 +128,20 @@ const MemberDetail = () => {
 
   const createLog = async (e) => {
     e.preventDefault();
-    if (!logContent.trim()) return;
+    if (!logContent.trim() && (!logFiles || logFiles.length === 0)) return;
     setSavingLog(true);
     try {
-      const resp = await axios.post(`/api/users/member/${id}/coach-logs`, { content: logContent.trim() });
+      const formData = new FormData();
+      formData.append('content', logContent.trim());
+      if (logFiles && logFiles.length > 0) {
+        Array.from(logFiles).forEach((f) => formData.append('files', f));
+      }
+      const resp = await axios.post(`/api/users/member/${id}/coach-logs`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setLogs([resp.data.log, ...logs]);
       setLogContent('');
+      setLogFiles([]);
     } catch (e) {
       console.error('Create log failed', e);
     } finally {
@@ -609,9 +618,20 @@ const MemberDetail = () => {
                 value={logContent}
                 onChange={(e) => setLogContent(e.target.value)}
               />
-              <button className="btn-primary" disabled={savingLog}>
-                {savingLog ? '新增中...' : '新增紀錄'}
-              </button>
+              <div className="flex items-center justify-between gap-3">
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => setLogFiles(e.target.files)}
+                  className="text-sm text-gray-600"
+                />
+                <button className="btn-primary" disabled={savingLog}>
+                  {savingLog ? '新增中...' : '新增紀錄'}
+                </button>
+              </div>
+              {logFiles && logFiles.length > 0 && (
+                <div className="text-xs text-gray-500">已選擇 {logFiles.length} 個附件</div>
+              )}
             </form>
           )}
 
@@ -621,6 +641,18 @@ const MemberDetail = () => {
               <div key={l.id} className="p-4 border rounded-lg">
                 <div className="text-sm text-gray-500 mb-1">{new Date(l.createdAt).toLocaleString('zh-TW')}</div>
                 <p className="text-gray-900 whitespace-pre-line">{l.content}</p>
+                {Array.isArray(l.attachments) && l.attachments.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {l.attachments.map((a, idx) => (
+                      <div key={idx} className="text-sm">
+                        <a href={a.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                          附件 {idx + 1} {a.originalFilename ? `- ${a.originalFilename}` : ''}
+                        </a>
+                        <span className="ml-2 text-xs text-gray-500">{a.mimeType || a.format || a.resourceType}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {l.coachName && <div className="text-xs text-gray-500 mt-2">由 {l.coachName} 建立</div>}
               </div>
             ))}

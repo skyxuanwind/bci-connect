@@ -207,7 +207,7 @@
   flex-direction: column;
 }
 
-.info-field.full-width {
+.info-field.full-width, .info-field.info-field-full {
   grid-column: 1 / -1;
 }
 
@@ -264,8 +264,8 @@
   justify-content: flex-end;
 }
 
-.btn-primary,
-.btn-secondary {
+.business-card-scanner .btn-primary,
+.business-card-scanner .btn-secondary {
   padding: 10px 20px;
   border-radius: 6px;
   font-weight: 500;
@@ -275,22 +275,22 @@
   font-size: 0.875rem;
 }
 
-.btn-primary {
+.business-card-scanner .btn-primary {
   background: #3b82f6;
   color: white;
 }
 
-.btn-primary:hover {
+.business-card-scanner .btn-primary:hover {
   background: #2563eb;
 }
 
-.btn-secondary {
+.business-card-scanner .btn-secondary {
   background: #f3f4f6;
   color: #374151;
   border: 1px solid #d1d5db;
 }
 
-.btn-secondary:hover {
+.business-card-scanner .btn-secondary:hover {
   background: #e5e7eb;
 }
 
@@ -368,7 +368,7 @@
     gap: 12px;
   }
   
-  .info-field.full-width {
+  .info-field.full-width, .info-field.info-field-full {
     grid-column: 1;
   }
   
@@ -429,13 +429,13 @@
     color: #d1d5db;
   }
   
-  .btn-secondary {
+  .business-card-scanner .btn-secondary {
     background: #374151;
     color: #f9fafb;
     border-color: #4b5563;
   }
   
-  .btn-secondary:hover {
+  .business-card-scanner .btn-secondary:hover {
     background: #4b5563;
   }
 }

@@ -228,11 +228,15 @@ const initializeDatabase = async () => {
         coach_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         member_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
+        attachments JSONB DEFAULT '[]'::jsonb,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_coach_logs_member ON coach_logs(member_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_coach_logs_coach ON coach_logs(coach_id)`);
+
+    // Safety migration: ensure attachments column exists on older deployments
+    await pool.query(`ALTER TABLE coach_logs ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'::jsonb`);
 
     // Create email_verifications table for email verification during registration
     await pool.query(`
