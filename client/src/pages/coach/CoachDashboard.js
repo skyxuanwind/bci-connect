@@ -686,6 +686,13 @@ const CoachDashboard = () => {
                           <EyeIcon className="h-4 w-4 mr-2" />
                           查看詳情
                         </Link>
+                        <Link
+                          to={`/members/${member.id}#project-plan`}
+                          className="w-full btn-primary flex items-center justify-center text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          專案計畫
+                        </Link>
                         {member.interviewData && (
                           <Link
                             to={`/member-interview/${member.id}`}

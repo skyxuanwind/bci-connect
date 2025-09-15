@@ -176,6 +176,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Add version endpoint for build identification
+app.get('/api/version', async (req, res) => {
+  try {
+    // Prefer commit hash from environment (Render sets COMMIT if configured), fallback to package.json version
+    const pkg = require('./package.json');
+    const version = pkg.version || '0.0.0';
+    const commit = process.env.RENDER_GIT_COMMIT || process.env.COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || process.env.SOURCE_VERSION || null;
+    const shortCommit = commit ? commit.substring(0, 7) : null;
+    res.json({ version, commit: shortCommit, fullCommit: commit, timestamp: new Date().toISOString() });
+  } catch (e) {
+    res.json({ version: 'unknown', error: e?.message || String(e) });
+  }
+});
+
 // Simple readiness check
 app.get('/ready', (req, res) => {
   res.status(200).send('Ready');
