@@ -516,7 +516,9 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
     const { page = 1, limit = 20, search = '', noInterview, noNfc, sort } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    const isAdmin = !!req.user.is_admin;
+    // 只有真正的管理員（email包含admin的核心會員）才能看到所有會員
+    // 普通的核心會員教練只能看到自己的學員
+    const isRealAdmin = req.user.membership_level === 1 && req.user.email.includes('admin');
 
     let whereConditions = [
       'u.status = $1',
@@ -525,8 +527,8 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
     let params = ['active'];
     let idx = 2;
 
-    // 非管理員限定查看被指派的學員
-    if (!isAdmin) {
+    // 非真正管理員（包括普通核心會員教練）限定查看被指派的學員
+    if (!isRealAdmin) {
       whereConditions.push(`u.coach_user_id = $${idx}`);
       params.push(req.user.id);
       idx++;
@@ -978,9 +980,9 @@ router.post('/member/:id/onboarding-tasks', requireCoach, async (req, res) => {
       due = d.toISOString();
     }
 
-    // 權限驗證：教練只能指派給自己的學員；管理員不受限制
-    const isAdmin = !!req.user.is_admin;
-    if (!isAdmin) {
+    // 權限驗證：教練只能指派給自己的學員；真正的管理員不受限制
+    const isRealAdmin = req.user.membership_level === 1 && req.user.email.includes('admin');
+    if (!isRealAdmin) {
       const checkRes = await pool.query(
         `SELECT id FROM users WHERE id = $1 AND coach_user_id = $2 AND status = 'active'`,
         [memberId, req.user.id]
