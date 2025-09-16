@@ -234,6 +234,30 @@ function App() {
           } />
 
           {/* Management Features Routes - Admin & Level 1 */}
+          <Route path="/prospect-application" element={
+            <Level1Route>
+              <Layout>
+                <ProspectApplication />
+              </Layout>
+            </Level1Route>
+          } />
+          
+          <Route path="/prospect-voting" element={
+            <Level1Route>
+              <Layout>
+                <ProspectVoting />
+              </Layout>
+            </Level1Route>
+          } />
+          
+          <Route path="/blacklist" element={
+            <Level1Route>
+              <Layout>
+                <BlacklistManagement />
+              </Layout>
+            </Level1Route>
+          } />
+          
           <Route path="/financial" element={
             <Level1Route>
               <Layout>
