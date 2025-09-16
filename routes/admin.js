@@ -752,4 +752,44 @@ router.get('/users/:id/coach', async (req, res) => {
   }
 });
 
+// 臨時端點：重置教練密碼（僅用於測試）
+router.post('/reset-coach-password', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const newPassword = 'coach123456';
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    
+    const result = await pool.query(
+      'UPDATE users SET password = $1 WHERE email = $2 RETURNING id, name, email',
+      [hashedPassword, 'xuanowind@gmail.com']
+    );
+    
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+      res.json({
+        success: true,
+        message: '密碼重置成功',
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        },
+        newPassword: newPassword
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: '找不到教練用戶'
+      });
+    }
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: '重置密碼失敗'
+    });
+  }
+});
+
 module.exports = router;
