@@ -610,6 +610,7 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
         membershipLevel: row.membership_level,
         chapterName: row.chapter_name,
         interviewData: row.interview_form ? true : false,
+        coachUserId: row.coach_id, // 添加coachUserId字段
         coach: {
           id: row.coach_id,
           name: row.coach_name,
