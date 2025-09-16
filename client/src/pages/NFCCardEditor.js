@@ -795,7 +795,7 @@ const NFCCardEditor = () => {
                   
                   <div className="p-4 bg-gray-50 border-t border-gray-200 text-center">
                     <a 
-                      href={`/member/${user.id}`}
+                      href={`/member-card/${user.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"

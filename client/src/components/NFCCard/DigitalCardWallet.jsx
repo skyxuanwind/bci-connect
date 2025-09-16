@@ -517,7 +517,7 @@ const DigitalCardWallet = () => {
                     
                     <div className="card-actions">
                       <button
-                        onClick={() => window.open(`/member/${bookmark.userId}`, '_blank')}
+                        onClick={() => window.open(`/member-card/${bookmark.userId}`, '_blank')}
                         className="card-action-btn view-btn"
                         title="查看名片"
                       >

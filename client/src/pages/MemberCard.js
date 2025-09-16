@@ -1228,7 +1228,7 @@ const MemberCard = () => {
                               targetMemberId: Number(memberId),
                             }).catch(() => {});
                           } catch (error) {}
-                          navigate(`/member/${memberId}`);
+                          navigate(`/member-card/${memberId}`);
                         }}
                         className="px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
                       >

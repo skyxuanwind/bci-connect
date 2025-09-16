@@ -1286,7 +1286,7 @@ const DigitalWallet = () => {
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                   <div className="flex justify-between items-center">
                     <a
-                        href={`/member/${getMemberIdForCard(card)}`}
+                        href={`/member-card/${getMemberIdForCard(card)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-gold-600 hover:text-gold-800 text-sm font-medium transition-colors"
