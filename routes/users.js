@@ -25,6 +25,122 @@ const upload = multer({
   }
 });
 
+// 學員目錄：顯示所有有被指派教練的學員（包含其他教練的學員）
+router.get('/all-coachees', requireCoach, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '', noInterview, noNfc, sort } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let whereConditions = [
+      'u.status = $1',
+      `NOT (u.membership_level = 1 AND u.email LIKE '%admin%')`,
+      'u.coach_user_id IS NOT NULL' // 只顯示有被指派教練的學員
+    ];
+    let params = ['active'];
+    let idx = 2;
+
+    if (search && search.trim()) {
+      whereConditions.push(`(u.name ILIKE $${idx} OR u.company ILIKE $${idx} OR u.title ILIKE $${idx})`);
+      params.push(`%${search.trim()}%`);
+      idx++;
+    }
+
+    // 後端過濾條件
+    if (noInterview === 'true') {
+      whereConditions.push('u.interview_form IS NULL');
+    }
+    if (noNfc === 'true') {
+      whereConditions.push('(u.nfc_card_id IS NULL AND u.nfc_card_url IS NULL)');
+    }
+
+    const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+
+    const countQuery = `SELECT COUNT(*) AS total FROM users u ${whereClause}`;
+    const countResult = await pool.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total, 10) || 0;
+
+    // 排序子句
+    let orderClause = 'ORDER BY u.name ASC';
+    if (sort === 'overdue_desc') {
+      orderClause = 'ORDER BY COALESCE(t.overdue_tasks, 0) DESC, u.name ASC';
+    } else if (sort === 'meetings_desc') {
+      orderClause = 'ORDER BY COALESCE(m.meetings_count, 0) DESC, u.name ASC';
+    }
+
+    const listQuery = `
+      SELECT u.id, u.name, u.company, u.industry, u.title,
+             u.profile_picture_url, u.contact_number, u.membership_level,
+             u.interview_form, c.name as chapter_name,
+             coach.id as coach_id, coach.name as coach_name, coach.email as coach_email,
+             COALESCE(t.pending_tasks, 0) AS pending_tasks,
+             COALESCE(t.in_progress_tasks, 0) AS in_progress_tasks,
+             COALESCE(t.completed_tasks, 0) AS completed_tasks,
+             COALESCE(t.overdue_tasks, 0) AS overdue_tasks
+      FROM users u
+      LEFT JOIN chapters c ON u.chapter_id = c.id
+      LEFT JOIN users coach ON u.coach_user_id = coach.id
+      LEFT JOIN (
+        SELECT user_id,
+               SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_tasks,
+               SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_tasks,
+               SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks,
+               SUM(CASE WHEN due_date IS NOT NULL AND due_date < NOW() AND status <> 'completed' THEN 1 ELSE 0 END) AS overdue_tasks
+        FROM user_onboarding_tasks
+        GROUP BY user_id
+      ) t ON t.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS meetings_count FROM (
+          SELECT requester_id AS user_id FROM meetings
+          UNION ALL
+          SELECT attendee_id AS user_id FROM meetings
+        ) s GROUP BY user_id
+      ) m ON m.user_id = u.id
+      ${whereClause}
+      ${orderClause}
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `;
+    params.push(parseInt(limit), offset);
+
+    const listResult = await pool.query(listQuery, params);
+
+    res.json({
+      coachees: listResult.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        company: row.company,
+        industry: row.industry,
+        title: row.title,
+        profilePictureUrl: row.profile_picture_url,
+        contactNumber: row.contact_number,
+        membershipLevel: row.membership_level,
+        chapterName: row.chapter_name,
+        interviewData: row.interview_form ? true : false,
+        coachUserId: row.coach_id,
+        coach: {
+          id: row.coach_id,
+          name: row.coach_name,
+          email: row.coach_email
+        },
+        taskCounts: {
+          pending: Number(row.pending_tasks || 0),
+          inProgress: Number(row.in_progress_tasks || 0),
+          completed: Number(row.completed_tasks || 0),
+          overdue: Number(row.overdue_tasks || 0)
+        }
+      })),
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalMembers: total,
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get all coachees error:', error);
+    res.status(500).json({ message: '獲取學員目錄時發生錯誤' });
+  }
+});
+
 // Configure multer for coach log attachments (allow images, PDFs, and text)
 const uploadCoachLogs = multer({
   storage: multer.memoryStorage(),
@@ -516,20 +632,15 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
     const { page = 1, limit = 20, search = '', noInterview, noNfc, sort } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    // 只有真正的管理員（email包含admin的核心會員）才能看到所有會員
-    // 普通的核心會員教練只能看到自己的學員
-    const isRealAdmin = req.user.membership_level === 1 && req.user.email.includes('admin');
+    const coachId = req.user.id;
 
     let whereConditions = [
       'u.status = $1',
+      'u.coach_user_id = $2',
       `NOT (u.membership_level = 1 AND u.email LIKE '%admin%')`
     ];
-    let params = ['active'];
-    let idx = 2;
-
-    // 學員目錄：顯示所有有被指派教練的學員（包含其他教練的學員）
-    // 只過濾掉沒有教練的學員
-    whereConditions.push('u.coach_user_id IS NOT NULL');
+    let params = ['active', coachId];
+    let idx = 3;
 
     if (search && search.trim()) {
       whereConditions.push(`(u.name ILIKE $${idx} OR u.company ILIKE $${idx} OR u.title ILIKE $${idx})`);

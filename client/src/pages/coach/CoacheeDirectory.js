@@ -20,8 +20,8 @@ const CoacheeDirectory = () => {
     try {
       setLoading(true);
       setError('');
-      // 後端: 管理員可看全部，教練僅看自己的學員
-      const resp = await axios.get('/api/users/my-coachees', { params: { page, limit } });
+      // 學員目錄: 顯示所有有被指派教練的學員（包含其他教練的學員）
+      const resp = await axios.get('/api/users/all-coachees', { params: { page, limit } });
       const data = resp.data || {};
       setMembers(Array.isArray(data.coachees) ? data.coachees : []);
       setPagination(data.pagination || { currentPage: page, totalPages: 1, totalMembers: 0, limit });
