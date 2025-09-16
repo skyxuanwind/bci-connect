@@ -527,9 +527,11 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
     let params = ['active'];
     let idx = 2;
 
-    // 非真正管理員（包括普通核心會員教練）查看所有被指派到教練的學員
+    // 非真正管理員（包括普通核心會員教練）只能查看自己的學員
     if (!isRealAdmin) {
-      whereConditions.push(`u.coach_user_id IS NOT NULL`);
+      whereConditions.push(`u.coach_user_id = $${idx}`);
+      params.push(req.user.id);
+      idx++;
     }
 
     if (search && search.trim()) {
