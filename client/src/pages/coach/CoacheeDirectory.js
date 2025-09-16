@@ -68,6 +68,9 @@ const CoacheeDirectory = () => {
           <div className="ml-3">
             <div className="text-sm font-semibold text-gold-100 truncate">{m.name}</div>
             <div className="text-xs text-gold-300 truncate">{m.industry || m.title || ''}</div>
+            {m.coach && m.coach.name && (
+              <div className="text-xs text-blue-300 truncate">教練: {m.coach.name}</div>
+            )}
           </div>
         </div>
 
@@ -96,7 +99,7 @@ const CoacheeDirectory = () => {
     <div className="space-y-6">
       <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-elegant">
         <h1 className="text-2xl font-semibold text-gold-100">學員目錄</h1>
-        <p className="mt-2 text-gold-300">瀏覽所有學員的入職進度與狀態。{isAdmin() ? '（管理員視角）' : ''}</p>
+        <p className="mt-2 text-gold-300">瀏覽所有被指派到教練的學員名單，包含其教練資訊與入職進度。{isAdmin() ? '（管理員視角）' : ''}</p>
       </div>
 
       <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">

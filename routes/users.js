@@ -527,11 +527,9 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
     let params = ['active'];
     let idx = 2;
 
-    // 非真正管理員（包括普通核心會員教練）限定查看被指派的學員
+    // 非真正管理員（包括普通核心會員教練）查看所有被指派到教練的學員
     if (!isRealAdmin) {
-      whereConditions.push(`u.coach_user_id = $${idx}`);
-      params.push(req.user.id);
-      idx++;
+      whereConditions.push(`u.coach_user_id IS NOT NULL`);
     }
 
     if (search && search.trim()) {
@@ -566,12 +564,14 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
       SELECT u.id, u.name, u.company, u.industry, u.title,
              u.profile_picture_url, u.contact_number, u.membership_level,
              u.interview_form, c.name as chapter_name,
+             coach.id as coach_id, coach.name as coach_name, coach.email as coach_email,
              COALESCE(t.pending_tasks, 0) AS pending_tasks,
              COALESCE(t.in_progress_tasks, 0) AS in_progress_tasks,
              COALESCE(t.completed_tasks, 0) AS completed_tasks,
              COALESCE(t.overdue_tasks, 0) AS overdue_tasks
       FROM users u
       LEFT JOIN chapters c ON u.chapter_id = c.id
+      LEFT JOIN users coach ON u.coach_user_id = coach.id
       LEFT JOIN (
         SELECT user_id,
                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_tasks,
@@ -608,6 +608,11 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
         membershipLevel: row.membership_level,
         chapterName: row.chapter_name,
         interviewData: row.interview_form ? true : false,
+        coach: {
+          id: row.coach_id,
+          name: row.coach_name,
+          email: row.coach_email
+        },
         taskCounts: {
           pending: Number(row.pending_tasks || 0),
           inProgress: Number(row.in_progress_tasks || 0),
