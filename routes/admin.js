@@ -213,9 +213,11 @@ router.get('/users', async (req, res) => {
     const usersQuery = `
       SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
              u.contact_number, u.membership_level, u.status, u.is_coach, u.created_at,
-             u.profile_picture_url, u.nfc_card_id, c.name as chapter_name
+             u.profile_picture_url, u.nfc_card_id, u.coach_user_id, c.name as chapter_name,
+             coach.name as coach_name
       FROM users u
       LEFT JOIN chapters c ON u.chapter_id = c.id
+      LEFT JOIN users coach ON u.coach_user_id = coach.id
       ${whereClause}
       ORDER BY u.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -239,7 +241,9 @@ router.get('/users', async (req, res) => {
         chapterName: user.chapter_name,
         createdAt: user.created_at,
         nfcCardId: user.nfc_card_id || null,
-        isCoach: user.is_coach
+        isCoach: user.is_coach,
+        coachUserId: user.coach_user_id,
+        coachName: user.coach_name
       })),
       pagination: {
         currentPage: parseInt(page),

@@ -683,6 +683,9 @@ const UserManagement = () => {
                       教練資格
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      指派教練
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       註冊時間
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -733,6 +736,17 @@ const UserManagement = () => {
                         >
                           {togglingCoachId === user.id ? '更新中...' : (user.isCoach ? '取消教練' : '設為教練')}
                         </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {user.coachName ? (
+                          <div className="text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {user.coachName}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">未指派</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(user.createdAt)}
