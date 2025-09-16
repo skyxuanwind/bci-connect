@@ -25,6 +25,75 @@ const upload = multer({
   }
 });
 
+
+
+
+
+
+
+// Configure multer for coach log attachments (allow images, PDFs, and text)
+const uploadCoachLogs = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
+  fileFilter: (req, file, cb) => {
+    const allowed = (
+      file.mimetype.startsWith('image/') ||
+      file.mimetype === 'application/pdf' ||
+      file.mimetype === 'text/plain'
+    );
+    if (allowed) return cb(null, true);
+    return cb(new Error('僅允許上傳圖片、PDF 或純文字檔'), false);
+  }
+});
+
+// 獲取用戶公開資訊 (不需要認證)
+router.get('/:id/public', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      `SELECT id, name, company, title, mbti, mbti_public, email, profile_picture_url
+       FROM users 
+       WHERE id = $1 AND status = 'active'`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '用戶不存在或未啟用'
+      });
+    }
+    
+    const row = result.rows[0];
+    const user = {
+      id: row.id,
+      name: row.name,
+      company: row.company,
+      title: row.title,
+      email: row.email,
+      profilePictureUrl: row.profile_picture_url
+    };
+    if (row.mbti_public) {
+      user.mbti = row.mbti;
+    }
+    
+    res.json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error('Error fetching public user info:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取用戶資訊失敗'
+    });
+  }
+});
+
+// Apply authentication to all routes below
+router.use(authenticateToken);
+
 // 學員目錄：顯示所有有被指派教練的學員（包含其他教練的學員）
 router.get('/all-coachees', requireCoach, async (req, res) => {
   try {
@@ -140,69 +209,6 @@ router.get('/all-coachees', requireCoach, async (req, res) => {
     res.status(500).json({ message: '獲取學員目錄時發生錯誤' });
   }
 });
-
-// Configure multer for coach log attachments (allow images, PDFs, and text)
-const uploadCoachLogs = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
-  fileFilter: (req, file, cb) => {
-    const allowed = (
-      file.mimetype.startsWith('image/') ||
-      file.mimetype === 'application/pdf' ||
-      file.mimetype === 'text/plain'
-    );
-    if (allowed) return cb(null, true);
-    return cb(new Error('僅允許上傳圖片、PDF 或純文字檔'), false);
-  }
-});
-
-// 獲取用戶公開資訊 (不需要認證)
-router.get('/:id/public', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const result = await pool.query(
-      `SELECT id, name, company, title, mbti, mbti_public, email, profile_picture_url
-       FROM users 
-       WHERE id = $1 AND status = 'active'`,
-      [id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '用戶不存在或未啟用'
-      });
-    }
-    
-    const row = result.rows[0];
-    const user = {
-      id: row.id,
-      name: row.name,
-      company: row.company,
-      title: row.title,
-      email: row.email,
-      profilePictureUrl: row.profile_picture_url
-    };
-    if (row.mbti_public) {
-      user.mbti = row.mbti;
-    }
-    
-    res.json({
-      success: true,
-      user
-    });
-  } catch (error) {
-    console.error('Error fetching public user info:', error);
-    res.status(500).json({
-      success: false,
-      message: '獲取用戶資訊失敗'
-    });
-  }
-});
-
-// Apply authentication to all routes below
-router.use(authenticateToken);
 
 // 新增：儲存 MBTI 測評結果
 // @route   POST /api/users/mbti-type
