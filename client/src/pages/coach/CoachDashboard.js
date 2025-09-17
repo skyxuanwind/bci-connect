@@ -712,10 +712,11 @@ const CoachDashboard = () => {
                           查看詳情
                         </Link>
                         <Link
-                          to={`/members/${member.id}#project-plan`}
+                          to={`/project-plans/${member.id}`}
                           className="w-full btn-primary flex items-center justify-center text-sm"
                           onClick={(e) => e.stopPropagation()}
                         >
+                          <ChartBarIcon className="h-4 w-4 mr-2" />
                           專案計畫
                         </Link>
                         {member.interviewData && (
@@ -877,7 +878,7 @@ const CoachDashboard = () => {
                     {projectPlans[selectedMember.id].items?.length > 8 && (
                       <div className="mt-2 text-center">
                         <Link
-                          to={`/members/${selectedMember.id}#project-plan`}
+                          to={`/project-plans/${selectedMember.id}`}
                           className="text-xs text-gold-300 hover:text-gold-100 underline"
                           onClick={(e) => e.stopPropagation()}
                         >
