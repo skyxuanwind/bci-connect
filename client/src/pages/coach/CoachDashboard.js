@@ -86,7 +86,7 @@ const CoachDashboard = () => {
   };
 
   // 複製郵件模板
-  const copyEmailTemplate = (template, memberName = '學員姓名', coachName = '教練姓名', coachIndustry = '教練行業') => {
+  const copyEmailTemplate = (template, memberName = '學員姓名', coachName = user?.name || '教練姓名', coachIndustry = user?.industry || '教練行業') => {
     const emailContent = template
       .replace(/{memberName}/g, memberName)
       .replace(/{coachName}/g, coachName)
@@ -99,18 +99,31 @@ const CoachDashboard = () => {
     });
   };
 
-  // 發送郵件
-  const sendEmail = (template, memberEmail, memberName = '學員姓名', coachName = '教練姓名', coachIndustry = '教練行業') => {
+  // 發送郵件 - 使用 GBC 系統
+  const sendEmail = async (template, memberEmail, memberName = '學員姓名', coachName = user?.name || '教練姓名', coachIndustry = user?.industry || '教練行業') => {
     const emailContent = template
       .replace(/{memberName}/g, memberName)
       .replace(/{coachName}/g, coachName)
       .replace(/{coachIndustry}/g, coachIndustry);
     
-    // 這裡可以集成實際的郵件發送功能
-    const subject = 'GBC新會員歡迎信';
-    const mailtoLink = `mailto:${memberEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
-    window.open(mailtoLink);
-    toast.success('已打開郵件客戶端');
+    try {
+      // 使用 GBC 系統發送郵件
+      const response = await axios.post('/api/emails/send', {
+        to: memberEmail,
+        subject: 'GBC新會員歡迎信',
+        content: emailContent,
+        type: 'welcome'
+      });
+      
+      toast.success('郵件已通過 GBC 系統發送');
+    } catch (error) {
+      console.error('發送郵件失敗:', error);
+      // 如果 GBC 系統發送失敗，回退到 mailto
+      const subject = 'GBC新會員歡迎信';
+      const mailtoLink = `mailto:${memberEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
+      window.open(mailtoLink);
+      toast.warning('GBC 系統暫時無法使用，已打開郵件客戶端');
+    }
   };
 
   const getMembershipLevelBadge = (level) => {
@@ -999,7 +1012,7 @@ const CoachDashboard = () => {
                       
                       {/* 主要卡片內容 */}
                       <div className="relative">
-                        <div className="px-12 py-6">
+                        <div className="px-12 py-6 max-h-96 overflow-y-auto">
                           <div className={`rounded-lg border-2 p-6 transition-all duration-300 ${
                             getCardStyle()
                           } ${
@@ -1073,7 +1086,7 @@ const CoachDashboard = () => {
                                 {currentCard.emailTemplate && (
                                   <div className="mt-4 p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
                                     <div className="text-sm text-gold-300 mb-2 font-semibold">郵件模板：</div>
-                                    <div className="text-xs text-gold-400 mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border">
+                                    <div className="text-xs text-gold-400 mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border max-h-32 overflow-y-auto">
                                       {currentCard.emailTemplate}
                                     </div>
                                     <div className="flex gap-2">
