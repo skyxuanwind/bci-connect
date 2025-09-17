@@ -770,6 +770,85 @@ const CoachDashboard = () => {
                        completed: p?.foundationViewed || false,
                        category: '宣誓儀式',
                        priority: 'high'
+                     },
+                     {
+                       id: 'networking_time',
+                       title: '交流時間',
+                       subtitle: '可導新會員認識會員及來賓（尤其要介紹與新會員同產業類別或可以合作的會員）',
+                       description: '引導新會員與其他會員建立連結，特別關注同產業或合作機會',
+                       details: [
+                         '介紹同產業類別的會員',
+                         '尋找潛在合作機會的會員',
+                         '協助建立初步商務連結',
+                         '觀察新會員的互動情況',
+                         '適時提供交流指導'
+                       ],
+                       completed: p?.hasNetworking || false,
+                       category: '社交建立',
+                       priority: 'medium'
+                     },
+                     {
+                       id: 'meeting_guidelines',
+                       title: '例會中注意事項',
+                       subtitle: '提醒手機關機或靜音、講程中如有需要說明，也請舉手明即可，最新會員專心參與講程',
+                       description: '確保新會員了解例會禮儀和參與規範',
+                       details: [
+                         '提醒手機關機或靜音',
+                         '講程中如有需要說明，也請舉手明即可',
+                         '最新會員專心參與講程',
+                         '遵守會議秩序',
+                         '積極但適度的參與討論'
+                       ],
+                       completed: p?.understoodGuidelines || false,
+                       category: '會議禮儀',
+                       priority: 'medium'
+                     },
+                     {
+                       id: 'post_meeting',
+                       title: '會後',
+                       subtitle: '對象：新會員、導師',
+                       description: '執行：1.加入各大LINE群 2.系統教學',
+                       details: [
+                         '加入各大LINE群',
+                         '系統教學：一對一、引導單、引導金額意義及操作',
+                         'LINE群：新會員專案群、GBC聊天群、地基活動公告欄（請勿回覆）、分組第二組、軟性活動接龍群'
+                       ],
+                       completed: p?.joinedGroups || false,
+                       category: '系統整合',
+                       priority: 'high'
+                     },
+                     {
+                       id: 'one_week_followup',
+                       title: '一週內需完成',
+                       subtitle: '對象：導師',
+                       description: '執行：1.兩天內確認系統是否能登入及只及教學進度 2.幫你的新會員曝光介紹及見證學生的產品或服務 3.多元參訪體驗或體驗產品',
+                       details: [
+                         '兩天內確認系統是否能登入及只及教學進度',
+                         '幫你的新會員曝光介紹及見證學生的產品或服務',
+                         '多元參訪體驗或體驗產品',
+                         '確認新會員適應狀況',
+                         '提供必要的支持和指導'
+                       ],
+                       completed: p?.weekOneComplete || false,
+                       category: '跟進確認',
+                       priority: 'high'
+                     },
+                     {
+                       id: 'second_week',
+                       title: '第二週',
+                       subtitle: '對象：新會員、導師',
+                       description: '執行：1.引導新會員為何來賓 2.引導新會員邀請代表人員例會程 3.深度交流表完成 4.優先與核心幹部一對一',
+                       details: [
+                         '引導新會員為何來賓',
+                         '引導新會員邀請代表人員例會程',
+                         '深度交流表完成',
+                         '優先與核心幹部一對一',
+                         '建立更深層的會員關係',
+                         '了解組織架構和運作方式'
+                       ],
+                       completed: p?.weekTwoComplete || false,
+                       category: '深度整合',
+                       priority: 'medium'
                      }
                    ];
                    
