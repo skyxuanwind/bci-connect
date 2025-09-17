@@ -710,76 +710,66 @@ const CoachDashboard = () => {
                    const { p } = progressSummary(selectedMember.id);
                    const attachmentItems = [
                      {
-                       id: 'interview',
-                       title: '面談',
-                       subtitle: '一對一面談',
-                       description: '完成教練與學員的一對一面談',
+                       id: 'core_member_approval',
+                       title: '核心會員完成準予加入GBC',
+                       subtitle: '對象：新會員、導師',
+                       description: '1.建立新會員基本資料 2.一般導師指派 3.高階導師指派',
+                       details: [
+                         '建立新會員基本資料：姓名、性別、生日、手機、專業、教育',
+                         '一般導師指派',
+                         '高階導師指派'
+                       ],
                        completed: p?.hasInterview || false,
                        category: '基礎建立',
                        priority: 'high'
                      },
                      {
-                       id: 'mbti',
-                       title: 'MBTI',
-                       subtitle: '性格測驗',
-                       description: '完成MBTI性格測驗並記錄結果',
+                       id: 'pre_oath_preparation',
+                       title: '新會員宣誓前3-7天準備',
+                       subtitle: '對象：新會員、導師',
+                       description: '通知新會員準備SOP自我介紹、與文化部對接目標、GBC理念及認知',
+                       details: [
+                         '通知新會員準備SOP自我介紹',
+                         '與文化部對接目標、GBC理念及認知',
+                         '高階導師及導師介紹',
+                         '成功典範',
+                         '主要任務老客戶',
+                         '導師與新會員對接',
+                         '時間安排確認'
+                       ],
                        completed: p?.hasMbtiType || false,
-                       category: '基礎建立',
+                       category: '準備階段',
                        priority: 'high'
                      },
                      {
-                       id: 'nfc',
-                       title: 'NFC名片',
-                       subtitle: '數位名片',
-                       description: '設定並啟用NFC數位名片',
+                       id: 'day_before_oath',
+                       title: '宣誓前一天',
+                       subtitle: '對象：新會員、導師',
+                       description: '文化部通知會員內容、50個問題、領取徽章、名片、4號徽章主打',
+                       details: [
+                         '文化部通知會員內容',
+                         '50個問題',
+                         '領取徽章',
+                         '名片',
+                         '4號徽章主打'
+                       ],
                        completed: p?.hasNfcCard || false,
-                       category: '基礎建立',
+                       category: '最終準備',
                        priority: 'high'
                      },
                      {
-                       id: 'foundation',
-                       title: '地基',
-                       subtitle: '入會地基',
-                       description: '完成入會地基課程',
+                       id: 'ceremony_day',
+                       title: '第一天14:00宣前會',
+                       subtitle: '對象：新會員、導師',
+                       description: '開心50秒自我介紹引導單介紹內容、介紹環境、介紹核心幹部及職位內容',
+                       details: [
+                         '開心50秒自我介紹引導單介紹內容',
+                         '介紹環境',
+                         '介紹核心幹部及職位內容'
+                       ],
                        completed: p?.foundationViewed || false,
-                       category: '基礎建立',
+                       category: '宣誓儀式',
                        priority: 'high'
-                     },
-                     {
-                       id: 'business_card',
-                       title: '名片交換',
-                       subtitle: '商務交流',
-                       description: '進行名片交換活動',
-                       completed: (p?.businessMedia?.cardClicks || 0) > 0,
-                       category: '商務發展',
-                       priority: 'medium'
-                     },
-                     {
-                       id: 'referrals',
-                       title: '推薦系統',
-                       subtitle: '人脈拓展',
-                       description: '參與推薦系統活動',
-                       completed: (p?.referralsSent || 0) > 0,
-                       category: '商務發展',
-                       priority: 'medium'
-                     },
-                     {
-                       id: 'meetings',
-                       title: '會議參與',
-                       subtitle: '定期會議',
-                       description: '參加定期會議',
-                       completed: (p?.meetingsCount || 0) > 0,
-                       category: '持續參與',
-                       priority: 'low'
-                     },
-                     {
-                       id: 'events',
-                       title: '活動參與',
-                       subtitle: '社群活動',
-                       description: '參加社群活動',
-                       completed: (p?.eventsCount || 0) > 0,
-                       category: '持續參與',
-                       priority: 'low'
                      }
                    ];
                    
@@ -850,7 +840,21 @@ const CoachDashboard = () => {
                                   </h3>
                                 </div>
                                 <p className="text-sm text-gold-300 mb-1">{currentCard.subtitle}</p>
-                                <p className="text-xs text-gold-400">{currentCard.description}</p>
+                                <p className="text-xs text-gold-400 mb-2">{currentCard.description}</p>
+                                {/* 詳細信息列表 */}
+                                {currentCard.details && currentCard.details.length > 0 && (
+                                  <div className="mt-2">
+                                    <div className="text-xs text-gold-300 mb-1">詳細內容：</div>
+                                    <ul className="text-xs text-gold-400 space-y-1">
+                                      {currentCard.details.map((detail, index) => (
+                                        <li key={index} className="flex items-start">
+                                          <span className="text-gold-500 mr-1">•</span>
+                                          <span>{detail}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
                               <div className="text-right">
                                 <div className={`text-xs px-2 py-1 rounded-full ${
