@@ -70,6 +70,48 @@ const CoachDashboard = () => {
   const [myCoach, setMyCoach] = useState(null);
   const [myTaskUpdating, setMyTaskUpdating] = useState({}); // { [taskId]: true }
   const [myCoachLogs, setMyCoachLogs] = useState([]);
+  
+  // 卡片勾選狀態管理
+  const [checklistStates, setChecklistStates] = useState({});
+
+  // 處理勾選項目
+  const handleChecklistToggle = (cardId, itemId) => {
+    setChecklistStates(prev => ({
+      ...prev,
+      [cardId]: {
+        ...prev[cardId],
+        [itemId]: !prev[cardId]?.[itemId]
+      }
+    }));
+  };
+
+  // 複製郵件模板
+  const copyEmailTemplate = (template, memberName = '學員姓名', coachName = '教練姓名', coachIndustry = '教練行業') => {
+    const emailContent = template
+      .replace(/{memberName}/g, memberName)
+      .replace(/{coachName}/g, coachName)
+      .replace(/{coachIndustry}/g, coachIndustry);
+    
+    navigator.clipboard.writeText(emailContent).then(() => {
+      toast.success('郵件內容已複製到剪貼板');
+    }).catch(() => {
+      toast.error('複製失敗，請手動複製');
+    });
+  };
+
+  // 發送郵件
+  const sendEmail = (template, memberEmail, memberName = '學員姓名', coachName = '教練姓名', coachIndustry = '教練行業') => {
+    const emailContent = template
+      .replace(/{memberName}/g, memberName)
+      .replace(/{coachName}/g, coachName)
+      .replace(/{coachIndustry}/g, coachIndustry);
+    
+    // 這裡可以集成實際的郵件發送功能
+    const subject = 'GBC新會員歡迎信';
+    const mailtoLink = `mailto:${memberEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
+    window.open(mailtoLink);
+    toast.success('已打開郵件客戶端');
+  };
 
   const getMembershipLevelBadge = (level) => {
     const badges = {
@@ -712,16 +754,28 @@ const CoachDashboard = () => {
                      {
                        id: 'core_member_approval',
                        title: '核心會員完成準予加入GBC',
-                       subtitle: '對象：新會員、導師',
-                       description: '1.建立新會員基本資料 2.一般導師指派 3.高階導師指派',
+                       subtitle: '對象：新會員、教練',
+                       description: '教練需執行以下項目，完成後可勾選確認',
                        details: [
-                         '建立新會員基本資料：姓名、性別、生日、手機、專業、教育',
-                         '一般導師指派',
-                         '高階導師指派'
+                         '建立群組',
+                         '新會員提供基本資料及一張專業形象照片（基本資料系統自動抓學員的個人資料和大頭貼，大頭貼是能夠讓教練下載的）',
+                         '發送給學員信件'
                        ],
                        completed: p?.hasInterview || false,
                        category: '基礎建立',
-                       priority: 'high'
+                       priority: 'high',
+                       checklistItems: [
+                         { id: 'create_group', text: '建立群組', completed: false },
+                         { id: 'member_data', text: '新會員提供基本資料及一張專業形象照片', completed: false },
+                         { id: 'send_email', text: '發送給學員信件', completed: false }
+                       ],
+                       emailTemplate: `{memberName}您好:
+
+我是GBC教練{coachName}，代表性行業是{coachIndustry}，是未來4週陪伴您進入系統及融入分會的專屬教練，群組是本屆會長、副會長。
+
+未來如有任何問題，歡迎在群組請與我們提出及聯絡。
+
+最後，GBC所有教練歡迎您的加入，一同成長！`
                      },
                      {
                        id: 'pre_oath_preparation',
@@ -914,13 +968,9 @@ const CoachDashboard = () => {
                      setCurrentCardIndex((prev) => (prev - 1 + attachmentItems.length) % attachmentItems.length);
                    };
                   
-                  const getPriorityColor = (priority) => {
-                    switch (priority) {
-                      case 'high': return 'border-red-500 bg-red-500/10';
-                      case 'medium': return 'border-yellow-500 bg-yellow-500/10';
-                      case 'low': return 'border-blue-500 bg-blue-500/10';
-                      default: return 'border-gray-500 bg-gray-500/10';
-                    }
+                  // 統一使用黑金色系，移除優先級顏色區分
+                  const getCardStyle = () => {
+                    return 'border-gold-600 bg-primary-700/50';
                   };
                   
                   const getStatusColor = (completed) => {
@@ -951,7 +1001,7 @@ const CoachDashboard = () => {
                       <div className="relative">
                         <div className="px-12 py-6">
                           <div className={`rounded-lg border-2 p-6 transition-all duration-300 ${
-                            getPriorityColor(currentCard.priority)
+                            getCardStyle()
                           } ${
                             currentCard.completed ? 'bg-green-500/20 border-green-500' : ''
                           }`}>
@@ -972,8 +1022,40 @@ const CoachDashboard = () => {
                                 </div>
                                 <p className="text-base text-gold-300 mb-2 font-medium">{currentCard.subtitle}</p>
                                 <p className="text-sm text-gold-400 mb-3 leading-relaxed">{currentCard.description}</p>
+                                {/* 可勾選執行項目 */}
+                                {currentCard.checklistItems && currentCard.checklistItems.length > 0 && (
+                                  <div className="mt-3">
+                                    <div className="text-sm text-gold-300 mb-3 font-semibold">教練需執行：</div>
+                                    <div className="space-y-3">
+                                      {currentCard.checklistItems.map((item, index) => (
+                                        <div key={item.id} className="flex items-start">
+                                          <button
+                                            onClick={() => handleChecklistToggle(currentCard.id, item.id)}
+                                            className={`flex-shrink-0 w-5 h-5 rounded border-2 mr-3 mt-0.5 transition-colors ${
+                                              checklistStates[currentCard.id]?.[item.id] 
+                                                ? 'bg-green-500 border-green-500' 
+                                                : 'border-gold-400 hover:border-gold-300'
+                                            }`}
+                                          >
+                                            {checklistStates[currentCard.id]?.[item.id] && (
+                                              <CheckCircleIcon className="h-4 w-4 text-white" />
+                                            )}
+                                          </button>
+                                          <span className={`text-sm leading-relaxed ${
+                                            checklistStates[currentCard.id]?.[item.id] 
+                                              ? 'text-green-300 line-through' 
+                                              : 'text-gold-400'
+                                          }`}>
+                                            {index + 1}. {item.text}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
                                 {/* 詳細信息列表 */}
-                                {currentCard.details && currentCard.details.length > 0 && (
+                                {currentCard.details && currentCard.details.length > 0 && !currentCard.checklistItems && (
                                   <div className="mt-3">
                                     <div className="text-sm text-gold-300 mb-2 font-semibold">詳細內容：</div>
                                     <ul className="text-sm text-gold-400 space-y-2">
@@ -986,17 +1068,37 @@ const CoachDashboard = () => {
                                     </ul>
                                   </div>
                                 )}
+
+                                {/* 郵件模板和發信功能 */}
+                                {currentCard.emailTemplate && (
+                                  <div className="mt-4 p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
+                                    <div className="text-sm text-gold-300 mb-2 font-semibold">郵件模板：</div>
+                                    <div className="text-xs text-gold-400 mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border">
+                                      {currentCard.emailTemplate}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => copyEmailTemplate(currentCard.emailTemplate, selectedMember?.name)}
+                                        className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1"
+                                      >
+                                        <ClipboardDocumentListIcon className="h-4 w-4" />
+                                        一鍵複製
+                                      </button>
+                                      <button
+                                        onClick={() => sendEmail(currentCard.emailTemplate, selectedMember?.email, selectedMember?.name)}
+                                        className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
+                                      >
+                                        <EnvelopeIcon className="h-4 w-4" />
+                                        發送郵件
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                               <div className="text-right flex-shrink-0">
-                                <div className={`text-sm px-3 py-2 rounded-full font-medium ${
-                                  currentCard.priority === 'high' ? 'bg-red-600 text-red-100' :
-                                  currentCard.priority === 'medium' ? 'bg-yellow-600 text-yellow-100' :
-                                  'bg-blue-600 text-blue-100'
-                                }`}>
-                                  {currentCard.priority === 'high' ? '高優先級' :
-                                   currentCard.priority === 'medium' ? '中優先級' : '低優先級'}
+                                <div className="text-sm px-3 py-2 rounded-full font-medium bg-gold-600/20 text-gold-200 border border-gold-600">
+                                  {currentCard.category}
                                 </div>
-                                <div className="text-sm text-gold-400 mt-2 font-medium">{currentCard.category}</div>
                               </div>
                             </div>
                             
