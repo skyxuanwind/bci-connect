@@ -949,46 +949,46 @@ const CoachDashboard = () => {
                       
                       {/* 主要卡片內容 */}
                       <div className="relative">
-                        <div className="p-4">
-                          <div className={`rounded-lg border-2 p-4 transition-all duration-300 ${
+                        <div className="px-12 py-6">
+                          <div className={`rounded-lg border-2 p-6 transition-all duration-300 ${
                             getPriorityColor(currentCard.priority)
                           } ${
                             currentCard.completed ? 'bg-green-500/20 border-green-500' : ''
                           }`}>
                             {/* 卡片標題區 */}
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex-1 pr-4">
+                                <div className="flex items-center gap-3 mb-2">
                                   {currentCard.completed ? (
-                                    <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                                    <CheckCircleIcon className="h-7 w-7 text-green-400" />
                                   ) : (
-                                    <ClockIcon className="h-6 w-6 text-gold-400" />
+                                    <ClockIcon className="h-7 w-7 text-gold-400" />
                                   )}
-                                  <h3 className={`text-lg font-semibold ${
+                                  <h3 className={`text-xl font-bold ${
                                     getStatusColor(currentCard.completed)
                                   }`}>
                                     {currentCard.title}
                                   </h3>
                                 </div>
-                                <p className="text-sm text-gold-300 mb-1">{currentCard.subtitle}</p>
-                                <p className="text-xs text-gold-400 mb-2">{currentCard.description}</p>
+                                <p className="text-base text-gold-300 mb-2 font-medium">{currentCard.subtitle}</p>
+                                <p className="text-sm text-gold-400 mb-3 leading-relaxed">{currentCard.description}</p>
                                 {/* 詳細信息列表 */}
                                 {currentCard.details && currentCard.details.length > 0 && (
-                                  <div className="mt-2">
-                                    <div className="text-xs text-gold-300 mb-1">詳細內容：</div>
-                                    <ul className="text-xs text-gold-400 space-y-1">
+                                  <div className="mt-3">
+                                    <div className="text-sm text-gold-300 mb-2 font-semibold">詳細內容：</div>
+                                    <ul className="text-sm text-gold-400 space-y-2">
                                       {currentCard.details.map((detail, index) => (
                                         <li key={index} className="flex items-start">
-                                          <span className="text-gold-500 mr-1">•</span>
-                                          <span>{detail}</span>
+                                          <span className="text-gold-500 mr-2 text-base">•</span>
+                                          <span className="leading-relaxed">{detail}</span>
                                         </li>
                                       ))}
                                     </ul>
                                   </div>
                                 )}
                               </div>
-                              <div className="text-right">
-                                <div className={`text-xs px-2 py-1 rounded-full ${
+                              <div className="text-right flex-shrink-0">
+                                <div className={`text-sm px-3 py-2 rounded-full font-medium ${
                                   currentCard.priority === 'high' ? 'bg-red-600 text-red-100' :
                                   currentCard.priority === 'medium' ? 'bg-yellow-600 text-yellow-100' :
                                   'bg-blue-600 text-blue-100'
@@ -996,19 +996,19 @@ const CoachDashboard = () => {
                                   {currentCard.priority === 'high' ? '高優先級' :
                                    currentCard.priority === 'medium' ? '中優先級' : '低優先級'}
                                 </div>
-                                <div className="text-xs text-gold-400 mt-1">{currentCard.category}</div>
+                                <div className="text-sm text-gold-400 mt-2 font-medium">{currentCard.category}</div>
                               </div>
                             </div>
                             
                             {/* 狀態顯示 */}
                             <div className="flex items-center justify-between">
-                              <div className={`text-sm font-medium ${
+                              <div className={`text-base font-bold ${
                                 currentCard.completed ? 'text-green-400' : 'text-gold-400'
                               }`}>
                                 {currentCard.completed ? '✓ 已完成' : '○ 待完成'}
                               </div>
                               {currentCard.completed && (
-                                <div className="text-xs text-green-300">
+                                <div className="text-sm text-green-300 font-medium">
                                   狀態良好
                                 </div>
                               )}
@@ -1019,15 +1019,15 @@ const CoachDashboard = () => {
                         {/* 左右切換按鈕 */}
                         <button
                           onClick={prevCard}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary-600 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
                         >
-                          <ChevronLeftIcon className="h-4 w-4 text-gold-300" />
+                          <ChevronLeftIcon className="h-5 w-5 text-gold-300" />
                         </button>
                         <button
                           onClick={nextCard}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary-600 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
                         >
-                          <ChevronRightIcon className="h-4 w-4 text-gold-300" />
+                          <ChevronRightIcon className="h-5 w-5 text-gold-300" />
                         </button>
                       </div>
                       
