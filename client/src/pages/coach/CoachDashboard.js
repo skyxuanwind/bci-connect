@@ -567,190 +567,42 @@ const CoachDashboard = () => {
                   setSelectedMember(member);
                   fetchProjectPlan(member.id);
                 }}>
-                    {/* 未完成紅點提示 */}
-                    <div className="absolute top-2 right-2 flex gap-1">
-                      {missing.interview && <span title="未完成：面談" className="h-2 w-2 rounded-full bg-red-500 shadow" />}
-                      {missing.mbti && <span title="未完成：MBTI" className="h-2 w-2 rounded-full bg-red-500 shadow" />}
-                      {missing.nfc && <span title="未完成：NFC" className="h-2 w-2 rounded-full bg-red-500 shadow" />}
-                      {missing.foundation && <span title="未完成：地基" className="h-2 w-2 rounded-full bg-red-500 shadow" />}
-                    </div>
-                    <div className="p-6">
-                      {/* Header: Name + Select */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center">
-                          <Avatar 
-                            src={member.profilePictureUrl} 
-                            alt={member.name}
-                            size="large"
-                          />
-                          <div className="ml-3 flex-1">
-                            <h3 className="text-sm font-medium text-gold-100 truncate">
-                              {member.name}
-                            </h3>
-                            <div className="mt-1">
-                              {getMembershipLevelBadge(member.membershipLevel)}
+                    <div className="p-4">
+                      {/* 簡潔版卡片：大頭貼、名字、行業別、進度條 */}
+                      <div className="flex items-center mb-3">
+                        <Avatar 
+                          src={member.profilePictureUrl} 
+                          alt={member.name}
+                          size="medium"
+                        />
+                        <div className="ml-3 flex-1">
+                          <h3 className="text-sm font-medium text-gold-100 truncate">
+                            {member.name}
+                          </h3>
+                          <div className="text-xs text-gold-300 truncate">
+                            {member.company}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 進度條 */}
+                      {(() => {
+                        const percentShow = percent;
+                        return (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-gold-300">進度</span>
+                              <span className="text-xs text-gold-100 font-semibold">{percentShow}%</span>
                             </div>
-                            {member.taskCounts && (
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-700 text-yellow-100">
-                                  待 {Number(member.taskCounts.pending || 0)}
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-700 text-blue-100">
-                                  進 {Number(member.taskCounts.inProgress || 0)}
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-700 text-green-100">
-                                  完 {Number(member.taskCounts.completed || 0)}
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-700 text-red-100">
-                                  逾 {Number(member.taskCounts.overdue || 0)}
-                                </span>
-                              </div>
-                            )}
-                            {/* 進度概況徽章 */}
-                            {progressById[member.id] && (
-                              <>
-                                <div className="mt-2 flex flex-wrap gap-1">
-                                  <span className={`${progressById[member.id]?.hasInterview ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                                    {progressById[member.id]?.hasInterview ? (
-                                      <CheckCircleIcon className="h-3 w-3 mr-1" />
-                                    ) : (
-                                      <XCircleIcon className="h-3 w-3 mr-1" />
-                                    )}
-                                    面談
-                                  </span>
-                                  <span className={`${progressById[member.id]?.hasMbtiType ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                                    {progressById[member.id]?.hasMbtiType ? (
-                                      <CheckCircleIcon className="h-3 w-3 mr-1" />
-                                    ) : (
-                                      <XCircleIcon className="h-3 w-3 mr-1" />
-                                    )}
-                                    MBTI
-                                  </span>
-                                  <span className={`${progressById[member.id]?.hasNfcCard ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                                    {progressById[member.id]?.hasNfcCard ? (
-                                      <CheckCircleIcon className="h-3 w-3 mr-1" />
-                                    ) : (
-                                      <XCircleIcon className="h-3 w-3 mr-1" />
-                                    )}
-                                    NFC
-                                  </span>
-                                  <span className={`${progressById[member.id]?.foundationViewed ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                                    {progressById[member.id]?.foundationViewed ? (
-                                      <CheckCircleIcon className="h-3 w-3 mr-1" />
-                                    ) : (
-                                      <XCircleIcon className="h-3 w-3 mr-1" />
-                                    )}
-                                    地基
-                                  </span>
-                                </div>
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
-                                    會議 {Number(progressById[member.id]?.meetingsCount ?? 0)}
-                                  </span>
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
-                                    推薦出 {Number(progressById[member.id]?.referralsSent ?? 0)}
-                                  </span>
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
-                                    推薦成 {Number(progressById[member.id]?.referralsReceivedConfirmed ?? 0)}
-                                  </span>
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
-                                    活動 {Number(progressById[member.id]?.eventsCount ?? 0)}
-                                  </span>
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
-                                    名片點擊 {Number(progressById[member.id]?.businessMedia?.cardClicks ?? 0)}
-                                  </span>
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-700 text-gold-100">
-                                    CTA {Number(progressById[member.id]?.businessMedia?.ctaClicks ?? 0)}
-                                  </span>
-                                </div>
-
-                                {/* 進度條 */}
-                                {(() => {
-                                  const percentShow = percent;
-                                  const { profileScore, systemScore, bonusMbti } = progressSummary(member.id);
-                                  return (
-                                    <div className="mt-3">
-                                      <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs text-gold-300">進度</span>
-                                        <span className="text-xs text-gold-100 font-semibold">{percentShow}%</span>
-                                      </div>
-                                      <div className="w-full h-2 bg-primary-700 rounded">
-                                        <div
-                                          className={`h-2 rounded ${percentShow >= 80 ? 'bg-green-500' : percentShow >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                          style={{ width: `${percentShow}%` }}
-                                        />
-                                      </div>
-                                      <div className="mt-1 text-[11px] text-gold-400">
-                                        基礎 {profileScore}/60 ・ 系統 {systemScore}/40{bonusMbti > 0 ? ` ・ MBTI +${bonusMbti}` : ''}
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                              </>
-                            )}
+                            <div className="w-full h-2 bg-primary-700 rounded">
+                              <div
+                                className={`h-2 rounded ${percentShow >= 80 ? 'bg-green-500' : percentShow >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                style={{ width: `${percentShow}%` }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      </div>
-
-                      {/* Company and Title */}
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center text-sm text-gold-300">
-                          <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                          <span className="truncate">{member.company}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gold-300">
-                          <BriefcaseIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                          <span className="truncate">{member.title}</span>
-                        </div>
-                      </div>
-
-                      {/* Chapter */}
-                      {member.chapterName && (
-                        <div className="mb-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gold-600 text-primary-900">
-                            {member.chapterName}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Contact Info */}
-                      {member.contactNumber && (
-                        <div className="mb-4">
-                          <div className="flex items-center text-sm text-gold-300">
-                            <PhoneIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                            <span className="truncate">{member.contactNumber}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="mt-4 space-y-2">
-                        <Link
-                          to={`/members/${member.id}`}
-                          className="w-full btn-secondary flex items-center justify-center text-sm"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <EyeIcon className="h-4 w-4 mr-2" />
-                          查看詳情
-                        </Link>
-                        <Link
-                          to={`/project-plans/${member.id}`}
-                          className="w-full btn-primary flex items-center justify-center text-sm"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ChartBarIcon className="h-4 w-4 mr-2" />
-                          專案計畫
-                        </Link>
-                        {member.interviewData && (
-                          <Link
-                            to={`/member-interview/${member.id}`}
-                            className="w-full btn-primary flex items-center justify-center text-sm"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            面談表
-                          </Link>
-                        )}
-                      </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 );
