@@ -321,7 +321,7 @@ const CoachDashboard = () => {
       await axios.put(`/api/admin/users/${memberId}/status`, { status: newStatus });
       toast.success(`會員狀態已更新為${newStatus === 'active' ? '活躍' : '非活躍'}`);
       // 更新本地狀態
-      setMembers(prev => prev.map(member => 
+      setCoachees(prev => prev.map(member => 
         member.id === memberId ? { ...member, status: newStatus } : member
       ));
       if (selectedMember && selectedMember.id === memberId) {
