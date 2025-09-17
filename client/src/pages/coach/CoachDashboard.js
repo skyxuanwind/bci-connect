@@ -849,6 +849,58 @@ const CoachDashboard = () => {
                        completed: p?.weekTwoComplete || false,
                        category: '深度整合',
                        priority: 'medium'
+                     },
+                     {
+                       id: 'third_week',
+                       title: '第三週',
+                       subtitle: '對象：新會員、導師',
+                       description: '執行：1.確認新會員系統使用狀況及進度 2.與幹部一對一狀況交流及回報進度',
+                       details: [
+                         '確認新會員系統使用狀況及進度',
+                         '與幹部一對一狀況交流及回報進度',
+                         '評估新會員適應程度',
+                         '提供必要的額外支持',
+                         '記錄進度報告'
+                       ],
+                       completed: p?.weekThreeComplete || false,
+                       category: '進度追蹤',
+                       priority: 'medium'
+                     },
+                     {
+                       id: 'fourth_week',
+                       title: '第四週',
+                       subtitle: '對象：新會員、導師',
+                       description: '執行：1.確認新會員使用系統狀況及進度 2.確認與核心一對一進度狀況 3.優化自我介紹及介紹主題簡報(50秒、20分鐘)',
+                       details: [
+                         '確認新會員使用系統狀況及進度',
+                         '確認與核心一對一進度狀況',
+                         '優化自我介紹及介紹主題簡報(50秒、20分鐘)',
+                         '1.20分鐘主題簡報教學、並排定簡報時間',
+                         '準備正式簡報內容',
+                         '練習簡報技巧和時間控制'
+                       ],
+                       completed: p?.weekFourComplete || false,
+                       category: '技能提升',
+                       priority: 'high'
+                     },
+                     {
+                       id: 'graduation_standards',
+                       title: '結業標準',
+                       subtitle: '對象：新會員',
+                       description: '執行：1.八長一對一 2.完成系統教學 3.完成基本引薦行為',
+                       details: [
+                         '新會員執行項目：',
+                         '• 八長一對一',
+                         '• 完成系統教學',
+                         '• 完成基本引薦行為',
+                         '核心幹部執行項目：',
+                         '• 確保新會員狀態良好進度',
+                         '• 完成審核',
+                         '• 公告群組歡迎與其一對一'
+                       ],
+                       completed: p?.graduationComplete || false,
+                       category: '結業認證',
+                       priority: 'high'
                      }
                    ];
                    
