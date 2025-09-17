@@ -17,7 +17,8 @@ import {
   ClipboardDocumentListIcon,
   EnvelopeIcon,
   ChartBarIcon,
-  ClockIcon
+  ClockIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -308,6 +309,27 @@ const CoachDashboard = () => {
     } catch (e) {
       console.error('新增教練紀錄失敗', e);
       toast.error(e.response?.data?.message || '新增教練紀錄失敗');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // 更新會員狀態
+  const updateMemberStatus = async (memberId, newStatus) => {
+    setActionLoading(true);
+    try {
+      await axios.put(`/api/admin/users/${memberId}/status`, { status: newStatus });
+      toast.success(`會員狀態已更新為${newStatus === 'active' ? '活躍' : '非活躍'}`);
+      // 更新本地狀態
+      setMembers(prev => prev.map(member => 
+        member.id === memberId ? { ...member, status: newStatus } : member
+      ));
+      if (selectedMember && selectedMember.id === memberId) {
+        setSelectedMember(prev => ({ ...prev, status: newStatus }));
+      }
+    } catch (error) {
+      console.error('更新會員狀態失敗:', error);
+      toast.error(error.response?.data?.message || '更新會員狀態失敗');
     } finally {
       setActionLoading(false);
     }
@@ -968,6 +990,31 @@ const CoachDashboard = () => {
                   >
                     <ChartBarIcon className="h-5 w-5 mr-1" /> 專案計劃
                   </Link>
+                  <button
+                    type="button"
+                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
+                    onClick={() => {
+                      // 快速更新會員狀態
+                      const newStatus = selectedMember.status === 'active' ? 'inactive' : 'active';
+                      updateMemberStatus(selectedMember.id, newStatus);
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <CheckCircleIcon className="h-5 w-5 mr-1" /> 
+                    {selectedMember.status === 'active' ? '設為非活躍' : '設為活躍'}
+                  </button>
+                  <a
+                    href={`/nfc/${selectedMember.id}`}
+                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
+                  >
+                    <CreditCardIcon className="h-5 w-5 mr-1" /> NFC名片
+                  </a>
+                  <a
+                    href={`mailto:${selectedMember.email}`}
+                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
+                  >
+                    <EnvelopeIcon className="h-5 w-5 mr-1" /> 發送郵件
+                  </a>
                 </div>
               </div>
             </div>

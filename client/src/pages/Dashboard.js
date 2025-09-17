@@ -12,7 +12,11 @@ import {
   ArrowRightIcon,
   BuildingOfficeIcon,
   StarIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  CreditCardIcon,
+  CalendarIcon,
+  QrCodeIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
@@ -89,6 +93,34 @@ const Dashboard = () => {
       href: '/profile',
       icon: UserIcon,
       color: 'bg-green-500'
+    },
+    {
+      title: 'NFC 名片',
+      description: '管理您的電子名片',
+      href: '/nfc-card',
+      icon: CreditCardIcon,
+      color: 'bg-purple-500'
+    },
+    {
+      title: '會議安排',
+      description: '查看和安排會議',
+      href: '/meetings',
+      icon: CalendarIcon,
+      color: 'bg-indigo-500'
+    },
+    {
+      title: '活動報到',
+      description: 'NFC 和 QR Code 報到',
+      href: '/nfc-checkin',
+      icon: QrCodeIcon,
+      color: 'bg-orange-500'
+    },
+    {
+      title: '推薦系統',
+      description: '推薦新會員加入',
+      href: '/referrals',
+      icon: UserPlusIcon,
+      color: 'bg-teal-500'
     }
   ];
 

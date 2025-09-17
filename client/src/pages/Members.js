@@ -15,7 +15,9 @@ import {
   BriefcaseIcon,
   PhoneIcon,
   EyeIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  EnvelopeIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
 
 const Members = () => {
@@ -379,13 +381,55 @@ const Members = () => {
                   {/* Action Buttons */}
                   {canViewMember(member.membershipLevel) && (
                     <div className="mt-4 space-y-2">
-                      <Link
-                        to={`/members/${member.id}`}
-                        className="w-full btn-secondary flex items-center justify-center text-sm"
-                      >
-                        <EyeIcon className="h-4 w-4 mr-2" />
-                        查看詳情
-                      </Link>
+                      {/* 快速操作按鈕組 */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link
+                          to={`/members/${member.id}`}
+                          className="btn-secondary flex items-center justify-center text-xs py-2"
+                          title="查看會員詳細資料"
+                        >
+                          <EyeIcon className="h-3 w-3 mr-1" />
+                          詳情
+                        </Link>
+                        
+                        {/* 聯絡按鈕 */}
+                        {member.contactNumber && (
+                          <a
+                            href={`tel:${member.contactNumber}`}
+                            className="btn-secondary flex items-center justify-center text-xs py-2"
+                            title="撥打電話"
+                          >
+                            <PhoneIcon className="h-3 w-3 mr-1" />
+                            電話
+                          </a>
+                        )}
+                        
+                        {/* Email按鈕 */}
+                        {member.email && (
+                          <a
+                            href={`mailto:${member.email}`}
+                            className="btn-secondary flex items-center justify-center text-xs py-2"
+                            title="發送郵件"
+                          >
+                            <EnvelopeIcon className="h-3 w-3 mr-1" />
+                            郵件
+                          </a>
+                        )}
+                        
+                        {/* 名片按鈕 */}
+                        {member.nfcCardUrl && (
+                          <a
+                            href={member.nfcCardUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-secondary flex items-center justify-center text-xs py-2"
+                            title="查看電子名片"
+                          >
+                            <CreditCardIcon className="h-3 w-3 mr-1" />
+                            名片
+                          </a>
+                        )}
+                      </div>
                       
                       {/* Interview Schedule Button */}
                       {member.interviewData && (

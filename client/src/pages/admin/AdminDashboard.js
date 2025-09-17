@@ -13,7 +13,12 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ArrowTrendingUpIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  CalendarIcon,
+  CreditCardIcon,
+  CogIcon,
+  ArrowPathIcon,
+  ShieldExclamationIcon
 } from '@heroicons/react/24/outline';
 
 const AdminDashboard = () => {
@@ -69,6 +74,41 @@ const AdminDashboard = () => {
       href: '/admin/chapters',
       icon: BuildingOfficeIcon,
       color: 'bg-purple-500'
+    },
+    {
+      title: '活動管理',
+      description: '創建和管理活動',
+      href: '/admin/events',
+      icon: CalendarIcon,
+      color: 'bg-green-500'
+    },
+    {
+      title: 'NFC 分析',
+      description: '查看 NFC 使用統計',
+      href: '/admin/nfc-analytics',
+      icon: CreditCardIcon,
+      color: 'bg-indigo-500'
+    },
+    {
+      title: '系統設定',
+      description: '管理系統配置',
+      href: '/admin/settings',
+      icon: CogIcon,
+      color: 'bg-gray-500'
+    },
+    {
+      title: '數據同步',
+      description: '司法院判決書同步',
+      href: '/admin/judgment-sync',
+      icon: ArrowPathIcon,
+      color: 'bg-orange-500'
+    },
+    {
+      title: '黑名單管理',
+      description: '管理黑名單用戶',
+      href: '/admin/blacklist',
+      icon: ShieldExclamationIcon,
+      color: 'bg-red-500'
     }
   ];
 
