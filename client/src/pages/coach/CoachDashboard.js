@@ -961,6 +961,12 @@ const CoachDashboard = () => {
                   >
                     查看詳情
                   </Link>
+                  <Link
+                    to={`/project-plans/${selectedMember.id}`}
+                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
+                  >
+                    <ChartBarIcon className="h-5 w-5 mr-1" /> 專案計劃
+                  </Link>
                 </div>
               </div>
             </div>
