@@ -15,7 +15,9 @@ import {
   XMarkIcon,
   CalendarIcon,
   ClipboardDocumentListIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  ChartBarIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -50,6 +52,10 @@ const CoachDashboard = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [quickTitle, setQuickTitle] = useState('');
   const [quickDue, setQuickDue] = useState('');
+  
+  // 專案計劃狀態
+  const [projectPlans, setProjectPlans] = useState({});
+  const [projectPlanLoading, setProjectPlanLoading] = useState({});
 
   // 學員視圖（非教練）
   const [myTasks, setMyTasks] = useState([]);
@@ -272,6 +278,22 @@ const CoachDashboard = () => {
       console.error('指派任務失敗', e);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // 獲取專案計劃
+  const fetchProjectPlan = async (memberId) => {
+    if (projectPlans[memberId] || projectPlanLoading[memberId]) return;
+    
+    setProjectPlanLoading(prev => ({ ...prev, [memberId]: true }));
+    try {
+      const response = await axios.get(`/api/users/member/${memberId}/project-plan`);
+      setProjectPlans(prev => ({ ...prev, [memberId]: response.data }));
+    } catch (error) {
+      console.error('獲取專案計劃失敗:', error);
+      setProjectPlans(prev => ({ ...prev, [memberId]: null }));
+    } finally {
+      setProjectPlanLoading(prev => ({ ...prev, [memberId]: false }));
     }
   };
 
@@ -519,7 +541,10 @@ const CoachDashboard = () => {
                   foundation: !(p?.foundationViewed)
                 };
                 return (
-                  <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer relative" onClick={() => setSelectedMember(member)}>
+                  <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer relative" onClick={() => {
+                  setSelectedMember(member);
+                  fetchProjectPlan(member.id);
+                }}>
                     {/* 未完成紅點提示 */}
                     <div className="absolute top-2 right-2 flex gap-1">
                       {missing.interview && <span title="未完成：面談" className="h-2 w-2 rounded-full bg-red-500 shadow" />}
@@ -792,6 +817,83 @@ const CoachDashboard = () => {
                   </div>
                 );
               })()}
+
+              {/* 專案計劃 */}
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <ChartBarIcon className="h-5 w-5 text-gold-300" />
+                  <div className="text-lg font-semibold text-gold-100">專案計劃</div>
+                </div>
+                
+                {projectPlanLoading[selectedMember.id] && (
+                  <div className="flex items-center gap-2 text-gold-300">
+                    <LoadingSpinner size="sm" />
+                    <span className="text-sm">載入專案計劃中...</span>
+                  </div>
+                )}
+                
+                {!projectPlanLoading[selectedMember.id] && projectPlans[selectedMember.id] && (
+                  <div className="bg-primary-700/40 rounded-md p-4 border border-gold-700">
+                    {/* 專案進度總覽 */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-sm text-gold-300">完成度</div>
+                      <div className="text-sm font-medium text-gold-100">
+                        {projectPlans[selectedMember.id].summary?.percent || 0}%
+                      </div>
+                    </div>
+                    <div className="w-full h-2 bg-primary-700 rounded-full overflow-hidden mb-3">
+                      <div 
+                        className="h-2 bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300" 
+                        style={{ width: `${projectPlans[selectedMember.id].summary?.percent || 0}%` }}
+                      />
+                    </div>
+                    
+                    {/* 專案項目列表 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {projectPlans[selectedMember.id].items?.slice(0, 8).map((item, index) => (
+                        <div key={item.key || index} className="flex items-center gap-2 p-2 rounded border border-gold-700/50">
+                          {item.completed ? (
+                            <CheckCircleIcon className="h-4 w-4 text-green-400 flex-shrink-0" />
+                          ) : (
+                            <ClockIcon className="h-4 w-4 text-gold-400 flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-xs font-medium truncate ${
+                              item.completed ? 'text-green-100' : 'text-gold-200'
+                            }`}>
+                              {item.title}
+                            </div>
+                            {item.value && (
+                              <div className="text-[10px] text-gold-400 truncate">
+                                {item.value}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* 顯示更多項目的提示 */}
+                    {projectPlans[selectedMember.id].items?.length > 8 && (
+                      <div className="mt-2 text-center">
+                        <Link
+                          to={`/members/${selectedMember.id}#project-plan`}
+                          className="text-xs text-gold-300 hover:text-gold-100 underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          查看完整專案計劃 ({projectPlans[selectedMember.id].items.length} 項)
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {!projectPlanLoading[selectedMember.id] && !projectPlans[selectedMember.id] && (
+                  <div className="text-sm text-gold-400 bg-primary-700/20 rounded-md p-3 border border-gold-700/50">
+                    尚無專案計劃資料
+                  </div>
+                )}
+              </div>
 
               {/* 快捷操作 */}
               <div className="mt-6">
