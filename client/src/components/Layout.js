@@ -103,8 +103,6 @@ const Layout = ({ children }) => {
   const coachFeatures = [
     { name: '教練儀表板', href: '/coach', icon: SparklesIcon },
     { name: '學員目錄', href: '/coachees', icon: UsersIcon },
-    // 將「任務進度」合併到教練儀表板，保留入口至 /coach
-    { name: '任務進度', href: '/coach', icon: RectangleStackIcon },
   ];
 
   // 會員以上功能
