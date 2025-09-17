@@ -46,8 +46,14 @@ const CoachDashboard = () => {
   // 已移除未使用的 progressLoading 以清理警告
   const [selectedMember, setSelectedMember] = useState(null);
   const [sortKey, setSortKey] = useState(() => localStorage.getItem('coachSortKey') || 'default'); // default | overdue_desc | meetings_desc
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const canPrev = useMemo(() => page > 1, [page]);
   const canNext = useMemo(() => page < (pagination?.totalPages || 1), [page, pagination]);
+
+  // 當選擇不同學員時重置卡片索引
+  useEffect(() => {
+    setCurrentCardIndex(0);
+  }, [selectedMember?.id]);
 
   // Modal 內操作狀態
   const [actionLoading, setActionLoading] = useState(false);
@@ -693,81 +699,217 @@ const CoachDashboard = () => {
                 );
               })()}
 
-              {/* 專案計劃 */}
+              {/* 附件項目卡片 */}
               <div className="mt-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <ChartBarIcon className="h-5 w-5 text-gold-300" />
-                  <div className="text-lg font-semibold text-gold-100">專案計劃</div>
+                  <ClipboardDocumentListIcon className="h-5 w-5 text-gold-300" />
+                  <div className="text-lg font-semibold text-gold-100">附件項目</div>
                 </div>
                 
-                {projectPlanLoading[selectedMember.id] && (
-                  <div className="flex items-center gap-2 text-gold-300">
-                    <LoadingSpinner size="sm" />
-                    <span className="text-sm">載入專案計劃中...</span>
-                  </div>
-                )}
-                
-                {!projectPlanLoading[selectedMember.id] && projectPlans[selectedMember.id] && (
-                  <div className="bg-primary-700/40 rounded-md p-4 border border-gold-700">
-                    {/* 專案進度總覽 */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-sm text-gold-300">完成度</div>
-                      <div className="text-sm font-medium text-gold-100">
-                        {projectPlans[selectedMember.id].summary?.percent || 0}%
+                {(() => {
+                   const { p } = progressSummary(selectedMember.id);
+                   const attachmentItems = [
+                     {
+                       id: 'interview',
+                       title: '面談',
+                       subtitle: '一對一面談',
+                       description: '完成教練與學員的一對一面談',
+                       completed: p?.hasInterview || false,
+                       category: '基礎建立',
+                       priority: 'high'
+                     },
+                     {
+                       id: 'mbti',
+                       title: 'MBTI',
+                       subtitle: '性格測驗',
+                       description: '完成MBTI性格測驗並記錄結果',
+                       completed: p?.hasMbtiType || false,
+                       category: '基礎建立',
+                       priority: 'high'
+                     },
+                     {
+                       id: 'nfc',
+                       title: 'NFC名片',
+                       subtitle: '數位名片',
+                       description: '設定並啟用NFC數位名片',
+                       completed: p?.hasNfcCard || false,
+                       category: '基礎建立',
+                       priority: 'high'
+                     },
+                     {
+                       id: 'foundation',
+                       title: '地基',
+                       subtitle: '入會地基',
+                       description: '完成入會地基課程',
+                       completed: p?.foundationViewed || false,
+                       category: '基礎建立',
+                       priority: 'high'
+                     },
+                     {
+                       id: 'business_card',
+                       title: '名片交換',
+                       subtitle: '商務交流',
+                       description: '進行名片交換活動',
+                       completed: (p?.businessMedia?.cardClicks || 0) > 0,
+                       category: '商務發展',
+                       priority: 'medium'
+                     },
+                     {
+                       id: 'referrals',
+                       title: '推薦系統',
+                       subtitle: '人脈拓展',
+                       description: '參與推薦系統活動',
+                       completed: (p?.referralsSent || 0) > 0,
+                       category: '商務發展',
+                       priority: 'medium'
+                     },
+                     {
+                       id: 'meetings',
+                       title: '會議參與',
+                       subtitle: '定期會議',
+                       description: '參加定期會議',
+                       completed: (p?.meetingsCount || 0) > 0,
+                       category: '持續參與',
+                       priority: 'low'
+                     },
+                     {
+                       id: 'events',
+                       title: '活動參與',
+                       subtitle: '社群活動',
+                       description: '參加社群活動',
+                       completed: (p?.eventsCount || 0) > 0,
+                       category: '持續參與',
+                       priority: 'low'
+                     }
+                   ];
+                   
+                   const currentCard = attachmentItems[currentCardIndex] || attachmentItems[0];
+                   
+                   const nextCard = () => {
+                     setCurrentCardIndex((prev) => (prev + 1) % attachmentItems.length);
+                   };
+                   
+                   const prevCard = () => {
+                     setCurrentCardIndex((prev) => (prev - 1 + attachmentItems.length) % attachmentItems.length);
+                   };
+                  
+                  const getPriorityColor = (priority) => {
+                    switch (priority) {
+                      case 'high': return 'border-red-500 bg-red-500/10';
+                      case 'medium': return 'border-yellow-500 bg-yellow-500/10';
+                      case 'low': return 'border-blue-500 bg-blue-500/10';
+                      default: return 'border-gray-500 bg-gray-500/10';
+                    }
+                  };
+                  
+                  const getStatusColor = (completed) => {
+                    return completed ? 'text-green-400' : 'text-gold-400';
+                  };
+                  
+                  return (
+                    <div className="bg-primary-700/40 rounded-lg border border-gold-700 overflow-hidden">
+                      {/* 卡片導航指示器 */}
+                      <div className="flex items-center justify-between p-3 border-b border-gold-700/50">
+                        <div className="flex gap-1">
+                          {attachmentItems.map((_, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setCurrentCardIndex(index)}
+                              className={`w-2 h-2 rounded-full transition-colors ${
+                                index === currentCardIndex ? 'bg-gold-400' : 'bg-gold-700'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <div className="text-xs text-gold-300">
+                          {currentCardIndex + 1} / {attachmentItems.length}
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full h-2 bg-primary-700 rounded-full overflow-hidden mb-3">
-                      <div 
-                        className="h-2 bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300" 
-                        style={{ width: `${projectPlans[selectedMember.id].summary?.percent || 0}%` }}
-                      />
-                    </div>
-                    
-                    {/* 專案項目列表 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {projectPlans[selectedMember.id].items?.slice(0, 8).map((item, index) => (
-                        <div key={item.key || index} className="flex items-center gap-2 p-2 rounded border border-gold-700/50">
-                          {item.completed ? (
-                            <CheckCircleIcon className="h-4 w-4 text-green-400 flex-shrink-0" />
-                          ) : (
-                            <ClockIcon className="h-4 w-4 text-gold-400 flex-shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className={`text-xs font-medium truncate ${
-                              item.completed ? 'text-green-100' : 'text-gold-200'
-                            }`}>
-                              {item.title}
-                            </div>
-                            {item.value && (
-                              <div className="text-[10px] text-gold-400 truncate">
-                                {item.value}
+                      
+                      {/* 主要卡片內容 */}
+                      <div className="relative">
+                        <div className="p-4">
+                          <div className={`rounded-lg border-2 p-4 transition-all duration-300 ${
+                            getPriorityColor(currentCard.priority)
+                          } ${
+                            currentCard.completed ? 'bg-green-500/20 border-green-500' : ''
+                          }`}>
+                            {/* 卡片標題區 */}
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  {currentCard.completed ? (
+                                    <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                                  ) : (
+                                    <ClockIcon className="h-6 w-6 text-gold-400" />
+                                  )}
+                                  <h3 className={`text-lg font-semibold ${
+                                    getStatusColor(currentCard.completed)
+                                  }`}>
+                                    {currentCard.title}
+                                  </h3>
+                                </div>
+                                <p className="text-sm text-gold-300 mb-1">{currentCard.subtitle}</p>
+                                <p className="text-xs text-gold-400">{currentCard.description}</p>
                               </div>
-                            )}
+                              <div className="text-right">
+                                <div className={`text-xs px-2 py-1 rounded-full ${
+                                  currentCard.priority === 'high' ? 'bg-red-600 text-red-100' :
+                                  currentCard.priority === 'medium' ? 'bg-yellow-600 text-yellow-100' :
+                                  'bg-blue-600 text-blue-100'
+                                }`}>
+                                  {currentCard.priority === 'high' ? '高優先級' :
+                                   currentCard.priority === 'medium' ? '中優先級' : '低優先級'}
+                                </div>
+                                <div className="text-xs text-gold-400 mt-1">{currentCard.category}</div>
+                              </div>
+                            </div>
+                            
+                            {/* 狀態顯示 */}
+                            <div className="flex items-center justify-between">
+                              <div className={`text-sm font-medium ${
+                                currentCard.completed ? 'text-green-400' : 'text-gold-400'
+                              }`}>
+                                {currentCard.completed ? '✓ 已完成' : '○ 待完成'}
+                              </div>
+                              {currentCard.completed && (
+                                <div className="text-xs text-green-300">
+                                  狀態良好
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                    
-                    {/* 顯示更多項目的提示 */}
-                    {projectPlans[selectedMember.id].items?.length > 8 && (
-                      <div className="mt-2 text-center">
-                        <Link
-                          to={`/project-plans/${selectedMember.id}`}
-                          className="text-xs text-gold-300 hover:text-gold-100 underline"
-                          onClick={(e) => e.stopPropagation()}
+                        
+                        {/* 左右切換按鈕 */}
+                        <button
+                          onClick={prevCard}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary-600 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors"
                         >
-                          查看完整專案計劃 ({projectPlans[selectedMember.id].items.length} 項)
-                        </Link>
+                          <ChevronLeftIcon className="h-4 w-4 text-gold-300" />
+                        </button>
+                        <button
+                          onClick={nextCard}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary-600 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors"
+                        >
+                          <ChevronRightIcon className="h-4 w-4 text-gold-300" />
+                        </button>
                       </div>
-                    )}
-                  </div>
-                )}
-                
-                {!projectPlanLoading[selectedMember.id] && !projectPlans[selectedMember.id] && (
-                  <div className="text-sm text-gold-400 bg-primary-700/20 rounded-md p-3 border border-gold-700/50">
-                    尚無專案計劃資料
-                  </div>
-                )}
+                      
+                      {/* 底部統計 */}
+                      <div className="p-3 border-t border-gold-700/50 bg-primary-800/50">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="text-gold-300">
+                            已完成: {attachmentItems.filter(item => item.completed).length} / {attachmentItems.length}
+                          </div>
+                          <div className="text-gold-400">
+                            完成率: {Math.round((attachmentItems.filter(item => item.completed).length / attachmentItems.length) * 100)}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* 快捷操作 */}
