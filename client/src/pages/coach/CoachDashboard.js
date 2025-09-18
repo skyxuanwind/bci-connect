@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from '../../config/axios';
 import Avatar from '../../components/Avatar';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import DressCodeExamples from '../../components/DressCodeExamples';
 import {
   BuildingOfficeIcon,
   BriefcaseIcon,
@@ -1180,6 +1181,12 @@ const CoachDashboard = () => {
                                                   {detail.subtext && (
                                                     <div className="mt-2 text-xs text-gold-500 leading-relaxed whitespace-pre-line bg-primary-800/30 p-2 rounded border border-gold-700/30">
                                                       {detail.subtext}
+                                                    </div>
+                                                  )}
+                                                  {/* 服裝儀容範例 */}
+                                                  {detail.id === 'dress_code' && (
+                                                    <div className="mt-3">
+                                                      <DressCodeExamples />
                                                     </div>
                                                   )}
                                                 </div>
