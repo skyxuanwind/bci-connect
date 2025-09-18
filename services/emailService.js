@@ -634,6 +634,88 @@ const sendApprovalNotification = async ({ email, name, membershipLevel }) => {
   }
 };
 
+// 教練發送郵件給學員
+const sendCoachToMemberEmail = async ({ to, subject, content, type = 'general', coachId, coachName }) => {
+  try {
+    const transporter = createTransporter();
+    
+    // 驗證 SMTP 連接
+    await transporter.verify();
+    console.log('SMTP server connection verified successfully for coach email');
+    
+    const mailOptions = {
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
+      to: to,
+      bcc: process.env.SMTP_BCC || process.env.SMTP_USER,
+      subject: subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2c3e50; margin: 0;">GBC Connect</h1>
+              <p style="color: #7f8c8d; margin: 5px 0 0 0;">來自教練的訊息</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">親愛的學員，</p>
+              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6;">您的教練 <strong>${coachName}</strong> 透過 GBC 系統發送了一則訊息給您：</p>
+            </div>
+            
+            <div style="background-color: #f8f9fa; border-left: 4px solid #3498db; padding: 20px; margin: 20px 0; border-radius: 5px;">
+              <div style="color: #2c3e50; font-size: 16px; line-height: 1.8; white-space: pre-line;">
+                ${content}
+              </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
+              <p style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">如有任何問題，請直接回覆此郵件或聯繫您的教練。</p>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+              <p style="color: #7f8c8d; font-size: 12px;">此郵件由 GBC Connect 系統代為發送</p>
+              <p style="color: #7f8c8d; font-size: 12px;">教練：${coachName} | 系統信箱：${process.env.SMTP_USER}</p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+    
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Coach email sendMail result:', {
+        accepted: info.accepted,
+        rejected: info.rejected,
+        response: info.response,
+        messageId: info.messageId,
+        coach: coachName,
+        recipient: to,
+        type: type
+      });
+
+      return {
+        success: true,
+        messageId: info.messageId,
+        accepted: info.accepted,
+        rejected: info.rejected
+      };
+
+    } catch (sendError) {
+      console.error('Coach email send error:', sendError);
+      return {
+        success: false,
+        error: `郵件發送失敗: ${sendError.message}`
+      };
+    }
+    
+  } catch (error) {
+    console.error('Coach email service error:', error);
+    return {
+      success: false,
+      error: `郵件服務錯誤: ${error.message}`
+    };
+  }
+};
+
 module.exports = {
   generateVerificationCode,
   sendEmailVerification,
@@ -642,5 +724,6 @@ module.exports = {
   sendMeetingNotification,
   sendPasswordResetEmail,
   sendWelcomeEmail,
-  sendApprovalNotification
+  sendApprovalNotification,
+  sendCoachToMemberEmail
 };

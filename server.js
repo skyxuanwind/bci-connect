@@ -34,6 +34,7 @@ const feedbackRoutes = require('./routes/feedback');
 const wishesRoutes = require('./routes/wishes');
 const notificationsRoutes = require('./routes/notifications');
 const aiProfilesRoutes = require('./routes/ai-profiles');
+const emailRoutes = require('./routes/emails');
 const { initializeDatabase, pool } = require('./config/database');
 const { connectMongoDB } = require('./config/mongodb');
 const judgmentSyncService = require('./services/judgmentSyncService');
@@ -148,6 +149,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/ai-profiles', aiProfilesRoutes);
+app.use('/api/emails', emailRoutes);
 
 // 新增 AI 聯絡人端點
 const aiContactsRoutes = require('./routes/ai-contacts');
