@@ -814,16 +814,23 @@ const CoachDashboard = () => {
                      {
                        id: 'pre_oath_preparation',
                        title: '新會員宣誓前3-7天準備',
-                       subtitle: '對象：新會員、導師',
-                       description: '通知新會員準備SOP自我介紹、與文化部對接目標、GBC理念及認知',
+                       subtitle: '對象：新會員、教練',
+                       description: '協助新會員準備自我介紹範本及說明共同目標',
                        details: [
-                         '通知新會員準備SOP自我介紹',
-                         '與文化部對接目標、GBC理念及認知',
-                         '高階導師及導師介紹',
-                         '成功典範',
-                         '主要任務老客戶',
-                         '導師與新會員對接',
-                         '時間安排確認'
+                         {
+                           id: 'self_intro_template',
+                           text: '協助新會員準備50秒自我介紹範本',
+                           subtext: `大家好，我是${selectedMember?.industry || selectedMember?.company || 'OOO'}代表，${selectedMember?.name || 'XXX'}\n主要產品/服務內容\n成功見證\n主要代表性客戶\n獨特銷售或專業項\n請幫我引薦對象\n（${selectedMember?.industry || selectedMember?.company || 'OOO'}自動填入學員產業，${selectedMember?.name || 'XXX'}自動填入學員姓名，AI可以依照學員的產業提供自我介紹範本）`,
+                           completed: false,
+                           type: 'checkbox'
+                         },
+                         {
+                           id: 'explain_goals_foundation',
+                           text: '再次說明共同目標、GBC地基及成功經驗',
+                           subtext: `GBC地基狀態：${selectedMember?.profile?.foundationViewed ? '✅ 學員已閱讀商會地基' : '❌ 學員尚未閱讀商會地基'}\n（系統自動偵測學員是否有到商會地基勾選已閱讀）`,
+                           completed: false,
+                           type: 'checkbox'
+                         }
                        ],
                        completed: p?.hasMbtiType || false,
                        category: '準備階段',
@@ -1092,11 +1099,40 @@ const CoachDashboard = () => {
                                 {currentCard.details && currentCard.details.length > 0 && !currentCard.checklistItems && (
                                   <div className="mt-3">
                                     <div className="text-sm text-gold-300 mb-2 font-semibold">詳細內容：</div>
-                                    <ul className="text-sm text-gold-400 space-y-2">
+                                    <ul className="text-sm text-gold-400 space-y-3">
                                       {currentCard.details.map((detail, index) => (
                                         <li key={index} className="flex items-start">
-                                          <span className="text-gold-500 mr-2 text-base">•</span>
-                                          <span className="leading-relaxed">{detail}</span>
+                                          {typeof detail === 'object' && detail.type === 'checkbox' ? (
+                                            <div className="w-full">
+                                              <div className="flex items-start">
+                                                <input 
+                                                  type="checkbox" 
+                                                  id={`detail-${index}`}
+                                                  checked={detail.completed}
+                                                  onChange={() => {
+                                                    // TODO: 實現checkbox狀態更新邏輯
+                                                    console.log(`Toggle checkbox for ${detail.id}`);
+                                                  }}
+                                                  className="mt-1 mr-3 h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2"
+                                                />
+                                                <div className="flex-1">
+                                                  <label htmlFor={`detail-${index}`} className="leading-relaxed font-medium cursor-pointer">
+                                                    {detail.text}
+                                                  </label>
+                                                  {detail.subtext && (
+                                                    <div className="mt-2 text-xs text-gold-500 leading-relaxed whitespace-pre-line bg-primary-800/30 p-2 rounded border border-gold-700/30">
+                                                      {detail.subtext}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <>
+                                              <span className="text-gold-500 mr-2 text-base">•</span>
+                                              <span className="leading-relaxed">{typeof detail === 'string' ? detail : detail.text}</span>
+                                            </>
+                                          )}
                                         </li>
                                       ))}
                                     </ul>
