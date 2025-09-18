@@ -10,47 +10,28 @@ const DressCodeExamples = () => {
         <div className="text-center">
           <h5 className="text-sm font-medium text-gray-700 mb-3">男性正式服裝</h5>
           <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <svg
-              width="120"
-              height="200"
-              viewBox="0 0 120 200"
-              className="mx-auto mb-3"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* 頭部 */}
-              <circle cx="60" cy="25" r="15" fill="#F4C2A1" stroke="#E8B088" strokeWidth="1"/>
-              
-              {/* 頭髮 */}
-              <path d="M45 15 Q60 5 75 15 Q75 20 60 25 Q45 20 45 15" fill="#4A4A4A"/>
-              
-              {/* 西裝外套 */}
-              <rect x="35" y="40" width="50" height="80" rx="5" fill="#2D3748"/>
-              
-              {/* 襯衫 */}
-              <rect x="40" y="45" width="40" height="70" fill="#FFFFFF"/>
-              
-              {/* 領帶 */}
-              <rect x="55" y="45" width="10" height="50" fill="#1A365D"/>
-              
-              {/* 西裝褲 */}
-              <rect x="40" y="120" width="40" height="60" fill="#2D3748"/>
-              
-              {/* 皮鞋 */}
-              <ellipse cx="50" cy="190" rx="12" ry="6" fill="#1A1A1A"/>
-              <ellipse cx="70" cy="190" rx="12" ry="6" fill="#1A1A1A"/>
-              
-              {/* 手臂 */}
-              <rect x="25" y="50" width="10" height="40" fill="#2D3748"/>
-              <rect x="85" y="50" width="10" height="40" fill="#2D3748"/>
-              
-              {/* 手 */}
-              <circle cx="30" cy="95" r="5" fill="#F4C2A1"/>
-              <circle cx="90" cy="95" r="5" fill="#F4C2A1"/>
-              
-              {/* 腿 */}
-              <rect x="45" y="180" width="8" height="15" fill="#2D3748"/>
-              <rect x="67" y="180" width="8" height="15" fill="#2D3748"/>
-            </svg>
+            <div className="mx-auto mb-3 w-48 h-64 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+              <img 
+                src="/images/business-attire-male.jpg" 
+                alt="男性正式商務服裝範例"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // 如果JPG載入失敗，嘗試載入SVG
+                  e.target.src = '/images/business-attire-male.svg';
+                  e.target.className = 'w-full h-full object-contain';
+                  e.target.onerror = () => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  };
+                }}
+              />
+              <div className="hidden w-full h-full bg-gradient-to-b from-gray-200 to-gray-300 flex flex-col items-center justify-center text-gray-600">
+                <div className="text-4xl mb-2">👔</div>
+                <div className="text-xs text-center px-2">
+                  男性正式<br/>商務服裝
+                </div>
+              </div>
+            </div>
             
             <div className="text-xs text-gray-600 space-y-1">
               <div className="flex items-center justify-center">
@@ -77,44 +58,28 @@ const DressCodeExamples = () => {
         <div className="text-center">
           <h5 className="text-sm font-medium text-gray-700 mb-3">女性正式服裝</h5>
           <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <svg
-              width="120"
-              height="200"
-              viewBox="0 0 120 200"
-              className="mx-auto mb-3"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* 頭部 */}
-              <circle cx="60" cy="25" r="15" fill="#F4C2A1" stroke="#E8B088" strokeWidth="1"/>
-              
-              {/* 頭髮 */}
-              <path d="M45 15 Q60 5 75 15 Q80 25 75 35 Q60 30 45 35 Q40 25 45 15" fill="#8B4513"/>
-              
-              {/* 西裝外套/洋裝 */}
-              <path d="M35 40 L85 40 Q85 45 80 50 L80 120 Q75 125 60 125 Q45 125 40 120 L40 50 Q35 45 35 40" fill="#1A365D"/>
-              
-              {/* 襯衫/內搭 */}
-              <rect x="40" y="45" width="40" height="30" fill="#FFFFFF"/>
-              
-              {/* 裙子或褲子 */}
-              <path d="M40 120 L80 120 Q85 125 85 140 L85 160 Q80 165 60 165 Q40 165 35 160 L35 140 Q35 125 40 120" fill="#2D3748"/>
-              
-              {/* 高跟鞋 */}
-              <path d="M45 185 Q50 190 55 185 L55 190 Q50 195 45 190 Z" fill="#1A1A1A"/>
-              <path d="M65 185 Q70 190 75 185 L75 190 Q70 195 65 190 Z" fill="#1A1A1A"/>
-              
-              {/* 手臂 */}
-              <rect x="25" y="50" width="10" height="35" fill="#1A365D"/>
-              <rect x="85" y="50" width="10" height="35" fill="#1A365D"/>
-              
-              {/* 手 */}
-              <circle cx="30" cy="90" r="5" fill="#F4C2A1"/>
-              <circle cx="90" cy="90" r="5" fill="#F4C2A1"/>
-              
-              {/* 腿 */}
-              <rect x="45" y="165" width="6" height="20" fill="#F4C2A1"/>
-              <rect x="69" y="165" width="6" height="20" fill="#F4C2A1"/>
-            </svg>
+            <div className="mx-auto mb-3 w-48 h-64 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+              <img 
+                src="/images/business-attire-female.jpg" 
+                alt="女性正式商務服裝範例"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // 如果JPG載入失敗，嘗試載入SVG
+                  e.target.src = '/images/business-attire-female.svg';
+                  e.target.className = 'w-full h-full object-contain';
+                  e.target.onerror = () => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  };
+                }}
+              />
+              <div className="hidden w-full h-full bg-gradient-to-b from-gray-200 to-gray-300 flex flex-col items-center justify-center text-gray-600">
+                <div className="text-4xl mb-2">👗</div>
+                <div className="text-xs text-center px-2">
+                  女性正式<br/>商務服裝
+                </div>
+              </div>
+            </div>
             
             <div className="text-xs text-gray-600 space-y-1">
               <div className="flex items-center justify-center">

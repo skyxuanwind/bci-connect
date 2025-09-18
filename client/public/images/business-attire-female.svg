@@ -1,0 +1,41 @@
+<svg width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="400" height="600" fill="#f8f9fa"/>
+  
+  <!-- 人物輪廓 -->
+  <g transform="translate(200, 50)">
+    <!-- 頭部 -->
+    <circle cx="0" cy="40" r="35" fill="#f4c2a1" stroke="#e8b088" stroke-width="2"/>
+    
+    <!-- 頭髮 -->
+    <path d="M-35 15 Q0 -5 35 15 Q40 30 35 50 Q0 45 -35 50 Q-40 30 -35 15" fill="#8b4513"/>
+    
+    <!-- 西裝外套/套裝 -->
+    <path d="M-60 75 L60 75 Q60 85 55 95 L55 250 Q50 260 0 260 Q-50 260 -55 250 L-55 95 Q-60 85 -60 75" fill="#1a365d"/>
+    
+    <!-- 襯衫/內搭 -->
+    <rect x="-50" y="85" width="100" height="80" fill="#ffffff"/>
+    
+    <!-- 裙子或褲裝 */
+    <path d="M-50 260 L50 260 Q60 270 60 300 L60 380 Q50 390 0 390 Q-50 390 -60 380 L-60 300 Q-60 270 -50 260" fill="#2d3748"/>
+    
+    <!-- 高跟鞋 */
+    <path d="M-30 420 Q-20 430 -10 420 L-10 430 Q-20 440 -30 430 Z" fill="#1a1a1a"/>
+    <path d="M10 420 Q20 430 30 420 L30 430 Q20 440 10 430 Z" fill="#1a1a1a"/>
+    
+    <!-- 手臂 -->
+    <rect x="-80" y="100" width="20" height="90" fill="#1a365d"/>
+    <rect x="60" y="100" width="20" height="90" fill="#1a365d"/>
+    
+    <!-- 手 */
+    <circle cx="-70" cy="200" r="12" fill="#f4c2a1"/>
+    <circle cx="70" cy="200" r="12" fill="#f4c2a1"/>
+    
+    <!-- 腿 */
+    <rect x="-25" y="390" width="15" height="30" fill="#f4c2a1"/>
+    <rect x="10" y="390" width="15" height="30" fill="#f4c2a1"/>
+  </g>
+  
+  <!-- 標題 -->
+  <text x="200" y="550" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#2d3748">女性正式商務服裝</text>
+</svg>
