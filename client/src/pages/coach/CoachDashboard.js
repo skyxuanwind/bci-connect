@@ -101,6 +101,11 @@ const CoachDashboard = () => {
 
   // 發送郵件 - 使用 GBC 系統
   const sendEmail = async (template, memberEmail, memberName = '學員姓名', coachName = user?.name || '教練姓名', coachIndustry = user?.industry || '教練行業') => {
+    // 調試：檢查 selectedMember 的完整內容
+    console.log('調試 selectedMember:', selectedMember);
+    console.log('調試 memberEmail:', memberEmail);
+    console.log('調試 selectedMember?.email:', selectedMember?.email);
+    
     // 驗證必要參數
     if (!memberEmail) {
       toast.error('無法發送郵件：學員信箱地址不存在');
