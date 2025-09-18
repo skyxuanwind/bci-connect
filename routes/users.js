@@ -137,7 +137,7 @@ router.get('/all-coachees', requireCoach, async (req, res) => {
     }
 
     const listQuery = `
-      SELECT u.id, u.name, u.company, u.industry, u.title,
+      SELECT u.id, u.name, u.email, u.company, u.industry, u.title,
              u.profile_picture_url, u.contact_number, u.membership_level,
              u.interview_form, c.name as chapter_name,
              coach.id as coach_id, coach.name as coach_name, coach.email as coach_email,
@@ -716,6 +716,7 @@ router.get('/my-coachees', requireCoach, async (req, res) => {
       coachees: listResult.rows.map(row => ({
         id: row.id,
         name: row.name,
+        email: row.email,
         company: row.company,
         industry: row.industry,
         title: row.title,

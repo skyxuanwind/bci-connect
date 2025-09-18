@@ -101,6 +101,17 @@ const CoachDashboard = () => {
 
   // 發送郵件 - 使用 GBC 系統
   const sendEmail = async (template, memberEmail, memberName = '學員姓名', coachName = user?.name || '教練姓名', coachIndustry = user?.industry || '教練行業') => {
+    // 驗證必要參數
+    if (!memberEmail) {
+      toast.error('無法發送郵件：學員信箱地址不存在');
+      return;
+    }
+    
+    if (!template) {
+      toast.error('無法發送郵件：郵件模板內容為空');
+      return;
+    }
+    
     const emailContent = template
       .replace(/{memberName}/g, memberName)
       .replace(/{coachName}/g, coachName)
@@ -118,11 +129,16 @@ const CoachDashboard = () => {
       toast.success('郵件已通過 GBC 系統發送');
     } catch (error) {
       console.error('發送郵件失敗:', error);
+      
+      // 顯示具體的錯誤信息
+      const errorMessage = error.response?.data?.message || '郵件發送失敗';
+      toast.error(`發送失敗：${errorMessage}`);
+      
       // 如果 GBC 系統發送失敗，回退到 mailto
       const subject = 'GBC新會員歡迎信';
       const mailtoLink = `mailto:${memberEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
       window.open(mailtoLink);
-      toast.warning('GBC 系統暫時無法使用，已打開郵件客戶端');
+      toast.warning('已打開郵件客戶端作為備用方案');
     }
   };
 
