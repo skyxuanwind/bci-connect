@@ -73,6 +73,21 @@ const CoachDashboard = () => {
   
   // 卡片勾選狀態管理
   const [checklistStates, setChecklistStates] = useState({});
+  
+  // 更新勾選框狀態
+  const updateCheckboxState = (memberId, itemId, detailId, newState) => {
+    const key = `${memberId}_${itemId}_${detailId}`;
+    setChecklistStates(prev => ({
+      ...prev,
+      [key]: newState
+    }));
+  };
+  
+  // 獲取勾選框狀態
+  const getCheckboxState = (memberId, itemId, detailId, defaultState = false) => {
+    const key = `${memberId}_${itemId}_${detailId}`;
+    return checklistStates[key] !== undefined ? checklistStates[key] : defaultState;
+  };
 
   // 處理勾選項目
   const handleChecklistToggle = (cardId, itemId) => {
@@ -88,6 +103,7 @@ const CoachDashboard = () => {
   // 複製郵件模板
   const copyEmailTemplate = (template, memberName = '學員姓名', coachName = user?.name || '教練姓名', coachIndustry = user?.industry || '教練行業') => {
     const emailContent = template
+      .replace(/OO/g, memberName)
       .replace(/{memberName}/g, memberName)
       .replace(/{coachName}/g, coachName)
       .replace(/{coachIndustry}/g, coachIndustry);
@@ -820,14 +836,14 @@ const CoachDashboard = () => {
                          {
                            id: 'self_intro_template',
                            text: '協助新會員準備50秒自我介紹範本',
-                           subtext: `大家好，我是${selectedMember?.industry || selectedMember?.company || 'OOO'}代表，${selectedMember?.name || 'XXX'}\n主要產品/服務內容\n成功見證\n主要代表性客戶\n獨特銷售或專業項\n請幫我引薦對象\n（${selectedMember?.industry || selectedMember?.company || 'OOO'}自動填入學員產業，${selectedMember?.name || 'XXX'}自動填入學員姓名，AI可以依照學員的產業提供自我介紹範本）`,
+                           subtext: `大家好，我是${selectedMember?.industry || selectedMember?.company || 'OOO'}代表，${selectedMember?.name || 'XXX'}\n主要產品/服務內容\n成功見證\n主要代表性客戶\n獨特銷售或專業項\n請幫我引薦對象`,
                            completed: false,
                            type: 'checkbox'
                          },
                          {
                            id: 'explain_goals_foundation',
                            text: '再次說明共同目標、GBC地基及成功經驗',
-                           subtext: `GBC地基狀態：${selectedMember?.profile?.foundationViewed ? '✅ 學員已閱讀商會地基' : '❌ 學員尚未閱讀商會地基'}\n（系統自動偵測學員是否有到商會地基勾選已閱讀）`,
+                           subtext: `GBC地基狀態：${selectedMember?.profile?.foundationViewed ? '✅ 學員已閱讀商會地基' : '❌ 學員尚未閱讀商會地基'}`,
                            completed: false,
                            type: 'checkbox'
                          }
@@ -839,15 +855,56 @@ const CoachDashboard = () => {
                      {
                        id: 'day_before_oath',
                        title: '宣誓前一天',
-                       subtitle: '對象：新會員、導師',
-                       description: '文化部通知會員內容、50個問題、領取徽章、名片、4號徽章主打',
+                       subtitle: '對象：新會員、教練',
+                       description: '前一天提醒新會員內容',
                        details: [
-                         '文化部通知會員內容',
-                         '50個問題',
-                         '領取徽章',
-                         '名片',
-                         '4號徽章主打'
+                         {
+                           id: 'attendance_time',
+                           text: '出席時間 14:00',
+                           completed: false,
+                           type: 'checkbox'
+                         },
+                         {
+                           id: 'self_intro_50sec',
+                           text: '50秒自我介紹',
+                           completed: false,
+                           type: 'checkbox'
+                         },
+                         {
+                           id: 'dress_code',
+                           text: '服裝儀容，範例：(插上附件)',
+                           completed: false,
+                           type: 'checkbox'
+                         },
+                         {
+                           id: 'business_cards',
+                           text: '準備30張名片',
+                           completed: false,
+                           type: 'checkbox'
+                         },
+                         {
+                           id: 'four_week_plan',
+                           text: '4週導生計畫',
+                           completed: false,
+                           type: 'checkbox'
+                         },
+                         {
+                           id: 'send_email',
+                           text: '發送給學員信件',
+                           completed: false,
+                           type: 'checkbox'
+                         }
                        ],
+                       emailTemplate: `${selectedMember?.name || 'OO'}您好:
+
+提醒您
+今天需請您練習50秒自我介紹!
+掌握好上台狀況很重要，若怕緊張可以帶上手稿上台，請不要帶手機看稿！
+
+參與例會時注意事項:
+1.例會及培訓時請穿著正式服裝、配戴Pin章及名牌(襯衫、西裝、洋裝、皮鞋等)
+2.請帶名片(30張以上)
+3.明日到場時間14:00到達，我們將協助您教學以及認識夥伴。`,
                        completed: p?.hasNfcCard || false,
                        category: '最終準備',
                        priority: 'high'
@@ -1108,10 +1165,11 @@ const CoachDashboard = () => {
                                                 <input 
                                                   type="checkbox" 
                                                   id={`detail-${index}`}
-                                                  checked={detail.completed}
-                                                  onChange={() => {
-                                                    // TODO: 實現checkbox狀態更新邏輯
-                                                    console.log(`Toggle checkbox for ${detail.id}`);
+                                                  checked={getCheckboxState(selectedMember.id, currentCard.id, detail.id, detail.completed)}
+                                                  onChange={(e) => {
+                                                    const newState = e.target.checked;
+                                                    updateCheckboxState(selectedMember.id, currentCard.id, detail.id, newState);
+                                                    console.log(`Toggle checkbox for ${detail.id}: ${newState}`);
                                                   }}
                                                   className="mt-1 mr-3 h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2"
                                                 />
