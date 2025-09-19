@@ -127,7 +127,7 @@ const Layout = ({ children }) => {
     { name: '報到系統', href: '/checkin-scanner', icon: QrCodeIcon, minLevel: 1 },
     { name: '出席管理', href: '/attendance-management', icon: ClipboardDocumentCheckIcon, minLevel: 1 },
 
-    { name: '裁判書同步管理', href: '/judgment-sync', icon: ArrowPathIcon, minLevel: 1 },
+
   ];
 
   // 開發測試功能（所有登入用戶都可使用）

@@ -450,23 +450,7 @@ const ProspectDetail = () => {
                     </div>
                   </div>
                   
-                  {/* 判決書詳情展示 */}
-                  {analysisReport.legalRiskAssessment.judgmentDetails && analysisReport.legalRiskAssessment.judgmentDetails.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-600 mb-2">相關判決書摘要:</p>
-                      <div className="space-y-2">
-                        {analysisReport.legalRiskAssessment.judgmentDetails.map((judgment, index) => (
-                          <div key={index} className="bg-white rounded p-2 text-xs">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-gray-700">{judgment.案號 || `判決書 ${index + 1}`}</span>
-                              <span className="text-gray-500">{judgment.判決日期}</span>
-                            </div>
-                            <p className="text-gray-600 text-xs">{judgment.判決內容 || judgment.案件類型}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+
                 </div>
                 
                 <div className="flex items-center justify-between text-xs text-gray-500">

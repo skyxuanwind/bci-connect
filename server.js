@@ -23,7 +23,7 @@ const attendanceRoutes = require('./routes/attendance');
 const companyLookupRoutes = require('./routes/company-lookup');
 const aiAnalysisRoutes = require('./routes/ai-analysis');
 
-const judgmentSyncRoutes = require('./routes/judgment-sync');
+
 const nfcCardsRoutes = require('./routes/nfc-cards');
 const nfcAnalyticsRoutes = require('./routes/nfc-analytics');
 const ocrScannerRoutes = require('./routes/ocr-scanner');
@@ -37,7 +37,7 @@ const aiProfilesRoutes = require('./routes/ai-profiles');
 const emailRoutes = require('./routes/emails');
 const { initializeDatabase, pool } = require('./config/database');
 const { connectMongoDB } = require('./config/mongodb');
-const judgmentSyncService = require('./services/judgmentSyncService');
+
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
@@ -138,7 +138,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/company-lookup', companyLookupRoutes);
 app.use('/api/ai-analysis', aiAnalysisRoutes);
 
-app.use('/api/judgment-sync', judgmentSyncRoutes);
+
 app.use('/api/nfc-cards', nfcCardsRoutes);
 app.use('/api/nfc-analytics', nfcAnalyticsRoutes);
 app.use('/api/ocr', ocrScannerRoutes);
@@ -506,13 +506,7 @@ async function initializeDatabasesAsync() {
       console.warn('⚠️ MongoDB initialization failed (non-critical):', mongoError.message);
     }
     
-    // Start judgment sync scheduler
-    try {
-      judgmentSyncService.startScheduler();
-      console.log('⏰ 裁判書同步排程已啟動');
-    } catch (schedulerError) {
-      console.warn('⚠️ Scheduler initialization failed (non-critical):', schedulerError.message);
-    }
+
     
   } catch (error) {
     console.error('❌ Database initialization failed:', error);

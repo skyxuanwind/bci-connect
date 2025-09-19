@@ -96,13 +96,7 @@ const AdminDashboard = () => {
       icon: CogIcon,
       color: 'bg-gray-500'
     },
-    {
-      title: '數據同步',
-      description: '司法院判決書同步',
-      href: '/admin/judgment-sync',
-      icon: ArrowPathIcon,
-      color: 'bg-orange-500'
-    },
+
     {
       title: '黑名單管理',
       description: '管理黑名單用戶',

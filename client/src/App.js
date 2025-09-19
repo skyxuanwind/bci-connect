@@ -42,7 +42,7 @@ import FinancialStatement from './pages/FinancialStatement';
 import ComplaintBox from './pages/ComplaintBox';
 import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
-import JudgmentSync from './pages/JudgmentSync';
+
 import FoundationInfo from './pages/FoundationInfo';
 import ContentManagement from './pages/admin/ContentManagement';
 import WishesPage from './pages/WishesPage';
@@ -299,13 +299,7 @@ function App() {
             </Level1Route>
           } />
           
-          <Route path="/judgment-sync" element={
-            <Level1Route>
-              <Layout>
-                <JudgmentSync />
-              </Layout>
-            </Level1Route>
-          } />
+
 
           
           {/* Admin Routes */}

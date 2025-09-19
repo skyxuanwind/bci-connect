@@ -562,41 +562,7 @@ const ProspectApplication = () => {
     setAiAnalysisError('');
     setAiAnalysisResult(null);
     
-    // 同時查詢裁判書資料
-    let judgmentRiskData = null;
-    try {
-      const judgmentResponse = await axios.get('/api/judgment-sync/search', {
-        params: {
-          query: formData.companyName.trim(),
-          limit: 10
-        }
-      });
-      
-      if (judgmentResponse.data.success && judgmentResponse.data.data.length > 0) {
-        const judgments = judgmentResponse.data.data;
-        const highRiskCount = judgments.filter(j => j.risk_level === 'HIGH').length;
-        const mediumRiskCount = judgments.filter(j => j.risk_level === 'MEDIUM').length;
-        const totalCount = judgments.length;
-        
-        judgmentRiskData = {
-          totalJudgments: totalCount,
-          highRiskCount,
-          mediumRiskCount,
-          lowRiskCount: totalCount - highRiskCount - mediumRiskCount,
-          recentJudgments: judgments.slice(0, 5).map(j => ({
-            caseNumber: j.case_number,
-            judgmentDate: j.judgment_date,
-            caseType: j.case_type,
-            riskLevel: j.risk_level,
-            summary: j.summary
-          })),
-          overallRiskLevel: highRiskCount > 0 ? 'HIGH' : (mediumRiskCount > 2 ? 'MEDIUM' : 'LOW')
-        };
-      }
-    } catch (judgmentError) {
-      console.warn('裁判書查詢失敗:', judgmentError);
-      // 不影響主要分析流程
-    }
+
     
     try {
       // 先創建臨時的潛在客戶資料
@@ -618,7 +584,7 @@ const ProspectApplication = () => {
             mainBusiness: formData.mainBusiness,
             professionalExperience: formData.professionalExperience
           },
-          judgmentRisk: judgmentRiskData,
+
           interview: {
             bciExpectations: formData.bciExpectations,
             pastAchievements: formData.pastAchievements,
