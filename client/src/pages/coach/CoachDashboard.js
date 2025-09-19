@@ -58,8 +58,6 @@ const CoachDashboard = () => {
 
   // Modal 內操作狀態
   const [actionLoading, setActionLoading] = useState(false);
-  const [quickTitle, setQuickTitle] = useState('');
-  const [quickDue, setQuickDue] = useState('');
   
   // 專案計劃狀態
   const [projectPlans, setProjectPlans] = useState({});
@@ -72,8 +70,11 @@ const CoachDashboard = () => {
   const [myTaskUpdating, setMyTaskUpdating] = useState({}); // { [taskId]: true }
   const [myCoachLogs, setMyCoachLogs] = useState([]);
   
-  // 卡片勾選狀態管理
-  const [checklistStates, setChecklistStates] = useState({});
+  // 卡片勾選狀態管理 - 添加持久化
+  const [checklistStates, setChecklistStates] = useState(() => {
+    const saved = localStorage.getItem('coachDashboardChecklistStates');
+    return saved ? JSON.parse(saved) : {};
+  });
   
   // 核心會員狀態
   const [coreMembers, setCoreMembers] = useState([]);
@@ -83,13 +84,15 @@ const CoachDashboard = () => {
   const [staffMembers, setStaffMembers] = useState([]);
   const [staffMembersLoading, setStaffMembersLoading] = useState(false);
   
-  // 更新勾選框狀態
+  // 更新勾選框狀態 - 添加持久化
   const updateCheckboxState = (memberId, itemId, detailId, newState) => {
     const key = `${memberId}_${itemId}_${detailId}`;
-    setChecklistStates(prev => ({
-      ...prev,
+    const newStates = {
+      ...checklistStates,
       [key]: newState
-    }));
+    };
+    setChecklistStates(newStates);
+    localStorage.setItem('coachDashboardChecklistStates', JSON.stringify(newStates));
   };
   
   // 獲取勾選框狀態
@@ -98,15 +101,17 @@ const CoachDashboard = () => {
     return checklistStates[key] !== undefined ? checklistStates[key] : defaultState;
   };
 
-  // 處理勾選項目
+  // 處理勾選項目 - 添加持久化
   const handleChecklistToggle = (cardId, itemId) => {
-    setChecklistStates(prev => ({
-      ...prev,
+    const newStates = {
+      ...checklistStates,
       [cardId]: {
-        ...prev[cardId],
-        [itemId]: !prev[cardId]?.[itemId]
+        ...checklistStates[cardId],
+        [itemId]: !checklistStates[cardId]?.[itemId]
       }
-    }));
+    };
+    setChecklistStates(newStates);
+    localStorage.setItem('coachDashboardChecklistStates', JSON.stringify(newStates));
   };
 
   // 複製郵件模板
@@ -381,42 +386,6 @@ const CoachDashboard = () => {
   // Modal 內動作
   const closeModal = () => {
     setSelectedMember(null);
-    setQuickTitle('');
-    setQuickDue('');
-  };
-
-  const assignTask = async (title, dueDate) => {
-    if (!selectedMember) return;
-    if (actionLoading) return; // 防止重複按
-    const t = (title || quickTitle || '').trim();
-    if (!t) {
-      toast.error('請輸入任務標題');
-      return;
-    }
-    setActionLoading(true);
-    try {
-      const p = axios.post('/api/users/onboarding-tasks/bulk', {
-        memberIds: [selectedMember.id],
-        title: t,
-        description: null,
-        dueDate: dueDate || quickDue || undefined
-      });
-      await toast.promise(p, {
-        loading: '指派任務中…',
-        success: `已指派任務給 ${selectedMember?.name || '學員'}`,
-        error: (err) => err?.response?.data?.message || '指派任務失敗'
-      }, {
-        id: 'assign-task',
-        duration: 4000,
-        style: { background: '#1f2937', color: '#fde68a', border: '1px solid #b45309' }
-      });
-      fetchTaskStats();
-      // 不強制重新載入列表以省流量
-    } catch (e) {
-      console.error('指派任務失敗', e);
-    } finally {
-      setActionLoading(false);
-    }
   };
 
   // 獲取專案計劃
@@ -435,21 +404,7 @@ const CoachDashboard = () => {
     }
   };
 
-  const createCoachLog = async (content) => {
-    if (!selectedMember) return;
-    const c = (content || '').trim();
-    if (!c) return;
-    setActionLoading(true);
-    try {
-      await axios.post(`/api/users/member/${selectedMember.id}/coach-logs`, { content: c });
-      toast.success('教練紀錄已新增');
-    } catch (e) {
-      console.error('新增教練紀錄失敗', e);
-      toast.error(e.response?.data?.message || '新增教練紀錄失敗');
-    } finally {
-      setActionLoading(false);
-    }
-  };
+
 
   // 更新會員狀態
   const updateMemberStatus = async (memberId, newStatus) => {
@@ -482,23 +437,18 @@ const CoachDashboard = () => {
     return { p, percent, profileScore, systemScore, bonusMbti };
   };
 
-  // 非教練視圖：我的任務進度
+  // 非教練視圖：僅顯示教練資訊
   if (!iAmCoach) {
-    const total = myTasks.length;
-    const completed = myTasks.filter(t => t.status === 'completed').length;
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-
     return (
       <div className="space-y-6">
         <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-elegant">
-          <h1 className="text-2xl font-semibold text-gold-100">任務進度</h1>
-          <p className="mt-2 text-gold-300">在此查看您目前的入職任務與教練資訊。</p>
+          <h1 className="text-2xl font-semibold text-gold-100">教練專區</h1>
+          <p className="mt-2 text-gold-300">此頁面僅供教練使用。</p>
         </div>
 
         <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-medium text-gold-100">進度概覽</h2>
-            {myTasksLoading && <span className="text-sm text-gold-300">載入中...</span>}
+            <h2 className="text-xl font-medium text-gold-100">教練資訊</h2>
           </div>
 
           {/* 教練資訊 */}
@@ -525,82 +475,6 @@ const CoachDashboard = () => {
               <span className="text-xs px-2 py-1 rounded-full bg-gray-700 text-gray-200">指派教練中</span>
             )}
           </div>
-
-          {/* 進度條 */}
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gold-300">完成度</div>
-              <div className="text-sm text-gold-100 font-semibold">{percent}%</div>
-            </div>
-            <div className="w-full h-2 bg-primary-700 rounded mt-1">
-              <div className={`h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
-            </div>
-            <div className="mt-1 text-[11px] text-gold-400">完成 {completed}/{total}</div>
-          </div>
-        </div>
-
-        {/* 任務清單 */}
-        <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">
-          <h2 className="text-xl font-medium text-gold-100 mb-3">我的任務</h2>
-          {myTasksLoading ? (
-            <div className="py-6"><LoadingSpinner /></div>
-          ) : (
-            <div className="space-y-2">
-              {myTasks.length === 0 && (
-                <div className="text-gold-300 text-sm">目前沒有任務</div>
-              )}
-              {myTasks.map(t => (
-                <div key={t.id} className="flex items-center justify-between p-3 rounded-md border border-gold-700 bg-primary-700/40">
-                  <div>
-                    <div className="text-gold-100 font-medium">{t.title}</div>
-                    <div className="text-xs text-gold-400">
-                      狀態：{t.status === 'completed' ? '已完成' : t.status === 'in_progress' ? '進行中' : '待辦'}
-                      {t.dueDate ? ` ・ 截止：${new Date(t.dueDate).toLocaleDateString()}` : ''}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {t.status !== 'completed' ? (
-                      <button
-                        type="button"
-                        className="btn-primary px-3 py-1.5 text-sm"
-                        onClick={() => updateTaskStatus(t.id, 'completed')}
-                        disabled={!!myTaskUpdating[t.id]}
-                      >
-                        {myTaskUpdating[t.id] ? '更新中…' : '標記完成'}
-                      </button>
-                    ) : (
-                      <span className="text-xs px-2 py-1 rounded-full bg-green-700 text-green-100">已完成</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* 教練紀錄（唯讀） */}
-        <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-medium text-gold-100">教練紀錄（唯讀）</h2>
-          </div>
-          {myTasksLoading ? (
-            <div className="py-6"><LoadingSpinner /></div>
-          ) : (
-            <div className="space-y-3">
-              {myCoachLogs.length === 0 && (
-                <div className="text-gold-300 text-sm">尚無教練紀錄</div>
-              )}
-              {myCoachLogs.map(log => (
-                <div key={log.id} className="p-3 rounded-md border border-gold-700 bg-primary-700/40">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gold-100 font-semibold">{log.coachName}</div>
-                    <div className="text-[11px] text-gold-400">{new Date(log.createdAt).toLocaleString()}</div>
-                  </div>
-                  <div className="mt-1 text-sm text-gold-200 whitespace-pre-wrap">{log.content}</div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -834,7 +708,7 @@ const CoachDashboard = () => {
               <div className="mt-6">
                 <div className="flex items-center gap-2 mb-3">
                   <ClipboardDocumentListIcon className="h-5 w-5 text-gold-300" />
-                  <div className="text-lg font-semibold text-gold-100">附件項目</div>
+                  <div className="text-lg font-semibold text-gold-100">教練任務</div>
                 </div>
                 
                 {(() => {
@@ -1034,15 +908,11 @@ const CoachDashboard = () => {
                        checklistItems: [
                          {
                            id: 'guide_guest_purpose',
-                           text: '引導新會員為何帶來賓',
-                           completed: false,
-                           type: 'checkbox'
+                           text: '引導新會員為何帶來賓'
                          },
                          {
                            id: 'invite_agent_meeting',
-                           text: '引導新會員邀請代理人參觀例會議程',
-                           completed: false,
-                           type: 'checkbox'
+                           text: '引導新會員邀請代理人參觀例會議程'
                          },
                          {
                            id: 'deep_communication_form',
@@ -1165,8 +1035,6 @@ const CoachDashboard = () => {
                         <div className="px-12 py-6 max-h-96 overflow-y-auto">
                           <div className={`rounded-lg border-2 p-6 transition-all duration-300 ${
                             getCardStyle()
-                          } ${
-                            currentCard.completed ? 'bg-green-500/20 border-green-500' : ''
                           }`}>
                             {/* 卡片標題區 */}
                             <div className="flex items-start justify-between mb-4">
@@ -1478,18 +1346,16 @@ const CoachDashboard = () => {
                             </div>
                             
                             {/* 狀態顯示 */}
-                            <div className="flex items-center justify-between">
-                              <div className={`text-base font-bold ${
-                                currentCard.completed ? 'text-green-400' : 'text-gold-400'
-                              }`}>
-                                {currentCard.completed ? '✓ 已完成' : '○ 待完成'}
-                              </div>
-                              {currentCard.completed && (
+                            {currentCard.completed && (
+                              <div className="flex items-center justify-between">
+                                <div className="text-base font-bold text-green-400">
+                                  ✓ 已完成
+                                </div>
                                 <div className="text-sm text-green-300 font-medium">
                                   狀態良好
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
@@ -1529,45 +1395,9 @@ const CoachDashboard = () => {
                 {/* 快捷操作 */}
                 <div className="text-xl font-bold text-gold-100 mb-3">快捷操作</div>
                 
-                {/* 一鍵指派任務 */}
-                <div className="bg-primary-700/40 rounded-md p-3 border border-gold-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ClipboardDocumentListIcon className="h-4 w-4 text-gold-300" />
-                    <div className="text-base font-semibold text-gold-100">一鍵指派任務</div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {['填寫面談表', '完成面談', '設定/更新 NFC 名片', '完成入會地基'].map((tpl) => (
-                      <button
-                        key={tpl}
-                        type="button"
-                        onClick={() => assignTask(tpl)}
-                        className="px-3 py-1.5 text-sm rounded-md bg-primary-600 hover:bg-primary-500 border border-gold-700 text-gold-100"
-                        disabled={actionLoading}
-                      >
-                        {tpl}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      className="input flex-1 text-base"
-                      placeholder="自訂任務標題（例如：補交名片連結）"
-                      value={quickTitle}
-                      onChange={(e) => setQuickTitle(e.target.value)}
-                    />
-                    <input
-                      type="date"
-                      className="input w-48 text-base"
-                      value={quickDue}
-                      onChange={(e) => setQuickDue(e.target.value)}
-                    />
-                    <button type="button" className="btn-primary whitespace-nowrap text-base px-4 py-2" onClick={() => assignTask()} disabled={actionLoading}>
-                      指派
-                    </button>
-                  </div>
-                </div>
 
-                {/* 安排會議 */}
+
+                {/* 快捷操作 */}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <a
                     href={`/meetings?schedule_with=${selectedMember.id}`}
@@ -1575,52 +1405,12 @@ const CoachDashboard = () => {
                   >
                     <CalendarIcon className="h-5 w-5 mr-1" /> 安排會議
                   </a>
-                  {/* 以教練紀錄替代「標記面談完成」的快速紀錄 */}
-                  <button
-                    type="button"
-                    className="btn-secondary text-base px-4 py-2"
-                    onClick={() => createCoachLog('已完成面談（快速標記於教練紀錄）')}
-                    disabled={actionLoading}
-                  >
-                    標記面談完成
-                  </button>
                   <Link
                     to={`/members/${selectedMember.id}`}
                     className="btn-secondary text-base px-4 py-2"
                   >
                     查看詳情
                   </Link>
-                  <Link
-                    to={`/project-plans/${selectedMember.id}`}
-                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
-                  >
-                    <ChartBarIcon className="h-5 w-5 mr-1" /> 專案計劃
-                  </Link>
-                  <button
-                    type="button"
-                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
-                    onClick={() => {
-                      // 快速更新會員狀態
-                      const newStatus = selectedMember.status === 'active' ? 'inactive' : 'active';
-                      updateMemberStatus(selectedMember.id, newStatus);
-                    }}
-                    disabled={actionLoading}
-                  >
-                    <CheckCircleIcon className="h-5 w-5 mr-1" /> 
-                    {selectedMember.status === 'active' ? '設為非活躍' : '設為活躍'}
-                  </button>
-                  <a
-                    href={`/nfc/${selectedMember.id}`}
-                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
-                  >
-                    <CreditCardIcon className="h-5 w-5 mr-1" /> NFC名片
-                  </a>
-                  <a
-                    href={`mailto:${selectedMember.email}`}
-                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
-                  >
-                    <EnvelopeIcon className="h-5 w-5 mr-1" /> 發送郵件
-                  </a>
                 </div>
               </div>
             </div>
