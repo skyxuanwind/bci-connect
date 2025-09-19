@@ -9,8 +9,8 @@
     "client": "cd client && PORT=3001 npm start",
     "client:3002": "cd client && PORT_API=8000 PORT=3002 npm start",
     "server": "nodemon server.js",
-    "build": "cd client && npm run build",
-    "heroku-postbuild": "cd client && npm install && npm run build"
+    "build": "cd client && NODE_ENV=production npm run build",
+    "heroku-postbuild": "cd client && npm install && NODE_ENV=production npm run build"
   },
   "keywords": [
     "business",
