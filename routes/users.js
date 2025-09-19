@@ -1529,6 +1529,34 @@ router.get('/core-members', async (req, res) => {
   }
 });
 
+// @route   GET /api/users/staff-members
+// @desc    Get all staff members (membership level 2)
+// @access  Private
+router.get('/staff-members', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.name, u.company, u.title, c.name as chapter_name
+       FROM users u
+       LEFT JOIN chapters c ON u.chapter_id = c.id
+       WHERE u.membership_level = 2 AND u.status = 'active'
+       ORDER BY u.name ASC`
+    );
+
+    res.json({
+      staffMembers: result.rows.map(member => ({
+        id: member.id,
+        name: member.name,
+        company: member.company,
+        title: member.title,
+        chapterName: member.chapter_name
+      }))
+    });
+  } catch (error) {
+    console.error('Get staff members error:', error);
+    res.status(500).json({ message: '獲取幹部人員列表時發生錯誤' });
+  }
+});
+
 // @route   GET /api/users/referral-stats
 // @desc    Get user's referral statistics for dashboard
 // @access  Private
