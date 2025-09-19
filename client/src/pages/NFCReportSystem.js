@@ -12,10 +12,10 @@ const NFCReportSystem = () => {
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState('');
   
-  // Gateway Service URL - 在生產環境使用當前域名，開發環境使用localhost:8000
+  // Gateway Service URL - 在生產環境使用當前域名，開發環境使用本地服務
 const GATEWAY_URL = process.env.NODE_ENV === 'production' 
     ? window.location.origin 
-    : 'http://localhost:3002';
+    : 'process.env.REACT_APP_NFC_GATEWAY_URL || window.location.origin';
   
   // 檢查本地 Gateway Service 狀態
   const checkGatewayStatus = async () => {
@@ -284,7 +284,7 @@ const GATEWAY_URL = process.env.NODE_ENV === 'production'
                 <div className="text-center py-4">
                   <div className="text-gray-500">無法連接到 Gateway Service</div>
                   <div className="text-sm text-gray-400 mt-2">
-                    請確認本地 Gateway Service 已在 http://localhost:3002 啟動
+                    請確認本地 Gateway Service 已在 process.env.REACT_APP_NFC_GATEWAY_URL || window.location.origin 啟動
                   </div>
                 </div>
               )}

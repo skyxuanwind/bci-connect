@@ -47,7 +47,7 @@ const NFCLocalTest = () => {
   // 檢查本地 NFC 伺服器狀態
   const checkServerStatus = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/nfc/status');
+      const response = await fetch('process.env.REACT_APP_API_URL || window.location.origin/api/nfc/status');
       const data = await response.json();
       setServerStatus(data);
     } catch (error) {
