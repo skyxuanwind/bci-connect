@@ -441,22 +441,22 @@ const CoachDashboard = () => {
   if (!iAmCoach) {
     return (
       <div className="space-y-6">
-        <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6 shadow-elegant">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-elegant">
           <h1 className="text-xl sm:text-2xl font-semibold text-gold-100">教練專區</h1>
           <p className="mt-2 text-gold-300">此頁面僅供教練使用。</p>
         </div>
 
-        <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6">
-          <div className="flex items-center justify-between mb-2 sm:mb-4">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg sm:text-xl font-medium text-gold-100">教練資訊</h2>
           </div>
 
           {/* 教練資訊 */}
-          <div className="mb-2 sm:mb-4">
+          <div className="mb-4">
             <div className="text-sm text-gold-300 mb-2">我的教練：</div>
             {user?.coachUserId ? (
               myCoach ? (
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-3">
                   <Avatar src={myCoach.profilePictureUrl} alt={myCoach.name} size="small" />
                   <div>
                     <div className="text-sm text-gold-100 font-semibold">{myCoach.name || `ID: ${myCoach.id}`}</div>
@@ -482,18 +482,18 @@ const CoachDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6 shadow-elegant">
+      <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-elegant">
         <h1 className="text-xl sm:text-2xl font-semibold text-gold-100">教練儀表板</h1>
         <p className="mt-2 text-gold-300">歡迎來到教練專區。您可以在此查看並管理指派給您的學員。</p>
       </div>
 
       {/* 任務統計 */}
-      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6">
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
+      <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg sm:text-xl font-medium text-gold-100">待辦任務統計</h2>
           {statsLoading && <span className="text-sm text-gold-300">載入中...</span>}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <div className="card p-3 text-center">
             <div className="text-sm sm:text-xs text-gold-300">總數</div>
             <div className="text-xl sm:text-2xl font-semibold text-gold-100">{taskStats.total}</div>
@@ -518,9 +518,9 @@ const CoachDashboard = () => {
       </div>
 
       {/* 搜尋列 */}
-      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-4">
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
+      <div className="bg-primary-800 border border-gold-600 rounded-lg p-4">
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="flex items-center gap-3">
             <label className="text-sm text-gold-200">排序</label>
             <select className="input py-1" value={sortKey} onChange={(e) => { setSortKey(e.target.value); setPage(1); }}>
               <option value="default">預設</option>
@@ -542,8 +542,8 @@ const CoachDashboard = () => {
       </div>
 
       {/* 學員列表 */}
-      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6">
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
+      <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg sm:text-xl font-medium text-gold-100">我的學員</h2>
           <div className="text-sm text-gold-300">
             共 {pagination?.totalMembers || 0} 位
@@ -564,7 +564,7 @@ const CoachDashboard = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:p-4 sm:gap-3 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {visibleCoachees.map((member) => {
                 const { p, percent } = progressSummary(member.id);
                 const missing = {
@@ -578,9 +578,9 @@ const CoachDashboard = () => {
                   setSelectedMember(member);
                   fetchProjectPlan(member.id);
                 }}>
-                    <div className="p-3 sm:p-4">
+                    <div className="p-4">
                       {/* 簡潔版卡片：大頭貼、名字、行業別、進度條 */}
-                      <div className="flex items-center mb-2 sm:mb-3">
+                      <div className="flex items-center mb-3">
                         <Avatar 
                           src={member.profilePictureUrl} 
                           alt={member.name}
@@ -605,9 +605,9 @@ const CoachDashboard = () => {
                               <span className="text-sm sm:text-xs text-gold-300">進度</span>
                               <span className="text-sm sm:text-xs text-gold-100 font-semibold">{percentShow}%</span>
                             </div>
-                            <div className="w-full h-3 sm:h-2 bg-primary-700 rounded">
+                            <div className="w-full h-2 bg-primary-700 rounded">
                               <div
-                                className={`h-3 sm:h-2 rounded ${percentShow >= 80 ? 'bg-green-500' : percentShow >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                className={`h-2 rounded ${percentShow >= 80 ? 'bg-green-500' : percentShow >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
                                 style={{ width: `${percentShow}%` }}
                               />
                             </div>
@@ -653,7 +653,7 @@ const CoachDashboard = () => {
         <div className="fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black/60" onClick={closeModal} />
           <div className="absolute inset-x-4 md:inset-x-0 md:left-1/2 md:-translate-x-1/2 top-10 md:top-20 z-50 bg-primary-800 border border-gold-600 rounded-lg shadow-elegant w-auto md:w-[720px]">
-            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gold-700">
+            <div className="flex items-center justify-between p-4 border-b border-gold-700">
               <div className="flex items-center">
                 <Avatar src={selectedMember.profilePictureUrl} alt={selectedMember.name} size="medium" />
                 <div className="ml-3">
@@ -666,7 +666,7 @@ const CoachDashboard = () => {
               </button>
             </div>
 
-            <div className="p-3 sm:p-4 md:p-3 sm:p-6">
+            <div className="p-4 md:p-6">
               {/* 進度概覽 */}
               {(() => {
                 const { p, percent, profileScore, systemScore, bonusMbti } = progressSummary(selectedMember.id);
@@ -676,8 +676,8 @@ const CoachDashboard = () => {
                       <div className="text-sm text-gold-300">進度</div>
                       <div className="text-sm text-gold-100 font-semibold">{percent}%</div>
                     </div>
-                    <div className="w-full h-3 sm:h-2 bg-primary-700 rounded mt-1">
-                      <div className={`h-3 sm:h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
+                    <div className="w-full h-2 bg-primary-700 rounded mt-1">
+                      <div className={`h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
                     </div>
                     <div className="mt-1 text-[11px] text-gold-400">基礎 {profileScore}/60 ・ 系統 {systemScore}/40{bonusMbti > 0 ? ` ・ MBTI +${bonusMbti}` : ''}</div>
 
@@ -706,7 +706,7 @@ const CoachDashboard = () => {
 
               {/* 附件項目卡片 */}
               <div className="mt-6">
-                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <div className="flex items-center gap-2 mb-3">
                   <ClipboardDocumentListIcon className="h-5 w-5 text-gold-300" />
                   <div className="text-lg font-semibold text-gold-100">教練任務</div>
                 </div>
@@ -1019,7 +1019,7 @@ const CoachDashboard = () => {
                             <button
                               key={index}
                               onClick={() => setCurrentCardIndex(index)}
-                              className={`w-2 h-3 sm:h-2 rounded-full transition-colors ${
+                              className={`w-2 h-2 rounded-full transition-colors ${
                                 index === currentCardIndex ? 'bg-gold-400' : 'bg-gold-700'
                               }`}
                             />
@@ -1033,13 +1033,13 @@ const CoachDashboard = () => {
                       {/* 主要卡片內容 */}
                       <div className="relative">
                         <div className="px-12 py-6 max-h-96 overflow-y-auto">
-                          <div className={`rounded-lg border-2 p-3 sm:p-6 transition-all duration-300 ${
+                          <div className={`rounded-lg border-2 p-6 transition-all duration-300 ${
                             getCardStyle()
                           }`}>
                             {/* 卡片標題區 */}
-                            <div className="flex items-start justify-between mb-2 sm:mb-4">
+                            <div className="flex items-start justify-between mb-4">
                               <div className="flex-1 pr-4">
-                                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                                <div className="flex items-center gap-3 mb-2">
                                   {currentCard.completed ? (
                                     <CheckCircleIcon className="h-7 w-7 text-green-400" />
                                   ) : (
@@ -1052,11 +1052,11 @@ const CoachDashboard = () => {
                                   </h3>
                                 </div>
                                 <p className="text-base text-gold-300 mb-2 font-medium">{currentCard.subtitle}</p>
-                                <p className="text-sm text-gold-400 mb-2 sm:mb-3 leading-relaxed">{currentCard.description}</p>
+                                <p className="text-sm text-gold-400 mb-3 leading-relaxed">{currentCard.description}</p>
                                 {/* 可勾選執行項目 */}
                                 {currentCard.checklistItems && currentCard.checklistItems.length > 0 && (
                                   <div className="mt-3">
-                                    <div className="text-sm text-gold-300 mb-2 sm:mb-3 font-semibold">教練需執行：</div>
+                                    <div className="text-sm text-gold-300 mb-3 font-semibold">教練需執行：</div>
                                     <div className="space-y-3">
                                       {currentCard.checklistItems.map((item, index) => {
                                         // 處理字符串類型的項目
@@ -1154,9 +1154,9 @@ const CoachDashboard = () => {
                                                       <span className="text-xs text-gold-400">填寫進度</span>
                                                       <span className="text-sm sm:text-xs text-gold-300 font-semibold">{item.progressBar.label}</span>
                                                     </div>
-                                                    <div className="w-full h-3 sm:h-2 bg-primary-700 rounded">
+                                                    <div className="w-full h-2 bg-primary-700 rounded">
                                                       <div 
-                                                        className={`h-3 sm:h-2 rounded transition-all duration-300 ${
+                                                        className={`h-2 rounded transition-all duration-300 ${
                                                           item.progressBar.color === 'green' ? 'bg-green-500' : 
                                                           item.progressBar.color === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'
                                                         }`} 
@@ -1314,9 +1314,9 @@ const CoachDashboard = () => {
 
                                 {/* 郵件模板和發信功能 */}
                                 {currentCard.emailTemplate && (
-                                  <div className="mt-4 p-3 sm:p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
+                                  <div className="mt-4 p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
                                     <div className="text-sm text-gold-300 mb-2 font-semibold">郵件模板：</div>
-                                    <div className="text-xs text-gold-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border max-h-32 overflow-y-auto">
+                                    <div className="text-xs text-gold-400 mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border max-h-32 overflow-y-auto">
                                       {currentCard.emailTemplate}
                                     </div>
                                     <div className="flex gap-2">
@@ -1393,7 +1393,7 @@ const CoachDashboard = () => {
               {/* 快捷操作 */}
               <div className="mt-6">
                 {/* 快捷操作 */}
-                <div className="text-xl font-bold text-gold-100 mb-2 sm:mb-3">快捷操作</div>
+                <div className="text-xl font-bold text-gold-100 mb-3">快捷操作</div>
                 
 
 

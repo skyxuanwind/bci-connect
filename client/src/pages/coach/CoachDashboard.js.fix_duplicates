@@ -441,18 +441,18 @@ const CoachDashboard = () => {
   if (!iAmCoach) {
     return (
       <div className="space-y-6">
-        <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6 shadow-elegant">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-4 sm:p-6 shadow-elegant">
           <h1 className="text-xl sm:text-2xl font-semibold text-gold-100">教練專區</h1>
           <p className="mt-2 text-gold-300">此頁面僅供教練使用。</p>
         </div>
 
-        <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6">
-          <div className="flex items-center justify-between mb-2 sm:mb-4">
+        <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-2 sm:mb-3 sm:mb-4">
             <h2 className="text-lg sm:text-xl font-medium text-gold-100">教練資訊</h2>
           </div>
 
           {/* 教練資訊 */}
-          <div className="mb-2 sm:mb-4">
+          <div className="mb-2 sm:mb-3 sm:mb-4">
             <div className="text-sm text-gold-300 mb-2">我的教練：</div>
             {user?.coachUserId ? (
               myCoach ? (
@@ -482,14 +482,14 @@ const CoachDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6 shadow-elegant">
+      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-4 sm:p-6 shadow-elegant">
         <h1 className="text-xl sm:text-2xl font-semibold text-gold-100">教練儀表板</h1>
         <p className="mt-2 text-gold-300">歡迎來到教練專區。您可以在此查看並管理指派給您的學員。</p>
       </div>
 
       {/* 任務統計 */}
-      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6">
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
+      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-2 sm:mb-3 sm:mb-4">
           <h2 className="text-lg sm:text-xl font-medium text-gold-100">待辦任務統計</h2>
           {statsLoading && <span className="text-sm text-gold-300">載入中...</span>}
         </div>
@@ -542,8 +542,8 @@ const CoachDashboard = () => {
       </div>
 
       {/* 學員列表 */}
-      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6">
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
+      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-2 sm:mb-3 sm:mb-4">
           <h2 className="text-lg sm:text-xl font-medium text-gold-100">我的學員</h2>
           <div className="text-sm text-gold-300">
             共 {pagination?.totalMembers || 0} 位
@@ -564,7 +564,7 @@ const CoachDashboard = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:p-4 sm:gap-3 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:p-4 sm:gap-3 sm:p-4 sm:p-6">
               {visibleCoachees.map((member) => {
                 const { p, percent } = progressSummary(member.id);
                 const missing = {
@@ -666,7 +666,7 @@ const CoachDashboard = () => {
               </button>
             </div>
 
-            <div className="p-3 sm:p-4 md:p-3 sm:p-6">
+            <div className="p-3 sm:p-4 md:p-3 sm:p-4 sm:p-6">
               {/* 進度概覽 */}
               {(() => {
                 const { p, percent, profileScore, systemScore, bonusMbti } = progressSummary(selectedMember.id);
@@ -1033,11 +1033,11 @@ const CoachDashboard = () => {
                       {/* 主要卡片內容 */}
                       <div className="relative">
                         <div className="px-12 py-6 max-h-96 overflow-y-auto">
-                          <div className={`rounded-lg border-2 p-3 sm:p-6 transition-all duration-300 ${
+                          <div className={`rounded-lg border-2 p-3 sm:p-4 sm:p-6 transition-all duration-300 ${
                             getCardStyle()
                           }`}>
                             {/* 卡片標題區 */}
-                            <div className="flex items-start justify-between mb-2 sm:mb-4">
+                            <div className="flex items-start justify-between mb-2 sm:mb-3 sm:mb-4">
                               <div className="flex-1 pr-4">
                                 <div className="flex items-center gap-2 sm:gap-3 mb-2">
                                   {currentCard.completed ? (
