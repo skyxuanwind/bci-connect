@@ -97,6 +97,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
+      "https://bci-connect.onrender.com",
       process.env.CLIENT_URL,
       process.env.FRONTEND_URL
     ].filter(Boolean);
