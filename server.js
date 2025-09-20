@@ -99,6 +99,7 @@ const corsOptions = {
     const allowedOrigins = [
       "https://bci-connect.onrender.com",
       process.env.CLIENT_URL,
+        "https://www.gbc-connect.com",
       process.env.FRONTEND_URL
     ].filter(Boolean);
 
