@@ -650,9 +650,9 @@ const CoachDashboard = () => {
 
       {/* 進度總覽彈窗 & 快捷 CTA */}
       {selectedMember && (
-        <div className="fixed inset-0 z-40">
+        <div className="fixed inset-0 z-40 overflow-y-auto touch-pan-y">
           <div className="absolute inset-0 bg-black/60" onClick={closeModal} />
-          <div className="absolute inset-x-4 md:inset-x-0 md:left-1/2 md:-translate-x-1/2 top-10 md:top-20 z-50 bg-primary-800 border border-gold-600 rounded-lg shadow-elegant w-auto md:w-[720px]">
+          <div className="relative mx-4 md:inset-x-0 md:left-1/2 md:-translate-x-1/2 my-6 md:my-10 z-50 bg-primary-800 border border-gold-600 rounded-lg shadow-elegant w-auto md:w-[720px] max-h-[92svh] overflow-y-auto">
             <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gold-700">
               <div className="flex items-center">
                 <Avatar src={selectedMember.profilePictureUrl} alt={selectedMember.name} size="medium" />
