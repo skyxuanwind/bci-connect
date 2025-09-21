@@ -39,14 +39,10 @@ const CoachDashboard = () => {
   const [coachees, setCoachees] = useState([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalMembers: 0, limit });
 
-  // 任務統計
-  const [taskStats, setTaskStats] = useState({ total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0 });
-  const [statsLoading, setStatsLoading] = useState(false);
   // 進度概況
   const [progressById, setProgressById] = useState({});
   // 已移除未使用的 progressLoading 以清理警告
   const [selectedMember, setSelectedMember] = useState(null);
-  const [sortKey, setSortKey] = useState(() => localStorage.getItem('coachSortKey') || 'default'); // default | overdue_desc | meetings_desc
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const canPrev = useMemo(() => page > 1, [page]);
   const canNext = useMemo(() => page < (pagination?.totalPages || 1), [page, pagination]);
@@ -62,6 +58,10 @@ const CoachDashboard = () => {
   // 專案計劃狀態
   const [projectPlans, setProjectPlans] = useState({});
   const [projectPlanLoading, setProjectPlanLoading] = useState({});
+  // 任務統計狀態
+  const [taskStats, setTaskStats] = useState({ total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0 });
+  const [statsLoading, setStatsLoading] = useState(false);
+
 
   // 學員視圖（非教練）
   const [myTasks, setMyTasks] = useState([]);
@@ -196,9 +196,7 @@ const CoachDashboard = () => {
       setLoading(true);
       setError('');
       const params = { page, limit };
-      // 套用排序參數（搜尋與舊篩選已移除）
-      if (sortKey && sortKey !== 'default') params.sort = sortKey;
-
+      
       const resp = await axios.get('/api/users/my-coachees', { params });
       const data = resp.data || {};
       setCoachees(Array.isArray(data.coachees) ? data.coachees : []);
@@ -347,7 +345,7 @@ const CoachDashboard = () => {
     if (!iAmCoach) return;
     fetchCoachees();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, sortKey, iAmCoach]);
+  }, [page, iAmCoach]);
 
   useEffect(() => {
     if (!iAmCoach) return;
@@ -357,31 +355,10 @@ const CoachDashboard = () => {
     fetchStaffMembers();
   }, [iAmCoach]);
 
-  // 持久化：排序（舊的兩個篩選已移除）
-  useEffect(() => {
-    try { localStorage.setItem('coachSortKey', sortKey || 'default'); } catch {}
-  }, [sortKey]);
-
-  const visibleCoachees = useMemo(() => {
+    const visibleCoachees = useMemo(() => {
     let list = Array.isArray(coachees) ? [...coachees] : [];
-
-    // 排序
-    if (sortKey === 'overdue_desc') {
-      list.sort((a, b) => {
-        const ao = Number(a?.taskCounts?.overdue ?? 0);
-        const bo = Number(b?.taskCounts?.overdue ?? 0);
-        return bo - ao;
-      });
-    } else if (sortKey === 'meetings_desc') {
-      list.sort((a, b) => {
-        const am = Number(progressById[a.id]?.meetingsCount ?? 0);
-        const bm = Number(progressById[b.id]?.meetingsCount ?? 0);
-        return bm - am;
-      });
-    }
-
     return list;
-  }, [coachees, progressById, sortKey]);
+  }, [coachees, progressById]);
 
   // Modal 內動作
   const closeModal = () => {
@@ -487,58 +464,18 @@ const CoachDashboard = () => {
         <p className="mt-2 text-gold-300">歡迎來到教練專區。您可以在此查看並管理指派給您的學員。</p>
       </div>
 
-      {/* 任務統計 */}
-      <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-6">
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
-          <h2 className="text-lg sm:text-xl font-medium text-gold-100">待辦任務統計</h2>
-          {statsLoading && <span className="text-sm text-gold-300">載入中...</span>}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
-          <div className="card p-3 text-center">
-            <div className="text-sm sm:text-xs text-gold-300">總數</div>
-            <div className="text-xl sm:text-2xl font-semibold text-gold-100">{taskStats.total}</div>
-          </div>
-          <div className="card p-3 text-center">
-            <div className="text-sm sm:text-xs text-gold-300">待辦</div>
-            <div className="text-xl sm:text-2xl font-semibold text-yellow-200">{taskStats.pending}</div>
-          </div>
-          <div className="card p-3 text-center">
-            <div className="text-sm sm:text-xs text-gold-300">進行中</div>
-            <div className="text-xl sm:text-2xl font-semibold text-blue-200">{taskStats.inProgress}</div>
-          </div>
-          <div className="card p-3 text-center">
-            <div className="text-sm sm:text-xs text-gold-300">已完成</div>
-            <div className="text-xl sm:text-2xl font-semibold text-green-200">{taskStats.completed}</div>
-          </div>
-          <div className="card p-3 text-center">
-            <div className="text-sm sm:text-xs text-gold-300">逾期</div>
-            <div className="text-xl sm:text-2xl font-semibold text-red-200">{taskStats.overdue}</div>
-          </div>
-        </div>
-      </div>
+      
 
       {/* 搜尋列 */}
       <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <label className="text-sm text-gold-200">排序</label>
-            <select className="input py-1" value={sortKey} onChange={(e) => { setSortKey(e.target.value); setPage(1); }}>
-              <option value="default">預設</option>
-              <option value="overdue_desc">逾期任務數（多→少）</option>
-              <option value="meetings_desc">會議次數（多→少）</option>
-            </select>
-            {sortKey !== 'default' && (
-              <button
-                type="button"
-                onClick={() => { setSortKey('default'); setPage(1); fetchCoachees(); }}
-                className="btn-secondary py-1 px-2"
-              >重置</button>
-            )}
+            
+            
           </div>
         </div>
-        {sortKey !== 'default' && (
-          <div className="mt-2 text-sm sm:text-xs text-gold-300">已套用排序（跨頁生效）。</div>
-        )}
+        
       </div>
 
       {/* 學員列表 */}
@@ -1381,7 +1318,7 @@ const CoachDashboard = () => {
                             已完成: {attachmentItems.filter(item => item.completed).length} / {attachmentItems.length}
                           </div>
                           <div className="text-gold-400">
-                            完成率: {Math.round((attachmentItems.filter(item => item.completed).length / attachmentItems.length) * 100)}%
+                            完成率: {Math.round((attachmentItems.filter(item => item.completed).length / attachmentItems.length) * 100)}
                           </div>
                         </div>
                       </div>
