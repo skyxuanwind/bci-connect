@@ -97,14 +97,16 @@ const CoachDashboard = () => {
     const fetchCoachees = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get('/coaches/my-coachees', { params: { page, limit } });
-        setCoachees(data.members || []);
-        setPagination({
-          currentPage: data.currentPage || page,
-          totalPages: data.totalPages || 1,
-          totalMembers: data.totalMembers || 0,
-          limit
-        });
+        const { data } = await axios.get('/api/users/my-coachees', { params: { page, limit } });
+        setCoachees(Array.isArray(data.coachees) ? data.coachees : []);
+        setPagination(
+          data.pagination || {
+            currentPage: data?.pagination?.currentPage || page,
+            totalPages: data?.pagination?.totalPages || 1,
+            totalMembers: data?.pagination?.totalMembers || (Array.isArray(data.coachees) ? data.coachees.length : 0),
+            limit
+          }
+        );
       } catch (e) {
         setError(e?.response?.data?.message || '載入學員列表失敗');
       } finally {
@@ -118,7 +120,7 @@ const CoachDashboard = () => {
   const fetchProjectPlan = async (memberId) => {
     try {
       setProjectPlanLoading((prev) => ({ ...prev, [memberId]: true }));
-      const { data } = await axios.get(`/project-plans/${memberId}`);
+      const { data } = await axios.get(`/api/users/member/${memberId}/project-plan`);
       setProjectPlans((prev) => ({ ...prev, [memberId]: data || {} }));
     } catch (e) {
       toast.error('載入任務內容失敗');
