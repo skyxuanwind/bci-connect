@@ -138,7 +138,7 @@ router.put('/reject-user/:id', async (req, res) => {
       return res.status(400).json({ message: '此用戶不在待審核狀態' });
     }
 
-    // Delete the user record (or you could set status to 'rejected')
+    // Delete the user record (或你 could set status to 'rejected')
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
 
     res.json({
@@ -430,53 +430,146 @@ router.delete('/users/:id', async (req, res) => {
     try {
       // Delete related data first (按依賴順序)
       // 1. 刪除 AI 通知相關
-      await pool.query('DELETE FROM ai_notifications WHERE user_id = $1 OR related_user_id = $1', [id]);
+      const tbl_ai_notifications = await pool.query("SELECT to_regclass('public.ai_notifications') AS t");
+      if (tbl_ai_notifications.rows[0]?.t) {
+        await pool.query('DELETE FROM ai_notifications WHERE user_id = $1 OR related_user_id = $1', [id]);
+      }
       
       // 2. 刪除 NFC 相關數據
-      await pool.query('DELETE FROM nfc_card_visits WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)', [id]);
-      await pool.query('DELETE FROM nfc_card_content WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)', [id]);
+      const tbl_nfc_card_visits = await pool.query("SELECT to_regclass('public.nfc_card_visits') AS t");
+      if (tbl_nfc_card_visits.rows[0]?.t) {
+        await pool.query('DELETE FROM nfc_card_visits WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)', [id]);
+      }
+      const tbl_nfc_card_content = await pool.query("SELECT to_regclass('public.nfc_card_content') AS t");
+      if (tbl_nfc_card_content.rows[0]?.t) {
+        await pool.query('DELETE FROM nfc_card_content WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)', [id]);
+      }
       await pool.query('DELETE FROM nfc_cards WHERE user_id = $1', [id]);
-      await pool.query('DELETE FROM nfc_card_collections WHERE user_id = $1', [id]);
+      const tbl_nfc_card_collections = await pool.query("SELECT to_regclass('public.nfc_card_collections') AS t");
+      if (tbl_nfc_card_collections.rows[0]?.t) {
+        await pool.query('DELETE FROM nfc_card_collections WHERE user_id = $1', [id]);
+      }
       
       // 3. 刪除數字錢包相關
-      await pool.query('DELETE FROM scanned_business_cards WHERE user_id = $1', [id]);
+      const tbl_scanned_business_cards = await pool.query("SELECT to_regclass('public.scanned_business_cards') AS t");
+      if (tbl_scanned_business_cards.rows[0]?.t) {
+        await pool.query('DELETE FROM scanned_business_cards WHERE user_id = $1', [id]);
+      }
       
       // 4. 刪除會員活動和許願相關
-      await pool.query('DELETE FROM member_activities WHERE user_id = $1', [id]);
-      await pool.query('DELETE FROM ai_matching_results WHERE matched_user_id = $1', [id]);
-      await pool.query('DELETE FROM member_wishes WHERE user_id = $1', [id]);
+      const tbl_member_activities = await pool.query("SELECT to_regclass('public.member_activities') AS t");
+      if (tbl_member_activities.rows[0]?.t) {
+        await pool.query('DELETE FROM member_activities WHERE user_id = $1', [id]);
+      }
+      const tbl_ai_matching_results = await pool.query("SELECT to_regclass('public.ai_matching_results') AS t");
+      if (tbl_ai_matching_results.rows[0]?.t) {
+        await pool.query('DELETE FROM ai_matching_results WHERE matched_user_id = $1', [id]);
+      }
+      const tbl_member_wishes = await pool.query("SELECT to_regclass('public.member_wishes') AS t");
+      if (tbl_member_wishes.rows[0]?.t) {
+        await pool.query('DELETE FROM member_wishes WHERE user_id = $1', [id]);
+      }
       
       // 5. 刪除榮譽徽章
-      await pool.query('DELETE FROM user_honor_badges WHERE user_id = $1', [id]);
+      const tbl_user_honor_badges = await pool.query("SELECT to_regclass('public.user_honor_badges') AS t");
+      if (tbl_user_honor_badges.rows[0]?.t) {
+        await pool.query('DELETE FROM user_honor_badges WHERE user_id = $1', [id]);
+      }
       
       // 6. 刪除出席記錄
-      await pool.query('DELETE FROM attendance_records WHERE user_id = $1', [id]);
+      const tbl_attendance_records = await pool.query("SELECT to_regclass('public.attendance_records') AS t");
+      if (tbl_attendance_records.rows[0]?.t) {
+        await pool.query('DELETE FROM attendance_records WHERE user_id = $1', [id]);
+      }
       
       // 7. 刪除黑名單條目（如果是創建者）
-      await pool.query('DELETE FROM blacklist_entries WHERE created_by_id = $1', [id]);
+      const tbl_blacklist_entries = await pool.query("SELECT to_regclass('public.blacklist_entries') AS t");
+      if (tbl_blacklist_entries.rows[0]?.t) {
+        await pool.query('DELETE FROM blacklist_entries WHERE created_by_id = $1', [id]);
+      }
       
       // 8. 刪除原有的關聯數據
-      await pool.query('DELETE FROM referrals WHERE referrer_id = $1 OR referred_to_id = $1', [id]);
-      await pool.query('DELETE FROM meetings WHERE requester_id = $1 OR attendee_id = $1', [id]);
-      await pool.query('DELETE FROM user_ratings WHERE rater_id = $1 OR ratee_id = $1', [id]);
+      const tbl_referrals = await pool.query("SELECT to_regclass('public.referrals') AS t");
+      if (tbl_referrals.rows[0]?.t) {
+        await pool.query('DELETE FROM referrals WHERE referrer_id = $1 OR referred_to_id = $1', [id]);
+      }
+      const tbl_meetings = await pool.query("SELECT to_regclass('public.meetings') AS t");
+      if (tbl_meetings.rows[0]?.t) {
+        await pool.query('DELETE FROM meetings WHERE requester_id = $1 OR attendee_id = $1', [id]);
+      }
+      const tbl_user_ratings = await pool.query("SELECT to_regclass('public.user_ratings') AS t");
+      if (tbl_user_ratings.rows[0]?.t) {
+        await pool.query('DELETE FROM user_ratings WHERE rater_id = $1 OR ratee_id = $1', [id]);
+      }
       await pool.query('DELETE FROM user_onboarding_tasks WHERE user_id = $1', [id]);
-      await pool.query('DELETE FROM coach_member_relationships WHERE coach_id = $1 OR member_id = $1', [id]);
-      await pool.query('DELETE FROM event_registrations WHERE user_id = $1', [id]);
-      
-      // 8a. 清除活動報名中的邀請人引用（避免 FK 違反）
-      await pool.query('UPDATE event_registrations SET invited_by_id = NULL WHERE invited_by_id = $1', [id]);
+      const tbl_coach_member_relationships = await pool.query("SELECT to_regclass('public.coach_member_relationships') AS t");
+      if (tbl_coach_member_relationships.rows[0]?.t) {
+        await pool.query('DELETE FROM coach_member_relationships WHERE coach_id = $1 OR member_id = $1', [id]);
+      }
+      const tbl_event_registrations = await pool.query("SELECT to_regclass('public.event_registrations') AS t");
+      if (tbl_event_registrations.rows[0]?.t) {
+        await pool.query('DELETE FROM event_registrations WHERE user_id = $1', [id]);
+        await pool.query('UPDATE event_registrations SET invited_by_id = NULL WHERE invited_by_id = $1', [id]);
+      }
       
       // 8b. 清除申訴紀錄的提交者引用（nullable，避免 FK 違反）
-      await pool.query('UPDATE complaints SET submitter_id = NULL WHERE submitter_id = $1', [id]);
+      const tbl_complaints = await pool.query("SELECT to_regclass('public.complaints') AS t");
+      if (tbl_complaints.rows[0]?.t) {
+        await pool.query('UPDATE complaints SET submitter_id = NULL WHERE submitter_id = $1', [id]);
+      }
       
       // 8c. 清除靜態內容的最後更新人引用（nullable，避免 FK 違反）
-      await pool.query('UPDATE static_content SET updated_by_id = NULL WHERE updated_by_id = $1', [id]);
+      const tbl_static_content = await pool.query("SELECT to_regclass('public.static_content') AS t");
+      if (tbl_static_content.rows[0]?.t) {
+        await pool.query('UPDATE static_content SET updated_by_id = NULL WHERE updated_by_id = $1', [id]);
+      }
       
-      await pool.query('DELETE FROM guest_registrations WHERE inviter_id = $1', [id]);
-      await pool.query('DELETE FROM event_votes WHERE voter_id = $1', [id]);
-      await pool.query('DELETE FROM prospect_votes WHERE voter_id = $1', [id]);
-      await pool.query('DELETE FROM prospects WHERE created_by_id = $1', [id]);
-      await pool.query('DELETE FROM transactions WHERE created_by_id = $1', [id]);
+      const tbl_guest_registrations = await pool.query("SELECT to_regclass('public.guest_registrations') AS t");
+      if (tbl_guest_registrations.rows[0]?.t) {
+        await pool.query('DELETE FROM guest_registrations WHERE inviter_id = $1', [id]);
+      }
+      // event_votes 已做存在性保護
+      const evCheck = await pool.query("SELECT to_regclass('public.event_votes') AS tbl");
+      if (evCheck.rows[0]?.tbl) {
+        await pool.query('DELETE FROM event_votes WHERE voter_id = $1', [id]);
+      }
+      const tbl_prospect_votes = await pool.query("SELECT to_regclass('public.prospect_votes') AS t");
+      if (tbl_prospect_votes.rows[0]?.t) {
+        await pool.query('DELETE FROM prospect_votes WHERE voter_id = $1', [id]);
+        await pool.query('DELETE FROM prospect_votes WHERE prospect_id IN (SELECT id FROM prospects WHERE created_by_id = $1)', [id]);
+      }
+      const tbl_prospects = await pool.query("SELECT to_regclass('public.prospects') AS t");
+      if (tbl_prospects.rows[0]?.t) {
+        await pool.query('DELETE FROM prospects WHERE created_by_id = $1', [id]);
+      }
+      const tbl_transactions = await pool.query("SELECT to_regclass('public.transactions') AS t");
+      if (tbl_transactions.rows[0]?.t) {
+        await pool.query('DELETE FROM transactions WHERE created_by_id = $1', [id]);
+      }
+      
+      // 8d. 商媒體內容與分析安全清理（兼容舊資料庫可能缺少 ON DELETE 條款）
+      const tbl_business_media = await pool.query("SELECT to_regclass('public.business_media') AS t");
+      if (tbl_business_media.rows[0]?.t) {
+        // 若舊結構未設置 ON DELETE CASCADE，先手動刪除此講者的內容
+        await pool.query('DELETE FROM business_media WHERE speaker_id = $1', [id]);
+      }
+      const tbl_business_media_analytics = await pool.query("SELECT to_regclass('public.business_media_analytics') AS t");
+      if (tbl_business_media_analytics.rows[0]?.t) {
+        // 目標會員為被刪除用戶時，設為 NULL 以避免 FK 阻擋
+        await pool.query('UPDATE business_media_analytics SET target_member_id = NULL WHERE target_member_id = $1', [id]);
+      }
+
+      // 8e. 會議回饋（雙向問卷）清理（保險處理）
+      const tbl_meeting_feedbacks = await pool.query("SELECT to_regclass('public.meeting_feedbacks') AS t");
+      if (tbl_meeting_feedbacks.rows[0]?.t) {
+        await pool.query('DELETE FROM meeting_feedbacks WHERE rater_id = $1 OR ratee_id = $1', [id]);
+      }
+
+      // 8f. 教練日誌清理（保險處理）
+      const tbl_coach_logs = await pool.query("SELECT to_regclass('public.coach_logs') AS t");
+      if (tbl_coach_logs.rows[0]?.t) {
+        await pool.query('DELETE FROM coach_logs WHERE coach_id = $1 OR member_id = $1', [id]);
+      }
       
       // 9. 更新其他用戶的教練關係（將此用戶作為教練的學員設為無教練）
       await pool.query('UPDATE users SET coach_user_id = NULL WHERE coach_user_id = $1', [id]);
@@ -502,7 +595,14 @@ router.delete('/users/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Delete user error:', error);
-    res.status(500).json({ message: '刪除用戶時發生錯誤' });
+    res.status(500).json({ 
+      message: '刪除用戶時發生錯誤',
+      error: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint,
+      where: error.where
+    });
   }
 });
 
