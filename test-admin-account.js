@@ -1,7 +1,7 @@
 const axios = require('axios');
 
-// 線上 API 基礎 URL
-const API_BASE = 'https://bci-connect.onrender.com';
+// 線上/本地 API 基礎 URL（可用環境變數覆蓋）
+const API_BASE = process.env.API_BASE || 'https://bci-connect.onrender.com';
 
 // 管理員帳號（從 TEST_ACCOUNTS_README.md）
 const ADMIN_ACCOUNT = {
@@ -12,6 +12,7 @@ const ADMIN_ACCOUNT = {
 async function testAdminAccount() {
   try {
     console.log('🚀 開始測試管理員帳號...');
+    console.log(`🔗 目標 API: ${API_BASE}`);
     
     // 1. 健康檢查
     console.log('\n1. 檢查 API 健康狀態...');
@@ -26,6 +27,7 @@ async function testAdminAccount() {
     // 2. 管理員登入
     console.log('\n2. 嘗試管理員登入...');
     let adminToken;
+    let adminUser;
     try {
       const loginResponse = await axios.post(`${API_BASE}/api/auth/login`, {
         email: ADMIN_ACCOUNT.email,
@@ -33,12 +35,14 @@ async function testAdminAccount() {
       });
       
       adminToken = loginResponse.data.token;
+      adminUser = loginResponse.data.user;
+      const isAdmin = adminUser?.membershipLevel === 1;
       console.log('✅ 管理員登入成功!');
       console.log('👤 管理員資訊:', {
-        name: loginResponse.data.user.name,
-        email: loginResponse.data.user.email,
-        isAdmin: loginResponse.data.user.is_admin,
-        membershipLevel: loginResponse.data.user.membership_level
+        name: adminUser.name,
+        email: adminUser.email,
+        isAdmin,
+        membershipLevel: adminUser.membershipLevel
       });
     } catch (error) {
       console.log('❌ 管理員登入失敗:', error.response?.data?.message || error.message);
@@ -149,10 +153,51 @@ async function testAdminAccount() {
       });
       
       console.log('✅ 管理員用戶管理 API 成功');
-      console.log(`👥 管理員視角用戶數: ${adminUsersResponse.data.users?.length || 0}`);
+      const adminUsers = adminUsersResponse.data.users || [];
+      console.log(`👥 管理員視角用戶數: ${adminUsers.length}`);
+      if (adminUsers.length > 0) {
+        console.log('\n📋 用戶清單（前10名）:');
+        adminUsers.slice(0, 10).forEach((u, idx) => {
+          console.log(`  ${idx + 1}. ID=${u.id}  ${u.email}  ${u.name}`);
+        });
+        console.log('⚠️ 注意：ID=1為系統管理員，請勿刪除');
+      }
       
     } catch (error) {
       console.log('❌ 管理員用戶管理 API 失敗:', error.response?.data?.message || error.message);
+    }
+
+    // 4.1 若提供 DELETE_USER_ID，嘗試刪除該用戶
+    if (process.env.DELETE_USER_ID) {
+      const deleteId = process.env.DELETE_USER_ID;
+      console.log(`\n4.1 嘗試刪除用戶 ID=${deleteId} ...`);
+      try {
+        const delRes = await axios.delete(`${API_BASE}/api/admin/users/${deleteId}`, {
+          headers: { Authorization: `Bearer ${adminToken}` }
+        });
+        console.log('✅ 刪除結果:', delRes.data);
+      } catch (error) {
+        const status = error.response?.status;
+        const data = error.response?.data;
+        const payload = data ? {
+          message: data.message,
+          error: data.error,
+          code: data.code,
+          detail: data.detail,
+          constraint: data.constraint,
+          where: data.where,
+        } : null;
+        if (status === 404) {
+          console.log('ℹ️ 用戶不存在或已被刪除 (404):', payload || data || error.message);
+        } else if (status) {
+          console.log(`❌ 刪除失敗 (HTTP ${status}):`, payload || data || error.message);
+          if (data) {
+            console.log('↳ 服務端原始錯誤 payload:', data);
+          }
+        } else {
+          console.log('❌ 刪除失敗:', error.message);
+        }
+      }
     }
     
     // 5. 如果有教練，測試教練-學員關係 API
