@@ -94,6 +94,26 @@ router.get('/:id/public', async (req, res) => {
 // Apply authentication to all routes below
 router.use(authenticateToken);
 
+// 列出所有用戶（供管理端/測試腳本使用）
+// @route   GET /api/users
+// @desc    Get all users (basic fields)
+// @access  Private
+router.get('/', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, email, company, industry, title,
+             membership_level, status, is_coach, coach_user_id
+      FROM users
+      ORDER BY id ASC
+    `);
+
+    return res.json({ users: result.rows });
+  } catch (error) {
+    console.error('Get users list error:', error);
+    return res.status(500).json({ message: '獲取用戶列表時發生錯誤' });
+  }
+});
+
 // 學員目錄：顯示所有有被指派教練的學員（包含其他教練的學員）
 router.get('/all-coachees', requireCoach, async (req, res) => {
   try {
@@ -635,18 +655,18 @@ router.get('/members', async (req, res) => {
 // @access  Private (Coach or Admin)
 router.get('/my-coachees', requireCoach, async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '', noInterview, noNfc, sort } = req.query;
+    const { page = 1, limit = 20, search = '', noInterview, noNfc, sort, includeInactive } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     const coachId = req.user.id;
 
     let whereConditions = [
-      'u.status = $1',
-      'u.coach_user_id = $2',
+      '($1::boolean IS TRUE OR u.status = $2)',
+      'u.coach_user_id = $3',
       `NOT (u.membership_level = 1 AND u.email LIKE '%admin%')`
     ];
-    let params = ['active', coachId];
-    let idx = 3;
+    let params = [includeInactive === 'true', 'active', coachId];
+    let idx = 4;
 
     if (search && search.trim()) {
       whereConditions.push(`(u.name ILIKE $${idx} OR u.company ILIKE $${idx} OR u.title ILIKE $${idx})`);

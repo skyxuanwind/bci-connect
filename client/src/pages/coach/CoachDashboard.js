@@ -97,7 +97,7 @@ const CoachDashboard = () => {
     const fetchCoachees = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get('/api/users/my-coachees', { params: { page, limit } });
+        const { data } = await axios.get('/api/users/my-coachees', { params: { page, limit, includeInactive: true } });
         setCoachees(Array.isArray(data.coachees) ? data.coachees : []);
         setPagination(
           data.pagination || {
