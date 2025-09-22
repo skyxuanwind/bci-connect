@@ -333,16 +333,180 @@ const CoachDashboard = () => {
                       { id: 'member_data', text: '新會員提供基本資料及一張專業形象照片', completed: false },
                       { id: 'send_email', text: '發送給學員信件', completed: false }
                     ],
-                    emailTemplate: `{memberName}您好:
-
-我是GBC教練{coachName}，代表性行業是{coachIndustry}，是未來4週陪伴您進入系統及融入分會的專屬教練，群組是本屆會長、副會長。
-
-未來如有任何問題，歡迎在群組請與我們提出及聯絡。
-
-最後，GBC所有教練歡迎您的加入，一同成長！`
+                    emailTemplate: `{memberName}您好:\n\n我是GBC教練{coachName}，代表性行業是{coachIndustry}，是未來4週陪伴您進入系統及融入分會的專屬教練，群組是本屆會長、副會長。\n\n未來如有任何問題，歡迎在群組請與我們提出及聯絡。\n\n最後，GBC所有教練歡迎您的加入，一同成長！`
+                  },
+                  {
+                    id: 'pre_oath_preparation',
+                    title: '新會員宣誓前3-7天準備',
+                    subtitle: '對象：新會員、教練',
+                    description: '協助新會員準備自我介紹範本及說明共同目標',
+                    details: [
+                      {
+                        id: 'self_intro_template',
+                        text: '協助新會員準備50秒自我介紹範本',
+                        subtext: `大家好，我是${selectedMember?.industry || selectedMember?.company || 'OOO'}代表，${selectedMember?.name || 'XXX'}\n主要產品/服務內容\n成功見證\n主要代表性客戶\n獨特銷售或專業項\n請幫我引薦對象`,
+                        completed: false
+                      },
+                      {
+                        id: 'explain_goals_foundation',
+                        text: '再次說明共同目標、GBC地基及成功經驗',
+                        subtext: `GBC地基狀態：${selectedMember?.profile?.foundationViewed ? '✅ 學員已閱讀商會地基' : '❌ 學員尚未閱讀商會地基'}`,
+                        completed: false
+                      }
+                    ],
+                    completed: false,
+                    category: '準備階段',
+                    priority: 'high'
+                  },
+                  {
+                    id: 'day_before_oath',
+                    title: '宣誓前一天',
+                    subtitle: '對象：新會員、教練',
+                    description: '前一天提醒新會員內容',
+                    checklistItems: [
+                      { id: 'attendance_time', text: '出席時間 14:00', completed: false },
+                      { id: 'self_intro_50sec', text: '50秒自我介紹', completed: false },
+                      { id: 'dress_code', text: '服裝儀容，範例：(插上附件)', completed: false },
+                      { id: 'business_cards', text: '準備30張名片', completed: false },
+                      { id: 'four_week_plan', text: '4週導生計畫', completed: false },
+                      { id: 'send_email', text: '發送給學員信件', completed: false }
+                    ],
+                    emailTemplate: `${selectedMember?.name || 'OO'}您好:\n\n提醒您\n今天需請您練習50秒自我介紹!\n掌握好上台狀況很重要，若怕緊張可以帶上手稿上台，請不要帶手機看稿！\n\n參與例會時注意事項:\n1.例會及培訓時請穿著正式服裝、配戴Pin章及名牌(襯衫、西裝、洋裝、皮鞋等)\n2.請帶名片(30張以上)\n3.明日到場時間14:00到達，我們將協助您教學以及認識夥伴。`,
+                    completed: false,
+                    category: '最終準備',
+                    priority: 'high'
+                  },
+                  {
+                    id: 'ceremony_day',
+                    title: '第一天14:00宣前會',
+                    subtitle: '對象：新會員、教練',
+                    description: '教練需執行以下項目，完成後可勾選確認',
+                    checklistItems: [
+                      { id: 'intro_guide', text: '關心50秒自我介紹引薦單介紹內容', completed: false },
+                      { id: 'environment_intro', text: '介紹環境', completed: false },
+                      { id: 'core_staff_intro', text: '介紹核心幹部及職位內容', completed: false }
+                    ],
+                    completed: false,
+                    category: '宣誓儀式',
+                    priority: 'high'
+                  },
+                  {
+                    id: 'networking_time',
+                    title: '交流時間',
+                    subtitle: '引導新會員認識會員及來賓',
+                    description: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
+                    checklistItems: [
+                      '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)'
+                    ],
+                    completed: false,
+                    category: '社交建立',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'meeting_guidelines',
+                    title: '例會中注意事項',
+                    subtitle: '提醒手機關機或靜音、議程中如有需要說明，也請簡單說明即可，讓新會員專心參與議程',
+                    description: '確保新會員了解例會禮儀和參與規範',
+                    checklistItems: [
+                      { id: 'phone_silent', text: '提醒手機關機或靜音，請全程專注投入議程，盡量不使用手機', completed: false },
+                      { id: 'simple_explanation', text: '議程中如有需要說明，也請簡單說明即可，讓新會員專心參與議程', completed: false }
+                    ],
+                    completed: p?.understoodGuidelines || false,
+                    category: '會議禮儀',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'post_meeting',
+                    title: '會後',
+                    subtitle: '對象：新會員、教練',
+                    description: '執行：1.加入各大LINE群 2.系統教學',
+                    checklistItems: [
+                      '加入各大LINE群：新會員專案群、GBC聊天群、地基活動公告欄（請勿回覆）、分組第__組、軟性活動接龍群',
+                      '系統教學：一對一、引薦單、引薦金額意義及操作'
+                    ],
+                    completed: false,
+                    category: '系統整合',
+                    priority: 'high'
+                  },
+                  {
+                    id: 'one_week_followup',
+                    title: '一週內需完成',
+                    subtitle: '對象：教練',
+                    description: '執行：1.兩天內確認系統是否能登入 2.教學系統個人深度交流表填寫 3.幫你的新會員曝光介紹及見證導生的產品或服務 4.多先參訪夥伴或體驗產品',
+                    checklistItems: [
+                      '兩天內確認系統是否能登入',
+                      {
+                        id: 'interview_form_check',
+                        text: '教學系統個人深度交流表填寫',
+                        subtext: `面談表狀態：${p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表'}`,
+                        completed: p?.hasInterview || false
+                      },
+                      '幫你的新會員曝光介紹及見證導生的產品或服務，重點在讓新會員覺得有被重視',
+                      '多先參訪夥伴或體驗產品'
+                    ],
+                    completed: p?.weekOneComplete || false,
+                    category: '跟進確認',
+                    priority: 'high'
+                  },
+                  {
+                    id: 'second_week',
+                    title: '第二週',
+                    subtitle: '對象：新會員、教練',
+                    description: '執行：1.引導新會員為何帶來賓 2.引導新會員邀請代理人參觀例會議程 3.深度交流表完成 4.優先與核心一對一',
+                    checklistItems: [
+                      { id: 'guide_guest_purpose', text: '引導新會員為何帶來賓', completed: false },
+                      { id: 'invite_agent_meeting', text: '引導新會員邀請代理人參觀例會議程', completed: false },
+                      { id: 'deep_communication_form', text: '深度交流表完成', subtext: p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表', completed: p?.hasInterview || false },
+                      { id: 'core_member_one_on_one', text: '優先與核心一對一', subtext: `系統偵測到 ${coreMembers.length} 位核心權限會員`, completed: false }
+                    ],
+                    completed: p?.weekTwoComplete || false,
+                    category: '深度整合',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'third_week',
+                    title: '第三週',
+                    subtitle: '對象：新會員、教練',
+                    description: '執行：1.確認新會員系統使用狀況及進度 2.與幹部一對一狀況交流及回報進度',
+                    checklistItems: [
+                      { id: 'system_usage_check', text: '確認新會員系統使用狀況及進度', completed: false },
+                      { id: 'staff_one_on_one', text: '與幹部一對一狀況交流及回報進度', subtext: `系統偵測到 ${staffMembers.length} 位干部權限會員`, completed: false }
+                    ],
+                    completed: p?.weekThreeComplete || false,
+                    category: '進度追蹤',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'fourth_week',
+                    title: '第四週',
+                    subtitle: '對象：新會員、教練',
+                    description: '執行：1.確認新會員使用系統狀況及進度 2.確認與核心及幹部一對一進度狀況 3.優化自我介紹及介紹主題簡報(50秒、20分鐘)',
+                    checklistItems: [
+                      { id: 'system_status_check', text: '確認新會員使用系統狀況及進度', completed: false },
+                      { id: 'core_staff_one_on_one', text: '確認與核心及幹部一對一進度狀況', completed: false },
+                      { id: 'presentation_optimization', text: '優化自我介紹及介紹主題簡報(50秒、20分鐘)', completed: false }
+                    ],
+                    completed: p?.weekFourComplete || false,
+                    category: '技能提升',
+                    priority: 'high'
+                  },
+                  {
+                    id: 'graduation_standards',
+                    title: '結業標準',
+                    subtitle: '對象：新會員',
+                    description: '執行：1.核心幹部一對一 2.完成系統教學 3.完成基本引薦行為 4.公告群組歡迎與其一對一',
+                    checklistItems: [
+                      { id: 'core_staff_one_on_one_final', text: '核心幹部一對一', completed: false },
+                      { id: 'system_training_complete', text: '完成系統教學', completed: false },
+                      { id: 'basic_referral_behavior', text: '完成基本引薦行為', completed: false },
+                      { id: 'group_announcement_welcome', text: '公告群組歡迎與其一對一', completed: false }
+                    ],
+                    completed: p?.graduationComplete || false,
+                    category: '結業認證',
+                    priority: 'high'
                   }
                 ];
-
+                const currentCard = attachmentItems[currentCardIndex] || attachmentItems[0];
                 return (
                   <div>
                     <div>
@@ -365,84 +529,94 @@ const CoachDashboard = () => {
                       <div className="relative p-3 sm:p-4 border border-gold-600 rounded-lg bg-primary-800/40">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="text-base sm:text-sm font-semibold text-gold-100">{attachmentItems[0].title}</div>
-                            <div className="text-xs text-gold-400">{attachmentItems[0].subtitle}</div>
-                            {attachmentItems[0].description && (
-                              <div className="mt-2 text-sm text-gold-300 leading-relaxed">{attachmentItems[0].description}</div>
+                            <div className="text-base sm:text-sm font-semibold text-gold-100">{currentCard.title}</div>
+                            <div className="text-xs text-gold-400">{currentCard.subtitle}</div>
+                            {currentCard.description && (
+                              <div className="mt-2 text-sm text-gold-300 leading-relaxed">{currentCard.description}</div>
                             )}
 
-                            {attachmentItems[0].checklistItems && (
+                            {currentCard.checklistItems && (
                               <div className="mt-3 space-y-2">
-                                {attachmentItems[0].checklistItems.map((item) => (
-                                  <div key={item.id} className="flex items-center justify-between bg-primary-800/40 p-2 rounded border border-gold-700/30">
-                                    <div className="flex items-center gap-2">
-                                      <input
-                                        type="checkbox"
-                                        checked={getCheckboxState(selectedMember.id, attachmentItems[0].id, item.id, item.completed)}
-                                        onChange={(e) => updateCheckboxState(selectedMember.id, attachmentItems[0].id, item.id, e.target.checked)}
-                                        className="h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2"
-                                      />
-                                      <span className="text-sm text-gold-300">{item.text}</span>
-                                    </div>
+                                {currentCard.checklistItems.map((item, index) => {
+                                  const itemId = typeof item === 'string' ? `item_${index}` : item.id;
+                                  const itemText = typeof item === 'string' ? item : item.text;
+                                  const defaultCompleted = typeof item === 'object' && 'completed' in item ? !!item.completed : false;
+                                  return (
+                                    <div key={itemId} className="flex items-center justify-between bg-primary-800/40 p-2 rounded border border-gold-700/30">
+                                      <div className="flex items-center gap-2">
+                                        <input
+                                          type="checkbox"
+                                          checked={getCheckboxState(selectedMember.id, currentCard.id, itemId, defaultCompleted)}
+                                          onChange={(e) => updateCheckboxState(selectedMember.id, currentCard.id, itemId, e.target.checked)}
+                                          className="h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2"
+                                        />
+                                        <span className="text-sm text-gold-300">
+                                          {itemText}
+                                          {typeof item === 'object' && item.subtext ? (
+                                            <span className="block text-xs text-gold-400 mt-0.5">{item.subtext}</span>
+                                          ) : null}
+                                        </span>
+                                      </div>
+                                      <button
+                                        onClick={() => handleChecklistToggle(currentCard.id, itemId)}
+                                        className={`w-4 h-4 rounded border transition-colors ${
+                                          checklistStates[currentCard.id]?.[itemId]
+                                            ? 'bg-green-500 border-green-500'
+                                            : 'border-gold-400 hover:border-gold-300'
+                                        }`}
+                                      >
+                                        {checklistStates[currentCard.id]?.[itemId] && (
+                                          <CheckCircleIcon className="h-3 w-3 text-white" />
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {currentCard.details && currentCard.details.length > 0 && !currentCard.checklistItems && (
+                                <div className="mt-3">
+                                  <div className="text-sm text-gold-300 mb-2 font-semibold">詳細內容：</div>
+                                  <ul className="text-sm text-gold-400 space-y-3">
+                                    {currentCard.details.map((detail, index) => (
+                                      <li key={typeof detail === 'string' ? `detail_${index}` : detail.id} className="flex items-start">
+                                        <span className="text-gold-500 mr-2 text-base">•</span>
+                                        <span className="leading-relaxed">{typeof detail === 'string' ? detail : detail.text}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {currentCard.emailTemplate && (
+                                <div className="mt-4 p-3 sm:p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
+                                  <div className="text-sm text-gold-300 mb-2 font-semibold">郵件模板：</div>
+                                  <div className="text-xs text-gold-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border max-h-32 overflow-y-auto">
+                                    {currentCard.emailTemplate}
+                                  </div>
+                                  <div className="flex gap-2">
                                     <button
-                                      onClick={() => handleChecklistToggle(attachmentItems[0].id, item.id)}
-                                      className={`w-4 h-4 rounded border transition-colors ${
-                                        checklistStates[attachmentItems[0].id]?.[item.id]
-                                          ? 'bg-green-500 border-green-500'
-                                          : 'border-gold-400 hover:border-gold-300'
-                                      }`}
+                                      onClick={() => {/* copy logic here */}}
+                                      className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1"
                                     >
-                                      {checklistStates[attachmentItems[0].id]?.[item.id] && (
-                                        <CheckCircleIcon className="h-3 w-3 text-white" />
-                                      )}
+                                      <ClipboardDocumentListIcon className="h-4 w-4" />
+                                      一鍵複製
+                                    </button>
+                                    <button
+                                      onClick={() => {/* send email logic here */}}
+                                      className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
+                                    >
+                                      <EnvelopeIcon className="h-4 w-4" />
+                                      發送郵件
                                     </button>
                                   </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {attachmentItems[0].details && attachmentItems[0].details.length > 0 && !attachmentItems[0].checklistItems && (
-                              <div className="mt-3">
-                                <div className="text-sm text-gold-300 mb-2 font-semibold">詳細內容：</div>
-                                <ul className="text-sm text-gold-400 space-y-3">
-                                  {attachmentItems[0].details.map((detail, index) => (
-                                    <li key={index} className="flex items-start">
-                                      <span className="text-gold-500 mr-2 text-base">•</span>
-                                      <span className="leading-relaxed">{detail}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            {attachmentItems[0].emailTemplate && (
-                              <div className="mt-4 p-3 sm:p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
-                                <div className="text-sm text-gold-300 mb-2 font-semibold">郵件模板：</div>
-                                <div className="text-xs text-gold-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border max-h-32 overflow-y-auto">
-                                  {attachmentItems[0].emailTemplate}
                                 </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => {/* copy logic here */}}
-                                    className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1"
-                                  >
-                                    <ClipboardDocumentListIcon className="h-4 w-4" />
-                                    一鍵複製
-                                  </button>
-                                  <button
-                                    onClick={() => {/* send email logic here */}}
-                                    className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
-                                  >
-                                    <EnvelopeIcon className="h-4 w-4" />
-                                    發送郵件
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                           <div className="text-right flex-shrink-0">
                             <div className="text-sm px-3 py-2 rounded-full font-medium bg-gold-600/20 text-gold-200 border border-gold-600">
-                              {attachmentItems[0].category}
+                              {currentCard.category}
                             </div>
                           </div>
                         </div>
@@ -454,7 +628,7 @@ const CoachDashboard = () => {
                           <ChevronLeftIcon className="h-5 w-5 text-gold-300" />
                         </button>
                         <button
-                          onClick={() => setCurrentCardIndex((i) => i + 1)}
+                          onClick={() => setCurrentCardIndex((i) => Math.min(attachmentItems.length - 1, i + 1))}
                           className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
                         >
                           <ChevronRightIcon className="h-5 w-5 text-gold-300" />
