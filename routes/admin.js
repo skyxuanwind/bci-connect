@@ -428,16 +428,50 @@ router.delete('/users/:id', async (req, res) => {
     await pool.query('BEGIN');
 
     try {
-      // Delete related data first (foreign key constraints)
+      // Delete related data first (按依賴順序)
+      // 1. 刪除 AI 通知相關
+      await pool.query('DELETE FROM ai_notifications WHERE user_id = $1 OR related_user_id = $1', [id]);
+      
+      // 2. 刪除 NFC 相關數據
+      await pool.query('DELETE FROM nfc_card_visits WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)', [id]);
+      await pool.query('DELETE FROM nfc_card_content WHERE card_id IN (SELECT id FROM nfc_cards WHERE user_id = $1)', [id]);
+      await pool.query('DELETE FROM nfc_cards WHERE user_id = $1', [id]);
+      await pool.query('DELETE FROM nfc_card_collections WHERE user_id = $1', [id]);
+      
+      // 3. 刪除數字錢包相關
+      await pool.query('DELETE FROM scanned_business_cards WHERE user_id = $1', [id]);
+      
+      // 4. 刪除會員活動和許願相關
+      await pool.query('DELETE FROM member_activities WHERE user_id = $1', [id]);
+      await pool.query('DELETE FROM ai_matching_results WHERE matched_user_id = $1', [id]);
+      await pool.query('DELETE FROM member_wishes WHERE user_id = $1', [id]);
+      
+      // 5. 刪除榮譽徽章
+      await pool.query('DELETE FROM user_honor_badges WHERE user_id = $1', [id]);
+      
+      // 6. 刪除出席記錄
+      await pool.query('DELETE FROM attendance_records WHERE user_id = $1', [id]);
+      
+      // 7. 刪除黑名單條目（如果是創建者）
+      await pool.query('DELETE FROM blacklist_entries WHERE created_by_id = $1', [id]);
+      
+      // 8. 刪除原有的關聯數據
       await pool.query('DELETE FROM referrals WHERE referrer_id = $1 OR referred_to_id = $1', [id]);
       await pool.query('DELETE FROM meetings WHERE requester_id = $1 OR attendee_id = $1', [id]);
+      await pool.query('DELETE FROM user_ratings WHERE rater_id = $1 OR ratee_id = $1', [id]);
+      await pool.query('DELETE FROM user_onboarding_tasks WHERE user_id = $1', [id]);
+      await pool.query('DELETE FROM coach_member_relationships WHERE coach_id = $1 OR member_id = $1', [id]);
       await pool.query('DELETE FROM event_registrations WHERE user_id = $1', [id]);
       await pool.query('DELETE FROM guest_registrations WHERE inviter_id = $1', [id]);
+      await pool.query('DELETE FROM event_votes WHERE voter_id = $1', [id]);
       await pool.query('DELETE FROM prospect_votes WHERE voter_id = $1', [id]);
       await pool.query('DELETE FROM prospects WHERE created_by_id = $1', [id]);
       await pool.query('DELETE FROM transactions WHERE created_by_id = $1', [id]);
       
-      // Finally delete the user
+      // 9. 更新其他用戶的教練關係（將此用戶作為教練的學員設為無教練）
+      await pool.query('UPDATE users SET coach_user_id = NULL WHERE coach_user_id = $1', [id]);
+      
+      // 10. Finally delete the user
       await pool.query('DELETE FROM users WHERE id = $1', [id]);
       
       await pool.query('COMMIT');
