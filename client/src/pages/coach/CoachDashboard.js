@@ -25,425 +25,122 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 
 const CoachDashboard = () => {
-  // 分頁狀態（已移除搜尋）
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
-  // const navigate = useNavigate();
-
   const { user, isCoach: isCoachCtx } = useAuth();
   const iAmCoach = !!(isCoachCtx && isCoachCtx());
 
-  // 資料狀態（教練視圖）
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [coachees, setCoachees] = useState([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalMembers: 0, limit });
 
-  // 進度概況
   const [progressById, setProgressById] = useState({});
-  // 已移除未使用的 progressLoading 以清理警告
   const [selectedMember, setSelectedMember] = useState(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const canPrev = useMemo(() => page > 1, [page]);
 
-  // 12張卡片進度條邏輯
-  const totalCards = 12; // 總共12張卡片
-  const progressPercentage = ((currentCardIndex + 1) / totalCards) * 100;
-
-  // 進度條組件
-  const ProgressBar = ({ current, total, className = "" }) => {
-    const percentage = (current / total) * 100;
-    
-    return (
-      <div className={`w-full ${className}`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gold-300">學習進度</span>
-          <span className="text-sm text-gold-400">{current}/{total}</span>
-        </div>
-        <div className="w-full bg-primary-700 rounded-full h-2.5">
-          <div 
-            className="bg-gradient-to-r from-gold-500 to-gold-400 h-2.5 rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${percentage}%` }}
-          ></div>
-        </div>
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-xs text-gold-500">已完成 {Math.round(percentage)}%</span>
-          <span className="text-xs text-gold-500">剩餘 {total - current} 張</span>
-        </div>
-      </div>
-    );
-  };
-
-  const canNext = useMemo(() => page < (pagination?.totalPages || 1), [page, pagination]);
-
-  // 當選擇不同學員時重置卡片索引
-  useEffect(() => {
-    setCurrentCardIndex(0);
-  }, [selectedMember?.id]);
-
-  // Modal 內操作狀態
   const [actionLoading, setActionLoading] = useState(false);
-  
-  // 專案計劃狀態
+
   const [projectPlans, setProjectPlans] = useState({});
   const [projectPlanLoading, setProjectPlanLoading] = useState({});
-  // 任務統計狀態
+
   const [taskStats, setTaskStats] = useState({ total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0 });
   const [statsLoading, setStatsLoading] = useState(false);
 
-
-  // 學員視圖（非教練）
   const [myTasks, setMyTasks] = useState([]);
   const [myTasksLoading, setMyTasksLoading] = useState(false);
   const [myCoach, setMyCoach] = useState(null);
-  const [myTaskUpdating, setMyTaskUpdating] = useState({}); // { [taskId]: true }
+  const [myTaskUpdating, setMyTaskUpdating] = useState({});
   const [myCoachLogs, setMyCoachLogs] = useState([]);
-  
-  // 卡片勾選狀態管理 - 添加持久化
+
   const [checklistStates, setChecklistStates] = useState(() => {
-    const saved = localStorage.getItem('coachDashboardChecklistStates');
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const raw = localStorage.getItem('coach_checklist_states');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
   });
-  
-  // 核心會員狀態
+
   const [coreMembers, setCoreMembers] = useState([]);
   const [coreMembersLoading, setCoreMembersLoading] = useState(false);
-  
-  // 幹部會員狀態
   const [staffMembers, setStaffMembers] = useState([]);
   const [staffMembersLoading, setStaffMembersLoading] = useState(false);
-  
-  // 更新勾選框狀態 - 添加持久化
+
   const updateCheckboxState = (memberId, itemId, detailId, newState) => {
-    const key = `${memberId}_${itemId}_${detailId}`;
-    const newStates = {
-      ...checklistStates,
-      [key]: newState
-    };
-    setChecklistStates(newStates);
-    localStorage.setItem('coachDashboardChecklistStates', JSON.stringify(newStates));
-  };
-  
-  // 獲取勾選框狀態
-  const getCheckboxState = (memberId, itemId, detailId, defaultState = false) => {
-    const key = `${memberId}_${itemId}_${detailId}`;
-    return checklistStates[key] !== undefined ? checklistStates[key] : defaultState;
-  };
-
-  // 處理勾選項目 - 添加持久化
-  const handleChecklistToggle = (cardId, itemId) => {
-    const newStates = {
-      ...checklistStates,
-      [cardId]: {
-        ...checklistStates[cardId],
-        [itemId]: !checklistStates[cardId]?.[itemId]
-      }
-    };
-    setChecklistStates(newStates);
-    localStorage.setItem('coachDashboardChecklistStates', JSON.stringify(newStates));
-  };
-
-  // 複製郵件模板
-  const copyEmailTemplate = (template, memberName = '學員姓名', coachName = user?.name || '教練姓名', coachIndustry = user?.industry || '教練行業') => {
-    const emailContent = template
-      .replace(/OO/g, memberName)
-      .replace(/{memberName}/g, memberName)
-      .replace(/{coachName}/g, coachName)
-      .replace(/{coachIndustry}/g, coachIndustry);
-    
-    navigator.clipboard.writeText(emailContent).then(() => {
-      toast.success('郵件內容已複製到剪貼板');
-    }).catch(() => {
-      toast.error('複製失敗，請手動複製');
+    setChecklistStates((prev) => {
+      const next = { ...prev };
+      if (!next[memberId]) next[memberId] = {};
+      if (!next[memberId][itemId]) next[memberId][itemId] = {};
+      next[memberId][itemId][detailId] = newState;
+      localStorage.setItem('coach_checklist_states', JSON.stringify(next));
+      return next;
     });
   };
 
-  // 發送郵件 - 使用 GBC 系統
-  const sendEmail = async (template, memberEmail, memberName = '學員姓名', coachName = user?.name || '教練姓名', coachIndustry = user?.industry || '教練行業') => {
-    // 調試：檢查 selectedMember 的完整內容
-    console.log('調試 selectedMember:', selectedMember);
-    console.log('調試 memberEmail:', memberEmail);
-    console.log('調試 selectedMember?.email:', selectedMember?.email);
-    
-    // 驗證必要參數
-    if (!memberEmail) {
-      toast.error('無法發送郵件：學員信箱地址不存在');
-      return;
-    }
-    
-    if (!template) {
-      toast.error('無法發送郵件：郵件模板內容為空');
-      return;
-    }
-    
-    const emailContent = template
-      .replace(/{memberName}/g, memberName)
-      .replace(/{coachName}/g, coachName)
-      .replace(/{coachIndustry}/g, coachIndustry);
-    
-    try {
-      // 使用 GBC 系統發送郵件
-      const response = await axios.post('/api/emails/send', {
-        to: memberEmail,
-        subject: 'GBC新會員歡迎信',
-        content: emailContent,
-        type: 'welcome'
-      });
-      
-      toast.success('郵件已通過 GBC 系統發送');
-    } catch (error) {
-      console.error('發送郵件失敗:', error);
-      
-      // 顯示具體的錯誤信息
-      const errorMessage = error.response?.data?.message || '郵件發送失敗';
-      toast.error(`發送失敗：${errorMessage}`);
-      
-      // 如果 GBC 系統發送失敗，回退到 mailto
-      const subject = 'GBC新會員歡迎信';
-      const mailtoLink = `mailto:${memberEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
-      window.open(mailtoLink);
-      toast.warning('已打開郵件客戶端作為備用方案');
-    }
+  const getCheckboxState = (memberId, itemId, detailId, defaultState = false) => {
+    return !!(checklistStates?.[memberId]?.[itemId]?.[detailId] ?? defaultState);
   };
 
-  const getMembershipLevelBadge = (level) => {
-    const badges = {
-      1: { text: '核心', class: 'level-1' },
-      2: { text: '幹部', class: 'level-2' },
-      3: { text: '會員', class: 'level-3' }
-    };
-    const badge = badges[level] || { text: '未設定', class: 'bg-gray-500' };
-    return (
-      <span className={`badge ${badge.class} text-xs px-2 py-1 rounded-full font-medium`}>
-        {badge.text}
-      </span>
-    );
+  const handleChecklistToggle = (cardId, itemId) => {
+    setChecklistStates((prev) => {
+      const next = { ...prev };
+      if (!next[cardId]) next[cardId] = {};
+      next[cardId][itemId] = !next[cardId]?.[itemId];
+      localStorage.setItem('coach_checklist_states', JSON.stringify(next));
+      return next;
+    });
   };
 
-  const fetchCoachees = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const params = { page, limit };
-      
-      const resp = await axios.get('/api/users/my-coachees', { params });
-      const data = resp.data || {};
-      setCoachees(Array.isArray(data.coachees) ? data.coachees : []);
-      setPagination(data.pagination || { currentPage: page, totalPages: 1, totalMembers: 0, limit });
-    } catch (e) {
-      console.error('載入學員列表失敗:', e);
-      setError(e.response?.data?.message || '載入學員列表失敗');
-      setCoachees([]);
-      setPagination({ currentPage: 1, totalPages: 1, totalMembers: 0, limit });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTaskStats = async () => {
-    try {
-      setStatsLoading(true);
-      const resp = await axios.get('/api/users/my-coachees/task-stats');
-      const s = resp.data || {};
-      setTaskStats({
-        total: Number(s.total || 0),
-        pending: Number(s.pending || 0),
-        inProgress: Number(s.inProgress || 0),
-        completed: Number(s.completed || 0),
-        overdue: Number(s.overdue || 0)
-      });
-    } catch (e) {
-      console.error('載入任務統計失敗:', e);
-    } finally {
-      setStatsLoading(false);
-    }
-  };
-
-  const fetchProgress = async () => {
-    try {
-      const resp = await axios.get('/api/users/my-coachees/progress');
-      const list = resp.data?.progress || [];
-      const map = {};
-      list.forEach(item => {
-        if (item && item.userId != null) map[item.userId] = item;
-      });
-      setProgressById(map);
-    } catch (e) {
-      console.error('載入進度概況失敗:', e);
-    } finally {
-      // no-op
-    }
-  };
-
-  // 非教練視圖：載入自己的任務與教練資訊
-  const fetchMyView = async () => {
-    if (!user?.id) return;
-    setMyTasksLoading(true);
-    try {
-      // 取得自己的任務
-      const tResp = await axios.get(`/api/users/member/${user.id}/onboarding-tasks`);
-      setMyTasks(Array.isArray(tResp.data?.tasks) ? tResp.data.tasks : []);
-
-      // 取得教練公開資訊（若有教練）
-      if (user.coachUserId) {
-        try {
-          const cResp = await axios.get(`/api/users/${user.coachUserId}/public`);
-          setMyCoach(cResp.data?.user || null);
-        } catch (err) {
-          console.warn('取得教練公開資訊失敗或不存在');
-          setMyCoach({ id: user.coachUserId });
-        }
-      } else {
-        setMyCoach(null);
-      }
-
-      // 取得教練紀錄（唯讀）
+  useEffect(() => {
+    if (!iAmCoach) return;
+    const fetchCoachees = async () => {
       try {
-        const lResp = await axios.get(`/api/users/member/${user.id}/coach-logs`);
-        setMyCoachLogs(Array.isArray(lResp.data?.logs) ? lResp.data.logs : []);
-      } catch (err) {
-        console.warn('取得教練紀錄失敗');
-        setMyCoachLogs([]);
+        setLoading(true);
+        const { data } = await axios.get('/coaches/my-coachees', { params: { page, limit } });
+        setCoachees(data.members || []);
+        setPagination({
+          currentPage: data.currentPage || page,
+          totalPages: data.totalPages || 1,
+          totalMembers: data.totalMembers || 0,
+          limit
+        });
+      } catch (e) {
+        setError(e?.response?.data?.message || '載入學員列表失敗');
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error('載入我的任務失敗:', e);
-      setMyTasks([]);
-      setMyCoachLogs([]);
-    } finally {
-      setMyTasksLoading(false);
-    }
-  };
+    };
 
-  const updateTaskStatus = async (taskId, status) => {
-    if (!taskId) return;
-    setMyTaskUpdating(prev => ({ ...prev, [taskId]: true }));
-    try {
-      const p = axios.put(`/api/users/onboarding-tasks/${taskId}`, { status });
-      await toast.promise(p, {
-        loading: '更新任務中…',
-        success: status === 'completed' ? '任務已完成' : '已更新任務狀態',
-        error: (err) => err?.response?.data?.message || '更新任務失敗'
-      }, {
-        id: `task-${taskId}`,
-        duration: 4000,
-        style: { background: '#1f2937', color: '#fde68a', border: '1px solid #b45309' }
-      });
-      await fetchMyView();
-    } catch (e) {
-      // 錯誤已由 toast 顯示
-    } finally {
-      setMyTaskUpdating(prev => ({ ...prev, [taskId]: false }));
-    }
-  };
-
-  // 獲取核心會員名單
-  const fetchCoreMembers = async () => {
-    try {
-      setCoreMembersLoading(true);
-      const resp = await axios.get('/api/users/core-members');
-      setCoreMembers(resp.data?.coreMembers || []);
-    } catch (e) {
-      console.error('載入核心會員名單失敗:', e);
-      setCoreMembers([]);
-    } finally {
-      setCoreMembersLoading(false);
-    }
-  };
-
-  // 獲取幹部會員名單
-  const fetchStaffMembers = async () => {
-    try {
-      setStaffMembersLoading(true);
-      const resp = await axios.get('/api/users/staff-members');
-      setStaffMembers(resp.data?.staffMembers || []);
-    } catch (e) {
-      console.error('載入幹部會員名單失敗:', e);
-      setStaffMembers([]);
-    } finally {
-      setStaffMembersLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (iAmCoach) return;
-    fetchMyView();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [iAmCoach, user?.id, user?.coachUserId]);
-
-  useEffect(() => {
-    if (!iAmCoach) return;
     fetchCoachees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, iAmCoach]);
+  }, [iAmCoach, page, limit]);
 
-  useEffect(() => {
-    if (!iAmCoach) return;
-    fetchTaskStats();
-    fetchProgress();
-    fetchCoreMembers();
-    fetchStaffMembers();
-  }, [iAmCoach]);
-
-    const visibleCoachees = useMemo(() => {
-    let list = Array.isArray(coachees) ? [...coachees] : [];
-    return list;
-  }, [coachees, progressById]);
-
-  // Modal 內動作
-  const closeModal = () => {
-    setSelectedMember(null);
-  };
-
-  // 獲取專案計劃
   const fetchProjectPlan = async (memberId) => {
-    if (projectPlans[memberId] || projectPlanLoading[memberId]) return;
-    
-    setProjectPlanLoading(prev => ({ ...prev, [memberId]: true }));
     try {
-      const response = await axios.get(`/api/users/member/${memberId}/project-plan`);
-      setProjectPlans(prev => ({ ...prev, [memberId]: response.data }));
-    } catch (error) {
-      console.error('獲取專案計劃失敗:', error);
-      setProjectPlans(prev => ({ ...prev, [memberId]: null }));
+      setProjectPlanLoading((prev) => ({ ...prev, [memberId]: true }));
+      const { data } = await axios.get(`/project-plans/${memberId}`);
+      setProjectPlans((prev) => ({ ...prev, [memberId]: data || {} }));
+    } catch (e) {
+      toast.error('載入任務內容失敗');
     } finally {
-      setProjectPlanLoading(prev => ({ ...prev, [memberId]: false }));
-    }
-  };
-
-
-
-  // 更新會員狀態
-  const updateMemberStatus = async (memberId, newStatus) => {
-    setActionLoading(true);
-    try {
-      await axios.put(`/api/admin/users/${memberId}/status`, { status: newStatus });
-      toast.success(`會員狀態已更新為${newStatus === 'active' ? '活躍' : '非活躍'}`);
-      // 更新本地狀態
-      setCoachees(prev => prev.map(member => 
-        member.id === memberId ? { ...member, status: newStatus } : member
-      ));
-      if (selectedMember && selectedMember.id === memberId) {
-        setSelectedMember(prev => ({ ...prev, status: newStatus }));
-      }
-    } catch (error) {
-      console.error('更新會員狀態失敗:', error);
-      toast.error(error.response?.data?.message || '更新會員狀態失敗');
-    } finally {
-      setActionLoading(false);
+      setProjectPlanLoading((prev) => ({ ...prev, [memberId]: false }));
     }
   };
 
   const progressSummary = (memberId) => {
     const p = progressById[memberId] || {};
-    const prog = p?.progress || {};
-    const percent = Math.round(Number(prog?.overallPercent ?? 0));
-    const profileScore = Number(prog?.profileScore ?? 0);
-    const systemScore = Number(prog?.systemScore ?? 0);
-    const bonusMbti = Number(prog?.bonusMbti ?? 0);
+    const profileScore = (p.profile || 0);
+    const systemScore = (p.system || 0);
+    const bonusMbti = p.hasMbtiType ? 5 : 0;
+    const percent = Math.min(100, Math.round(((profileScore + systemScore + bonusMbti) / 105) * 100));
     return { p, percent, profileScore, systemScore, bonusMbti };
   };
 
-  // 非教練視圖：僅顯示教練資訊
+  const closeModal = () => {
+    setSelectedMember(null);
+    setCurrentCardIndex(0);
+  };
+
   if (!iAmCoach) {
     return (
       <div className="space-y-6">
@@ -493,18 +190,13 @@ const CoachDashboard = () => {
         <p className="mt-2 text-gold-300">歡迎來到教練專區。您可以在此查看並管理指派給您的學員。</p>
       </div>
 
-      
-
       {/* 搜尋列 */}
       <div className="bg-primary-800 border border-gold-600 rounded-lg p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <label className="text-sm text-gold-200">排序</label>
-            
-            
           </div>
         </div>
-        
       </div>
 
       {/* 學員列表 */}
@@ -531,38 +223,25 @@ const CoachDashboard = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:p-4 sm:gap-3 sm:p-6">
-              {visibleCoachees.map((member) => {
-                const { p, percent } = progressSummary(member.id);
-                const missing = {
-                  interview: !(p?.hasInterview),
-                  mbti: !(p?.hasMbtiType),
-                  nfc: !(p?.hasNfcCard),
-                  foundation: !(p?.foundationViewed)
-                };
+              {coachees.map((member) => {
+                const { percent } = progressSummary(member.id);
                 return (
-                  <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer relative" onClick={() => {
-                  setSelectedMember(member);
-                  fetchProjectPlan(member.id);
-                }}>
+                  <div
+                    key={member.id}
+                    className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer relative"
+                    onClick={() => {
+                      setSelectedMember(member);
+                      fetchProjectPlan(member.id);
+                    }}
+                  >
                     <div className="p-3 sm:p-4">
-                      {/* 簡潔版卡片：大頭貼、名字、行業別、進度條 */}
                       <div className="flex items-center mb-2 sm:mb-3">
-                        <Avatar 
-                          src={member.profilePictureUrl} 
-                          alt={member.name}
-                          size="medium"
-                        />
+                        <Avatar src={member.profilePictureUrl} alt={member.name} size="medium" />
                         <div className="ml-3 flex-1">
-                          <h3 className="text-base sm:text-sm font-medium text-gold-100 truncate">
-                            {member.name}
-                          </h3>
-                          <div className="text-sm sm:text-xs text-gold-300 truncate">
-                            {member.company}
-                          </div>
+                          <h3 className="text-base sm:text-sm font-medium text-gold-100 truncate">{member.name}</h3>
+                          <div className="text-sm sm:text-xs text-gold-300 truncate">{member.company}</div>
                         </div>
                       </div>
-
-                      {/* 進度條 */}
                       {(() => {
                         const percentShow = percent;
                         return (
@@ -580,135 +259,228 @@ const CoachDashboard = () => {
                           </div>
                         );
                       })()}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-                      {/* 缺失項目提示 */}
-                      {Object.values(missing).some(Boolean) && (
-                        <div className="mt-2 sm:mt-3">
-                          <div className="text-sm sm:text-xs text-red-300 mb-1">待完成：</div>
-                          <div className="flex flex-wrap gap-1">
-                            {missing.interview && <span className="text-xs px-2 py-1 bg-red-600/20 text-red-300 rounded">面談</span>}
-                            {missing.mbti && <span className="text-xs px-2 py-1 bg-red-600/20 text-red-300 rounded">MBTI</span>}
-                            {missing.nfc && <span className="text-xs px-2 py-1 bg-red-600/20 text-red-300 rounded">NFC卡</span>}
-                            {missing.foundation && <span className="text-xs px-2 py-1 bg-red-600/20 text-red-300 rounded">基礎課程</span>}
-                          </div>
-                        </div>
-                      )}
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-gold-300">
+                第 {pagination?.currentPage || page} / {pagination?.totalPages || 1} 頁
+              </div>
+              <div className="space-x-2">
+                <button
+                  type="button"
+                  disabled={pagination.currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className={`btn-secondary inline-flex items-center ${pagination.currentPage <= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <ChevronLeftIcon className="h-4 w-4 mr-1" /> 上一頁
+                </button>
+                <button
+                  type="button"
+                  disabled={pagination.currentPage >= pagination.totalPages}
+                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                  className={`btn-secondary inline-flex items-center ${pagination.currentPage >= pagination.totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  下一頁 <ChevronRightIcon className="h-4 w-4 ml-1" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
-                      {/* 會員等級 */}
-                      <div className="mt-2 sm:mt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getMembershipLevelBadge(member.membershipLevel)}
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            member.status === 'active' 
-                              ? 'bg-green-600/20 text-green-300' 
-                              : 'bg-red-600/20 text-red-300'
-                          }`}>
-                            {member.status === 'active' ? '活躍' : '非活躍'}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gold-400">
-                          {member.email && (
-                            <EnvelopeIcon className="h-4 w-4" />
-                          )}
-                        </div>
+      {selectedMember && (
+        <div className="fixed inset-0 z-40 overflow-y-auto touch-pan-y">
+          <div className="absolute inset-0 bg-black/60" onClick={closeModal} />
+          <div className="relative mx-4 md:inset-x-0 md:left-1/2 md:-translate-x-1/2 my-6 md:my-10 z-50 bg-primary-800 border border-gold-600 rounded-lg shadow-elegant w-auto md:w-[720px] max-h-[92svh] overflow-y-auto">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gold-700">
+              <div className="flex items-center">
+                <Avatar src={selectedMember.profilePictureUrl} alt={selectedMember.name} size="medium" />
+                <div className="ml-3">
+                  <div className="text-gold-100 font-semibold">{selectedMember.name}</div>
+                  <div className="text-sm sm:text-xs text-gold-300">{selectedMember.company} ・ {selectedMember.title}</div>
+                </div>
+              </div>
+              <button className="icon-button" onClick={closeModal}>
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-3 sm:p-4 md:p-3 sm:p-6">
+              {(() => {
+                const { p, percent, profileScore, systemScore, bonusMbti } = progressSummary(selectedMember.id);
+                const attachmentItems = [
+                  {
+                    id: 'core_member_approval',
+                    title: '核心會員完成準予加入GBC',
+                    subtitle: '對象：新會員、教練',
+                    description: '教練需執行以下項目，完成後可勾選確認',
+                    details: [
+                      '建立群組',
+                      '新會員提供基本資料及一張專業形象照片（基本資料系統自動抓學員的個人資料和大頭貼，大頭貼是能夠讓教練下載的）',
+                      '發送給學員信件'
+                    ],
+                    completed: p?.hasInterview || false,
+                    category: '基礎建立',
+                    priority: 'high',
+                    checklistItems: [
+                      { id: 'create_group', text: '建立群組', completed: false },
+                      { id: 'member_data', text: '新會員提供基本資料及一張專業形象照片', completed: false },
+                      { id: 'send_email', text: '發送給學員信件', completed: false }
+                    ],
+                    emailTemplate: `{memberName}您好:
+
+我是GBC教練{coachName}，代表性行業是{coachIndustry}，是未來4週陪伴您進入系統及融入分會的專屬教練，群組是本屆會長、副會長。
+
+未來如有任何問題，歡迎在群組請與我們提出及聯絡。
+
+最後，GBC所有教練歡迎您的加入，一同成長！`
+                  }
+                ];
+
+                return (
+                  <div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gold-300">進度</div>
+                        <div className="text-sm text-gold-100 font-semibold">{percent}%</div>
                       </div>
-                                      </button>
-                                      <button
-                                        onClick={() => sendEmail(currentCard.emailTemplate, selectedMember?.email, selectedMember?.name)}
-                                        className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
-                                      >
-                                        <EnvelopeIcon className="h-4 w-4" />
-                                        發送郵件
-                                      </button>
+                      <div className="w-full h-3 sm:h-2 bg-primary-700 rounded mt-1">
+                        <div className={`${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'} h-3 sm:h-2 rounded`} style={{ width: `${percent}%` }} />
+                      </div>
+                      <div className="mt-1 text-[11px] text-gold-400">基礎 {profileScore}/60 ・ 系統 {systemScore}/40{bonusMbti > 0 ? ` ・ MBTI +${bonusMbti}` : ''}</div>
+                    </div>
+
+                    <div className="mt-6">
+                      <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                        <ClipboardDocumentListIcon className="h-5 w-5 text-gold-300" />
+                        <div className="text-lg font-semibold text-gold-100">教練任務</div>
+                      </div>
+
+                      <div className="relative p-3 sm:p-4 border border-gold-600 rounded-lg bg-primary-800/40">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-base sm:text-sm font-semibold text-gold-100">{attachmentItems[0].title}</div>
+                            <div className="text-xs text-gold-400">{attachmentItems[0].subtitle}</div>
+                            {attachmentItems[0].description && (
+                              <div className="mt-2 text-sm text-gold-300 leading-relaxed">{attachmentItems[0].description}</div>
+                            )}
+
+                            {attachmentItems[0].checklistItems && (
+                              <div className="mt-3 space-y-2">
+                                {attachmentItems[0].checklistItems.map((item) => (
+                                  <div key={item.id} className="flex items-center justify-between bg-primary-800/40 p-2 rounded border border-gold-700/30">
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={getCheckboxState(selectedMember.id, attachmentItems[0].id, item.id, item.completed)}
+                                        onChange={(e) => updateCheckboxState(selectedMember.id, attachmentItems[0].id, item.id, e.target.checked)}
+                                        className="h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2"
+                                      />
+                                      <span className="text-sm text-gold-300">{item.text}</span>
                                     </div>
+                                    <button
+                                      onClick={() => handleChecklistToggle(attachmentItems[0].id, item.id)}
+                                      className={`w-4 h-4 rounded border transition-colors ${
+                                        checklistStates[attachmentItems[0].id]?.[item.id]
+                                          ? 'bg-green-500 border-green-500'
+                                          : 'border-gold-400 hover:border-gold-300'
+                                      }`}
+                                    >
+                                      {checklistStates[attachmentItems[0].id]?.[item.id] && (
+                                        <CheckCircleIcon className="h-3 w-3 text-white" />
+                                      )}
+                                    </button>
                                   </div>
-                                )}
+                                ))}
                               </div>
-                              <div className="text-right flex-shrink-0">
-                                <div className="text-sm px-3 py-2 rounded-full font-medium bg-gold-600/20 text-gold-200 border border-gold-600">
-                                  {currentCard.category}
-                                </div>
+                            )}
+
+                            {attachmentItems[0].details && attachmentItems[0].details.length > 0 && !attachmentItems[0].checklistItems && (
+                              <div className="mt-3">
+                                <div className="text-sm text-gold-300 mb-2 font-semibold">詳細內容：</div>
+                                <ul className="text-sm text-gold-400 space-y-3">
+                                  {attachmentItems[0].details.map((detail, index) => (
+                                    <li key={index} className="flex items-start">
+                                      <span className="text-gold-500 mr-2 text-base">•</span>
+                                      <span className="leading-relaxed">{detail}</span>
+                                    </li>
+                                  ))}
+                                </ul>
                               </div>
-                            </div>
-                            
-                            {/* 狀態顯示 */}
-                            {currentCard.completed && (
-                              <div className="flex items-center justify-between">
-                                <div className="text-base font-bold text-green-400">
-                                  ✓ 已完成
+                            )}
+
+                            {attachmentItems[0].emailTemplate && (
+                              <div className="mt-4 p-3 sm:p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
+                                <div className="text-sm text-gold-300 mb-2 font-semibold">郵件模板：</div>
+                                <div className="text-xs text-gold-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border max-h-32 overflow-y-auto">
+                                  {attachmentItems[0].emailTemplate}
                                 </div>
-                                <div className="text-sm text-green-300 font-medium">
-                                  狀態良好
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {/* copy logic here */}}
+                                    className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1"
+                                  >
+                                    <ClipboardDocumentListIcon className="h-4 w-4" />
+                                    一鍵複製
+                                  </button>
+                                  <button
+                                    onClick={() => {/* send email logic here */}}
+                                    className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
+                                  >
+                                    <EnvelopeIcon className="h-4 w-4" />
+                                    發送郵件
+                                  </button>
                                 </div>
                               </div>
                             )}
                           </div>
-                        </div>
-                        
-                        {/* 頂部進度條 */}
-                        <div className="mt-2">
-                          <div className="w-full h-2 bg-primary-700/50 rounded-full border border-gold-700/50 overflow-hidden">
-                            <div className="h-full bg-gold-500" style={{ width: `${Math.min(100, Math.max(0, progressPercentage))}%` }} />
-                          </div>
-                          <div className="mt-1 text-xs text-gold-300 text-right">
-                            {Math.round(progressPercentage)}% ({currentCardIndex + 1} / {totalCards})
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-sm px-3 py-2 rounded-full font-medium bg-gold-600/20 text-gold-200 border border-gold-600">
+                              {attachmentItems[0].category}
+                            </div>
                           </div>
                         </div>
 
-                        {/* 左右切換按鈕 */}
                         <button
-                          onClick={prevCard}
+                          onClick={() => setCurrentCardIndex((i) => Math.max(0, i - 1))}
                           className="absolute left-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
                         >
                           <ChevronLeftIcon className="h-5 w-5 text-gold-300" />
                         </button>
                         <button
-                          onClick={nextCard}
+                          onClick={() => setCurrentCardIndex((i) => i + 1)}
                           className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
                         >
                           <ChevronRightIcon className="h-5 w-5 text-gold-300" />
                         </button>
-                      </div>
-                      
-                      {/* 底部統計 */}
-                      <div className="p-3 border-t border-gold-700/50 bg-primary-800/50">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="text-gold-300">
-                            已完成: {attachmentItems.filter(item => item.completed).length} / {attachmentItems.length}
-                          </div>
-                          <div className="text-gold-400">
-                            完成率: {Math.round((attachmentItems.filter(item => item.completed).length / attachmentItems.length) * 100)}
+
+                        <div className="p-3 border-t border-gold-700/50 bg-primary-800/50">
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="text-gold-300">已完成: {attachmentItems.filter((i) => i.completed).length} / {attachmentItems.length}</div>
+                            <div className="text-gold-400">完成率: {Math.round((attachmentItems.filter((i) => i.completed).length / attachmentItems.length) * 100)}</div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  );
-                })()}
-              </div>
 
-              {/* 快捷操作 */}
-              <div className="mt-6">
-                {/* 快捷操作 */}
-                <div className="text-xl font-bold text-gold-100 mb-2 sm:mb-3">快捷操作</div>
-                
-
-
-                {/* 快捷操作 */}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <a
-                    href={`/meetings?schedule_with=${selectedMember.id}`}
-                    className="btn-secondary inline-flex items-center text-base px-4 py-2"
-                  >
-                    <CalendarIcon className="h-5 w-5 mr-1" /> 安排會議
-                  </a>
-                  <Link
-                    to={`/members/${selectedMember.id}`}
-                    className="btn-secondary text-base px-4 py-2"
-                  >
-                    查看詳情
-                  </Link>
-                </div>
-              </div>
+                    <div className="mt-6">
+                      <div className="text-xl font-bold text-gold-100 mb-2 sm:mb-3">快捷操作</div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <a href={`/meetings?schedule_with=${selectedMember.id}`} className="btn-secondary inline-flex items-center text-base px-4 py-2">
+                          <CalendarIcon className="h-5 w-5 mr-1" /> 安排會議
+                        </a>
+                        <Link to={`/members/${selectedMember.id}`} className="btn-secondary text-base px-4 py-2">
+                          查看詳情
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
