@@ -462,6 +462,16 @@ router.delete('/users/:id', async (req, res) => {
       await pool.query('DELETE FROM user_onboarding_tasks WHERE user_id = $1', [id]);
       await pool.query('DELETE FROM coach_member_relationships WHERE coach_id = $1 OR member_id = $1', [id]);
       await pool.query('DELETE FROM event_registrations WHERE user_id = $1', [id]);
+      
+      // 8a. 清除活動報名中的邀請人引用（避免 FK 違反）
+      await pool.query('UPDATE event_registrations SET invited_by_id = NULL WHERE invited_by_id = $1', [id]);
+      
+      // 8b. 清除申訴紀錄的提交者引用（nullable，避免 FK 違反）
+      await pool.query('UPDATE complaints SET submitter_id = NULL WHERE submitter_id = $1', [id]);
+      
+      // 8c. 清除靜態內容的最後更新人引用（nullable，避免 FK 違反）
+      await pool.query('UPDATE static_content SET updated_by_id = NULL WHERE updated_by_id = $1', [id]);
+      
       await pool.query('DELETE FROM guest_registrations WHERE inviter_id = $1', [id]);
       await pool.query('DELETE FROM event_votes WHERE voter_id = $1', [id]);
       await pool.query('DELETE FROM prospect_votes WHERE voter_id = $1', [id]);
