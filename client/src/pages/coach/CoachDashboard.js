@@ -635,10 +635,6 @@ const CoachDashboard = () => {
                                   </div>
                                 )}
 
-                                {/* 詳細信息列表 */}
-                                  {/* 詳細信息列表：暫時移除以隔離語法錯誤 */}
-
-                                {/* 郵件模板和發信功能 */}
                                 {currentCard.emailTemplate && (
                                   <div className="mt-4 p-3 sm:p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
                                     <div className="text-sm text-gold-300 mb-2 font-semibold">郵件模板：</div>
