@@ -470,49 +470,123 @@ const CoachDashboard = () => {
   const progressSummary = (memberId) => {
     const p = progressById[memberId] || {};
     const prog = p?.progress || {};
-    
-    // 使用前端計算的進度，與教練任務進度條保持同步
+
+    // 與下方「教練任務」卡片一致的 checklist 結構，確保上下進度同步
     const tempAttachmentItems = [
       {
         id: 'core_member_approval',
         title: '核心會員完成準予加入GBC',
         completed: p?.hasInterview || false,
         checklistItems: [
-          { id: 'interview', text: '面談' },
-          { id: 'mbti', text: 'MBTI' },
-          { id: 'nfc', text: 'NFC' },
-          { id: 'foundation', text: '地基' }
+          { id: 'create_group', text: '建立群組' },
+          { id: 'member_data', text: '新會員提供基本資料及一張專業形象照片' },
+          { id: 'send_email', text: '發送給學員信件' }
         ]
       },
       {
-        id: 'pre_oath_preparation',
-        title: '新會員宣誓前3-7天準備',
-        completed: false,
+        id: 'meeting_guidelines',
+        title: '例會中注意事項',
+        completed: p?.understoodGuidelines || false,
         checklistItems: [
-          { id: 'self_intro', text: '自我介紹準備' },
-          { id: 'goals_foundation', text: '目標與地基說明' }
+          { id: 'phone_silent', text: '提醒手機關機或靜音，請全程專注投入議程，盡量不使用手機' },
+          { id: 'simple_explanation', text: '議程中如有需要說明，也請簡單說明即可，讓新會員專心參與議程' }
         ]
       },
       {
-        id: 'day_before_oath',
-        title: '宣誓前一天',
+        id: 'post_meeting',
+        title: '會後',
         completed: false,
         checklistItems: [
-          { id: 'attendance_time', text: '出席時間提醒' },
-          { id: 'self_intro_50sec', text: '50秒自我介紹' },
-          { id: 'dress_code', text: '服裝儀容' },
-          { id: 'business_cards', text: '準備名片' },
-          { id: 'four_week_plan', text: '4週導生計畫' },
-          { id: 'send_email', text: '發送信件' }
+          '加入各大LINE群LINE群：新會員專案群、GBC聊天群、地基活動公告欄（請勿回覆）、分組第__組、軟性活動接龍群',
+          '系統教學：一對一、引薦單、引薦金額意義及操作'
+        ]
+      },
+      {
+        id: 'one_week_followup',
+        title: '一週內需完成',
+        completed: p?.weekOneComplete || false,
+        checklistItems: [
+          '兩天內確認系統是否能登入',
+          {
+            id: 'interview_form_check',
+            text: '教學系統個人深度交流表填寫',
+            completed: p?.hasInterview || false,
+            type: 'auto_detect',
+            progressBar: { show: true, value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '未填寫' }
+          },
+          '幫你的新會員曝光介紹及見證導生的產品或服務，重點在讓新會員覺得有被重視',
+          '多先參訪夥伴或體驗產品'
+        ]
+      },
+      {
+        id: 'second_week',
+        title: '第二週',
+        completed: p?.weekTwoComplete || false,
+        checklistItems: [
+          { id: 'guide_guest_purpose', text: '引導新會員為何帶來賓' },
+          { id: 'invite_agent_meeting', text: '引導新會員邀請代理人參觀例會議程' },
+          {
+            id: 'deep_communication_form',
+            text: '深度交流表完成',
+            completed: p?.hasInterview || false,
+            type: 'auto_detect',
+            progressBar: { value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '未填寫', color: p?.hasInterview ? 'green' : 'red' }
+          },
+          {
+            id: 'core_member_one_on_one',
+            text: '優先與核心一對一',
+            type: 'core_members_list',
+            coreMembers: coreMembers,
+            loading: coreMembersLoading
+          }
+        ]
+      },
+      {
+        id: 'third_week',
+        title: '第三週',
+        completed: p?.weekThreeComplete || false,
+        checklistItems: [
+          { id: 'system_usage_check', text: '確認新會員系統使用狀況及進度' },
+          {
+            id: 'staff_one_on_one',
+            text: '與幹部一對一狀況交流及回報進度',
+            type: 'staff_members_list',
+            staffMembers: staffMembers,
+            loading: staffMembersLoading
+          }
+        ]
+      },
+      {
+        id: 'fourth_week',
+        title: '第四週',
+        completed: p?.weekFourComplete || false,
+        checklistItems: [
+          { id: 'system_status_check', text: '確認新會員使用系統狀況及進度' },
+          { id: 'core_staff_one_on_one', text: '確認與核心及幹部一對一進度狀況' },
+          { id: 'presentation_optimization', text: '優化自我介紹及介紹主題簡報(50秒、20分鐘)' }
+        ]
+      },
+      {
+        id: 'graduation_standards',
+        title: '結業標準',
+        completed: p?.graduationComplete || false,
+        checklistItems: [
+          { id: 'core_staff_one_on_one_final', text: '核心幹部一對一' },
+          { id: 'system_training_complete', text: '完成系統教學' },
+          { id: 'basic_referral_behavior', text: '完成基本引薦行為' },
+          { id: 'group_announcement_welcome', text: '公告群組歡迎與其一對一' }
         ]
       }
     ];
-    
-    const percent = Math.round(calculateOverallProgress(tempAttachmentItems).percentage);
+
+    const overallProgress = calculateOverallProgress(tempAttachmentItems);
+    const percent = Math.round(overallProgress.percentage);
+    const overallCompleted = overallProgress.completed;
+    const overallTotal = overallProgress.total;
     const profileScore = Number(prog?.profileScore ?? 0);
     const systemScore = Number(prog?.systemScore ?? 0);
     const bonusMbti = Number(prog?.bonusMbti ?? 0);
-    return { p, percent, profileScore, systemScore, bonusMbti };
+    return { p, percent, overallCompleted, overallTotal, profileScore, systemScore, bonusMbti };
   };
 
   // 非教練視圖：僅顯示教練資訊
@@ -966,8 +1040,7 @@ const CoachDashboard = () => {
                   }
                 ];
                 
-                const overallProgress = calculateOverallProgress(attachmentItems);
-                const percent = overallProgress.percentage;
+                const { percent, overallCompleted, overallTotal } = progressSummary(selectedMember.id);
                 
                 return (
                   <div>
@@ -980,10 +1053,10 @@ const CoachDashboard = () => {
                     </div>
                     <div className="flex items-center justify-between text-xs mt-2">
                       <div className="text-gold-300">
-                        已完成: {overallProgress.completed} / {overallProgress.total}
+                        已完成: {overallCompleted} / {overallTotal}
                       </div>
                       <div className="text-gold-400">
-                        完成率: {overallProgress.percentage}%
+                        完成率: {percent}%
                       </div>
                     </div>
                   </div>
@@ -1452,7 +1525,7 @@ const CoachDashboard = () => {
                                                   className={`flex-shrink-0 w-5 h-5 rounded border-2 mr-3 mt-0.5 transition-colors ${
                                                     checklistStates[currentCard.id]?.[item.id] 
                                                       ? 'bg-green-500 border-green-500' 
-                                                      : 'border-gold-400 hover:border-gold-300'
+                                                      : 'bg-transparent border-yellow-400 hover:border-yellow-300'
                                                   }`}
                                                 >
                                                   {checklistStates[currentCard.id]?.[item.id] && (
@@ -1602,21 +1675,36 @@ const CoachDashboard = () => {
                                           {typeof detail === 'object' && detail.type === 'checkbox' ? (
                                             <div className="w-full">
                                               <div className="flex items-start">
-                                                <input 
-                                                  type="checkbox" 
-                                                  id={`detail-${index}`}
-                                                  checked={getCheckboxState(selectedMember.id, currentCard.id, detail.id, detail.completed)}
-                                                  onChange={(e) => {
-                                                    const newState = e.target.checked;
-                                                    updateCheckboxState(selectedMember.id, currentCard.id, detail.id, newState);
-                                                    console.log(`Toggle checkbox for ${detail.id}: ${newState}`);
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const current = getCheckboxState(selectedMember.id, currentCard.id, detail.id, detail.completed);
+                                                    const next = !current;
+                                                    updateCheckboxState(selectedMember.id, currentCard.id, detail.id, next);
+                                                    console.log(`Toggle checkbox for ${detail.id}: ${next}`);
                                                   }}
-                                                  className="mt-1 mr-3 h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2"
-                                                />
+                                                  className={`mt-1 mr-3 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                    getCheckboxState(selectedMember.id, currentCard.id, detail.id, detail.completed)
+                                                      ? 'bg-green-500 border-green-500' 
+                                                      : 'bg-transparent border-yellow-400 hover:border-yellow-300'
+                                                  }`}
+                                                >
+                                                  {getCheckboxState(selectedMember.id, currentCard.id, detail.id, detail.completed) && (
+                                                    <CheckCircleIcon className="h-4 w-4 text-white" />
+                                                  )}
+                                                </button>
                                                 <div className="flex-1">
-                                                  <label htmlFor={`detail-${index}`} className="leading-relaxed font-medium cursor-pointer">
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      const current = getCheckboxState(selectedMember.id, currentCard.id, detail.id, detail.completed);
+                                                      const next = !current;
+                                                      updateCheckboxState(selectedMember.id, currentCard.id, detail.id, next);
+                                                    }}
+                                                    className="leading-relaxed font-medium text-left hover:text-gold-200"
+                                                  >
                                                     {detail.text}
-                                                  </label>
+                                                  </button>
                                                   {detail.subtext && (
                                                     <div className="mt-2 text-xs text-gold-500 leading-relaxed whitespace-pre-line bg-primary-800/30 p-2 rounded border border-gold-700/30">
                                                       {detail.subtext}
