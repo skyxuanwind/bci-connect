@@ -669,7 +669,28 @@ const CoachDashboard = () => {
             <div className="p-3 sm:p-4 md:p-3 sm:p-6">
               {/* 進度概覽 */}
               {(() => {
-                const { p, percent, profileScore, systemScore, bonusMbti } = progressSummary(selectedMember.id);
+                const { p } = progressSummary(selectedMember.id);
+                const attachmentItems = [
+                  {
+                    id: 'core_member_approval',
+                    title: '核心會員完成準予加入GBC',
+                    checklistItems: [
+                      { id: 'create_group', text: '建立群組', completed: false },
+                      { id: 'member_data', text: '新會員提供基本資料及一張專業形象照片', completed: false },
+                      { id: 'send_email', text: '發送給學員信件', completed: false }
+                    ]
+                  },
+                  {
+                    id: 'pre_oath_preparation',
+                    title: '新會員宣誓前3-7天準備',
+                    checklistItems: [
+                      { id: 'self_intro_template', text: '協助新會員準備50秒自我介紹範本', completed: false },
+                      { id: 'common_goals', text: '說明共同目標', completed: false }
+                    ]
+                  }
+                ];
+                const overallProgress = calculateOverallProgress(attachmentItems);
+                const percent = overallProgress.percentage;
                 return (
                   <div>
                     <div className="flex items-center justify-between">
@@ -680,25 +701,7 @@ const CoachDashboard = () => {
                       <div className={`h-3 sm:h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
                     </div>
 
-                    {/* 狀態徽章 */}
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      <span className={`${p?.hasInterview ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                        {p?.hasInterview ? <CheckCircleIcon className="h-3 w-3 mr-1"/> : <XCircleIcon className="h-3 w-3 mr-1"/>}
-                        面談
-                      </span>
-                      <span className={`${p?.hasMbtiType ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                        {p?.hasMbtiType ? <CheckCircleIcon className="h-3 w-3 mr-1"/> : <XCircleIcon className="h-3 w-3 mr-1"/>}
-                        MBTI
-                      </span>
-                      <span className={`${p?.hasNfcCard ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                        {p?.hasNfcCard ? <CheckCircleIcon className="h-3 w-3 mr-1"/> : <XCircleIcon className="h-3 w-3 mr-1"/>}
-                        NFC
-                      </span>
-                      <span className={`${p?.foundationViewed ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                        {p?.foundationViewed ? <CheckCircleIcon className="h-3 w-3 mr-1"/> : <XCircleIcon className="h-3 w-3 mr-1"/>}
-                        地基
-                      </span>
-                    </div>
+
                   </div>
                 );
               })()}
