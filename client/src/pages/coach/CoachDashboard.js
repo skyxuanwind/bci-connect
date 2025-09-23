@@ -99,30 +99,45 @@ const CoachDashboard = () => {
     }
 
     if (!memberEmail) {
-      toast.error('無法發送信件：學員信箱不存在');
+      toast.error('無法發送信件：學員信箱未設定');
       return;
     }
 
+    setActionLoading(true);
     try {
-      setActionLoading(true);
+      // 替換模板變數
+      const processedTemplate = template
+        .replace(/{memberName}/g, memberName || '學員')
+        .replace(/{coachName}/g, user?.name || '教練')
+        .replace(/{coachIndustry}/g, user?.industry || '教練行業');
+
       const response = await axios.post('/api/emails/send', {
         to: memberEmail,
-        subject: 'GBC 教練信件',
-        content: template,
-        type: 'coach_to_member'
+        subject: 'GBC 系統通知',
+        content: processedTemplate
       });
 
       if (response.data.success) {
         toast.success(`信件已成功發送至 ${memberName} 的信箱`);
       } else {
-        toast.error('信件發送失敗，請稍後再試');
+        toast.error('信件發送失敗：' + (response.data.message || '未知錯誤'));
       }
     } catch (error) {
       console.error('發送信件錯誤:', error);
-      toast.error(error.response?.data?.message || '信件發送失敗，請稍後再試');
+      toast.error('信件發送失敗：' + (error.response?.data?.message || error.message || '網路錯誤'));
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // 複製信件模板時也要替換變數
+  const copyEmailTemplate = (template, memberName = '學員') => {
+    const processedTemplate = template
+      .replace(/{memberName}/g, memberName || '學員')
+      .replace(/{coachName}/g, user?.name || '教練')
+      .replace(/{coachIndustry}/g, user?.industry || '教練行業');
+    
+    return processedTemplate;
   };
 
   useEffect(() => {
@@ -595,6 +610,13 @@ const CoachDashboard = () => {
                       </div>
 
                       <div className="relative p-3 sm:p-4 px-8 md:px-10 border border-gold-600 rounded-lg bg-primary-800/40">
+                        {/* 分類標籤移到上方 */}
+                        <div className="absolute -top-3 left-4">
+                          <div className="inline-block text-xs px-2 py-1 rounded-full font-medium bg-gold-600/20 text-gold-200 border border-gold-600">
+                            {currentCard.category}
+                          </div>
+                        </div>
+                        
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="text-base sm:text-sm font-semibold text-gold-100">{currentCard.title}</div>
@@ -612,12 +634,6 @@ const CoachDashboard = () => {
                                   return (
                                     <div key={itemId} className="flex items-center justify-between bg-primary-800/40 p-2 rounded border border-gold-700/30">
                                       <div className="flex items-center gap-2">
-                                        <input
-                                          type="checkbox"
-                                          checked={getCheckboxState(selectedMember.id, currentCard.id, itemId, defaultCompleted)}
-                                          onChange={(e) => updateCheckboxState(selectedMember.id, currentCard.id, itemId, e.target.checked)}
-                                          className="w-4 h-4 rounded border border-gold-400 text-green-500 focus:ring-green-500 focus:ring-2"
-                                        />
                                         <span className="text-sm text-gold-300">
                                           {itemText}
                                           {typeof item === 'object' && item.subtext ? (
@@ -644,7 +660,7 @@ const CoachDashboard = () => {
                               )}
 
                               {/* 核心會員名單 */}
-                              {currentCard.id === 'core_member_one_on_one' && (
+                              {currentCard.id === 'second_week' && (
                                 <div className="mt-3">
                                   {coreMembersLoading ? (
                                     <div className="text-xs text-gold-400">載入核心會員名單中...</div>
@@ -688,7 +704,7 @@ const CoachDashboard = () => {
                               )}
 
                               {/* 幹部會員名單 */}
-                              {currentCard.id === 'staff_one_on_one' && (
+                              {currentCard.id === 'third_week' && (
                                 <div className="mt-3">
                                   {staffMembersLoading ? (
                                     <div className="text-xs text-gold-400">載入幹部會員名單中...</div>
@@ -754,7 +770,7 @@ const CoachDashboard = () => {
                                 <div className="mt-4 p-3 sm:p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
                                   <div className="text-sm text-gold-300 mb-2 font-semibold">信件模板：</div>
                                   <div className="text-xs text-gold-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border">
-                                    {currentCard.emailTemplate}
+                                    {copyEmailTemplate(currentCard.emailTemplate, selectedMember?.name)}
                                   </div>
                                   <div className="flex gap-2">
                                     <button
@@ -782,11 +798,6 @@ const CoachDashboard = () => {
                                   </div>
                                 </div>
                               )}
-                            </div>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-sm px-3 py-2 rounded-full font-medium bg-gold-600/20 text-gold-200 border border-gold-600">
-                              {currentCard.category}
                             </div>
                           </div>
                         </div>
