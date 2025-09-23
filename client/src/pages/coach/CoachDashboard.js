@@ -92,6 +92,39 @@ const CoachDashboard = () => {
     });
   };
 
+  const sendEmail = async (template, memberEmail, memberName = '學員') => {
+    if (!template || !template.trim()) {
+      toast.error('無法發送信件：信件模板內容為空');
+      return;
+    }
+
+    if (!memberEmail) {
+      toast.error('無法發送信件：學員信箱不存在');
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const response = await axios.post('/api/emails/send', {
+        to: memberEmail,
+        subject: 'GBC 教練信件',
+        content: template,
+        type: 'coach_to_member'
+      });
+
+      if (response.data.success) {
+        toast.success(`信件已成功發送至 ${memberName} 的信箱`);
+      } else {
+        toast.error('信件發送失敗，請稍後再試');
+      }
+    } catch (error) {
+      console.error('發送信件錯誤:', error);
+      toast.error(error.response?.data?.message || '信件發送失敗，請稍後再試');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!iAmCoach) return;
     const fetchCoachees = async () => {
@@ -115,6 +148,8 @@ const CoachDashboard = () => {
     };
 
     fetchCoachees();
+    fetchCoreMembers();
+    fetchStaffMembers();
   }, [iAmCoach, page, limit]);
 
   const fetchProjectPlan = async (memberId) => {
@@ -126,6 +161,34 @@ const CoachDashboard = () => {
       toast.error('載入任務內容失敗');
     } finally {
       setProjectPlanLoading((prev) => ({ ...prev, [memberId]: false }));
+    }
+  };
+
+  // 獲取核心會員名單
+  const fetchCoreMembers = async () => {
+    try {
+      setCoreMembersLoading(true);
+      const resp = await axios.get('/api/users/core-members');
+      setCoreMembers(resp.data?.coreMembers || []);
+    } catch (e) {
+      console.error('載入核心會員名單失敗:', e);
+      setCoreMembers([]);
+    } finally {
+      setCoreMembersLoading(false);
+    }
+  };
+
+  // 獲取幹部會員名單
+  const fetchStaffMembers = async () => {
+    try {
+      setStaffMembersLoading(true);
+      const resp = await axios.get('/api/users/staff-members');
+      setStaffMembers(resp.data?.staffMembers || []);
+    } catch (e) {
+      console.error('載入幹部會員名單失敗:', e);
+      setStaffMembers([]);
+    } finally {
+      setStaffMembersLoading(false);
     }
   };
 
@@ -354,6 +417,10 @@ const CoachDashboard = () => {
                         completed: false
                       }
                     ],
+                    checklistItems: [
+                      { id: 'self_intro_template', text: '協助新會員準備50秒自我介紹範本', completed: false },
+                      { id: 'explain_goals_foundation', text: '再次說明共同目標、GBC地基及成功經驗', completed: false }
+                    ],
                     completed: false,
                     category: '準備階段',
                     priority: 'high'
@@ -366,7 +433,7 @@ const CoachDashboard = () => {
                     checklistItems: [
                       { id: 'attendance_time', text: '出席時間 14:00', completed: false },
                       { id: 'self_intro_50sec', text: '50秒自我介紹', completed: false },
-                      { id: 'dress_code', text: '服裝儀容，範例：(插上附件)', completed: false },
+                      { id: 'dress_code', text: '服裝儀容', completed: false },
                       { id: 'business_cards', text: '準備30張名片', completed: false },
                       { id: 'four_week_plan', text: '4週導生計畫', completed: false },
                       { id: 'send_email', text: '發送給學員信件', completed: false }
@@ -470,7 +537,7 @@ const CoachDashboard = () => {
                     description: '執行：1.確認新會員系統使用狀況及進度 2.與幹部一對一狀況交流及回報進度',
                     checklistItems: [
                       { id: 'system_usage_check', text: '確認新會員系統使用狀況及進度', completed: false },
-                      { id: 'staff_one_on_one', text: '與幹部一對一狀況交流及回報進度', subtext: `系統偵測到 ${staffMembers.length} 位干部權限會員`, completed: false }
+                      { id: 'staff_one_on_one', text: '與幹部一對一狀況交流及回報進度', subtext: `系統偵測到 ${staffMembers.length} 位幹部權限會員`, completed: false }
                     ],
                     completed: p?.weekThreeComplete || false,
                     category: '進度追蹤',
@@ -549,7 +616,7 @@ const CoachDashboard = () => {
                                           type="checkbox"
                                           checked={getCheckboxState(selectedMember.id, currentCard.id, itemId, defaultCompleted)}
                                           onChange={(e) => updateCheckboxState(selectedMember.id, currentCard.id, itemId, e.target.checked)}
-                                          className="hidden"
+                                          className="w-4 h-4 rounded border border-gold-400 text-green-500 focus:ring-green-500 focus:ring-2"
                                         />
                                         <span className="text-sm text-gold-300">
                                           {itemText}
@@ -576,6 +643,99 @@ const CoachDashboard = () => {
                                 </div>
                               )}
 
+                              {/* 核心會員名單 */}
+                              {currentCard.id === 'core_member_one_on_one' && (
+                                <div className="mt-3">
+                                  {coreMembersLoading ? (
+                                    <div className="text-xs text-gold-400">載入核心會員名單中...</div>
+                                  ) : coreMembers && coreMembers.length > 0 ? (
+                                    <div className="space-y-2">
+                                      <div className="text-xs text-gold-300 font-semibold">核心會員名單：</div>
+                                      <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+                                        {coreMembers.map((member, memberIndex) => (
+                                          <div key={member.id || memberIndex} className="flex items-center justify-between bg-primary-800/40 p-2 rounded border border-gold-700/30">
+                                            <div className="flex items-center space-x-2">
+                                              <Avatar 
+                                                src={member.profilePicture} 
+                                                name={member.name} 
+                                                size="sm" 
+                                              />
+                                              <div>
+                                                <div className="text-xs text-gold-300 font-medium">{member.name}</div>
+                                                <div className="text-[10px] text-gold-500">{member.industry || member.company}</div>
+                                              </div>
+                                            </div>
+                                            <button
+                                              onClick={() => handleChecklistToggle(currentCard.id, `core_member_${member.id}`)}
+                                              className={`w-4 h-4 rounded border transition-colors ${
+                                                checklistStates[currentCard.id]?.[`core_member_${member.id}`] 
+                                                  ? 'bg-green-500 border-green-500' 
+                                                  : 'border-gold-400 hover:border-gold-300'
+                                              }`}
+                                            >
+                                              {checklistStates[currentCard.id]?.[`core_member_${member.id}`] && (
+                                                <CheckCircleIcon className="h-3 w-3 text-white" />
+                                              )}
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-gold-500">暫無核心會員資料</div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* 幹部會員名單 */}
+                              {currentCard.id === 'staff_one_on_one' && (
+                                <div className="mt-3">
+                                  {staffMembersLoading ? (
+                                    <div className="text-xs text-gold-400">載入幹部會員名單中...</div>
+                                  ) : staffMembers && staffMembers.length > 0 ? (
+                                    <div className="space-y-2">
+                                      <div className="text-xs text-purple-300 font-semibold">幹部會員名單：</div>
+                                      <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+                                        {staffMembers.map((member, memberIndex) => (
+                                          <div key={member.id || memberIndex} className="flex items-center justify-between bg-primary-800/40 p-2 rounded border border-purple-700/30">
+                                            <div className="flex items-center space-x-2">
+                                              <Avatar 
+                                                src={member.profilePicture} 
+                                                name={member.name} 
+                                                size="sm" 
+                                              />
+                                              <div>
+                                                <div className="text-xs text-purple-300 font-medium">{member.name}</div>
+                                                <div className="text-[10px] text-purple-500">{member.industry || member.company}</div>
+                                              </div>
+                                            </div>
+                                            <button
+                                              onClick={() => handleChecklistToggle(currentCard.id, `staff_member_${member.id}`)}
+                                              className={`w-4 h-4 rounded border transition-colors ${
+                                                checklistStates[currentCard.id]?.[`staff_member_${member.id}`] 
+                                                  ? 'bg-green-500 border-green-500' 
+                                                  : 'border-purple-400 hover:border-purple-300'
+                                              }`}
+                                            >
+                                              {checklistStates[currentCard.id]?.[`staff_member_${member.id}`] && (
+                                                <CheckCircleIcon className="h-3 w-3 text-white" />
+                                              )}
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-purple-500">暫無幹部會員資料</div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* 服裝儀容範例 */}
+                              {currentCard.id === 'day_before_oath' && (
+                                <DressCodeExamples />
+                              )}
+
                               {currentCard.details && currentCard.details.length > 0 && !currentCard.checklistItems && (
                                 <div className="mt-3">
                                   <div className="text-sm text-gold-300 mb-2 font-semibold">詳細內容：</div>
@@ -592,8 +752,8 @@ const CoachDashboard = () => {
 
                               {currentCard.emailTemplate && (
                                 <div className="mt-4 p-3 sm:p-4 bg-primary-600/30 rounded-lg border border-gold-600/30">
-                                  <div className="text-sm text-gold-300 mb-2 font-semibold">郵件模板：</div>
-                                  <div className="text-xs text-gold-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border max-h-32 overflow-y-auto">
+                                  <div className="text-sm text-gold-300 mb-2 font-semibold">信件模板：</div>
+                                  <div className="text-xs text-gold-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line bg-primary-800/50 p-3 rounded border">
                                     {currentCard.emailTemplate}
                                   </div>
                                   <div className="flex gap-2">
@@ -601,7 +761,7 @@ const CoachDashboard = () => {
                                       onClick={async () => {
                                         try {
                                           await navigator.clipboard.writeText(currentCard.emailTemplate || '');
-                                          toast.success('已複製郵件模板');
+                                          toast.success('已複製信件模板');
                                         } catch (err) {
                                           toast.error('複製失敗，請手動選取文字');
                                         }
@@ -612,17 +772,12 @@ const CoachDashboard = () => {
                                       一鍵複製
                                     </button>
                                     <button
-                                      onClick={() => {
-                                        const subject = encodeURIComponent('GBC 教練郵件');
-                                        const body = encodeURIComponent(currentCard.emailTemplate || '');
-                                        if (typeof window !== 'undefined') {
-                                          window.location.href = `mailto:${selectedMember?.email || ''}?subject=${subject}&body=${body}`;
-                                        }
-                                      }}
-                                      className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
+                                      onClick={() => sendEmail(currentCard.emailTemplate, selectedMember?.email, selectedMember?.name)}
+                                      disabled={actionLoading}
+                                      className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                       <EnvelopeIcon className="h-4 w-4" />
-                                      發送郵件
+                                      {actionLoading ? '發送中...' : '發送信件'}
                                     </button>
                                   </div>
                                 </div>
