@@ -518,7 +518,7 @@ const CoachDashboard = () => {
                       <div className="w-full h-3 sm:h-2 bg-primary-700 rounded mt-1">
                         <div className={`${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'} h-3 sm:h-2 rounded`} style={{ width: `${percent}%` }} />
                       </div>
-                      <div className="mt-1 text-[11px] text-gold-400">基礎 {profileScore}/60 ・ 系統 {systemScore}/40{bonusMbti > 0 ? ` ・ MBTI +${bonusMbti}` : ''}</div>
+                      <div className="mt-1 text-[11px] text-gold-400 hidden">基礎 {profileScore}/60 ・ 系統 {systemScore}/40{bonusMbti > 0 ? ` ・ MBTI +${bonusMbti}` : ''}</div>
                     </div>
 
                     <div className="mt-6">
@@ -527,7 +527,7 @@ const CoachDashboard = () => {
                         <div className="text-lg font-semibold text-gold-100">教練任務</div>
                       </div>
 
-                      <div className="relative p-3 sm:p-4 border border-gold-600 rounded-lg bg-primary-800/40">
+                      <div className="relative p-3 sm:p-4 px-8 md:px-10 border border-gold-600 rounded-lg bg-primary-800/40">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="text-base sm:text-sm font-semibold text-gold-100">{currentCard.title}</div>
@@ -549,7 +549,7 @@ const CoachDashboard = () => {
                                           type="checkbox"
                                           checked={getCheckboxState(selectedMember.id, currentCard.id, itemId, defaultCompleted)}
                                           onChange={(e) => updateCheckboxState(selectedMember.id, currentCard.id, itemId, e.target.checked)}
-                                          className="h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2"
+                                          className="hidden"
                                         />
                                         <span className="text-sm text-gold-300">
                                           {itemText}
@@ -638,13 +638,13 @@ const CoachDashboard = () => {
 
                         <button
                           onClick={() => setCurrentCardIndex((i) => Math.max(0, i - 1))}
-                          className="absolute left-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
                         >
                           <ChevronLeftIcon className="h-5 w-5 text-gold-300" />
                         </button>
                         <button
                           onClick={() => setCurrentCardIndex((i) => Math.min(attachmentItems.length - 1, i + 1))}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-600/90 border border-gold-600 flex items-center justify-center hover:bg-primary-500 transition-colors shadow-lg backdrop-blur-sm"
                         >
                           <ChevronRightIcon className="h-5 w-5 text-gold-300" />
                         </button>
