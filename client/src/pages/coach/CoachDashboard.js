@@ -679,7 +679,6 @@ const CoachDashboard = () => {
                     <div className="w-full h-3 sm:h-2 bg-primary-700 rounded mt-1">
                       <div className={`h-3 sm:h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
                     </div>
-                    <div className="mt-1 text-[11px] text-gold-400">基礎 {profileScore}/60 ・ 系統 {systemScore}/40{bonusMbti > 0 ? ` ・ MBTI +${bonusMbti}` : ''}</div>
 
                     {/* 狀態徽章 */}
                     <div className="mt-3 flex flex-wrap gap-1">
