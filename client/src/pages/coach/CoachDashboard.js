@@ -708,7 +708,7 @@ const CoachDashboard = () => {
               {/* 進度概覽 */}
               {(() => {
                 const { p } = progressSummary(selectedMember.id);
-                // 使用完整的 attachmentItems 數據，與下方保持一致
+                // 使用與下方卡片相同的 attachmentItems 數據源
                 const attachmentItems = [
                   {
                     id: 'core_member_approval',
@@ -800,54 +800,175 @@ const CoachDashboard = () => {
                     priority: 'high'
                   },
                   {
-                     id: 'ceremony_day',
-                     title: '第一天14:00宣前會',
-                     subtitle: '對象：新會員、教練',
-                     description: '教練需執行以下項目，完成後可勾選確認',
-                     details: [
-                       {
-                         id: 'intro_guide',
-                         text: '關心50秒自我介紹引薦單介紹內容',
-                         completed: false,
-                         type: 'checkbox'
-                       },
-                       {
-                         id: 'environment_intro',
-                         text: '介紹環境',
-                         completed: false,
-                         type: 'checkbox'
-                       },
-                       {
-                         id: 'core_staff_intro',
-                         text: '介紹核心幹部及職位內容',
-                         completed: false,
-                         type: 'checkbox'
-                       }
-                     ],
-                     completed: false,
-                     category: '宣誓儀式',
-                     priority: 'high'
-                   },
-                   {
-                     id: 'networking_time',
-                     title: '交流時間',
-                     subtitle: '引導新會員認識會員及來賓',
-                     description: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
-                     details: [
-                       {
-                         id: 'networking_guide',
-                         text: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
-                         completed: false,
-                         type: 'checkbox'
-                       }
-                     ],
-                     completed: false,
-                     category: '社交建立',
-                     priority: 'medium'
-                   }
+                    id: 'ceremony_day',
+                    title: '第一天14:00宣前會',
+                    subtitle: '對象：新會員、教練',
+                    description: '教練需執行以下項目，完成後可勾選確認',
+                    details: [
+                      {
+                        id: 'intro_guide',
+                        text: '關心50秒自我介紹引薦單介紹內容',
+                        completed: false,
+                        type: 'checkbox'
+                      },
+                      {
+                        id: 'environment_intro',
+                        text: '介紹環境',
+                        completed: false,
+                        type: 'checkbox'
+                      },
+                      {
+                        id: 'core_staff_intro',
+                        text: '介紹核心幹部及職位內容',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '宣誓儀式',
+                    priority: 'high'
+                  },
+                  {
+                    id: 'networking_time',
+                    title: '交流時間',
+                    subtitle: '引導新會員認識會員及來賓',
+                    description: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
+                    details: [
+                      {
+                        id: 'networking_guide',
+                        text: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '社交建立',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'week1_followup',
+                    title: '第一週追蹤',
+                    subtitle: '對象：新會員、教練',
+                    description: '第一週的追蹤和支持',
+                    details: [
+                      {
+                        id: 'week1_check',
+                        text: '第一週追蹤新會員狀況',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '追蹤階段',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'week2_followup',
+                    title: '第二週追蹤',
+                    subtitle: '對象：新會員、教練',
+                    description: '第二週的追蹤和支持',
+                    details: [
+                      {
+                        id: 'week2_check',
+                        text: '第二週追蹤新會員狀況',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '追蹤階段',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'week3_followup',
+                    title: '第三週追蹤',
+                    subtitle: '對象：新會員、教練',
+                    description: '第三週的追蹤和支持',
+                    details: [
+                      {
+                        id: 'week3_check',
+                        text: '第三週追蹤新會員狀況',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '追蹤階段',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'week4_followup',
+                    title: '第四週追蹤',
+                    subtitle: '對象：新會員、教練',
+                    description: '第四週的追蹤和支持',
+                    details: [
+                      {
+                        id: 'week4_check',
+                        text: '第四週追蹤新會員狀況',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '追蹤階段',
+                    priority: 'medium'
+                  },
+                  {
+                    id: 'month1_review',
+                    title: '第一個月檢討',
+                    subtitle: '對象：新會員、教練',
+                    description: '第一個月的整體檢討',
+                    details: [
+                      {
+                        id: 'month1_review_check',
+                        text: '第一個月檢討',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '檢討階段',
+                    priority: 'low'
+                  },
+                  {
+                    id: 'month2_review',
+                    title: '第二個月檢討',
+                    subtitle: '對象：新會員、教練',
+                    description: '第二個月的整體檢討',
+                    details: [
+                      {
+                        id: 'month2_review_check',
+                        text: '第二個月檢討',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '檢討階段',
+                    priority: 'low'
+                  },
+                  {
+                    id: 'month3_review',
+                    title: '第三個月檢討',
+                    subtitle: '對象：新會員、教練',
+                    description: '第三個月的整體檢討',
+                    details: [
+                      {
+                        id: 'month3_review_check',
+                        text: '第三個月檢討',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '檢討階段',
+                    priority: 'low'
+                  }
                 ];
+                
                 const overallProgress = calculateOverallProgress(attachmentItems);
                 const percent = overallProgress.percentage;
+                
                 return (
                   <div>
                     <div className="flex items-center justify-between">
@@ -1279,7 +1400,7 @@ const CoachDashboard = () => {
                                                 className={`flex-shrink-0 w-5 h-5 rounded border-2 mr-3 mt-0.5 transition-colors ${
                                                   checklistStates[currentCard.id]?.[`item_${index}`] 
                                                     ? 'bg-green-500 border-green-500' 
-                                                    : 'border-gold-400 hover:border-gold-300'
+                                                    : 'bg-transparent border-yellow-400 hover:border-yellow-300'
                                                 }`}
                                               >
                                                 {checklistStates[currentCard.id]?.[`item_${index}`] && (
@@ -1399,17 +1520,17 @@ const CoachDashboard = () => {
                                                                 </div>
                                                               </div>
                                                               <button
-                                                                onClick={() => handleChecklistToggle(currentCard.id, `core_member_${member.id}`)}
-                                                                className={`w-4 h-4 rounded border transition-colors ${
-                                                                  checklistStates[currentCard.id]?.[`core_member_${member.id}`] 
-                                                                    ? 'bg-green-500 border-green-500' 
-                                                                    : 'border-gold-400 hover:border-gold-300'
-                                                                }`}
-                                                              >
-                                                                {checklistStates[currentCard.id]?.[`core_member_${member.id}`] && (
-                                                                  <CheckCircleIcon className="h-3 w-3 text-white" />
-                                                                )}
-                                                              </button>
+                                                onClick={() => handleChecklistToggle(currentCard.id, `core_member_${member.id}`)}
+                                                className={`w-4 h-4 rounded border transition-colors ${
+                                                  checklistStates[currentCard.id]?.[`core_member_${member.id}`] 
+                                                    ? 'bg-green-500 border-green-500' 
+                                                    : 'bg-transparent border-yellow-400 hover:border-yellow-300'
+                                                }`}
+                                              >
+                                                {checklistStates[currentCard.id]?.[`core_member_${member.id}`] && (
+                                                  <CheckCircleIcon className="h-3 w-3 text-white" />
+                                                )}
+                                              </button>
                                                             </div>
                                                           ))}
                                                         </div>
@@ -1442,17 +1563,17 @@ const CoachDashboard = () => {
                                                                 </div>
                                                               </div>
                                                               <button
-                                                                onClick={() => handleChecklistToggle(currentCard.id, `staff_member_${member.id}`)}
-                                                                className={`w-4 h-4 rounded border transition-colors ${
-                                                                  checklistStates[currentCard.id]?.[`staff_member_${member.id}`] 
-                                                                    ? 'bg-green-500 border-green-500' 
-                                                                    : 'border-purple-400 hover:border-purple-300'
-                                                                }`}
-                                                              >
-                                                                {checklistStates[currentCard.id]?.[`staff_member_${member.id}`] && (
-                                                                  <CheckCircleIcon className="h-3 w-3 text-white" />
-                                                                )}
-                                                              </button>
+                                                onClick={() => handleChecklistToggle(currentCard.id, `staff_member_${member.id}`)}
+                                                className={`w-4 h-4 rounded border transition-colors ${
+                                                  checklistStates[currentCard.id]?.[`staff_member_${member.id}`] 
+                                                    ? 'bg-green-500 border-green-500' 
+                                                    : 'bg-transparent border-yellow-400 hover:border-yellow-300'
+                                                }`}
+                                              >
+                                                {checklistStates[currentCard.id]?.[`staff_member_${member.id}`] && (
+                                                  <CheckCircleIcon className="h-3 w-3 text-white" />
+                                                )}
+                                              </button>
                                                             </div>
                                                           ))}
                                                         </div>
