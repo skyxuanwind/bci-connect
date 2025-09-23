@@ -470,7 +470,45 @@ const CoachDashboard = () => {
   const progressSummary = (memberId) => {
     const p = progressById[memberId] || {};
     const prog = p?.progress || {};
-    const percent = Math.round(Number(prog?.overallPercent ?? 0));
+    
+    // 使用前端計算的進度，與教練任務進度條保持同步
+    const tempAttachmentItems = [
+      {
+        id: 'core_member_approval',
+        title: '核心會員完成準予加入GBC',
+        completed: p?.hasInterview || false,
+        checklistItems: [
+          { id: 'interview', text: '面談' },
+          { id: 'mbti', text: 'MBTI' },
+          { id: 'nfc', text: 'NFC' },
+          { id: 'foundation', text: '地基' }
+        ]
+      },
+      {
+        id: 'pre_oath_preparation',
+        title: '新會員宣誓前3-7天準備',
+        completed: false,
+        checklistItems: [
+          { id: 'self_intro', text: '自我介紹準備' },
+          { id: 'goals_foundation', text: '目標與地基說明' }
+        ]
+      },
+      {
+        id: 'day_before_oath',
+        title: '宣誓前一天',
+        completed: false,
+        checklistItems: [
+          { id: 'attendance_time', text: '出席時間提醒' },
+          { id: 'self_intro_50sec', text: '50秒自我介紹' },
+          { id: 'dress_code', text: '服裝儀容' },
+          { id: 'business_cards', text: '準備名片' },
+          { id: 'four_week_plan', text: '4週導生計畫' },
+          { id: 'send_email', text: '發送信件' }
+        ]
+      }
+    ];
+    
+    const percent = Math.round(calculateOverallProgress(tempAttachmentItems).percentage);
     const profileScore = Number(prog?.profileScore ?? 0);
     const systemScore = Number(prog?.systemScore ?? 0);
     const bonusMbti = Number(prog?.bonusMbti ?? 0);
@@ -670,10 +708,21 @@ const CoachDashboard = () => {
               {/* 進度概覽 */}
               {(() => {
                 const { p } = progressSummary(selectedMember.id);
+                // 使用完整的 attachmentItems 數據，與下方保持一致
                 const attachmentItems = [
                   {
                     id: 'core_member_approval',
                     title: '核心會員完成準予加入GBC',
+                    subtitle: '對象：新會員、教練',
+                    description: '教練需執行以下項目，完成後可勾選確認',
+                    details: [
+                      '建立群組',
+                      '新會員提供基本資料及一張專業形象照片（基本資料系統自動抓學員的個人資料和大頭貼，大頭貼是能夠讓教練下載的）',
+                      '發送給學員信件'
+                    ],
+                    completed: p?.hasInterview || false,
+                    category: '基礎建立',
+                    priority: 'high',
                     checklistItems: [
                       { id: 'create_group', text: '建立群組', completed: false },
                       { id: 'member_data', text: '新會員提供基本資料及一張專業形象照片', completed: false },
@@ -683,11 +732,119 @@ const CoachDashboard = () => {
                   {
                     id: 'pre_oath_preparation',
                     title: '新會員宣誓前3-7天準備',
-                    checklistItems: [
-                      { id: 'self_intro_template', text: '協助新會員準備50秒自我介紹範本', completed: false },
-                      { id: 'common_goals', text: '說明共同目標', completed: false }
-                    ]
-                  }
+                    subtitle: '對象：新會員、教練',
+                    description: '協助新會員準備自我介紹範本及說明共同目標',
+                    details: [
+                      {
+                        id: 'self_intro_template',
+                        text: '協助新會員準備50秒自我介紹範本',
+                        completed: false,
+                        type: 'checkbox'
+                      },
+                      {
+                        id: 'explain_goals_foundation',
+                        text: '再次說明共同目標、GBC地基及成功經驗',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '準備階段',
+                    priority: 'high'
+                  },
+                  {
+                    id: 'day_before_oath',
+                    title: '宣誓前一天',
+                    subtitle: '對象：新會員、教練',
+                    description: '前一天提醒新會員內容',
+                    details: [
+                      {
+                        id: 'attendance_time',
+                        text: '出席時間 14:00',
+                        completed: false,
+                        type: 'checkbox'
+                      },
+                      {
+                        id: 'self_intro_50sec',
+                        text: '50秒自我介紹',
+                        completed: false,
+                        type: 'checkbox'
+                      },
+                      {
+                        id: 'dress_code',
+                        text: '服裝儀容，範例：(插上附件)',
+                        completed: false,
+                        type: 'checkbox'
+                      },
+                      {
+                        id: 'business_cards',
+                        text: '準備30張名片',
+                        completed: false,
+                        type: 'checkbox'
+                      },
+                      {
+                        id: 'four_week_plan',
+                        text: '4週導生計畫',
+                        completed: false,
+                        type: 'checkbox'
+                      },
+                      {
+                        id: 'send_email',
+                        text: '發送給學員信件',
+                        completed: false,
+                        type: 'checkbox'
+                      }
+                    ],
+                    completed: false,
+                    category: '最終準備',
+                    priority: 'high'
+                  },
+                  {
+                     id: 'ceremony_day',
+                     title: '第一天14:00宣前會',
+                     subtitle: '對象：新會員、教練',
+                     description: '教練需執行以下項目，完成後可勾選確認',
+                     details: [
+                       {
+                         id: 'intro_guide',
+                         text: '關心50秒自我介紹引薦單介紹內容',
+                         completed: false,
+                         type: 'checkbox'
+                       },
+                       {
+                         id: 'environment_intro',
+                         text: '介紹環境',
+                         completed: false,
+                         type: 'checkbox'
+                       },
+                       {
+                         id: 'core_staff_intro',
+                         text: '介紹核心幹部及職位內容',
+                         completed: false,
+                         type: 'checkbox'
+                       }
+                     ],
+                     completed: false,
+                     category: '宣誓儀式',
+                     priority: 'high'
+                   },
+                   {
+                     id: 'networking_time',
+                     title: '交流時間',
+                     subtitle: '引導新會員認識會員及來賓',
+                     description: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
+                     details: [
+                       {
+                         id: 'networking_guide',
+                         text: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
+                         completed: false,
+                         type: 'checkbox'
+                       }
+                     ],
+                     completed: false,
+                     category: '社交建立',
+                     priority: 'medium'
+                   }
                 ];
                 const overallProgress = calculateOverallProgress(attachmentItems);
                 const percent = overallProgress.percentage;
@@ -700,8 +857,14 @@ const CoachDashboard = () => {
                     <div className="w-full h-3 sm:h-2 bg-primary-700 rounded mt-1">
                       <div className={`h-3 sm:h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
                     </div>
-
-
+                    <div className="flex items-center justify-between text-xs mt-2">
+                      <div className="text-gold-300">
+                        已完成: {overallProgress.completed} / {overallProgress.total}
+                      </div>
+                      <div className="text-gold-400">
+                        完成率: {overallProgress.percentage}%
+                      </div>
+                    </div>
                   </div>
                 );
               })()}
@@ -829,10 +992,25 @@ const CoachDashboard = () => {
                        title: '第一天14:00宣前會',
                        subtitle: '對象：新會員、教練',
                        description: '教練需執行以下項目，完成後可勾選確認',
-                       checklistItems: [
-                         { id: 'intro_guide', text: '關心50秒自我介紹引薦單介紹內容' },
-                         { id: 'environment_intro', text: '介紹環境' },
-                         { id: 'core_staff_intro', text: '介紹核心幹部及職位內容' }
+                       details: [
+                         {
+                           id: 'intro_guide',
+                           text: '關心50秒自我介紹引薦單介紹內容',
+                           completed: false,
+                           type: 'checkbox'
+                         },
+                         {
+                           id: 'environment_intro',
+                           text: '介紹環境',
+                           completed: false,
+                           type: 'checkbox'
+                         },
+                         {
+                           id: 'core_staff_intro',
+                           text: '介紹核心幹部及職位內容',
+                           completed: false,
+                           type: 'checkbox'
+                         }
                        ],
                        completed: false,
                        category: '宣誓儀式',
@@ -843,8 +1021,13 @@ const CoachDashboard = () => {
                        title: '交流時間',
                        subtitle: '引導新會員認識會員及來賓',
                        description: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
-                       checklistItems: [
-                         { id: 'networking_guide', text: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)' }
+                       details: [
+                         {
+                           id: 'networking_guide',
+                           text: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
+                           completed: false,
+                           type: 'checkbox'
+                         }
                        ],
                        completed: false,
                        category: '社交建立',
