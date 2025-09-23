@@ -396,7 +396,7 @@ const CoachDashboard = () => {
                     subtitle: '引導新會員認識會員及來賓',
                     description: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)',
                     checklistItems: [
-                      '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)'
+                      { id: 'guide_networking', text: '引導新會員認識會員及來賓(尤其要介紹與新會員同產業類別或可以合作的會員)', completed: false }
                     ],
                     completed: false,
                     category: '社交建立',
@@ -507,6 +507,7 @@ const CoachDashboard = () => {
                   }
                 ];
                 const currentCard = attachmentItems[currentCardIndex] || attachmentItems[0];
+                const showDetails = currentCard?.details && currentCard.details.length > 0 && !currentCard.checklistItems;
                 return (
                   <div>
                     <div>
@@ -569,6 +570,7 @@ const CoachDashboard = () => {
                                           <CheckCircleIcon className="h-3 w-3 text-white" />
                                         )}
                                       </button>
+                                      </div>
                                     );
                                   })}
                                 </div>
@@ -596,14 +598,27 @@ const CoachDashboard = () => {
                                   </div>
                                   <div className="flex gap-2">
                                     <button
-                                      onClick={() => {/* copy logic here */}}
+                                      onClick={async () => {
+                                        try {
+                                          await navigator.clipboard.writeText(currentCard.emailTemplate || '');
+                                          toast.success('已複製郵件模板');
+                                        } catch (err) {
+                                          toast.error('複製失敗，請手動選取文字');
+                                        }
+                                      }}
                                       className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1"
                                     >
                                       <ClipboardDocumentListIcon className="h-4 w-4" />
                                       一鍵複製
                                     </button>
                                     <button
-                                      onClick={() => {/* send email logic here */}}
+                                      onClick={() => {
+                                        const subject = encodeURIComponent('GBC 教練郵件');
+                                        const body = encodeURIComponent(currentCard.emailTemplate || '');
+                                        if (typeof window !== 'undefined') {
+                                          window.location.href = `mailto:${selectedMember?.email || ''}?subject=${subject}&body=${body}`;
+                                        }
+                                      }}
                                       className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
                                     >
                                       <EnvelopeIcon className="h-4 w-4" />
@@ -641,19 +656,18 @@ const CoachDashboard = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-6">
-                      <div className="text-xl font-bold text-gold-100 mb-2 sm:mb-3">快捷操作</div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <a href={`/meetings?schedule_with=${selectedMember.id}`} className="btn-secondary inline-flex items-center text-base px-4 py-2">
-                          <CalendarIcon className="h-5 w-5 mr-1" /> 安排會議
-                        </a>
-                        <Link to={`/members/${selectedMember.id}`} className="btn-secondary text-base px-4 py-2">
-                          查看詳情
-                        </Link>
+                      <div className="mt-6">
+                        <div className="text-xl font-bold text-gold-100 mb-2 sm:mb-3">快捷操作</div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <a href={`/meetings?schedule_with=${selectedMember.id}`} className="btn-secondary inline-flex items-center text-base px-4 py-2">
+                            <CalendarIcon className="h-5 w-5 mr-1" /> 安排會議
+                          </a>
+                          <Link to={`/members/${selectedMember.id}`} className="btn-secondary text-base px-4 py-2">
+                            查看詳情
+                          </Link>
+                        </div>
                       </div>
-                    </div>
                   </div>
                 );
               })()}
