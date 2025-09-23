@@ -100,7 +100,7 @@ const Home = () => {
       </div>
       
       {/* Premium CSS Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes luxuryFlow {
           0% { transform: translateX(-100px) translateY(0) rotate(-12deg) scaleX(0.8) scaleY(1); opacity: 0; }
           15% { opacity: 0.6; }

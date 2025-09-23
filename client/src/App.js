@@ -62,6 +62,7 @@ import BusinessMediaAdmin from './pages/admin/BusinessMediaAdmin';
 
 import MBTIAssessment from './pages/MBTIAssessment';
 import CoacheeDirectory from './pages/coach/CoacheeDirectory';
+import MemberProgress from './pages/MemberProgress';
 
 
 
@@ -116,6 +117,15 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <MemberDetail />
+              </Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* Member Progress Page */}
+          <Route path="/progress/:id" element={
+            <ProtectedRoute>
+              <Layout>
+                <MemberProgress />
               </Layout>
             </ProtectedRoute>
           } />

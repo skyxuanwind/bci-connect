@@ -723,6 +723,15 @@ const CoachDashboard = () => {
                                 style={{ width: `${percentShow}%` }}
                               />
                             </div>
+                            <div className="mt-3">
+                              <Link
+                                to={`/progress/${member.id}`}
+                                className="btn-secondary inline-flex items-center"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                查看個人進度
+                              </Link>
+                            </div>
                           </div>
                         );
                       })()}
