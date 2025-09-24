@@ -702,7 +702,7 @@ const CoachDashboard = () => {
                 };
                 return (
                   <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer relative" onClick={() => {
-                  navigate(`/progress/${member.id}`);
+                  navigate(`/project-plans/${member.id}`);
                 }}>
                     <div className="p-3 sm:p-4">
                       {/* 簡潔版卡片：大頭貼、名字、行業別、進度條 */}
