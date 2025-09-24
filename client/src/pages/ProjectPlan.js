@@ -44,7 +44,18 @@ const ProjectPlan = () => {
       const nested = isFlat ? flattenToNested(flatOrNested) : (flatOrNested || {});
       setChecklistStates(prev => {
         const out = { ...prev };
-        out[String(memberId)] = nested[String(memberId)] || {};
+        const mid = String(memberId);
+        const prevMember = out[mid] || {};
+        const newMember = nested[mid] || {};
+        // 深度合併：以伺服器回傳覆蓋同鍵，保留未回傳鍵
+        const mergedMember = { ...prevMember };
+        Object.keys(newMember).forEach(cardId => {
+          mergedMember[cardId] = { ...(mergedMember[cardId] || {}) };
+          Object.keys(newMember[cardId] || {}).forEach(itemId => {
+            mergedMember[cardId][itemId] = !!newMember[cardId][itemId];
+          });
+        });
+        out[mid] = mergedMember;
         localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(out));
         return out;
       });
@@ -147,7 +158,7 @@ const ProjectPlan = () => {
       try {
         const { data } = await axios.get(`/api/users/member/${id}/project-plan/checklist`);
         const serverFlat = (data?.states && typeof data.states === 'object') ? data.states : {};
-        // 改為以伺服器為主覆蓋指定會員的狀態，避免合併造成不一致
+        // 改為以伺服器為主覆蓋指定會員的狀態，避免合併造造成不一致
         applyMemberStates(id, serverFlat);
       } catch (e) {
         console.warn('載入勾選狀態失敗，使用本地資料繼續', e?.response?.data || e.message);
@@ -741,7 +752,11 @@ const flattenToNested = (flat) => {
   const nested = {};
   if (!flat || typeof flat !== 'object') return nested;
   Object.entries(flat).forEach(([k, v]) => {
-    const [memberId, cardId, itemId] = String(k).split('_');
+    const parts = String(k).split('_');
+    if (parts.length < 3) return;
+    const memberId = parts[0];
+    const cardId = parts[1];
+    const itemId = parts.slice(2).join('_'); // 允許 itemId 內含底線
     if (!memberId || !cardId || !itemId) return;
     nested[memberId] = nested[memberId] || {};
     nested[memberId][cardId] = nested[memberId][cardId] || {};
