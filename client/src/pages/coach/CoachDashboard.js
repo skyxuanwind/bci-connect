@@ -390,7 +390,7 @@ const CoachDashboard = () => {
             fetchProgress();
             fetchTaskStats();
             if (memberId && selectedMember && selectedMember.id === memberId) {
-              fetchProjectPlan(memberId);
+              fetchProjectPlan(memberId, true);
             }
             if (eventType === 'onboarding-task-created') {
               toast.success('已新增教練任務，資訊已更新');
@@ -516,8 +516,8 @@ const CoachDashboard = () => {
   };
 
   // 獲取專案計劃
-  const fetchProjectPlan = async (memberId) => {
-    if (projectPlans[memberId] || projectPlanLoading[memberId]) return;
+  const fetchProjectPlan = async (memberId, force = false) => {
+    if (!force && (projectPlans[memberId] || projectPlanLoading[memberId])) return;
     
     setProjectPlanLoading(prev => ({ ...prev, [memberId]: true }));
     try {
