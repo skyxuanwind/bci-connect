@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../config/axios';
 import Avatar from '../../components/Avatar';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -28,7 +28,7 @@ const CoachDashboard = () => {
   // 分頁狀態（已移除搜尋）
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const { user, isCoach: isCoachCtx } = useAuth();
   const iAmCoach = !!(isCoachCtx && isCoachCtx());
@@ -702,8 +702,7 @@ const CoachDashboard = () => {
                 };
                 return (
                   <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer relative" onClick={() => {
-                  setSelectedMember(member);
-                  fetchProjectPlan(member.id);
+                  navigate(`/progress/${member.id}`);
                 }}>
                     <div className="p-3 sm:p-4">
                       {/* 簡潔版卡片：大頭貼、名字、行業別、進度條 */}
