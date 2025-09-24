@@ -738,30 +738,7 @@ const CoachDashboard = () => {
                       <div className="text-sm text-gold-300">進度</div>
                       <div className="text-sm text-gold-100 font-semibold">{percent}%</div>
                     </div>
-                    <div className="w-full h-3 sm:h-2 bg-primary-700 rounded mt-1">
-                      <div className={`h-3 sm:h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
-                    </div>
-                    <div className="mt-1 text-[11px] text-gold-400">基礎 {profileScore}/60 ・ 系統 {systemScore}/40{bonusMbti > 0 ? ` ・ MBTI +${bonusMbti}` : ''}</div>
 
-                    {/* 狀態徽章 */}
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      <span className={`${p?.hasInterview ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                        {p?.hasInterview ? <CheckCircleIcon className="h-3 w-3 mr-1"/> : <XCircleIcon className="h-3 w-3 mr-1"/>}
-                        面談
-                      </span>
-                      <span className={`${p?.hasMbtiType ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                        {p?.hasMbtiType ? <CheckCircleIcon className="h-3 w-3 mr-1"/> : <XCircleIcon className="h-3 w-3 mr-1"/>}
-                        MBTI
-                      </span>
-                      <span className={`${p?.hasNfcCard ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                        {p?.hasNfcCard ? <CheckCircleIcon className="h-3 w-3 mr-1"/> : <XCircleIcon className="h-3 w-3 mr-1"/>}
-                        NFC
-                      </span>
-                      <span className={`${p?.foundationViewed ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'} inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium`}>
-                        {p?.foundationViewed ? <CheckCircleIcon className="h-3 w-3 mr-1"/> : <XCircleIcon className="h-3 w-3 mr-1"/>}
-                        地基
-                      </span>
-                    </div>
                   </div>
                 );
               })()}
@@ -817,8 +794,8 @@ const CoachDashboard = () => {
                          },
                          {
                            id: 'explain_goals_foundation',
-                           text: '再次說明共同目標、GBC地基及成功經驗',
-                           subtext: `GBC地基狀態：${selectedMember?.profile?.foundationViewed ? '✅ 學員已閱讀商會地基' : '❌ 學員尚未閱讀商會地基'}`,
+                           text: '再次說明共同目標及成功經驗',
+                           subtext: '',
                            completed: false,
                            type: 'checkbox'
                          }
@@ -929,7 +906,7 @@ const CoachDashboard = () => {
                        subtitle: '對象：新會員、教練',
                        description: '執行：1.加入各大LINE群 2.系統教學',
                        checklistItems: [
-                         '加入各大LINE群LINE群：新會員專案群、GBC聊天群、地基活動公告欄（請勿回覆）、分組第__組、軟性活動接龍群',
+                         '加入各大LINE群LINE群：新會員專案群、GBC聊天群、活動公告欄（請勿回覆）、分組第__組、軟性活動接龍群',
                          '系統教學：一對一、引薦單、引薦金額意義及操作'
                        ],
                        completed: false,
