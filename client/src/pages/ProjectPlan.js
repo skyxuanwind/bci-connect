@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from '../config/axios';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -8,7 +8,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CheckCircleIcon,
-  XCircleIcon,
   ClockIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
@@ -16,9 +15,11 @@ import {
 import DressCodeExamples from '../components/DressCodeExamples';
 // 新增：提示複製郵件內容
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProjectPlan = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [member, setMember] = useState(null);
   const [projectPlan, setProjectPlan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,19 +28,32 @@ const ProjectPlan = () => {
   // 新增：教練任務滑動索引與勾選狀態持久化（沿用 CoachDashboard 的鍵值，確保一致）
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [checklistStates, setChecklistStates] = useState(() => {
-    const saved = localStorage.getItem('coachDashboardChecklistStates');
-    return saved ? JSON.parse(saved) : {};
+    const savedV2 = localStorage.getItem('coachDashboardChecklistStatesV2');
+    if (savedV2) return JSON.parse(savedV2);
+    const savedV1 = localStorage.getItem('coachDashboardChecklistStates');
+    if (savedV1) return flattenToNested(JSON.parse(savedV1));
+    return {};
   });
-  const updateCheckboxState = (memberId, itemId, detailId, newState) => {
-    const key = `${memberId}_${itemId}_${detailId}`;
-    const newStates = { ...checklistStates, [key]: newState };
-    setChecklistStates(newStates);
-    localStorage.setItem('coachDashboardChecklistStates', JSON.stringify(newStates));
+  const [batchingEnabled, setBatchingEnabled] = useState(false);
+  const [pendingUpdates, setPendingUpdates] = useState([]);
+
+  const updateCheckboxState = (memberId, cardId, itemId, newState) => {
+    setChecklistStates(prev => {
+      const next = setNested({ ...prev }, memberId, cardId, itemId, newState);
+      localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(next));
+      return next;
+    });
+    if (batchingEnabled) {
+      setPendingUpdates(prev => [...prev, { memberId, cardId, itemId, value: !!newState }]);
+    } else {
+      axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states: [{ memberId, cardId, itemId, value: !!newState }] }).catch(() => {});
+    }
   };
-  const getCheckboxState = (memberId, itemId, detailId, defaultState = false) => {
-    const key = `${memberId}_${itemId}_${detailId}`;
-    return checklistStates[key] !== undefined ? checklistStates[key] : defaultState;
+
+  const getCheckboxState = (memberId, cardId, itemId, defaultState = false) => {
+    return getNested(checklistStates, memberId, cardId, itemId, defaultState);
   };
+
   // 新增：從專案計劃映射自動偵測欄位，與 MemberProgress 對齊
   const p = React.useMemo(() => {
     if (!projectPlan) return {};
@@ -66,12 +80,9 @@ const ProjectPlan = () => {
     };
   }, [projectPlan]);
 
-  useEffect(() => {
-    fetchMemberData();
-    fetchProjectPlan();
-  }, [id]);
 
-  const fetchMemberData = async () => {
+
+  const fetchMemberData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/users/${id}`);
@@ -82,9 +93,9 @@ const ProjectPlan = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchProjectPlan = async () => {
+  const fetchProjectPlan = useCallback(async () => {
     try {
       setLoadingPlan(true);
       const response = await axios.get(`/api/users/member/${id}/project-plan`);
@@ -95,7 +106,26 @@ const ProjectPlan = () => {
     } finally {
       setLoadingPlan(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchMemberData();
+    fetchProjectPlan();
+    (async () => {
+      try {
+        const { data } = await axios.get(`/api/users/member/${id}/project-plan/checklist`);
+        const serverFlat = (data?.states && typeof data.states === 'object') ? data.states : {};
+        const serverNested = flattenToNested(serverFlat);
+        setChecklistStates(prev => {
+          const merged = mergeNested(prev, serverNested);
+          localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(merged));
+          return merged;
+        });
+      } catch (e) {
+        console.warn('載入勾選狀態失敗，使用本地資料繼續', e?.response?.data || e.message);
+      }
+    })();
+  }, [id, fetchMemberData, fetchProjectPlan]);
 
   const getMembershipLevelBadge = (level) => {
     const badges = {
@@ -123,6 +153,17 @@ const ProjectPlan = () => {
         {badge.text}
       </span>
     );
+  };
+
+  const sendBatchUpdates = async () => {
+    if (!pendingUpdates.length) return;
+    try {
+      await axios.post(`/api/users/member/${id}/project-plan/checklist`, { states: pendingUpdates });
+      toast.success('批次提交成功');
+      setPendingUpdates([]);
+    } catch (e) {
+      toast.error(e?.response?.data?.message || '批次提交失敗');
+    }
   };
 
   if (loading) {
@@ -200,7 +241,7 @@ const ProjectPlan = () => {
             </div>
           )}
           {!loadingPlan && projectPlan && (
-            <>
+            <> 
               {/* 進度總覽 */}
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
@@ -210,15 +251,31 @@ const ProjectPlan = () => {
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                    style={{ width: `${projectPlan.summary?.percent || 0}%` }}
-                  ></div>
+                  <div className="bg-blue-600 h-3 rounded-full transition-all duration-300" style={{ width: `${projectPlan.summary?.percent || 0}%` }}></div>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600 mt-2">
                   <span>已完成 {projectPlan.summary?.completedCount || 0} 項</span>
                   <span>共 {projectPlan.summary?.total || 0} 項</span>
                 </div>
+                {/* 手動勾選完成度統計 */}
+                {(() => {
+                  const spec = [
+                    { cardId: 'core_member_approval', items: ['create_group','member_data','send_email'] },
+                    { cardId: 'day_before_oath', items: ['attendance_time','self_intro_50sec','dress_code','business_cards','four_week_plan','send_email'] },
+                    { cardId: 'ceremony_day', items: ['intro_guide','environment_intro','core_staff_intro'] },
+                    { cardId: 'networking_time', items: ['networking_guide'] },
+                    { cardId: 'meeting_guidelines', items: ['phone_silent','simple_explanation'] }
+                  ];
+                  const manualTotal = spec.reduce((sum, s) => sum + s.items.length, 0);
+                  const manualChecked = spec.reduce((sum, s) => sum + s.items.filter(itemId => getCheckboxState(id, s.cardId, itemId, false)).length, 0);
+                  const manualPercent = manualTotal ? Math.round((manualChecked / manualTotal) * 100) : 0;
+                  return (
+                    <div className="flex justify-between text-sm text-gray-600 mt-2">
+                      <span>手動勾選已完成 {manualChecked} 項</span>
+                      <span>手動勾選完成率 {manualPercent}% （共 {manualTotal} 項）</span>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* 教練任務：12 張卡片（黑金樣式，非彈窗，直接顯示） */}
@@ -226,6 +283,11 @@ const ProjectPlan = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <ChartBarIcon className="h-5 w-5 text-gold-300" />
                   <div className="text-lg font-semibold text-gold-100">教練任務</div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="text-xs text-gold-300">批次提交</span>
+                    <button type="button" className="btn-secondary px-2 py-1" onClick={() => setBatchingEnabled(b => !b)}>{batchingEnabled ? 'ON' : 'OFF'}</button>
+                    <button type="button" className="btn-primary px-2 py-1" disabled={!pendingUpdates.length} onClick={sendBatchUpdates}>提交更動 ({pendingUpdates.length})</button>
+                  </div>
                 </div>
                 {(() => {
                   const attachmentItems = [
@@ -419,9 +481,28 @@ const ProjectPlan = () => {
                   const copyEmailTemplate = (template) => {
                     const emailContent = (template || '')
                       .replace(/\{memberName\}/g, member?.name || '學員姓名')
-                      .replace(/\{coachName\}/g, '教練')
-                      .replace(/\{coachIndustry\}/g, '行業');
+                      .replace(/\{coachName\}/g, user?.name || '教練')
+                      .replace(/\{coachIndustry\}/g, user?.industry || user?.company || '行業');
                     navigator.clipboard.writeText(emailContent).then(() => toast.success('郵件內容已複製')).catch(() => toast.error('複製失敗'));
+                  };
+                  const sendEmail = async (template, toEmail, memberName) => {
+                    try {
+                      const subject = `${memberName || member?.name || ''} 教練通知`;
+                      const content = (template || '')
+                        .replace(/\{memberName\}/g, memberName || member?.name || '學員')
+                        .replace(/\{coachName\}/g, user?.name || '教練')
+                        .replace(/\{coachIndustry\}/g, user?.industry || user?.company || '行業');
+                      const to = toEmail || member?.email;
+                      if (!to) {
+                        toast.error('找不到學員的收件信箱');
+                        return;
+                      }
+                      await axios.post('/api/emails/send', { to, subject, content, type: 'project_plan' });
+                      toast.success('郵件已發送');
+                    } catch (e) {
+                      const msg = e?.response?.data?.message || '郵件發送失敗';
+                      toast.error(msg);
+                    }
                   };
                   return (
                     <div className="bg-primary-700/40 rounded-lg border border-gold-700 overflow-hidden">
@@ -505,6 +586,7 @@ const ProjectPlan = () => {
                                     <pre className="text-xs sm:text-sm text-gold-200 whitespace-pre-wrap">{currentCard.emailTemplate}</pre>
                                     <div className="mt-3 flex gap-2">
                                       <button type="button" className="btn-secondary px-3 py-1" onClick={() => copyEmailTemplate(currentCard.emailTemplate)}>一鍵複製</button>
+                                      <button type="button" className="btn-primary px-3 py-1" onClick={() => sendEmail(currentCard.emailTemplate, member?.email, member?.name)}>一鍵寄出</button>
                                     </div>
                                   </div>
                                 )}
@@ -557,3 +639,42 @@ const ProjectPlan = () => {
 };
 
 export default ProjectPlan;
+
+// 轉換工具：flat -> nested
+const flattenToNested = (flat) => {
+  const nested = {};
+  if (!flat || typeof flat !== 'object') return nested;
+  Object.entries(flat).forEach(([k, v]) => {
+    const [memberId, cardId, itemId] = String(k).split('_');
+    if (!memberId || !cardId || !itemId) return;
+    nested[memberId] = nested[memberId] || {};
+    nested[memberId][cardId] = nested[memberId][cardId] || {};
+    nested[memberId][cardId][itemId] = !!v;
+  });
+  return nested;
+};
+
+const getNested = (state, memberId, cardId, itemId, defaultVal = false) => {
+  return !!(state?.[memberId]?.[cardId]?.[itemId] ?? defaultVal);
+};
+
+const setNested = (state, memberId, cardId, itemId, value) => {
+  if (!state[memberId]) state[memberId] = {};
+  if (!state[memberId][cardId]) state[memberId][cardId] = {};
+  state[memberId][cardId][itemId] = !!value;
+  return state;
+};
+
+const mergeNested = (a, b) => {
+  const out = JSON.parse(JSON.stringify(a || {}));
+  Object.keys(b || {}).forEach(memberId => {
+    out[memberId] = out[memberId] || {};
+    Object.keys(b[memberId] || {}).forEach(cardId => {
+      out[memberId][cardId] = out[memberId][cardId] || {};
+      Object.keys(b[memberId][cardId] || {}).forEach(itemId => {
+        out[memberId][cardId][itemId] = !!b[memberId][cardId][itemId];
+      });
+    });
+  });
+  return out;
+};

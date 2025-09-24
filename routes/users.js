@@ -1892,4 +1892,124 @@ router.get('/member/:id/project-plan', async (req, res) => {
   }
 });
 
+// 教練任務勾選狀態：讀取
+router.get('/member/:id/project-plan/checklist', async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
+    const coachUserId = userRes.rows[0].coach_user_id;
+    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
+    if (!allow) return res.status(403).json({ message: '沒有權限讀取勾選狀態' });
+
+    const q = await pool.query(
+      `SELECT activity_data FROM member_activities
+       WHERE user_id = $1 AND activity_type = 'project_plan_checklist'
+       ORDER BY created_at DESC LIMIT 1`,
+      [memberId]
+    );
+
+    const activityData = q.rows[0]?.activity_data || {};
+    const states = activityData.states || activityData || {};
+
+    return res.json({ success: true, states });
+  } catch (err) {
+    console.error('Get project plan checklist error:', err);
+    return res.status(500).json({ success: false, message: '讀取勾選狀態時發生錯誤' });
+  }
+});
+
+// 教練任務勾選狀態：更新
+router.post('/member/:id/project-plan/checklist', async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    const incoming = req.body?.states || {};
+
+    // 將各種格式統一轉為扁平鍵值 { "memberId_cardId_itemId": boolean }
+    let incomingFlat = {};
+    if (Array.isArray(incoming)) {
+      // 陣列格式：[{ memberId, cardId, itemId, value }]
+      incoming.forEach(s => {
+        const mid = String(s.memberId || memberId);
+        const cardId = String(s.cardId || '').trim();
+        const itemId = String(s.itemId || '').trim();
+        if (cardId && itemId) {
+          const key = `${mid}_${cardId}_${itemId}`;
+          incomingFlat[key] = !!s.value;
+        }
+      });
+    } else if (incoming && typeof incoming === 'object') {
+      const keys = Object.keys(incoming);
+      const isFlat = keys.some(k => k.includes('_'));
+      if (isFlat) {
+        // 舊版扁平鍵值：{ "memberId_cardId_itemId": boolean }
+        incomingFlat = Object.entries(incoming).reduce((acc, [k, v]) => {
+          acc[String(k)] = !!v;
+          return acc;
+        }, {});
+      } else {
+        // 巢狀：{ memberId: { cardId: { itemId: boolean } } }
+        Object.keys(incoming).forEach(mid => {
+          const cards = incoming[mid] || {};
+          Object.keys(cards).forEach(cardId => {
+            const items = cards[cardId] || {};
+            Object.keys(items).forEach(itemId => {
+              const key = `${mid}_${cardId}_${itemId}`;
+              incomingFlat[key] = !!items[itemId];
+            });
+          });
+        });
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'states 格式錯誤' });
+    }
+
+    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
+    const coachUserId = userRes.rows[0].coach_user_id;
+    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
+    if (!allow) return res.status(403).json({ message: '沒有權限更新勾選狀態' });
+
+    const q = await pool.query(
+      `SELECT id, activity_data FROM member_activities
+       WHERE user_id = $1 AND activity_type = 'project_plan_checklist'
+       ORDER BY created_at DESC LIMIT 1`,
+      [memberId]
+    );
+
+    const existing = q.rows[0]?.activity_data || {};
+    const existingStates = existing.states || existing || {};
+    const mergedStates = { ...existingStates, ...incomingFlat };
+
+    const activityData = {
+      states: mergedStates,
+      updatedBy: req.user.id,
+      updatedAt: new Date().toISOString(),
+      source: 'project_plan'
+    };
+
+    if (q.rows.length > 0) {
+      await pool.query(
+        `UPDATE member_activities SET activity_data = $2 WHERE id = $1`,
+        [q.rows[0].id, JSON.stringify(activityData)]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO member_activities (user_id, activity_type, activity_data, ip_address, user_agent)
+         VALUES ($1, 'project_plan_checklist', $2, $3, $4)`,
+        [memberId, JSON.stringify(activityData), req.ip || null, req.headers['user-agent'] || null]
+      );
+    }
+
+    return res.json({ success: true, states: mergedStates });
+  } catch (err) {
+    console.error('Update project plan checklist error:', err);
+    return res.status(500).json({ success: false, message: '更新勾選狀態時發生錯誤' });
+  }
+});
+
 module.exports = router;

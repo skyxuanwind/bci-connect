@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import axios from '../../config/axios';
 import Avatar from '../../components/Avatar';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -16,11 +16,10 @@ const CoacheeDirectory = () => {
 
   const [progressById, setProgressById] = useState({});
 
-  const fetchCoachees = async () => {
+  const fetchCoachees = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      // 學員目錄: 顯示所有有被指派教練的學員（包含其他教練的學員）
       const resp = await axios.get('/api/users/all-coachees', { params: { page, limit } });
       const data = resp.data || {};
       setMembers(Array.isArray(data.coachees) ? data.coachees : []);
@@ -33,9 +32,9 @@ const CoacheeDirectory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit]);
 
-  const fetchProgress = async () => {
+  const fetchProgress = useCallback(async () => {
     try {
       const resp = await axios.get('/api/users/my-coachees/progress');
       const list = resp.data?.progress || [];
@@ -45,12 +44,15 @@ const CoacheeDirectory = () => {
     } catch (e) {
       console.error('載入進度概況失敗:', e);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchCoachees(); }, [page]);
-  useEffect(() => { fetchProgress(); }, []);
+  useEffect(() => { fetchCoachees(); }, [fetchCoachees]);
+  useEffect(() => { fetchProgress(); }, [fetchProgress]);
 
   const visible = useMemo(() => Array.isArray(members) ? members : [], [members]);
+
+  // 強制引用 isAdmin 以避免未使用警告（實際亦有在 JSX 中使用）
+  const adminView = isAdmin();
 
   const renderCard = (m) => {
     const p = progressById[m.id] || {};
@@ -80,7 +82,7 @@ const CoacheeDirectory = () => {
             <span className="text-xs text-gold-100 font-semibold">{percent}%</span>
           </div>
           <div className="w-full h-2 bg-primary-700 rounded mt-1">
-            <div className={`h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
+            <div className={`${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'} h-2 rounded`} style={{ width: `${percent}%` }} />
           </div>
         </div>
 
@@ -99,7 +101,7 @@ const CoacheeDirectory = () => {
     <div className="space-y-6">
       <div className="bg-primary-800 border border-gold-600 rounded-lg p-6 shadow-elegant">
         <h1 className="text-2xl font-semibold text-gold-100">學員目錄</h1>
-        <p className="mt-2 text-gold-300">瀏覽所有被指派到教練的學員名單，包含其教練資訊與入職進度。{isAdmin() ? '（管理員視角）' : ''}</p>
+        <p className="mt-2 text-gold-300">瀏覽所有被指派到教練的學員名單，包含其教練資訊與入職進度。{adminView ? '（管理員視角）' : ''}</p>
       </div>
 
       <div className="bg-primary-800 border border-gold-600 rounded-lg p-6">
