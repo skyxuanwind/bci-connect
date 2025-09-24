@@ -127,6 +127,55 @@ const ProjectPlan = () => {
     })();
   }, [id, fetchMemberData, fetchProjectPlan]);
 
+  // SSE 連線狀態
+  const [sseStatus, setSseStatus] = useState('connecting');
+  // SSE 訂閱：即時同步教練任務勾選狀態
+  useEffect(() => {
+    if (!id) return;
+    let es;
+    try {
+      setSseStatus('connecting');
+      const url = `/api/users/member/${id}/project-plan/events`;
+      es = new EventSource(url, { withCredentials: true });
+
+      es.onopen = () => {
+        setSseStatus('connected');
+      };
+
+      const onChecklistUpdated = (e) => {
+        try {
+          const payload = JSON.parse(e.data || '{}');
+          const flat = (payload?.states && typeof payload.states === 'object') ? payload.states : {};
+          const nested = flattenToNested(flat);
+          setChecklistStates(prev => {
+            const merged = mergeNested(prev, nested);
+            localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(merged));
+            return merged;
+          });
+        } catch (err) {
+          console.warn('解析 SSE 勾選狀態更新事件失敗:', err);
+        }
+      };
+
+      es.addEventListener('project-plan-checklist-updated', onChecklistUpdated);
+      es.addEventListener('heartbeat', () => {});
+      es.onerror = (err) => {
+        console.warn('專案計劃 SSE 連線錯誤:', err);
+        setSseStatus('reconnecting');
+      };
+    } catch (e) {
+      console.warn('建立專案計劃 SSE 失敗:', e);
+      setSseStatus('reconnecting');
+    }
+
+    return () => {
+      if (es) {
+        try { es.close(); } catch (_) {}
+      }
+      setSseStatus('closed');
+    };
+  }, [id]);
+
   const getMembershipLevelBadge = (level) => {
     const badges = {
       1: { text: '金級會員', class: 'bg-yellow-100 text-yellow-800' },
@@ -283,6 +332,21 @@ const ProjectPlan = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <ChartBarIcon className="h-5 w-5 text-gold-300" />
                   <div className="text-lg font-semibold text-gold-100">教練任務</div>
+                  {(() => {
+                    const map = {
+                      connecting: { text: '連線中', dot: 'bg-yellow-500' },
+                      connected: { text: '已連線', dot: 'bg-green-500' },
+                      reconnecting: { text: '斷線，自動重試中', dot: 'bg-red-500 animate-pulse' },
+                      closed: { text: '已關閉', dot: 'bg-gray-400' },
+                    };
+                    const info = map[sseStatus] || map.connecting;
+                    return (
+                      <div className="ml-2 flex items-center gap-1 text-xs text-gray-700 bg-gray-100 rounded px-2 py-0.5">
+                        <span className={`inline-block w-2 h-2 rounded-full ${info.dot}`}></span>
+                        <span>SSE {info.text}</span>
+                      </div>
+                    );
+                  })()}
                   <div className="ml-auto flex items-center gap-2">
                     <span className="text-xs text-gold-300">批次提交</span>
                     <button type="button" className="btn-secondary px-2 py-1" onClick={() => setBatchingEnabled(b => !b)}>{batchingEnabled ? 'ON' : 'OFF'}</button>
@@ -510,7 +574,12 @@ const ProjectPlan = () => {
                       <div className="flex items-center justify-between p-3 border-b border-gold-700/50">
                         <div className="flex gap-1">
                           {attachmentItems.map((_, index) => (
-                            <button key={index} onClick={() => setCurrentCardIndex(index)} className={`w-2 h-3 sm:h-2 rounded-full transition-colors ${index === currentCardIndex ? 'bg-gold-400' : 'bg-gold-700'}`} />
+                            <button
+                              key={index}
+                              onClick={() => setCurrentCardIndex(index)}
+                              className={`w-2 h-3 sm:h-2 rounded-full transition-colors ${index === currentCardIndex ? 'bg-gold-400' : 'bg-gold-700'}`}
+                              aria-label={`切換到卡片 ${index + 1}`}
+                            />
                           ))}
                         </div>
                         <div className="text-sm sm:text-xs text-gold-300">{currentCardIndex + 1} / {attachmentItems.length}</div>

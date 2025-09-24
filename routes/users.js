@@ -1892,6 +1892,68 @@ router.get('/member/:id/project-plan', async (req, res) => {
   }
 });
 
+// SSE：專案計劃勾選狀態事件（會員視角）
+router.get('/member/:id/project-plan/events', async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    // 權限：本人、其教練或管理員
+    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
+    const coachUserId = userRes.rows[0].coach_user_id;
+    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
+    if (!allow) return res.status(403).json({ message: '沒有權限訂閱專案計劃事件' });
+
+    // 設定 SSE header
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    if (res.flushHeaders) res.flushHeaders();
+
+    // 記錄客戶端（以 metadata 過濾）
+    addSseClient(res, { type: 'project_plan', memberId });
+
+    // 心跳保活
+    const heartbeat = setInterval(() => {
+      try { res.write('event: heartbeat\ndata: {}\n\n'); } catch (_) {}
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      removeSseClient(res);
+    });
+  } catch (e) {
+    console.error('建立專案計劃 SSE 失敗:', e);
+    res.status(500).json({ message: '建立事件串流時發生錯誤' });
+  }
+});
+
+// SSE：教練訂閱專案計劃勾選狀態事件（教練視角）
+router.get('/coach/project-plan-events', requireCoach, async (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    if (res.flushHeaders) res.flushHeaders();
+
+    // 記錄教練端 SSE 連線
+    addSseClient(res, { type: 'project_plan', coachId: req.user.id });
+
+    const heartbeat = setInterval(() => {
+      try { res.write('event: heartbeat\ndata: {}\n\n'); } catch (_) {}
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      removeSseClient(res);
+    });
+  } catch (e) {
+    console.error('建立教練專案計劃 SSE 失敗:', e);
+    res.status(500).json({ message: '建立事件串流時發生錯誤' });
+  }
+});
+
 // 教練任務勾選狀態：讀取
 router.get('/member/:id/project-plan/checklist', async (req, res) => {
   try {
@@ -2003,6 +2065,19 @@ router.post('/member/:id/project-plan/checklist', async (req, res) => {
          VALUES ($1, 'project_plan_checklist', $2, $3, $4)`,
         [memberId, JSON.stringify(activityData), req.ip || null, req.headers['user-agent'] || null]
       );
+    }
+
+    // 即時廣播：通知會員本人與其教練，專案計劃勾選狀態已更新
+    try {
+      broadcastTo(({ meta }) => meta?.type === 'project_plan' && (
+        meta.memberId === memberId || (coachUserId && meta.coachId === coachUserId)
+      ), 'project-plan-checklist-updated', {
+        memberId,
+        states: mergedStates,
+        eventType: 'project-plan-checklist-updated'
+      });
+    } catch (e) {
+      console.warn('SSE 廣播失敗（專案計劃勾選更新）：', e?.message || e);
     }
 
     return res.json({ success: true, states: mergedStates });
