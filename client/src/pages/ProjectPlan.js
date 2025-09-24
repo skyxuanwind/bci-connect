@@ -37,7 +37,25 @@ const ProjectPlan = () => {
   const [batchingEnabled, setBatchingEnabled] = useState(false);
   const [pendingUpdates, setPendingUpdates] = useState([]);
 
+  // 新增：以伺服器為主的會員狀態覆蓋（用於 POST 成功與 SSE 事件）
+  const applyMemberStates = (memberId, flatOrNested) => {
+    try {
+      const isFlat = flatOrNested && typeof flatOrNested === 'object' && Object.keys(flatOrNested).some(k => String(k).includes('_'));
+      const nested = isFlat ? flattenToNested(flatOrNested) : (flatOrNested || {});
+      setChecklistStates(prev => {
+        const out = { ...prev };
+        out[String(memberId)] = nested[String(memberId)] || {};
+        localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(out));
+        return out;
+      });
+    } catch (e) {
+      console.warn('applyMemberStates 失敗', e);
+    }
+  };
+
   const updateCheckboxState = (memberId, cardId, itemId, newState) => {
+    const prevVal = getNested(checklistStates, memberId, cardId, itemId, false);
+    // 本地樂觀更新
     setChecklistStates(prev => {
       const next = setNested({ ...prev }, memberId, cardId, itemId, newState);
       localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(next));
@@ -46,7 +64,21 @@ const ProjectPlan = () => {
     if (batchingEnabled) {
       setPendingUpdates(prev => [...prev, { memberId, cardId, itemId, value: !!newState }]);
     } else {
-      axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states: [{ memberId, cardId, itemId, value: !!newState }] }).catch(() => {});
+      axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states: [{ memberId, cardId, itemId, value: !!newState }] })
+        .then(({ data }) => {
+          if (data && data.states) {
+            applyMemberStates(memberId, data.states);
+          }
+        })
+        .catch((err) => {
+          // 回滾本地狀態，維持與伺服器一致
+          setChecklistStates(prev => {
+            const next = setNested({ ...prev }, memberId, cardId, itemId, prevVal);
+            localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(next));
+            return next;
+          });
+          toast.error(err?.response?.data?.message || '更新失敗，已回復原狀');
+        });
     }
   };
 
@@ -115,12 +147,8 @@ const ProjectPlan = () => {
       try {
         const { data } = await axios.get(`/api/users/member/${id}/project-plan/checklist`);
         const serverFlat = (data?.states && typeof data.states === 'object') ? data.states : {};
-        const serverNested = flattenToNested(serverFlat);
-        setChecklistStates(prev => {
-          const merged = mergeNested(prev, serverNested);
-          localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(merged));
-          return merged;
-        });
+        // 改為以伺服器為主覆蓋指定會員的狀態，避免合併造成不一致
+        applyMemberStates(id, serverFlat);
       } catch (e) {
         console.warn('載入勾選狀態失敗，使用本地資料繼續', e?.response?.data || e.message);
       }
@@ -146,12 +174,8 @@ const ProjectPlan = () => {
         try {
           const payload = JSON.parse(e.data || '{}');
           const flat = (payload?.states && typeof payload.states === 'object') ? payload.states : {};
-          const nested = flattenToNested(flat);
-          setChecklistStates(prev => {
-            const merged = mergeNested(prev, nested);
-            localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(merged));
-            return merged;
-          });
+          const targetMemberId = payload?.memberId || id;
+          applyMemberStates(targetMemberId, flat);
         } catch (err) {
           console.warn('解析 SSE 勾選狀態更新事件失敗:', err);
         }
@@ -207,7 +231,10 @@ const ProjectPlan = () => {
   const sendBatchUpdates = async () => {
     if (!pendingUpdates.length) return;
     try {
-      await axios.post(`/api/users/member/${id}/project-plan/checklist`, { states: pendingUpdates });
+      const { data } = await axios.post(`/api/users/member/${id}/project-plan/checklist`, { states: pendingUpdates });
+      if (data && data.states) {
+        applyMemberStates(id, data.states);
+      }
       toast.success('批次提交成功');
       setPendingUpdates([]);
     } catch (e) {
