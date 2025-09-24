@@ -26,7 +26,26 @@ const MemberProgress = () => {
   useEffect(() => {
     if (!Number.isFinite(memberId)) return;
     setLoading(true);
-    Promise.all([fetchMember(), fetchProjectPlan()]).catch(() => setError('載入資料失敗')).finally(() => setLoading(false));
+    Promise.all([fetchMember(), fetchProjectPlan()])
+      .catch(() => setError('載入資料失敗'))
+      .finally(() => setLoading(false));
+  }, [memberId]);
+
+  // 新增：SSE 訂閱入職任務事件，動態刷新專案計劃
+  useEffect(() => {
+    if (!Number.isFinite(memberId)) return;
+    let es;
+    try {
+      es = new EventSource(`/api/users/member/${memberId}/onboarding-events`, { withCredentials: true });
+      const refresh = () => { fetchProjectPlan().catch(() => {}); };
+      es.addEventListener('onboarding-task-created', refresh);
+      es.addEventListener('onboarding-task-updated', refresh);
+      es.addEventListener('heartbeat', () => {});
+      es.onerror = (err) => { console.warn('會員進度 SSE 連線錯誤:', err); };
+    } catch (e) {
+      console.warn('建立會員進度 SSE 失敗:', e);
+    }
+    return () => { try { es && es.close(); } catch (_) {} };
   }, [memberId]);
 
   const p = useMemo(() => {

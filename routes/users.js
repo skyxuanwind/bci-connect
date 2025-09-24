@@ -6,6 +6,7 @@ const { pool } = require('../config/database');
 const { authenticateToken, requireMembershipLevel, requireCoach } = require('../middleware/auth');
 const { cloudinary } = require('../config/cloudinary');
 const { AINotificationService } = require('../services/aiNotificationService');
+const { addClient: addSseClient, removeClient: removeSseClient, broadcastTo } = require('../utils/sse');
 
 const router = express.Router();
 const aiNotificationService = new AINotificationService();
@@ -1101,6 +1102,68 @@ router.get('/member/:id/onboarding-tasks', async (req, res) => {
   }
 });
 
+// 新增：入職任務 SSE 事件串流（會員視角）
+router.get('/member/:id/onboarding-events', async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
+
+    // 權限：本人、其教練或管理員
+    const userRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: '會員不存在' });
+    const coachUserId = userRes.rows[0].coach_user_id;
+    const allow = req.user.id === memberId || !!req.user.is_admin || (coachUserId && req.user.id === coachUserId);
+    if (!allow) return res.status(403).json({ message: '沒有權限訂閱入職任務事件' });
+
+    // 設定 SSE header
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    if (res.flushHeaders) res.flushHeaders();
+
+    // 記錄客戶端（以 metadata 過濾）
+    addSseClient(res, { type: 'onboarding', memberId });
+
+    // 心跳，避免 proxy 關閉連線
+    const heartbeat = setInterval(() => {
+      try { res.write('event: heartbeat\ndata: {}\n\n'); } catch (_) {}
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      removeSseClient(res);
+    });
+  } catch (e) {
+    console.error('建立入職任務 SSE 失敗:', e);
+    res.status(500).json({ message: '建立事件串流時發生錯誤' });
+  }
+});
+
+// 新增：教練訂閱其學員的入職任務事件（教練視角）
+router.get('/coach/onboarding-events', requireCoach, async (req, res) => {
+  try {
+    // 教練登入者即可；其他檢查在 broadcastTo 過濾
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    if (res.flushHeaders) res.flushHeaders();
+
+    addSseClient(res, { type: 'onboarding', coachId: req.user.id });
+
+    const heartbeat = setInterval(() => {
+      try { res.write('event: heartbeat\ndata: {}\n\n'); } catch (_) {}
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      removeSseClient(res);
+    });
+  } catch (e) {
+    console.error('建立教練入職任務 SSE 失敗:', e);
+    res.status(500).json({ message: '建立事件串流時發生錯誤' });
+  }
+});
+
 // POST: 新增學員的入職任務（僅教練或管理員）
 router.post('/member/:id/onboarding-tasks', requireCoach, async (req, res) => {
   try {
@@ -1153,6 +1216,17 @@ router.post('/member/:id/onboarding-tasks', requireCoach, async (req, res) => {
       completedAt: r.completed_at,
       createdAt: r.created_at
     };
+
+    // SSE 廣播：通知會員本人與其教練
+    try {
+      const memberCoachRes = await pool.query('SELECT coach_user_id FROM users WHERE id = $1', [memberId]);
+      const coachUserId = memberCoachRes.rows[0]?.coach_user_id || null;
+      broadcastTo(({ meta }) => meta?.type === 'onboarding' && (
+        meta.memberId === memberId || (coachUserId && meta.coachId === coachUserId)
+      ), 'onboarding-task-created', { memberId, task });
+    } catch (e) {
+      console.warn('SSE 廣播失敗（任務新增）：', e?.message || e);
+    }
 
     res.json({ message: '任務已新增', task });
   } catch (error) {
@@ -1324,6 +1398,15 @@ router.put('/onboarding-tasks/:taskId', async (req, res) => {
       } catch (evtErr) {
         console.error('完成任務事件觸發失敗:', evtErr);
       }
+    }
+
+    // 即時推播：通知會員本人與其教練
+    try {
+      broadcastTo(({ meta }) => meta?.type === 'onboarding' && (
+        meta.memberId === updatedTask.userId || (taskRow.coach_user_id && meta.coachId === taskRow.coach_user_id)
+      ), 'onboarding-task-updated', { memberId: updatedTask.userId, task: updatedTask });
+    } catch (e) {
+      console.warn('SSE 廣播失敗（任務更新）：', e?.message || e);
     }
 
     res.json({ message: '任務已更新', task: updatedTask });
@@ -1509,6 +1592,35 @@ router.post('/onboarding-tasks/bulk', requireCoach, async (req, res) => {
     const insertResult = await client.query(insertSql, params);
 
     await client.query('COMMIT');
+
+    // 廣播：逐一推送（避免 payload 過大）
+    try {
+      const rows = insertResult.rows || [];
+      for (const r of rows) {
+        // 重新查詢完整資料以取 user_id 等
+        const tRes = await pool.query(
+          `SELECT id, user_id, title, description, status, due_date, completed_at, created_at, created_by_coach_id
+           FROM user_onboarding_tasks WHERE id = $1`, [r.id]
+        );
+        const tr = tRes.rows[0];
+        const t = {
+          id: tr.id,
+          userId: tr.user_id,
+          title: tr.title,
+          description: tr.description,
+          status: tr.status,
+          dueDate: tr.due_date,
+          completedAt: tr.completed_at,
+          createdAt: tr.created_at
+        };
+        const coachUserId = tr.created_by_coach_id || coachId;
+        broadcastTo(({ meta }) => meta?.type === 'onboarding' && (
+          meta.memberId === t.userId || (coachUserId && meta.coachId === coachUserId)
+        ), 'onboarding-task-created', { memberId: t.userId, task: t });
+      }
+    } catch (e) {
+      console.warn('SSE 廣播失敗（批次新增）：', e?.message || e);
+    }
 
     res.json({ message: '批量分配成功', createdCount: insertResult.rowCount || 0 });
   } catch (error) {
