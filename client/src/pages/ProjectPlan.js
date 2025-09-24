@@ -56,7 +56,7 @@ const ProjectPlan = () => {
           });
         });
         out[mid] = mergedMember;
-        localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(out));
+        // 移除本地儲存，改為純網路同步
         return out;
       });
     } catch (e) {
@@ -66,15 +66,15 @@ const ProjectPlan = () => {
 
   const updateCheckboxState = (memberId, cardId, itemId, newState) => {
     const prevVal = getNested(checklistStates, memberId, cardId, itemId, false);
-    // 本地樂觀更新
+    // 本地樂觀更新（僅記憶體，不存本地）
     setChecklistStates(prev => {
       const next = setNested({ ...prev }, memberId, cardId, itemId, newState);
-      localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(next));
       return next;
     });
     if (batchingEnabled) {
       setPendingUpdates(prev => [...prev, { memberId, cardId, itemId, value: !!newState }]);
     } else {
+      // 立即同步到伺服器
       axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states: [{ memberId, cardId, itemId, value: !!newState }] })
         .then(({ data }) => {
           if (data && data.states) {
@@ -85,10 +85,9 @@ const ProjectPlan = () => {
           // 回滾本地狀態，維持與伺服器一致
           setChecklistStates(prev => {
             const next = setNested({ ...prev }, memberId, cardId, itemId, prevVal);
-            localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(next));
             return next;
           });
-          toast.error(err?.response?.data?.message || '更新失敗，已回復原狀');
+          toast.error(err?.response?.data?.message || '網路同步失敗，已回復原狀');
         });
     }
   };
@@ -154,14 +153,17 @@ const ProjectPlan = () => {
   useEffect(() => {
     fetchMemberData();
     fetchProjectPlan();
+    // 初始化載入勾選狀態
     (async () => {
       try {
         const { data } = await axios.get(`/api/users/member/${id}/project-plan/checklist`);
         const serverFlat = (data?.states && typeof data.states === 'object') ? data.states : {};
-        // 改為以伺服器為主覆蓋指定會員的狀態，避免合併造造成不一致
+        // 完全以伺服器狀態為主，不讀取本地儲存
         applyMemberStates(id, serverFlat);
       } catch (e) {
-        console.warn('載入勾選狀態失敗，使用本地資料繼續', e?.response?.data || e.message);
+        console.warn('載入勾選狀態失敗，使用空狀態繼續', e?.response?.data || e.message);
+        // 網路失敗時使用空狀態，不依賴本地儲存
+        setChecklistStates({});
       }
     })();
   }, [id, fetchMemberData, fetchProjectPlan]);
