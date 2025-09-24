@@ -1223,7 +1223,11 @@ router.post('/member/:id/onboarding-tasks', requireCoach, async (req, res) => {
       const coachUserId = memberCoachRes.rows[0]?.coach_user_id || null;
       broadcastTo(({ meta }) => meta?.type === 'onboarding' && (
         meta.memberId === memberId || (coachUserId && meta.coachId === coachUserId)
-      ), 'onboarding-task-created', { memberId, task });
+      ), 'onboarding-task-created', { 
+        memberId, 
+        task, 
+        eventType: 'onboarding-task-created' 
+      });
     } catch (e) {
       console.warn('SSE 廣播失敗（任務新增）：', e?.message || e);
     }
@@ -1404,7 +1408,11 @@ router.put('/onboarding-tasks/:taskId', async (req, res) => {
     try {
       broadcastTo(({ meta }) => meta?.type === 'onboarding' && (
         meta.memberId === updatedTask.userId || (taskRow.coach_user_id && meta.coachId === taskRow.coach_user_id)
-      ), 'onboarding-task-updated', { memberId: updatedTask.userId, task: updatedTask });
+      ), 'onboarding-task-updated', { 
+        memberId: updatedTask.userId, 
+        task: updatedTask, 
+        eventType: 'onboarding-task-updated' 
+      });
     } catch (e) {
       console.warn('SSE 廣播失敗（任務更新）：', e?.message || e);
     }

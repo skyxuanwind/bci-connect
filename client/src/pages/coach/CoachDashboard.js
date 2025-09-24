@@ -419,6 +419,71 @@ const CoachDashboard = () => {
     };
   }, [iAmCoach, selectedMember?.id]);
 
+  // SSE：會員端事件訂閱，當自己的任務更新時實時同步
+  useEffect(() => {
+    if (iAmCoach || !user?.id) return;
+
+    let es; // EventSource 實例
+    let reconnectTimer;
+    const connect = () => {
+      try {
+        es = new EventSource(`/api/users/member/${user.id}/onboarding-events`, { withCredentials: true });
+
+        es.onopen = () => {
+          if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+          }
+        };
+
+        es.onerror = (err) => {
+          console.warn('會員 SSE 連線錯誤，即將重試', err);
+          if (es) {
+            es.close();
+          }
+          const delay = 3000;
+          reconnectTimer = setTimeout(connect, delay);
+        };
+
+        const handleMemberTaskEvent = (evt) => {
+          try {
+            const payload = JSON.parse(evt.data);
+            const { memberId, task, eventType } = payload || {};
+            
+            // 確認是自己的任務更新
+            if (memberId === user.id) {
+              // 立即重新載入任務列表
+              fetchMyView();
+              
+              if (eventType === 'onboarding-task-created') {
+                toast.success('新任務已分配，請查看任務列表');
+              } else if (eventType === 'onboarding-task-updated') {
+                toast.success('任務狀態已同步更新');
+              }
+            }
+          } catch (e) {
+            console.warn('解析會員 SSE 事件失敗', e);
+          }
+        };
+
+        es.addEventListener('onboarding-task-created', handleMemberTaskEvent);
+        es.addEventListener('onboarding-task-updated', handleMemberTaskEvent);
+        es.addEventListener('heartbeat', () => {}); // 心跳事件，保持連線
+      } catch (error) {
+        console.error('初始化會員 SSE 失敗', error);
+      }
+    };
+
+    connect();
+
+    return () => {
+      try {
+        if (es) es.close();
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+      } catch {}
+    };
+  }, [iAmCoach, user?.id]);
+
   // 持久化：排序（舊的兩個篩選已移除）
   useEffect(() => {
     try { localStorage.setItem('coachSortKey', sortKey || 'default'); } catch {}
