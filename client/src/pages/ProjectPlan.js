@@ -39,6 +39,12 @@ const ProjectPlan = () => {
   const [recentUpdates, setRecentUpdates] = useState(new Map()); // 追蹤最近的本地更新，防止SSE覆蓋
   // 已移除：卡片級變更與提交狀態（SSE 即時同步下不再需要）
 
+  // 新增：核心/幹部會員名單狀態
+  const [coreMembers, setCoreMembers] = useState([]);
+  const [staffMembers, setStaffMembers] = useState([]);
+  const [coreMembersLoading, setCoreMembersLoading] = useState(false);
+  const [staffMembersLoading, setStaffMembersLoading] = useState(false);
+
   // 新增：從專案計劃映射自動偵測欄位，與 MemberProgress 對齊
   const p = React.useMemo(() => {
     if (!projectPlan) return {};
@@ -104,16 +110,47 @@ const ProjectPlan = () => {
         const { data } = await axios.get(`/api/users/member/${id}/project-plan/checklist`);
         const serverFlat = (data?.states && typeof data.states === 'object') ? data.states : {};
         console.log(`[DEBUG] 從服務器載入的初始狀態:`, serverFlat);
-        // 完全以伺服器狀態為主，不讀取本地儲存
         applyMemberStates(id, serverFlat, true); // 標記為API響應
         console.log(`[DEBUG] 初始狀態載入完成`);
       } catch (e) {
         console.warn('載入勾選狀態失敗，使用空狀態繼續', e?.response?.data || e.message);
-        // 網路失敗時使用空狀態，不依賴本地儲存
         setChecklistStates({});
       }
     })();
   }, [id, fetchMemberData, fetchProjectPlan]);
+
+  // 載入核心/幹部會員名單（沿用 CoachDashboard API）
+  const fetchCoreMembers = useCallback(async () => {
+    try {
+      setCoreMembersLoading(true);
+      const resp = await axios.get('/api/users/core-members');
+      setCoreMembers(resp.data?.coreMembers || []);
+    } catch (e) {
+      console.warn('載入核心會員失敗', e?.response?.data || e.message);
+      setCoreMembers([]);
+    } finally {
+      setCoreMembersLoading(false);
+    }
+  }, []);
+
+  const fetchStaffMembers = useCallback(async () => {
+    try {
+      setStaffMembersLoading(true);
+      const resp = await axios.get('/api/users/staff-members');
+      setStaffMembers(resp.data?.staffMembers || []);
+    } catch (e) {
+      console.warn('載入幹部會員失敗', e?.response?.data || e.message);
+      setStaffMembers([]);
+    } finally {
+      setStaffMembersLoading(false);
+    }
+  }, []);
+
+  // 初始載入核心/幹部名單
+  useEffect(() => {
+    fetchCoreMembers();
+    fetchStaffMembers();
+  }, [fetchCoreMembers, fetchStaffMembers]);
 
   // SSE 連線狀態
   const [sseStatus, setSseStatus] = useState('connecting');
@@ -254,11 +291,11 @@ const ProjectPlan = () => {
 
   const getMembershipLevelBadge = (level) => {
     const badges = {
-      1: { text: '金級會員', class: 'bg-yellow-100 text-yellow-800' },
-      2: { text: '銀級會員', class: 'bg-gray-100 text-gray-800' },
-      3: { text: '銅級會員', class: 'bg-orange-100 text-orange-800' }
+      1: { text: '金級會員', class: 'bg-primary-800/60 text-gold-300 border border-gold-700' },
+      2: { text: '銀級會員', class: 'bg-primary-800/60 text-gold-300 border border-gold-700' },
+      3: { text: '銅級會員', class: 'bg-primary-800/60 text-gold-300 border border-gold-700' }
     };
-    const badge = badges[level] || { text: '未知', class: 'bg-gray-100 text-gray-800' };
+    const badge = badges[level] || { text: '未知', class: 'bg-primary-800/60 text-gold-300 border border-gold-700' };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.class}`}>
         {badge.text}
@@ -268,11 +305,11 @@ const ProjectPlan = () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      'active': { text: '啟用', class: 'bg-green-100 text-green-800' },
-      'pending': { text: '待審核', class: 'bg-yellow-100 text-yellow-800' },
-      'suspended': { text: '停權', class: 'bg-red-100 text-red-800' }
+      'active': { text: '啟用', class: 'bg-primary-800/60 text-gold-300 border border-gold-700' },
+      'pending': { text: '待審核', class: 'bg-primary-800/60 text-gold-300 border border-gold-700' },
+      'suspended': { text: '停權', class: 'bg-primary-800/60 text-gold-300 border border-gold-700' }
     };
-    const badge = badges[status] || { text: '未知', class: 'bg-gray-100 text-gray-800' };
+    const badge = badges[status] || { text: '未知', class: 'bg-primary-800/60 text-gold-300 border border-gold-700' };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.class}`}>
         {badge.text}
@@ -727,12 +764,12 @@ const ProjectPlan = () => {
                                             {detail.text}
                                           </label>
                                           {detail.subtext && (
-                                            <div className="ml-7 mt-1 text-xs text-gold-500 leading-relaxed whitespace-pre-line bg-primary-800/30 p-2 rounded border border-gold-700/30 w-full">{detail.subtext}</div>
+                                            <div className="ml-7 mt-1 text-xs text-gold-400 leading-relaxed whitespace-pre-line bg-primary-800/30 p-3 rounded-lg border border-gold-700/40 w-full">{detail.subtext}</div>
                                           )}
                                           {detail.progressBar && (
                                             <div className="ml-7 mt-2 w-full">
                                               <div className="w-full bg-gold-900/40 rounded-full h-2">
-                                                <div className={`h-2 rounded-full ${detail.progressBar.color === 'red' ? 'bg-red-500' : 'bg-green-500'}`} style={{ width: `${detail.progressBar.value || detail.progressBar.show ? detail.progressBar.value : 0}%` }}></div>
+                                                <div className={`h-2 rounded-full ${detail.progressBar.value === 100 ? 'bg-gold-500' : 'bg-gold-800/80'}`} style={{ width: `${detail.progressBar.value || detail.progressBar.show ? detail.progressBar.value : 0}%` }}></div>
                                               </div>
                                               <div className="mt-1 text-2xs text-gold-400">{detail.progressBar.label || ''}</div>
                                             </div>
