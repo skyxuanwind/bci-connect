@@ -308,7 +308,7 @@ const ProjectPlan = () => {
     return (
       <div className="text-center py-12">
         <div className="text-red-600 mb-4">{error}</div>
-        <Link to="/members" className="text-blue-600 hover:text-blue-800">
+        <Link to="/members" className="text-gold-300 hover:text-gold-100">
           返回會員列表
         </Link>
       </div>
@@ -321,7 +321,7 @@ const ProjectPlan = () => {
       <div className="mb-6">
         <Link
           to={`/members/${id}`}
-          className="inline-flex items-center text-blue-600 hover:text-blue-800"
+          className="inline-flex items-center text-gold-300 hover:text-gold-100"
         >
           <ChevronLeftIcon className="h-5 w-5 mr-1" />
           返回會員詳情
@@ -329,37 +329,37 @@ const ProjectPlan = () => {
       </div>
 
       {/* 會員基本資訊 */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white mb-8">
+      <div className="bg-primary-800 border border-gold-600 rounded-lg shadow-lg p-6 text-gold-100 mb-8">
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <Avatar
               src={member?.profilePictureUrl}
               alt={member?.name}
               size="xl"
-              className="bg-white bg-opacity-20"
+              className="bg-primary-700/40"
               fallbackIcon={UserIcon}
-              fallbackIconClass="text-white"
+              fallbackIconClass="text-gold-200"
             />
           </div>
           <div className="ml-6 flex-1">
-            <h1 className="text-2xl font-bold">{member?.name}</h1>
-            <p className="text-blue-100 mt-1">{member?.email}</p>
+            <h1 className="text-2xl font-bold text-gold-100">{member?.name}</h1>
+            <p className="text-gold-300 mt-1">{member?.email}</p>
             <div className="flex items-center space-x-4 mt-3">
               {member?.membershipLevel ? getMembershipLevelBadge(member.membershipLevel) : null}
               {member?.status ? getStatusBadge(member.status) : null}
             </div>
           </div>
           <div className="flex-shrink-0">
-            <ChartBarIcon className="h-12 w-12 text-blue-200" />
+            <ChartBarIcon className="h-12 w-12 text-gold-400" />
           </div>
         </div>
       </div>
 
       {/* 專案計劃內容 */}
-      <div className="bg-white rounded-lg shadow-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-            <ChartBarIcon className="h-6 w-6 mr-2 text-blue-600" />
+      <div className="bg-primary-800 border border-gold-600 rounded-lg shadow-lg">
+        <div className="px-6 py-4 border-b border-gold-600">
+          <h2 className="text-xl font-semibold text-gold-100 flex items-center">
+            <ChartBarIcon className="h-6 w-6 mr-2 text-gold-400" />
             專案計劃（12 項自動判定）
           </h2>
         </div>
@@ -367,27 +367,13 @@ const ProjectPlan = () => {
           {loadingPlan && (
             <div className="flex items-center justify-center py-12">
               <LoadingSpinner size="lg" />
-              <span className="ml-3 text-gray-600">載入專案計劃中...</span>
+              <span className="ml-3 text-gold-300">載入專案計劃中...</span>
             </div>
           )}
           {!loadingPlan && projectPlan && (
             <> 
               {/* 進度總覽 */}
               <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-lg font-medium text-gray-900">完成進度</div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {projectPlan.summary?.percent || 0}%
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className="bg-blue-600 h-3 rounded-full transition-all duration-300" style={{ width: `${projectPlan.summary?.percent || 0}%` }}></div>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600 mt-2">
-                  <span>已完成 {projectPlan.summary?.completedCount || 0} 項</span>
-                  <span>共 {projectPlan.summary?.total || 0} 項</span>
-                </div>
-                {/* 手動勾選完成度統計 */}
                 {(() => {
                   const spec = [
                     { cardId: 'core_member_approval', items: ['create_group','member_data','send_email'] },
@@ -400,9 +386,37 @@ const ProjectPlan = () => {
                   const manualChecked = spec.reduce((sum, s) => sum + s.items.filter(itemId => getCheckboxState(id, s.cardId, itemId, false)).length, 0);
                   const manualPercent = manualTotal ? Math.round((manualChecked / manualTotal) * 100) : 0;
                   return (
-                    <div className="flex justify-between text-sm text-gray-600 mt-2">
-                      <span>手動勾選已完成 {manualChecked} 項</span>
-                      <span>手動勾選完成率 {manualPercent}% （共 {manualTotal} 項）</span>
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="text-lg font-medium text-gold-100">完成進度</div>
+                        <div className="text-2xl font-bold text-gold-100">{manualPercent}%</div>
+                      </div>
+                      <div className="w-full bg-primary-900/40 rounded-full h-3">
+                        <div className="bg-gold-600 h-3 rounded-full transition-all duration-300" style={{ width: `${manualPercent}%` }}></div>
+                      </div>
+                      <div className="flex justify-between text-sm text-gold-300 mt-2">
+                        <span>已完成 {manualChecked} 項</span>
+                        <span>共 {manualTotal} 項</span>
+                      </div>
+                    </>
+                  );
+                })()}
+                {/* 勾選完成度統計（移除「手動」字樣） */}
+                {(() => {
+                  const spec = [
+                    { cardId: 'core_member_approval', items: ['create_group','member_data','send_email'] },
+                    { cardId: 'day_before_oath', items: ['attendance_time','self_intro_50sec','dress_code','business_cards','four_week_plan','send_email'] },
+                    { cardId: 'ceremony_day', items: ['intro_guide','environment_intro','core_staff_intro'] },
+                    { cardId: 'networking_time', items: ['networking_guide'] },
+                    { cardId: 'meeting_guidelines', items: ['phone_silent','simple_explanation'] }
+                  ];
+                  const manualTotal = spec.reduce((sum, s) => sum + s.items.length, 0);
+                  const manualChecked = spec.reduce((sum, s) => sum + s.items.filter(itemId => getCheckboxState(id, s.cardId, itemId, false)).length, 0);
+                  const manualPercent = manualTotal ? Math.round((manualChecked / manualTotal) * 100) : 0;
+                  return (
+                    <div className="flex justify-between text-sm text-gold-300 mt-2">
+                      <span>勾選已完成 {manualChecked} 項</span>
+                      <span>勾選完成率 {manualPercent}% （共 {manualTotal} 項）</span>
                     </div>
                   );
                 })()}
