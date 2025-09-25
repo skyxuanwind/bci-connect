@@ -421,13 +421,13 @@ const ProjectPlan = () => {
                     };
                     const info = map[sseStatus] || map.connecting;
                     return (
-                      <div className="ml-2 flex items-center gap-1 text-xs text-gray-700 bg-gray-100 rounded px-2 py-0.5">
+                      <div className="ml-2 flex items-center gap-1 text-xs text-gray-700 bg-gray-100 rounded px-2 py-0.5 hidden">
                         <span className={`inline-block w-2 h-2 rounded-full ${info.dot}`}></span>
                         <span>SSE {info.text}</span>
                       </div>
                     );
                   })()}
-                  <div className="ml-auto flex items-center gap-2">
+                  <div className="ml-auto flex items-center gap-2 hidden">
                     <span className="text-xs text-gold-300">
                       批次提交 {batchingEnabled ? '(已啟用 - 需手動提交)' : '(即時同步)'}
                     </span>
