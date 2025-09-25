@@ -115,6 +115,36 @@ const ProjectPlan = () => {
         [cardKey]: newChanges
       };
     });
+
+    // 即時模式：未啟用批次提交時，立刻送出單筆變更到後端
+    if (!batchingEnabled) {
+      const states = [{ memberId, cardId, itemId, value: !!newState }];
+      console.log(`[DEBUG] 即時提交單筆變更`, states);
+      axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states })
+        .then(({ data }) => {
+          if (data && data.states) {
+            console.log(`[DEBUG] 單筆提交成功，套用伺服器狀態`);
+            applyMemberStates(memberId, data.states, true);
+          }
+          // 清除此項目的變更記錄，避免「未提交變更」提示殘留
+          setCardChanges(prev => {
+            const cardKey = `${memberId}-${cardId}`;
+            const changes = { ...(prev[cardKey] || {}) };
+            delete changes[itemId];
+            const next = { ...prev };
+            if (Object.keys(changes).length > 0) {
+              next[cardKey] = changes;
+            } else {
+              delete next[cardKey];
+            }
+            return next;
+          });
+        })
+        .catch((error) => {
+          console.error(`[ERROR] 單筆提交失敗`, error?.response?.data || error.message);
+          toast.error('勾選變更提交失敗，請重試');
+        });
+    }
   };
 
   const getCheckboxState = (memberId, cardId, itemId, defaultState = false) => {
