@@ -40,117 +40,6 @@ const ProjectPlan = () => {
   const [cardChanges, setCardChanges] = useState({}); // 追蹤每張卡片的變更
   const [submittingCards, setSubmittingCards] = useState({}); // 追蹤正在提交的卡片
 
-  // 新增：以伺服器為主的會員狀態覆蓋（用於 POST 成功與 SSE 事件）
-  const applyMemberStates = (memberId, flatOrNested, isFromApiResponse = false) => {
-    try {
-      const isFlat = flatOrNested && typeof flatOrNested === 'object' && Object.keys(flatOrNested).some(k => String(k).includes('_'));
-      const nested = isFlat ? flattenToNested(flatOrNested) : (flatOrNested || {});
-      const now = Date.now();
-      
-      setChecklistStates(prev => {
-        const out = { ...prev };
-        const mid = String(memberId);
-        const prevMember = out[mid] || {};
-        const newMember = nested[mid] || {};
-        // 深度合併：以伺服器回傳覆蓋同鍵，保留未回傳鍵
-        const mergedMember = { ...prevMember };
-        Object.keys(newMember).forEach(cardId => {
-          mergedMember[cardId] = { ...(mergedMember[cardId] || {}) };
-          Object.keys(newMember[cardId] || {}).forEach(itemId => {
-            const key = `${mid}_${cardId}_${itemId}`;
-            const recentUpdate = recentUpdates.get(key);
-            
-            // 如果這是來自API響應，直接應用
-            // 如果這是SSE事件，檢查是否有最近的本地更新（3秒內）
-            if (isFromApiResponse || !recentUpdate || (now - recentUpdate.timestamp) > 3000) {
-              mergedMember[cardId][itemId] = !!newMember[cardId][itemId];
-              console.log(`[DEBUG] 應用狀態: ${key} = ${!!newMember[cardId][itemId]} (${isFromApiResponse ? 'API響應' : 'SSE事件'})`);
-            } else {
-              // 保持最近的本地更新，忽略SSE事件
-              console.log(`[DEBUG] 忽略SSE事件: ${key}，保持最近本地更新 (${now - recentUpdate.timestamp}ms前)`);
-            }
-          });
-        });
-        out[mid] = mergedMember;
-        return out;
-      });
-    } catch (e) {
-      console.warn('applyMemberStates 失敗', e);
-    }
-  };
-
-  const updateCheckboxState = (memberId, cardId, itemId, newState) => {
-    console.log(`[DEBUG] 勾選狀態變更 (純本地): memberId=${memberId}, cardId=${cardId}, itemId=${itemId}, newState=${newState}`);
-    
-    const timestamp = Date.now();
-    const key = `${memberId}_${cardId}_${itemId}`;
-    
-    // 記錄最近的本地更新時間戳
-    setRecentUpdates(prev => {
-      const newMap = new Map(prev);
-      newMap.set(key, { timestamp, value: !!newState });
-      console.log(`[DEBUG] 記錄本地更新時間戳: ${key} = ${timestamp}`);
-      return newMap;
-    });
-    
-    // 立即更新本地狀態
-    setChecklistStates(prevStates => {
-      const updated = setNested({ ...prevStates }, memberId, cardId, itemId, newState);
-      console.log(`[DEBUG] 本地狀態已更新:`, updated);
-      return updated;
-    });
-
-    // 追蹤卡片變更
-    setCardChanges(prev => {
-      const cardKey = `${memberId}-${cardId}`;
-      const changes = prev[cardKey] || {};
-      const newChanges = {
-        ...changes,
-        [itemId]: { value: !!newState, timestamp }
-      };
-      
-      console.log(`[DEBUG] 追蹤卡片變更: ${cardKey}`, newChanges);
-      return {
-        ...prev,
-        [cardKey]: newChanges
-      };
-    });
-
-    // 即時模式：未啟用批次提交時，立刻送出單筆變更到後端
-    if (!batchingEnabled) {
-      const states = [{ memberId, cardId, itemId, value: !!newState }];
-      console.log(`[DEBUG] 即時提交單筆變更`, states);
-      axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states })
-        .then(({ data }) => {
-          if (data && data.states) {
-            console.log(`[DEBUG] 單筆提交成功，套用伺服器狀態`);
-            applyMemberStates(memberId, data.states, true);
-          }
-          // 清除此項目的變更記錄，避免「未提交變更」提示殘留
-          setCardChanges(prev => {
-            const cardKey = `${memberId}-${cardId}`;
-            const changes = { ...(prev[cardKey] || {}) };
-            delete changes[itemId];
-            const next = { ...prev };
-            if (Object.keys(changes).length > 0) {
-              next[cardKey] = changes;
-            } else {
-              delete next[cardKey];
-            }
-            return next;
-          });
-        })
-        .catch((error) => {
-          console.error(`[ERROR] 單筆提交失敗`, error?.response?.data || error.message);
-          toast.error('勾選變更提交失敗，請重試');
-        });
-    }
-  };
-
-  const getCheckboxState = (memberId, cardId, itemId, defaultState = false) => {
-    return getNested(checklistStates, memberId, cardId, itemId, defaultState);
-  };
-
   // 新增：從專案計劃映射自動偵測欄位，與 MemberProgress 對齊
   const p = React.useMemo(() => {
     if (!projectPlan) return {};
@@ -274,6 +163,100 @@ const ProjectPlan = () => {
       setSseStatus('closed');
     };
   }, [id]);
+
+  // 勾選狀態：套用伺服器返回狀態（支援 flat 物件或陣列格式），並與本地合併
+  function applyMemberStates(memberId, states, isApiResponse = false) {
+    try {
+      const now = Date.now();
+      // 將 states 轉為嵌套結構 { memberId: { cardId: { itemId: bool } } }
+      let nested = {};
+      if (Array.isArray(states)) {
+        states.forEach(s => {
+          if (!s || typeof s !== 'object') return;
+          const mid = String(s.memberId || member?.id || memberId);
+          const cid = String(s.cardId || '');
+          const iid = String(s.itemId || '');
+          if (!mid || !cid || !iid) return;
+          setNested(nested, mid, cid, iid, !!s.value);
+        });
+      } else if (states && typeof states === 'object') {
+        nested = flattenToNested(states);
+      }
+
+      // 合併到現有狀態（避免短時間內本地更新被覆蓋：若最近有本地更新，則跳過服務器覆蓋）
+      setChecklistStates(prev => {
+        const merged = { ...prev };
+        Object.entries(nested).forEach(([mid, cards]) => {
+          Object.entries(cards || {}).forEach(([cid, items]) => {
+            Object.entries(items || {}).forEach(([iid, val]) => {
+              const key = `${mid}_${cid}_${iid}`;
+              const ts = recentUpdates.get(key);
+              if (ts && (now - ts) < 1500 && !isApiResponse) {
+                // 在 1.5 秒內的本地更新，略過 SSE 覆蓋
+                return;
+              }
+              setNested(merged, mid, cid, iid, !!val);
+            });
+          });
+        });
+        // 同步到本地儲存（僅保留最新完整狀態的快照）
+        try { localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(merged)); } catch (_) {}
+        return merged;
+      });
+    } catch (e) {
+      console.warn('applyMemberStates 失敗:', e);
+    }
+  }
+
+  // 讀取勾選狀態（若不存在，回傳預設值）
+  function getCheckboxState(memberId, cardId, itemId, defaultState = false) {
+    return getNested(checklistStates, memberId, cardId, itemId, defaultState);
+  }
+
+  // 更新勾選狀態：立即更新本地，並依模式決定即時提交或加入批次
+  async function updateCheckboxState(memberId, cardId, itemId, newState) {
+    const key = `${memberId}_${cardId}_${itemId}`;
+    const now = Date.now();
+    // 1) 先更新本地狀態，提升互動即時性
+    setChecklistStates(prev => {
+      const next = { ...prev };
+      setNested(next, memberId, cardId, itemId, !!newState);
+      try { localStorage.setItem('coachDashboardChecklistStatesV2', JSON.stringify(next)); } catch (_) {}
+      return next;
+    });
+
+    // 記錄最近本地更新，避免 SSE 立即覆蓋
+    setRecentUpdates(prev => {
+      const m = new Map(prev);
+      m.set(key, now);
+      return m;
+    });
+
+    // 記錄該卡片的變更，用於「提交此卡片」按鈕
+    const cardKey = `${memberId}-${cardId}`;
+    setCardChanges(prev => {
+      const next = { ...prev };
+      next[cardKey] = { ...(prev[cardKey] || {}), [itemId]: { value: !!newState, ts: now } };
+      return next;
+    });
+
+    // 依模式同步到伺服器
+    if (batchingEnabled) {
+      setPendingUpdates(prev => ([...prev, { memberId, cardId, itemId, value: !!newState }]));
+      return;
+    }
+
+    try {
+      const { data } = await axios.post(`/api/users/member/${memberId}/project-plan/checklist`, {
+        states: [{ memberId, cardId, itemId, value: !!newState }]
+      });
+      if (data && data.states) {
+        applyMemberStates(memberId, data.states, true);
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.message || '同步失敗，請稍後重試');
+    }
+  }
 
   const getMembershipLevelBadge = (level) => {
     const badges = {
@@ -627,9 +610,9 @@ const ProjectPlan = () => {
                       title: '會後',
                       subtitle: '對象：新會員、教練',
                       description: '執行：1.加入各大LINE群 2.系統教學',
-                      details: [
-                        '加入各大LINE群LINE群：新會員專案群、GBC聊天群、活動公告欄（請勿回覆）、分組第__組、軟性活動接龍群',
-                        '系統教學：一對一、引薦單、引薦金額意義及操作'
+                      checklistItems: [
+                        { id: 'join_line_groups', text: '加入各大LINE群 LINE群：新會員專案群、GBC聊天群、活動公告欄（請勿回覆）、分組第__組、軟性活動接龍群' },
+                        { id: 'system_teaching', text: '系統教學：一對一、引薦單、引薦金額意義及操作' }
                       ],
                       completed: false,
                       category: '系統整合',
@@ -640,11 +623,11 @@ const ProjectPlan = () => {
                       title: '一週內需完成',
                       subtitle: '對象：教練',
                       description: '執行：1.兩天內確認系統是否能登入 2.教學系統個人深度交流表填寫 3.幫你的新會員曝光介紹及見證導生的產品或服務 4.多先參訪夥伴或體驗產品',
-                      details: [
-                        '兩天內確認系統是否能登入',
-                        { id: 'interview_form_check', text: '教學系統個人深度交流表填寫', subtext: `面談表狀態：${p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表'}`, completed: p?.hasInterview || false, type: 'auto_detect', progressBar: { show: true, value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '未填寫' } },
-                        '幫你的新會員曝光介紹及見證導生的產品或服務，重點在讓新會員覺得有被重視',
-                        '多先參訪夥伴或體驗產品'
+                      checklistItems: [
+                        { id: 'check_login', text: '兩天內確認系統是否能登入' },
+                        { id: 'interview_form_check', text: '教學系統個人深度交流表填寫', subtext: `面談表狀態：${p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表'}`, completed: p?.hasInterview || false, progressBar: { show: true, value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '未填寫' } },
+                        { id: 'expose_products', text: '幫你的新會員曝光介紹及見證導生的產品或服務，重點在讓新會員覺得有被重視' },
+                        { id: 'visit_partners', text: '多先參訪夥伴或體驗產品' }
                       ],
                       completed: p?.weekOneComplete || false,
                       category: '跟進確認',
@@ -655,10 +638,10 @@ const ProjectPlan = () => {
                       title: '第二週',
                       subtitle: '對象：新會員、教練',
                       description: '執行：1.引導新會員為何帶來賓 2.引導新會員邀請代理人參觀例會議程 3.深度交流表完成 4.優先與核心一對一',
-                      details: [
+                      checklistItems: [
                         { id: 'guide_guest_purpose', text: '引導新會員為何帶來賓' },
                         { id: 'invite_agent_meeting', text: '引導新會員邀請代理人參觀例會議程' },
-                        { id: 'deep_communication_form', text: '深度交流表完成', subtext: p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表', completed: p?.hasInterview || false, type: 'auto_detect', progressBar: { value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '未填寫', color: p?.hasInterview ? 'green' : 'red' } },
+                        { id: 'deep_communication_form', text: '深度交流表完成', subtext: p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表', completed: p?.hasInterview || false, progressBar: { value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '未填寫', color: p?.hasInterview ? 'green' : 'red' } },
                         { id: 'core_member_one_on_one', text: '優先與核心一對一' }
                       ],
                       completed: p?.weekTwoComplete || false,
@@ -670,7 +653,7 @@ const ProjectPlan = () => {
                       title: '第三週',
                       subtitle: '對象：新會員、教練',
                       description: '執行：1.確認新會員系統使用狀況及進度 2.與幹部一對一狀況交流及回報進度',
-                      details: [
+                      checklistItems: [
                         { id: 'system_usage_check', text: '確認新會員系統使用狀況及進度' },
                         { id: 'staff_one_on_one', text: '與幹部一對一狀況交流及回報進度' }
                       ],
@@ -683,7 +666,7 @@ const ProjectPlan = () => {
                       title: '第四週',
                       subtitle: '對象：新會員、教練',
                       description: '執行：1.確認新會員使用系統狀況及進度 2.確認與核心及幹部一對一進度狀況 3.優化自我介紹及介紹主題簡報(50秒、20分鐘)',
-                      details: [
+                      checklistItems: [
                         { id: 'system_status_check', text: '確認新會員使用系統狀況及進度' },
                         { id: 'core_staff_one_on_one', text: '確認與核心及幹部一對一進度狀況' },
                         { id: 'presentation_optimization', text: '優化自我介紹及介紹主題簡報(50秒、20分鐘)' }
@@ -697,7 +680,7 @@ const ProjectPlan = () => {
                       title: '結業標準',
                       subtitle: '對象：新會員',
                       description: '執行：1.核心幹部一對一 2.完成系統教學 3.完成基本引薦行為 4.公告群組歡迎與其一對一',
-                      details: [
+                      checklistItems: [
                         { id: 'core_staff_one_on_one_final', text: '核心幹部一對一' },
                         { id: 'system_training_complete', text: '完成系統教學' },
                         { id: 'basic_referral_behavior', text: '完成基本引薦行為' },
@@ -783,6 +766,17 @@ const ProjectPlan = () => {
                                           <label htmlFor={`chk-${currentCard.id}-${detail.id}`} className="leading-relaxed cursor-pointer">
                                             {detail.text}
                                           </label>
+                                          {detail.subtext && (
+                                            <div className="ml-7 mt-1 text-xs text-gold-500 leading-relaxed whitespace-pre-line bg-primary-800/30 p-2 rounded border border-gold-700/30 w-full">{detail.subtext}</div>
+                                          )}
+                                          {detail.progressBar && (
+                                            <div className="ml-7 mt-2 w-full">
+                                              <div className="w-full bg-gold-900/40 rounded-full h-2">
+                                                <div className={`h-2 rounded-full ${detail.progressBar.color === 'red' ? 'bg-red-500' : 'bg-green-500'}`} style={{ width: `${detail.progressBar.value || detail.progressBar.show ? detail.progressBar.value : 0}%` }}></div>
+                                              </div>
+                                              <div className="mt-1 text-2xs text-gold-400">{detail.progressBar.label || ''}</div>
+                                            </div>
+                                          )}
                                         </li>
                                       ))}
                                     </ul>
