@@ -1987,6 +1987,8 @@ router.get('/member/:id/project-plan/checklist', async (req, res) => {
 router.post('/member/:id/project-plan/checklist', async (req, res) => {
   try {
     const memberId = parseInt(req.params.id, 10);
+    console.log(`[DEBUG] 收到項目計劃勾選更新請求: memberId=${memberId}, body=`, JSON.stringify(req.body, null, 2));
+    
     if (!Number.isInteger(memberId)) return res.status(400).json({ message: '會員 ID 無效' });
 
     const incoming = req.body?.states || {};
@@ -2069,6 +2071,7 @@ router.post('/member/:id/project-plan/checklist', async (req, res) => {
 
     // 即時廣播：通知會員本人與其教練，專案計劃勾選狀態已更新
     try {
+      console.log(`[DEBUG] 準備廣播SSE事件: memberId=${memberId}, coachUserId=${coachUserId}`);
       broadcastTo(({ meta }) => meta?.type === 'project_plan' && (
         meta.memberId === memberId || (coachUserId && meta.coachId === coachUserId)
       ), 'project-plan-checklist-updated', {
@@ -2076,6 +2079,7 @@ router.post('/member/:id/project-plan/checklist', async (req, res) => {
         states: mergedStates,
         eventType: 'project-plan-checklist-updated'
       });
+      console.log(`[DEBUG] SSE事件廣播成功`);
     } catch (e) {
       console.warn('SSE 廣播失敗（專案計劃勾選更新）：', e?.message || e);
     }

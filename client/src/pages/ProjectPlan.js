@@ -66,22 +66,28 @@ const ProjectPlan = () => {
 
   const updateCheckboxState = (memberId, cardId, itemId, newState) => {
     const prevVal = getNested(checklistStates, memberId, cardId, itemId, false);
+    console.log(`[DEBUG] 更新勾選狀態: memberId=${memberId}, cardId=${cardId}, itemId=${itemId}, newState=${newState}, prevVal=${prevVal}`);
+    
     // 本地樂觀更新（僅記憶體，不存本地）
     setChecklistStates(prev => {
       const next = setNested({ ...prev }, memberId, cardId, itemId, newState);
       return next;
     });
     if (batchingEnabled) {
+      console.log(`[DEBUG] 批次模式：累積變更`);
       setPendingUpdates(prev => [...prev, { memberId, cardId, itemId, value: !!newState }]);
     } else {
       // 立即同步到伺服器
+      console.log(`[DEBUG] 即時模式：發送API請求到 /api/users/member/${memberId}/project-plan/checklist`);
       axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states: [{ memberId, cardId, itemId, value: !!newState }] })
         .then(({ data }) => {
+          console.log(`[DEBUG] API請求成功:`, data);
           if (data && data.states) {
             applyMemberStates(memberId, data.states);
           }
         })
         .catch((err) => {
+          console.error('更新勾選狀態失敗:', err);
           // 回滾本地狀態，維持與伺服器一致
           setChecklistStates(prev => {
             const next = setNested({ ...prev }, memberId, cardId, itemId, prevVal);
@@ -177,17 +183,21 @@ const ProjectPlan = () => {
     try {
       setSseStatus('connecting');
       const url = `/api/users/member/${id}/project-plan/events`;
+      console.log(`[DEBUG] 建立SSE連接: ${url}`);
       es = new EventSource(url, { withCredentials: true });
 
       es.onopen = () => {
+        console.log(`[DEBUG] SSE連接已建立`);
         setSseStatus('connected');
       };
 
       const onChecklistUpdated = (e) => {
         try {
+          console.log(`[DEBUG] 收到SSE事件 project-plan-checklist-updated:`, e.data);
           const payload = JSON.parse(e.data || '{}');
           const flat = (payload?.states && typeof payload.states === 'object') ? payload.states : {};
           const targetMemberId = payload?.memberId || id;
+          console.log(`[DEBUG] 應用狀態更新: memberId=${targetMemberId}, states=`, flat);
           applyMemberStates(targetMemberId, flat);
         } catch (err) {
           console.warn('解析 SSE 勾選狀態更新事件失敗:', err);
