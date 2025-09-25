@@ -34,7 +34,7 @@ const ProjectPlan = () => {
     if (savedV1) return flattenToNested(JSON.parse(savedV1));
     return {};
   });
-  const [batchingEnabled, setBatchingEnabled] = useState(false);
+  const [batchingEnabled, setBatchingEnabled] = useState(false); // 預設關閉批次模式，確保即時同步
   const [pendingUpdates, setPendingUpdates] = useState([]);
 
   // 新增：以伺服器為主的會員狀態覆蓋（用於 POST 成功與 SSE 事件）
@@ -75,7 +75,14 @@ const ProjectPlan = () => {
     });
     if (batchingEnabled) {
       console.log(`[DEBUG] 批次模式：累積變更`);
-      setPendingUpdates(prev => [...prev, { memberId, cardId, itemId, value: !!newState }]);
+      setPendingUpdates(prev => {
+        const newUpdates = [...prev, { memberId, cardId, itemId, value: !!newState }];
+        // 顯示提醒，但不要太頻繁
+        if (newUpdates.length === 1) {
+          toast.info('批次模式已啟用，請記得點擊「提交更動」按鈕保存更改', { duration: 3000 });
+        }
+        return newUpdates;
+      });
     } else {
       // 立即同步到伺服器
       console.log(`[DEBUG] 即時模式：發送API請求到 /api/users/member/${memberId}/project-plan/checklist`);
@@ -398,9 +405,28 @@ const ProjectPlan = () => {
                     );
                   })()}
                   <div className="ml-auto flex items-center gap-2">
-                    <span className="text-xs text-gold-300">批次提交</span>
-                    <button type="button" className="btn-secondary px-2 py-1" onClick={() => setBatchingEnabled(b => !b)}>{batchingEnabled ? 'ON' : 'OFF'}</button>
-                    <button type="button" className="btn-primary px-2 py-1" disabled={!pendingUpdates.length} onClick={sendBatchUpdates}>提交更動 ({pendingUpdates.length})</button>
+                    <span className="text-xs text-gold-300">
+                      批次提交 {batchingEnabled ? '(已啟用 - 需手動提交)' : '(即時同步)'}
+                    </span>
+                    <button 
+                      type="button" 
+                      className={`px-2 py-1 text-xs ${batchingEnabled ? 'btn-warning' : 'btn-secondary'}`}
+                      onClick={() => setBatchingEnabled(b => !b)}
+                      title={batchingEnabled ? '點擊關閉批次模式，啟用即時同步' : '點擊啟用批次模式，手動提交更改'}
+                    >
+                      {batchingEnabled ? 'ON' : 'OFF'}
+                    </button>
+                    {batchingEnabled && (
+                      <button 
+                        type="button" 
+                        className="btn-primary px-2 py-1 text-xs" 
+                        disabled={!pendingUpdates.length} 
+                        onClick={sendBatchUpdates}
+                        title="提交所有累積的更改到服務器"
+                      >
+                        提交更動 ({pendingUpdates.length})
+                      </button>
+                    )}
                   </div>
                 </div>
                 {(() => {
