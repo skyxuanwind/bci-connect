@@ -285,3 +285,91 @@
   .text-blue-700 { @apply text-gold-200 !important; }
   .border-blue-300 { @apply border-gold-600 !important; }
   .hover\:bg-blue-50:hover { @apply bg-primary-700 !important; }
+/* 調整卡片內容避免溢出（圖片、長文字） */
+.card {
+  overflow: hidden; /* 防止內容超出或重疊框線 */
+}
+
+/* 行動版自適應字體與行距（基於 viewport 的 clamp） */
+@layer base {
+  html {
+    /* 自適應根字體大小，便於 Tailwind rem 尺寸整體縮放 */
+    font-size: clamp(14px, 1.8vw, 16px);
+  }
+  body {
+    line-height: 1.6; /* 提升閱讀舒適度 */
+    -webkit-text-size-adjust: 100%; /* iOS 字體縮放一致性 */
+  }
+  h1 { font-size: clamp(1.25rem, 4.8vw, 1.75rem); line-height: 1.35; }
+  h2 { font-size: clamp(1.125rem, 4.2vw, 1.5rem); line-height: 1.4; }
+  h3 { font-size: clamp(1rem, 3.8vw, 1.25rem); line-height: 1.45; }
+  h4 { font-size: clamp(0.95rem, 3.4vw, 1.125rem); line-height: 1.5; }
+  p, li { line-height: 1.7; margin-bottom: 0.75rem; }
+  small { font-size: clamp(0.75rem, 2.8vw, 0.875rem); }
+
+  /* 圖片在卡片內自動縮放，避免超出與拉伸 */
+  .card img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    border-radius: 0.5rem;
+  }
+
+  /* 長文字自動換行，避免溢出 */
+  .card, .card * {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* 觸控操作便利性：提升按鈕最小尺寸與可點擊範圍 */
+@layer components {
+  .btn-primary, .btn-secondary, .btn-gold, .btn-danger {
+    min-height: 44px; /* iOS/Android 建議的最小觸控高度 */
+    padding-top: 0.5rem; /* 保持一致的內距 */
+    padding-bottom: 0.5rem;
+  }
+
+  /* 通用圖示按鈕（如關閉、左右箭頭） */
+  .icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 0.5rem;
+    background: rgba(64,64,64,0.4);
+    border: 1px solid rgba(217,119,6,0.5);
+    color: #fef7cd;
+  }
+  .icon-button:hover { background: rgba(64,64,64,0.6); }
+}
+
+/* 小螢幕優化：間距與排版微調 */
+@media (max-width: 640px) {
+  .card { padding: 1rem; }
+  .card-header { padding-bottom: 0.5rem; margin-bottom: 0.75rem; }
+
+  /* 表單元素間距與可點擊性 */
+  label { line-height: 1.6; display: inline-block; }
+  input[type="checkbox"] { width: 20px; height: 20px; }
+
+  /* 防止圖片或內容超出容器（尤其是投放樣例/範例圖） */
+  .image-container, .media-container {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(217,119,6,0.4);
+  }
+  .image-container img, .media-container img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+  }
+
+  /* 文字區塊的左右內距加強，避免貼邊顯得擁擠 */
+  .content-block { padding-left: 0.25rem; padding-right: 0.25rem; }
+}
