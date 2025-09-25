@@ -932,13 +932,57 @@ export default ProjectPlan;
 const flattenToNested = (flat) => {
   const nested = {};
   if (!flat || typeof flat !== 'object') return nested;
+  // 明確列出所有教練任務卡片的合法 cardId，避免錯誤拆分（例如 ceremony_day、core_member_approval 等）
+  const knownCardIds = new Set([
+    'core_member_approval',
+    'pre_oath_preparation',
+    'day_before_oath',
+    'ceremony_day',
+    'networking_time',
+    'meeting_guidelines',
+    'post_meeting',
+    'one_week_followup',
+    'second_week',
+    'third_week',
+    'fourth_week',
+    'graduation_standards'
+  ]);
+
   Object.entries(flat).forEach(([k, v]) => {
-    const parts = String(k).split('_');
-    if (parts.length < 3) return;
-    const memberId = parts[0];
-    const cardId = parts[1];
-    const itemId = parts.slice(2).join('_'); // 允許 itemId 內含底線
+    const key = String(k);
+    const firstUnderscore = key.indexOf('_');
+    if (firstUnderscore <= 0) return;
+    const memberId = key.slice(0, firstUnderscore);
+    const rest = key.slice(firstUnderscore + 1); // 例如 'ceremony_day_intro_guide'
+
+    let cardId = null;
+    let itemId = null;
+
+    // 優先使用「已知卡片ID的最長前綴匹配」來取得 cardId 與 itemId
+    for (const cid of knownCardIds) {
+      if (rest === cid) {
+        // 沒有項目 id（極少數情況），略過
+        cardId = cid;
+        itemId = null;
+        break;
+      }
+      if (rest.startsWith(cid + '_')) {
+        cardId = cid;
+        itemId = rest.slice(cid.length + 1);
+        break;
+      }
+    }
+
+    // 後備方案：維持舊的「前兩段」拆分邏輯（避免未知卡片ID時完全失效）
+    if (!cardId) {
+      const parts = rest.split('_');
+      if (parts.length < 2) return;
+      cardId = parts[0];
+      itemId = parts.slice(1).join('_');
+    }
+
     if (!memberId || !cardId || !itemId) return;
+
     nested[memberId] = nested[memberId] || {};
     nested[memberId][cardId] = nested[memberId][cardId] || {};
     nested[memberId][cardId][itemId] = !!v;
