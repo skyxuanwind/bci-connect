@@ -473,7 +473,7 @@ const ProjectPlan = () => {
                         { id: 'member_data', text: '新會員提供基本資料及一張專業形象照片', completed: false },
                         { id: 'send_email', text: '發送給學員信件', completed: false }
                       ],
-                      emailTemplate: `${member?.name || '{memberName}'}您好:\n\n我是GBC教練{'{coachName}'}，代表性行業是{'{coachIndustry}'}，是未來4週陪伴您進入系統及融入分會的專屬教練，群組是本屆會長、副會長。\n\n未來如有任何問題，歡迎在群組請與我們提出及聯絡。\n\n最後，GBC所有教練歡迎您的加入，一同成長！`
+                      emailTemplate: `${member?.name || '{memberName}'}您好:\n\n我是GBC教練{coachName}，代表性行業是{coachIndustry}，是未來4週陪伴您進入系統及融入分會的專屬教練，群組是本屆會長、副會長。\n\n未來如有任何問題，歡迎在群組請與我們提出及聯絡。\n\n最後，GBC所有教練歡迎您的加入，一同成長！`
                     },
                     {
                       id: 'pre_oath_preparation',
