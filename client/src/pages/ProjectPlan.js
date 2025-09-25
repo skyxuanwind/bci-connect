@@ -37,8 +37,7 @@ const ProjectPlan = () => {
   const [batchingEnabled, setBatchingEnabled] = useState(false); // 預設關閉批次模式，確保即時同步
   const [pendingUpdates, setPendingUpdates] = useState([]);
   const [recentUpdates, setRecentUpdates] = useState(new Map()); // 追蹤最近的本地更新，防止SSE覆蓋
-  const [cardChanges, setCardChanges] = useState({}); // 追蹤每張卡片的變更
-  const [submittingCards, setSubmittingCards] = useState({}); // 追蹤正在提交的卡片
+  // 已移除：卡片級變更與提交狀態（SSE 即時同步下不再需要）
 
   // 新增：從專案計劃映射自動偵測欄位，與 MemberProgress 對齊
   const p = React.useMemo(() => {
@@ -232,13 +231,7 @@ const ProjectPlan = () => {
       return m;
     });
 
-    // 記錄該卡片的變更，用於「提交此卡片」按鈕
-    const cardKey = `${memberId}-${cardId}`;
-    setCardChanges(prev => {
-      const next = { ...prev };
-      next[cardKey] = { ...(prev[cardKey] || {}), [itemId]: { value: !!newState, ts: now } };
-      return next;
-    });
+    // 已移除：記錄卡片級變更（SSE 即時同步，不再需要卡片級提交）
 
     // 依模式同步到伺服器
     if (batchingEnabled) {
@@ -300,55 +293,7 @@ const ProjectPlan = () => {
     }
   };
 
-  // 提交單張卡片的變更
-  const submitCardChanges = async (memberId, cardId) => {
-    const cardKey = `${memberId}-${cardId}`;
-    const changes = cardChanges[cardKey];
-    
-    if (!changes || Object.keys(changes).length === 0) {
-      toast.info('此卡片沒有變更需要提交');
-      return;
-    }
-
-    setSubmittingCards(prev => ({ ...prev, [cardKey]: true }));
-
-    try {
-      // 將變更轉換為API格式
-      const states = Object.entries(changes).map(([itemId, change]) => ({
-        memberId,
-        cardId,
-        itemId,
-        value: change.value
-      }));
-
-      console.log(`[DEBUG] 提交卡片變更: ${cardKey}`, states);
-      const { data } = await axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states });
-      
-      if (data && data.states) {
-        // 提交成功後，應用服務器返回的狀態
-        console.log(`[DEBUG] 提交成功，應用服務器返回的狀態:`, data.states);
-        applyMemberStates(memberId, data.states, true);
-      }
-      
-      // 清除此卡片的變更記錄
-      setCardChanges(prev => {
-        const newChanges = { ...prev };
-        delete newChanges[cardKey];
-        return newChanges;
-      });
-      
-      toast.success(`卡片變更已成功提交 (${states.length} 項)`);
-    } catch (error) {
-      console.error('卡片提交失敗:', error);
-      toast.error('卡片提交失敗，請重試');
-    } finally {
-      setSubmittingCards(prev => {
-        const newSubmitting = { ...prev };
-        delete newSubmitting[cardKey];
-        return newSubmitting;
-      });
-    }
-  };
+  // 已移除：卡片級提交函式（SSE 即時同步 + 頂部批次提交即可）
 
   if (loading) {
     return (
@@ -828,57 +773,11 @@ const ProjectPlan = () => {
                             </div>
                             {/* 底部完成統計 */}
                             <div className="mt-4 pt-3 border-t border-gold-700/40 flex items-center justify-between text-sm">
-                              <div className="text-gold-300">已完成: {attachmentItems.filter(item => item.completed).length} / {attachmentItems.length}</div>
-                              <div className="text-gold-300">完成率: {Math.round((attachmentItems.filter(item => item.completed).length / attachmentItems.length) * 100)}%</div>
-                            </div>
-                            
-                            {/* 卡片變更提示和提交按鈕 */}
-                            {(() => {
-                              const cardKey = `${id}-${currentCard.id}`;
-                              const hasChanges = cardChanges[cardKey] && Object.keys(cardChanges[cardKey]).length > 0;
-                              const isSubmitting = submittingCards[cardKey];
-                              const changeCount = hasChanges ? Object.keys(cardChanges[cardKey]).length : 0;
-                              
-                              return (
-                                <div className="mt-4 pt-3 border-t border-gold-700/40">
-                                  {hasChanges && (
-                                    <div className="mb-3 p-3 bg-amber-500/20 border border-amber-500/40 rounded-lg">
-                                      <div className="flex items-center justify-between">
-                                        <div className="text-amber-200 text-sm">
-                                          <span className="font-medium">此卡片有 {changeCount} 項未提交的變更</span>
-                                          <div className="text-xs text-amber-300 mt-1">
-                                            點擊「提交此卡片」按鈕保存變更到資料庫
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex justify-center">
-                                    <button
-                                      onClick={() => submitCardChanges(id, currentCard.id)}
-                                      disabled={!hasChanges || isSubmitting}
-                                      className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
-                                        hasChanges && !isSubmitting
-                                          ? 'bg-gold-600 hover:bg-gold-500 text-white shadow-lg hover:shadow-xl'
-                                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                      }`}
-                                    >
-                                      {isSubmitting ? (
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                          提交中...
-                                        </div>
-                                      ) : hasChanges ? (
-                                        `提交此卡片 (${changeCount} 項變更)`
-                                      ) : (
-                                        '無變更需要提交'
-                                      )}
-                                    </button>
-                                  </div>
+                                  <div className="text-gold-300">已完成: {attachmentItems.filter(item => item.completed).length} / {attachmentItems.length}</div>
+                                  <div className="text-gold-300">完成率: {Math.round((attachmentItems.filter(item => item.completed).length / attachmentItems.length) * 100)}%</div>
                                 </div>
-                              );
-                            })()}
+                                
+                                {/* 已移除：卡片級變更提示與提交按鈕（即時同步模式下不需要手動提交） */}
                           </div>
                         </div>
                         {/* 左右切換按鈕 */}
