@@ -70,8 +70,9 @@ const ProjectPlan = () => {
   const fetchMemberData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/users/${id}`);
-      setMember(response.data);
+      // 修正：正確的會員資料 API 路徑，並取出 member 物件
+      const response = await axios.get(`/api/users/member/${id}`);
+      setMember(response.data?.member || response.data || null);
     } catch (err) {
       console.error('Failed to fetch member data:', err);
       setError('無法載入會員資料');
