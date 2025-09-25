@@ -36,12 +36,15 @@ const ProjectPlan = () => {
   });
   const [batchingEnabled, setBatchingEnabled] = useState(false); // 預設關閉批次模式，確保即時同步
   const [pendingUpdates, setPendingUpdates] = useState([]);
+  const [recentUpdates, setRecentUpdates] = useState(new Map()); // 追蹤最近的本地更新，防止SSE覆蓋
 
   // 新增：以伺服器為主的會員狀態覆蓋（用於 POST 成功與 SSE 事件）
-  const applyMemberStates = (memberId, flatOrNested) => {
+  const applyMemberStates = (memberId, flatOrNested, isFromApiResponse = false) => {
     try {
       const isFlat = flatOrNested && typeof flatOrNested === 'object' && Object.keys(flatOrNested).some(k => String(k).includes('_'));
       const nested = isFlat ? flattenToNested(flatOrNested) : (flatOrNested || {});
+      const now = Date.now();
+      
       setChecklistStates(prev => {
         const out = { ...prev };
         const mid = String(memberId);
@@ -52,11 +55,21 @@ const ProjectPlan = () => {
         Object.keys(newMember).forEach(cardId => {
           mergedMember[cardId] = { ...(mergedMember[cardId] || {}) };
           Object.keys(newMember[cardId] || {}).forEach(itemId => {
-            mergedMember[cardId][itemId] = !!newMember[cardId][itemId];
+            const key = `${mid}_${cardId}_${itemId}`;
+            const recentUpdate = recentUpdates.get(key);
+            
+            // 如果這是來自API響應，直接應用
+            // 如果這是SSE事件，檢查是否有最近的本地更新（3秒內）
+            if (isFromApiResponse || !recentUpdate || (now - recentUpdate.timestamp) > 3000) {
+              mergedMember[cardId][itemId] = !!newMember[cardId][itemId];
+              console.log(`[DEBUG] 應用狀態: ${key} = ${!!newMember[cardId][itemId]} (${isFromApiResponse ? 'API響應' : 'SSE事件'})`);
+            } else {
+              // 保持最近的本地更新，忽略SSE事件
+              console.log(`[DEBUG] 忽略SSE事件: ${key}，保持最近本地更新 (${now - recentUpdate.timestamp}ms前)`);
+            }
           });
         });
         out[mid] = mergedMember;
-        // 移除本地儲存，改為純網路同步
         return out;
       });
     } catch (e) {
@@ -67,6 +80,21 @@ const ProjectPlan = () => {
   const updateCheckboxState = (memberId, cardId, itemId, newState) => {
     const prevVal = getNested(checklistStates, memberId, cardId, itemId, false);
     console.log(`[DEBUG] 更新勾選狀態: memberId=${memberId}, cardId=${cardId}, itemId=${itemId}, newState=${newState}, prevVal=${prevVal}`);
+    
+    // 記錄本地更新時間戳
+    const updateKey = `${memberId}_${cardId}_${itemId}`;
+    const timestamp = Date.now();
+    setRecentUpdates(prev => {
+      const newMap = new Map(prev);
+      newMap.set(updateKey, { timestamp, value: !!newState });
+      // 清理5秒前的記錄
+      for (const [key, update] of newMap.entries()) {
+        if (timestamp - update.timestamp > 5000) {
+          newMap.delete(key);
+        }
+      }
+      return newMap;
+    });
     
     // 本地樂觀更新（僅記憶體，不存本地）
     setChecklistStates(prev => {
@@ -90,7 +118,7 @@ const ProjectPlan = () => {
         .then(({ data }) => {
           console.log(`[DEBUG] API請求成功:`, data);
           if (data && data.states) {
-            applyMemberStates(memberId, data.states);
+            applyMemberStates(memberId, data.states, true); // 標記為API響應
           }
         })
         .catch((err) => {
@@ -99,6 +127,12 @@ const ProjectPlan = () => {
           setChecklistStates(prev => {
             const next = setNested({ ...prev }, memberId, cardId, itemId, prevVal);
             return next;
+          });
+          // 清除失敗的更新記錄
+          setRecentUpdates(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(updateKey);
+            return newMap;
           });
           toast.error(err?.response?.data?.message || '網路同步失敗，已回復原狀');
         });
@@ -205,7 +239,7 @@ const ProjectPlan = () => {
           const flat = (payload?.states && typeof payload.states === 'object') ? payload.states : {};
           const targetMemberId = payload?.memberId || id;
           console.log(`[DEBUG] 應用狀態更新: memberId=${targetMemberId}, states=`, flat);
-          applyMemberStates(targetMemberId, flat);
+          applyMemberStates(targetMemberId, flat, false); // 標記為SSE事件，不是API響應
         } catch (err) {
           console.warn('解析 SSE 勾選狀態更新事件失敗:', err);
         }
@@ -263,7 +297,7 @@ const ProjectPlan = () => {
     try {
       const { data } = await axios.post(`/api/users/member/${id}/project-plan/checklist`, { states: pendingUpdates });
       if (data && data.states) {
-        applyMemberStates(id, data.states);
+        applyMemberStates(id, data.states, true); // 標記為API響應
       }
       toast.success('批次提交成功');
       setPendingUpdates([]);
