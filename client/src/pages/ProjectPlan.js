@@ -82,6 +82,17 @@ const ProjectPlan = () => {
   const updateCheckboxState = (memberId, cardId, itemId, newState) => {
     console.log(`[DEBUG] 勾選狀態變更 (純本地): memberId=${memberId}, cardId=${cardId}, itemId=${itemId}, newState=${newState}`);
     
+    const timestamp = Date.now();
+    const key = `${memberId}_${cardId}_${itemId}`;
+    
+    // 記錄最近的本地更新時間戳
+    setRecentUpdates(prev => {
+      const newMap = new Map(prev);
+      newMap.set(key, { timestamp, value: !!newState });
+      console.log(`[DEBUG] 記錄本地更新時間戳: ${key} = ${timestamp}`);
+      return newMap;
+    });
+    
     // 立即更新本地狀態
     setChecklistStates(prevStates => {
       const updated = setNested({ ...prevStates }, memberId, cardId, itemId, newState);
@@ -95,7 +106,7 @@ const ProjectPlan = () => {
       const changes = prev[cardKey] || {};
       const newChanges = {
         ...changes,
-        [itemId]: { value: !!newState, timestamp: Date.now() }
+        [itemId]: { value: !!newState, timestamp }
       };
       
       console.log(`[DEBUG] 追蹤卡片變更: ${cardKey}`, newChanges);
@@ -170,10 +181,13 @@ const ProjectPlan = () => {
     // 初始化載入勾選狀態
     (async () => {
       try {
+        console.log(`[DEBUG] 開始載入初始勾選狀態: memberId=${id}`);
         const { data } = await axios.get(`/api/users/member/${id}/project-plan/checklist`);
         const serverFlat = (data?.states && typeof data.states === 'object') ? data.states : {};
+        console.log(`[DEBUG] 從服務器載入的初始狀態:`, serverFlat);
         // 完全以伺服器狀態為主，不讀取本地儲存
-        applyMemberStates(id, serverFlat);
+        applyMemberStates(id, serverFlat, true); // 標記為API響應
+        console.log(`[DEBUG] 初始狀態載入完成`);
       } catch (e) {
         console.warn('載入勾選狀態失敗，使用空狀態繼續', e?.response?.data || e.message);
         // 網路失敗時使用空狀態，不依賴本地儲存
