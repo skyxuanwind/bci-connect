@@ -297,9 +297,10 @@ const ProjectPlan = () => {
       console.log(`[DEBUG] 提交卡片變更: ${cardKey}`, states);
       const { data } = await axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states });
       
-      if (data && data.memberStates) {
+      if (data && data.states) {
         // 提交成功後，應用服務器返回的狀態
-        applyMemberStates(memberId, data.memberStates, true);
+        console.log(`[DEBUG] 提交成功，應用服務器返回的狀態:`, data.states);
+        applyMemberStates(memberId, data.states, true);
       }
       
       // 清除此卡片的變更記錄
