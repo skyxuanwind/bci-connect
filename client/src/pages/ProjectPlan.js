@@ -37,6 +37,8 @@ const ProjectPlan = () => {
   const [batchingEnabled, setBatchingEnabled] = useState(false); // 預設關閉批次模式，確保即時同步
   const [pendingUpdates, setPendingUpdates] = useState([]);
   const [recentUpdates, setRecentUpdates] = useState(new Map()); // 追蹤最近的本地更新，防止SSE覆蓋
+  const [cardChanges, setCardChanges] = useState({}); // 追蹤每張卡片的變更
+  const [submittingCards, setSubmittingCards] = useState({}); // 追蹤正在提交的卡片
 
   // 新增：以伺服器為主的會員狀態覆蓋（用於 POST 成功與 SSE 事件）
   const applyMemberStates = (memberId, flatOrNested, isFromApiResponse = false) => {
@@ -78,65 +80,30 @@ const ProjectPlan = () => {
   };
 
   const updateCheckboxState = (memberId, cardId, itemId, newState) => {
-    const prevVal = getNested(checklistStates, memberId, cardId, itemId, false);
-    console.log(`[DEBUG] 更新勾選狀態: memberId=${memberId}, cardId=${cardId}, itemId=${itemId}, newState=${newState}, prevVal=${prevVal}`);
+    console.log(`[DEBUG] 勾選狀態變更 (純本地): memberId=${memberId}, cardId=${cardId}, itemId=${itemId}, newState=${newState}`);
     
-    // 記錄本地更新時間戳
-    const updateKey = `${memberId}_${cardId}_${itemId}`;
-    const timestamp = Date.now();
-    setRecentUpdates(prev => {
-      const newMap = new Map(prev);
-      newMap.set(updateKey, { timestamp, value: !!newState });
-      // 清理5秒前的記錄
-      for (const [key, update] of newMap.entries()) {
-        if (timestamp - update.timestamp > 5000) {
-          newMap.delete(key);
-        }
-      }
-      return newMap;
+    // 立即更新本地狀態
+    setChecklistStates(prevStates => {
+      const updated = setNested({ ...prevStates }, memberId, cardId, itemId, newState);
+      console.log(`[DEBUG] 本地狀態已更新:`, updated);
+      return updated;
     });
-    
-    // 本地樂觀更新（僅記憶體，不存本地）
-    setChecklistStates(prev => {
-      const next = setNested({ ...prev }, memberId, cardId, itemId, newState);
-      return next;
+
+    // 追蹤卡片變更
+    setCardChanges(prev => {
+      const cardKey = `${memberId}-${cardId}`;
+      const changes = prev[cardKey] || {};
+      const newChanges = {
+        ...changes,
+        [itemId]: { value: !!newState, timestamp: Date.now() }
+      };
+      
+      console.log(`[DEBUG] 追蹤卡片變更: ${cardKey}`, newChanges);
+      return {
+        ...prev,
+        [cardKey]: newChanges
+      };
     });
-    if (batchingEnabled) {
-      console.log(`[DEBUG] 批次模式：累積變更`);
-      setPendingUpdates(prev => {
-        const newUpdates = [...prev, { memberId, cardId, itemId, value: !!newState }];
-        // 顯示提醒，但不要太頻繁
-        if (newUpdates.length === 1) {
-          toast.info('批次模式已啟用，請記得點擊「提交更動」按鈕保存更改', { duration: 3000 });
-        }
-        return newUpdates;
-      });
-    } else {
-      // 立即同步到伺服器
-      console.log(`[DEBUG] 即時模式：發送API請求到 /api/users/member/${memberId}/project-plan/checklist`);
-      axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states: [{ memberId, cardId, itemId, value: !!newState }] })
-        .then(({ data }) => {
-          console.log(`[DEBUG] API請求成功:`, data);
-          if (data && data.states) {
-            applyMemberStates(memberId, data.states, true); // 標記為API響應
-          }
-        })
-        .catch((err) => {
-          console.error('更新勾選狀態失敗:', err);
-          // 回滾本地狀態，維持與伺服器一致
-          setChecklistStates(prev => {
-            const next = setNested({ ...prev }, memberId, cardId, itemId, prevVal);
-            return next;
-          });
-          // 清除失敗的更新記錄
-          setRecentUpdates(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(updateKey);
-            return newMap;
-          });
-          toast.error(err?.response?.data?.message || '網路同步失敗，已回復原狀');
-        });
-    }
   };
 
   const getCheckboxState = (memberId, cardId, itemId, defaultState = false) => {
@@ -303,6 +270,55 @@ const ProjectPlan = () => {
       setPendingUpdates([]);
     } catch (e) {
       toast.error(e?.response?.data?.message || '批次提交失敗');
+    }
+  };
+
+  // 提交單張卡片的變更
+  const submitCardChanges = async (memberId, cardId) => {
+    const cardKey = `${memberId}-${cardId}`;
+    const changes = cardChanges[cardKey];
+    
+    if (!changes || Object.keys(changes).length === 0) {
+      toast.info('此卡片沒有變更需要提交');
+      return;
+    }
+
+    setSubmittingCards(prev => ({ ...prev, [cardKey]: true }));
+
+    try {
+      // 將變更轉換為API格式
+      const states = Object.entries(changes).map(([itemId, change]) => ({
+        memberId,
+        cardId,
+        itemId,
+        value: change.value
+      }));
+
+      console.log(`[DEBUG] 提交卡片變更: ${cardKey}`, states);
+      const { data } = await axios.post(`/api/users/member/${memberId}/project-plan/checklist`, { states });
+      
+      if (data && data.memberStates) {
+        // 提交成功後，應用服務器返回的狀態
+        applyMemberStates(memberId, data.memberStates, true);
+      }
+      
+      // 清除此卡片的變更記錄
+      setCardChanges(prev => {
+        const newChanges = { ...prev };
+        delete newChanges[cardKey];
+        return newChanges;
+      });
+      
+      toast.success(`卡片變更已成功提交 (${states.length} 項)`);
+    } catch (error) {
+      console.error('卡片提交失敗:', error);
+      toast.error('卡片提交失敗，請重試');
+    } finally {
+      setSubmittingCards(prev => {
+        const newSubmitting = { ...prev };
+        delete newSubmitting[cardKey];
+        return newSubmitting;
+      });
     }
   };
 
@@ -776,6 +792,54 @@ const ProjectPlan = () => {
                               <div className="text-gold-300">已完成: {attachmentItems.filter(item => item.completed).length} / {attachmentItems.length}</div>
                               <div className="text-gold-300">完成率: {Math.round((attachmentItems.filter(item => item.completed).length / attachmentItems.length) * 100)}%</div>
                             </div>
+                            
+                            {/* 卡片變更提示和提交按鈕 */}
+                            {(() => {
+                              const cardKey = `${id}-${currentCard.id}`;
+                              const hasChanges = cardChanges[cardKey] && Object.keys(cardChanges[cardKey]).length > 0;
+                              const isSubmitting = submittingCards[cardKey];
+                              const changeCount = hasChanges ? Object.keys(cardChanges[cardKey]).length : 0;
+                              
+                              return (
+                                <div className="mt-4 pt-3 border-t border-gold-700/40">
+                                  {hasChanges && (
+                                    <div className="mb-3 p-3 bg-amber-500/20 border border-amber-500/40 rounded-lg">
+                                      <div className="flex items-center justify-between">
+                                        <div className="text-amber-200 text-sm">
+                                          <span className="font-medium">此卡片有 {changeCount} 項未提交的變更</span>
+                                          <div className="text-xs text-amber-300 mt-1">
+                                            點擊「提交此卡片」按鈕保存變更到資料庫
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex justify-center">
+                                    <button
+                                      onClick={() => submitCardChanges(id, currentCard.id)}
+                                      disabled={!hasChanges || isSubmitting}
+                                      className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                        hasChanges && !isSubmitting
+                                          ? 'bg-gold-600 hover:bg-gold-500 text-white shadow-lg hover:shadow-xl'
+                                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                      }`}
+                                    >
+                                      {isSubmitting ? (
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                          提交中...
+                                        </div>
+                                      ) : hasChanges ? (
+                                        `提交此卡片 (${changeCount} 項變更)`
+                                      ) : (
+                                        '無變更需要提交'
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                         {/* 左右切換按鈕 */}
