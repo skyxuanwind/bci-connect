@@ -45,7 +45,7 @@ const ConnectionCeremony = () => {
 
   // 檢查權限
   useEffect(() => {
-    if (!user || !['core', 'admin'].includes(user.membership_level)) {
+    if (!user || (!['core', 'admin'].includes(user.membershipLevel) && user.membershipLevel !== 1)) {
       toast.error('您沒有權限訪問此頁面');
       return;
     }

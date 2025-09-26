@@ -17,7 +17,7 @@ const CoreAdminRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!['core', 'admin'].includes(user.membership_level)) {
+  if (!['core', 'admin'].includes(user.membershipLevel) && user.membershipLevel !== 1) {
     return (
       <div className="min-h-screen bg-primary-900 flex items-center justify-center">
         <div className="text-center">

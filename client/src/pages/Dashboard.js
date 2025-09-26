@@ -16,7 +16,8 @@ import {
   CreditCardIcon,
   CalendarIcon,
   QrCodeIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
@@ -77,6 +78,11 @@ const Dashboard = () => {
         {getMembershipLevelText(level)}
       </span>
     );
+  };
+
+  // 檢查是否為 Core 或 Admin 用戶
+  const isCoreOrAdmin = () => {
+    return user && (user.membershipLevel === 'core' || user.membershipLevel === 'admin' || user.membershipLevel === 1);
   };
 
   const quickActions = [
@@ -160,6 +166,17 @@ const Dashboard = () => {
       href: '/admin',
       icon: ChartBarIcon,
       color: 'bg-red-500'
+    }
+  ];
+
+  // Core/Admin 專用功能
+  const coreAdminActions = [
+    {
+      title: 'GBC 連結之橋儀式',
+      description: '主持新會員入會儀式',
+      href: '/connection-ceremony',
+      icon: SparklesIcon,
+      color: 'bg-gradient-to-r from-yellow-400 to-orange-500'
     }
   ];
 
@@ -337,6 +354,39 @@ const Dashboard = () => {
                             <p className="text-xs text-gray-400 truncate">{action.description}</p>
                           </div>
                         </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Core/Admin Ceremony Actions */}
+            {isCoreOrAdmin() && (
+              <div className="bg-gradient-to-br from-primary-800 to-primary-900 border border-gold-500 shadow-xl rounded-lg p-4 sm:p-6">
+                <div className="border-b border-gold-500 pb-4 mb-4 sm:mb-6">
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gold-100">儀式功能</h2>
+                    <InfoButton tooltip="Core 和 Admin 專用的儀式功能，包括主持新會員入會的 GBC 連結之橋儀式。" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {coreAdminActions.map((action, index) => {
+                    const Icon = action.icon;
+                    return (
+                      <Link
+                        to={action.href}
+                        key={action.title}
+                        className="flex items-center p-3 sm:p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 border border-gold-500 hover:border-gold-400 rounded-lg transition-all duration-200 shadow-lg"
+                      >
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 ${action.color} rounded-lg flex items-center justify-center flex-shrink-0 shadow-md`}>
+                          <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                        </div>
+                        <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                          <h3 className="text-sm font-medium text-gold-100 truncate">{action.title}</h3>
+                          <p className="text-xs text-gold-300 truncate">{action.description}</p>
+                        </div>
+                        <ArrowRightIcon className="h-4 w-4 text-gold-400 flex-shrink-0" />
+                      </Link>
                     );
                   })}
                 </div>
