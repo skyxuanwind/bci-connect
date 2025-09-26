@@ -45,7 +45,11 @@ const ConnectionCeremony = () => {
 
   // 檢查權限
   useEffect(() => {
-    if (!user || (!['core', 'admin'].includes(user.membershipLevel) && user.membershipLevel !== 1)) {
+    // Level 1 = Core 用戶，或者郵箱包含 'admin' 的管理員
+    const isCore = Number(user?.membershipLevel) === 1;
+    const isAdmin = user?.email?.includes('admin') && Number(user?.membershipLevel) === 1;
+    
+    if (!user || (!isCore && !isAdmin)) {
       toast.error('您沒有權限訪問此頁面');
       return;
     }
@@ -1149,7 +1153,11 @@ const ConnectionCeremony = () => {
     }
   };
 
-  if (!user || !['core', 'admin'].includes(user.membership_level)) {
+  // 最終權限檢查
+  const isCore = Number(user?.membershipLevel) === 1;
+  const isAdmin = user?.email?.includes('admin') && Number(user?.membershipLevel) === 1;
+  
+  if (!user || (!isCore && !isAdmin)) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
