@@ -141,6 +141,13 @@ const Dashboard = () => {
       color: 'bg-purple-500'
     },
     {
+      title: '管理員面板',
+      description: '儀式設置與誓詞編輯',
+      href: '/admin-panel',
+      icon: CreditCardIcon,
+      color: 'bg-green-500'
+    },
+    {
       title: '分會管理',
       description: '管理分會設定',
       href: '/admin/chapters',

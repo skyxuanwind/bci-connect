@@ -881,6 +881,29 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create ceremony_logs table (儀式日誌)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ceremony_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        ceremony_type VARCHAR(50) NOT NULL,
+        nfc_card_id VARCHAR(255),
+        metadata JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create settings table (系統設定)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key VARCHAR(255) PRIMARY KEY,
+        value TEXT NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
 
 
     // Create indexes for better performance

@@ -8,6 +8,7 @@ import AdminRoute from './components/AdminRoute';
 import Level1Route from './components/Level1Route';
 // import Level2Route from './components/Level2Route';
 import CoachRoute from './components/CoachRoute';
+import CoreAdminRoute from './components/CoreAdminRoute';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -63,6 +64,8 @@ import BusinessMediaAdmin from './pages/admin/BusinessMediaAdmin';
 import MBTIAssessment from './pages/MBTIAssessment';
 import CoacheeDirectory from './pages/coach/CoacheeDirectory';
 import MemberProgress from './pages/MemberProgress';
+import ConnectionCeremony from './pages/ConnectionCeremony';
+import AdminPanel from './pages/AdminPanel';
 
 
 
@@ -311,6 +314,20 @@ function App() {
           
 
 
+          
+          {/* GBC 連結之橋儀式 - Core/Admin only */}
+          <Route path="/connection-ceremony" element={
+            <CoreAdminRoute>
+              <ConnectionCeremony />
+            </CoreAdminRoute>
+          } />
+          
+          {/* 管理員控制面板 - Core/Admin only */}
+          <Route path="/admin-panel" element={
+            <CoreAdminRoute>
+              <AdminPanel />
+            </CoreAdminRoute>
+          } />
           
           {/* Admin Routes */}
           <Route path="/admin" element={

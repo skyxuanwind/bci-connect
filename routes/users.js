@@ -95,6 +95,40 @@ router.get('/:id/public', async (req, res) => {
 // Apply authentication to all routes below
 router.use(authenticateToken);
 
+// GBC 連結之橋儀式 - 獲取橋樑數據
+// @route   GET /api/members/bridge-data
+// @desc    Get all active members for bridge ceremony
+// @access  Private (Core/Admin only)
+router.get('/bridge-data', requireMembershipLevel(['core', 'admin']), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+        id as userId,
+        name,
+        title as profession,
+        profile_picture_url as profilePictureUrl,
+        company,
+        industry,
+        created_at
+       FROM users 
+       WHERE status = 'active' 
+       ORDER BY created_at ASC`
+    );
+    
+    res.json({
+      success: true,
+      members: result.rows,
+      total: result.rows.length
+    });
+  } catch (error) {
+    console.error('Error fetching bridge data:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取橋樑數據失敗'
+    });
+  }
+});
+
 // 列出所有用戶（供管理端/測試腳本使用）
 // @route   GET /api/users
 // @desc    Get all users (basic fields)
