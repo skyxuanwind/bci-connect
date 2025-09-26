@@ -414,10 +414,17 @@ const ProjectPlan = () => {
                 {(() => {
                   const spec = [
                     { cardId: 'core_member_approval', items: ['create_group','member_data','send_email'] },
+                    { cardId: 'pre_oath_preparation', items: ['self_intro_template','explain_goals_foundation'] },
                     { cardId: 'day_before_oath', items: ['attendance_time','self_intro_50sec','dress_code','business_cards','four_week_plan','send_email'] },
                     { cardId: 'ceremony_day', items: ['intro_guide','environment_intro','core_staff_intro'] },
                     { cardId: 'networking_time', items: ['networking_guide'] },
-                    { cardId: 'meeting_guidelines', items: ['phone_silent','simple_explanation'] }
+                    { cardId: 'meeting_guidelines', items: ['phone_silent','simple_explanation'] },
+                    { cardId: 'post_meeting', items: ['join_line_groups','system_teaching'] },
+                    { cardId: 'one_week_followup', items: ['check_login','interview_form_check','expose_products','visit_partners'] },
+                    { cardId: 'second_week', items: ['guide_guest_purpose','invite_agent_meeting','deep_communication_form','core_member_one_on_one'] },
+                    { cardId: 'third_week', items: ['system_usage_check','staff_one_on_one'] },
+                    { cardId: 'fourth_week', items: ['system_status_check','core_staff_one_on_one','presentation_optimization'] },
+                    { cardId: 'graduation_standards', items: ['core_staff_one_on_one_final','system_training_complete','basic_referral_behavior','group_announcement_welcome'] }
                   ];
                   const manualTotal = spec.reduce((sum, s) => sum + s.items.length, 0);
                   const manualChecked = spec.reduce((sum, s) => sum + s.items.filter(itemId => getCheckboxState(id, s.cardId, itemId, false)).length, 0);
@@ -442,10 +449,17 @@ const ProjectPlan = () => {
                 {(() => {
                   const spec = [
                     { cardId: 'core_member_approval', items: ['create_group','member_data','send_email'] },
+                    { cardId: 'pre_oath_preparation', items: ['self_intro_template','explain_goals_foundation'] },
                     { cardId: 'day_before_oath', items: ['attendance_time','self_intro_50sec','dress_code','business_cards','four_week_plan','send_email'] },
                     { cardId: 'ceremony_day', items: ['intro_guide','environment_intro','core_staff_intro'] },
                     { cardId: 'networking_time', items: ['networking_guide'] },
-                    { cardId: 'meeting_guidelines', items: ['phone_silent','simple_explanation'] }
+                    { cardId: 'meeting_guidelines', items: ['phone_silent','simple_explanation'] },
+                    { cardId: 'post_meeting', items: ['join_line_groups','system_teaching'] },
+                    { cardId: 'one_week_followup', items: ['check_login','interview_form_check','expose_products','visit_partners'] },
+                    { cardId: 'second_week', items: ['guide_guest_purpose','invite_agent_meeting','deep_communication_form','core_member_one_on_one'] },
+                    { cardId: 'third_week', items: ['system_usage_check','staff_one_on_one'] },
+                    { cardId: 'fourth_week', items: ['system_status_check','core_staff_one_on_one','presentation_optimization'] },
+                    { cardId: 'graduation_standards', items: ['core_staff_one_on_one_final','system_training_complete','basic_referral_behavior','group_announcement_welcome'] }
                   ];
                   const manualTotal = spec.reduce((sum, s) => sum + s.items.length, 0);
                   const manualChecked = spec.reduce((sum, s) => sum + s.items.filter(itemId => getCheckboxState(id, s.cardId, itemId, false)).length, 0);
@@ -622,7 +636,7 @@ const ProjectPlan = () => {
                       description: '執行：1.兩天內確認系統是否能登入 2.教學系統個人深度交流表填寫 3.幫你的新會員曝光介紹及見證導生的產品或服務 4.多先參訪夥伴或體驗產品',
                       checklistItems: [
                         { id: 'check_login', text: '兩天內確認系統是否能登入' },
-                        { id: 'interview_form_check', text: '教學系統個人深度交流表填寫', subtext: `面談表狀態：${p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表'}`, completed: p?.hasInterview || false, progressBar: { show: true, value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '未填寫' } },
+                        { id: 'interview_form_check', text: '教學系統個人深度交流表填寫', subtext: `面談表狀態：${p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表'}`, completed: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false), progressBar: { show: true, value: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false) ? 100 : 0, label: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false) ? '已完成' : '未填寫' } },
                         { id: 'expose_products', text: '幫你的新會員曝光介紹及見證導生的產品或服務，重點在讓新會員覺得有被重視' },
                         { id: 'visit_partners', text: '多先參訪夥伴或體驗產品' }
                       ],
