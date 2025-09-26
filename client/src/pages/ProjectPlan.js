@@ -473,7 +473,7 @@ const ProjectPlan = () => {
                     };
                     const info = map[sseStatus] || map.connecting;
                     return (
-                      <div className="ml-2 flex items-center gap-1 text-xs text-gray-700 bg-gray-100 rounded px-2 py-0.5 hidden">
+                      <div className="ml-2 flex items-center gap-1 text-xs text-gold-300 bg-primary-800/40 border border-gold-700/40 rounded px-2 py-0.5 hidden">
                         <span className={`inline-block w-2 h-2 rounded-full ${info.dot}`}></span>
                         <span>SSE {info.text}</span>
                       </div>
@@ -760,7 +760,7 @@ const ProjectPlan = () => {
                                       {currentCard.checklistItems.map((detail, index) => (
                                         <li key={index} className="flex items-start">
                                           <input type="checkbox" id={`chk-${currentCard.id}-${detail.id}`} checked={getCheckboxState(id, currentCard.id, detail.id, detail.completed)} onChange={(e) => updateCheckboxState(id, currentCard.id, detail.id, e.target.checked)} className="mt-1 mr-3 h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2" />
-                                          <label htmlFor={`chk-${currentCard.id}-${detail.id}`} className="leading-relaxed cursor-pointer">
+                                          <label htmlFor={`chk-${currentCard.id}-${detail.id}`} className="leading-relaxed cursor-pointer text-gold-100">
                                             {detail.text}
                                           </label>
                                           {detail.subtext && (
@@ -790,7 +790,7 @@ const ProjectPlan = () => {
                                               <div className="flex items-start">
                                                 <input type="checkbox" id={`detail-${index}`} checked={getCheckboxState(id, currentCard.id, detail.id, detail.completed)} onChange={(e) => updateCheckboxState(id, currentCard.id, detail.id, e.target.checked)} className="mt-1 mr-3 h-4 w-4 text-gold-500 bg-primary-700 border-gold-600 rounded focus:ring-gold-500 focus:ring-2" />
                                                 <div className="flex-1">
-                                                  <label htmlFor={`detail-${index}`} className="leading-relaxed font-medium cursor-pointer">{detail.text}</label>
+                                                  <label htmlFor={`detail-${index}`} className="leading-relaxed font-medium cursor-pointer text-gold-100">{detail.text}</label>
                                                   {detail.subtext && (
                                                     <div className="mt-2 text-xs text-gold-500 leading-relaxed whitespace-pre-line bg-primary-800/30 p-2 rounded border border-gold-700/30">{detail.subtext}</div>
                                                   )}
@@ -803,7 +803,7 @@ const ProjectPlan = () => {
                                           ) : (
                                             <>
                                               <span className="text-gold-500 mr-2 text-base">•</span>
-                                              <span className="leading-relaxed">{typeof detail === 'string' ? detail : detail.text}</span>
+                                              <span className="leading-relaxed text-gold-100">{typeof detail === 'string' ? detail : detail.text}</span>
                                             </>
                                           )}
                                         </li>
