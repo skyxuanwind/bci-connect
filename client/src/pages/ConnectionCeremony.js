@@ -231,73 +231,138 @@ const ConnectionCeremony = () => {
     animate();
   };
 
-  // 創建星空背景
+  // 創建金色星空背景
   const createStarField = (scene) => {
     const starGeometry = new THREE.BufferGeometry();
-    const starCount = 1000;
+    const starCount = 1500;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
+    const sizes = new Float32Array(starCount);
 
     for (let i = 0; i < starCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 400;
-      positions[i * 3 + 1] = Math.random() * 200 + 50;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
+      positions[i * 3] = (Math.random() - 0.5) * 500;
+      positions[i * 3 + 1] = Math.random() * 300 + 20;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 500;
 
-      // 星星顏色變化
+      // 金色系星星顏色
       const color = new THREE.Color();
-      color.setHSL(Math.random() * 0.2 + 0.5, 0.8, Math.random() * 0.5 + 0.5);
+      const hue = Math.random() * 0.1 + 0.12; // 金色色調範圍
+      const saturation = Math.random() * 0.3 + 0.7;
+      const lightness = Math.random() * 0.4 + 0.6;
+      color.setHSL(hue, saturation, lightness);
       colors[i * 3] = color.r;
       colors[i * 3 + 1] = color.g;
       colors[i * 3 + 2] = color.b;
+      
+      sizes[i] = Math.random() * 3 + 1;
     }
 
     starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    starGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
     const starMaterial = new THREE.PointsMaterial({
-      size: 2,
+      size: 3,
       vertexColors: true,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending
     });
 
     const stars = new THREE.Points(starGeometry, starMaterial);
     scene.add(stars);
+    
+    // 添加星星閃爍動畫
+    const animateStars = () => {
+      const time = Date.now() * 0.001;
+      const positions = stars.geometry.attributes.position.array;
+      const colors = stars.geometry.attributes.color.array;
+      
+      for (let i = 0; i < starCount; i++) {
+        const i3 = i * 3;
+        // 輕微的位置變化
+        positions[i3 + 1] += Math.sin(time + i * 0.1) * 0.02;
+        
+        // 閃爍效果
+        const intensity = (Math.sin(time * 2 + i * 0.5) + 1) * 0.5;
+        colors[i3] = intensity * 1.0; // R
+        colors[i3 + 1] = intensity * 0.8; // G
+        colors[i3 + 2] = intensity * 0.2; // B
+      }
+      
+      stars.geometry.attributes.position.needsUpdate = true;
+      stars.geometry.attributes.color.needsUpdate = true;
+    };
+    
+    // 將動畫函數存儲以便在主動畫循環中調用
+    scene.userData.animateStars = animateStars;
   };
 
   // 設置高級光照系統
   const setupAdvancedLighting = (scene) => {
-    // 環境光
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+    // 深邃環境光 - 營造神秘氛圍
+    const ambientLight = new THREE.AmbientLight(0x111122, 0.2);
     scene.add(ambientLight);
     ambientLightRef.current = ambientLight;
 
-    // 主要方向光（月光效果）
-    const moonLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    moonLight.position.set(10, 20, 10);
-    moonLight.castShadow = true;
-    moonLight.shadow.mapSize.width = 2048;
-    moonLight.shadow.mapSize.height = 2048;
-    moonLight.shadow.camera.near = 0.5;
-    moonLight.shadow.camera.far = 50;
-    moonLight.shadow.camera.left = -30;
-    moonLight.shadow.camera.right = 30;
-    moonLight.shadow.camera.top = 30;
-    moonLight.shadow.camera.bottom = -30;
-    scene.add(moonLight);
+    // 主要金色方向光 - 突出橋樑
+    const mainLight = new THREE.DirectionalLight(0xFFD700, 1.2);
+    mainLight.position.set(0, 40, 20);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 4096;
+    mainLight.shadow.mapSize.height = 4096;
+    mainLight.shadow.camera.near = 0.5;
+    mainLight.shadow.camera.far = 100;
+    mainLight.shadow.camera.left = -50;
+    mainLight.shadow.camera.right = 50;
+    mainLight.shadow.camera.top = 50;
+    mainLight.shadow.camera.bottom = -50;
+    mainLight.shadow.bias = -0.0001;
+    scene.add(mainLight);
 
-    // 橋樑聚光燈
-    const bridgeSpotlight = new THREE.SpotLight(0xffd700, 1, 50, Math.PI / 6, 0.5);
-    bridgeSpotlight.position.set(0, 25, 0);
-    bridgeSpotlight.target.position.set(0, 0, 0);
+    // 橋樑主聚光燈 - 金色光束
+    const bridgeSpotlight = new THREE.SpotLight(0xFFD700, 2, 80, Math.PI / 4, 0.3);
+    bridgeSpotlight.position.set(0, 50, 0);
+    bridgeSpotlight.target.position.set(0, 6, 0);
     bridgeSpotlight.castShadow = true;
+    bridgeSpotlight.shadow.mapSize.width = 2048;
+    bridgeSpotlight.shadow.mapSize.height = 2048;
     scene.add(bridgeSpotlight);
     scene.add(bridgeSpotlight.target);
 
-    // 動態彩色光束
-    const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xfeca57];
-    colors.forEach((color, index) => {
-      const light = new THREE.PointLight(color, 0.5, 20);
+    // 側面金色聚光燈 - 增強立體感
+    for (let i = 0; i < 2; i++) {
+      const sideSpotlight = new THREE.SpotLight(0xFFA500, 1.5, 60, Math.PI / 6, 0.4);
+      sideSpotlight.position.set((i === 0 ? -30 : 30), 35, 15);
+      sideSpotlight.target.position.set(0, 6, 0);
+      sideSpotlight.castShadow = true;
+      scene.add(sideSpotlight);
+      scene.add(sideSpotlight.target);
+    }
+
+    // 橋塔頂部光源 - 閃耀效果
+    for (let i = 0; i < 2; i++) {
+      const towerLight = new THREE.PointLight(0xFFD700, 2, 40);
+      towerLight.position.set((i === 0 ? -1 : 1) * (bridgeData.length * 2), 35, 0);
+      towerLight.castShadow = true;
+      scene.add(towerLight);
+      
+      // 添加光暈效果
+      const glowGeometry = new THREE.SphereGeometry(1, 16, 16);
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFFD700,
+        transparent: true,
+        opacity: 0.6
+      });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      glow.position.copy(towerLight.position);
+      scene.add(glow);
+    }
+
+    // 動態金色光束陣列
+    const goldColors = [0xFFD700, 0xFFA500, 0xFFB347, 0xDAA520, 0xB8860B];
+    goldColors.forEach((color, index) => {
+      const light = new THREE.PointLight(color, 0.8, 25);
       light.position.set(
         (index - 2) * 10,
         15,
@@ -307,115 +372,345 @@ const ConnectionCeremony = () => {
     });
   };
 
-  // 創建粒子系統
+  // 創建金色粒子系統
   const createParticleSystem = (scene) => {
-    const particleCount = 500;
+    // 主要金色粒子系統
+    const particleCount = 800;
     const particles = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const velocities = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+    const lifetimes = new Float32Array(particleCount);
 
     for (let i = 0; i < particleCount; i++) {
-      // 初始位置
-      positions[i * 3] = (Math.random() - 0.5) * 100;
-      positions[i * 3 + 1] = Math.random() * 30;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+      // 圍繞橋樑的初始位置
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 60 + 20;
+      positions[i * 3] = Math.cos(angle) * radius;
+      positions[i * 3 + 1] = Math.random() * 40 + 5;
+      positions[i * 3 + 2] = Math.sin(angle) * radius;
 
-      // 速度
-      velocities[i * 3] = (Math.random() - 0.5) * 0.1;
-      velocities[i * 3 + 1] = Math.random() * 0.05 + 0.02;
-      velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.1;
+      // 向上飄動的速度
+      velocities[i * 3] = (Math.random() - 0.5) * 0.05;
+      velocities[i * 3 + 1] = Math.random() * 0.08 + 0.03;
+      velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.05;
 
-      // 顏色
-      const color = new THREE.Color();
-      color.setHSL(Math.random(), 0.8, 0.6);
-      colors[i * 3] = color.r;
-      colors[i * 3 + 1] = color.g;
-      colors[i * 3 + 2] = color.b;
+      // 金色系顏色
+      const goldVariation = Math.random();
+      if (goldVariation < 0.6) {
+        // 純金色
+        colors[i * 3] = 1.0;
+        colors[i * 3 + 1] = 0.84;
+        colors[i * 3 + 2] = 0.0;
+      } else if (goldVariation < 0.8) {
+        // 橙金色
+        colors[i * 3] = 1.0;
+        colors[i * 3 + 1] = 0.65;
+        colors[i * 3 + 2] = 0.0;
+      } else {
+        // 深金色
+        colors[i * 3] = 0.72;
+        colors[i * 3 + 1] = 0.53;
+        colors[i * 3 + 2] = 0.04;
+      }
+
+      sizes[i] = Math.random() * 2 + 1;
+      lifetimes[i] = Math.random() * 100;
     }
 
     particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
     const particleMaterial = new THREE.PointsMaterial({
-      size: 1.5,
+      size: 2,
       vertexColors: true,
       transparent: true,
-      opacity: 0.7,
-      blending: THREE.AdditiveBlending
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true
     });
 
     const particleSystem = new THREE.Points(particles, particleMaterial);
-    particleSystem.userData = { velocities };
+    particleSystem.userData = { velocities, lifetimes };
     scene.add(particleSystem);
     particleSystemRef.current = particleSystem;
+
+    // 橋樑周圍的光塵效果
+    const dustCount = 300;
+    const dustGeometry = new THREE.BufferGeometry();
+    const dustPositions = new Float32Array(dustCount * 3);
+    const dustColors = new Float32Array(dustCount * 3);
+    const dustSizes = new Float32Array(dustCount);
+
+    for (let i = 0; i < dustCount; i++) {
+      // 集中在橋樑附近
+      dustPositions[i * 3] = (Math.random() - 0.5) * (bridgeData.length * 8 + 30);
+      dustPositions[i * 3 + 1] = Math.random() * 20 + 3;
+      dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+
+      // 微弱的金色光塵
+      const intensity = Math.random() * 0.5 + 0.3;
+      dustColors[i * 3] = intensity;
+      dustColors[i * 3 + 1] = intensity * 0.8;
+      dustColors[i * 3 + 2] = intensity * 0.2;
+      
+      dustSizes[i] = Math.random() * 0.5 + 0.2;
+    }
+
+    dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    dustGeometry.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
+    dustGeometry.setAttribute('size', new THREE.BufferAttribute(dustSizes, 1));
+
+    const dustMaterial = new THREE.PointsMaterial({
+      size: 0.5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.4,
+      blending: THREE.AdditiveBlending
+    });
+
+    const dustSystem = new THREE.Points(dustGeometry, dustMaterial);
+    scene.add(dustSystem);
+    
+    // 存儲光塵系統以便動畫
+    scene.userData.dustSystem = dustSystem;
   };
 
   const createBridgeBase = (scene) => {
-    // 橋面
-    const bridgeGeometry = new THREE.BoxGeometry(bridgeData.length * 8 + 20, 2, 10);
-    const bridgeMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+    // 主橋面 - 金色奢華設計
+    const bridgeGeometry = new THREE.BoxGeometry(bridgeData.length * 8 + 20, 3, 12);
+    const bridgeMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xFFD700, // 純金色
+      metalness: 0.9,
+      roughness: 0.1,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
+      reflectivity: 1.0,
+      envMapIntensity: 2.0
+    });
     const bridge = new THREE.Mesh(bridgeGeometry, bridgeMaterial);
-    bridge.position.y = 5;
+    bridge.position.y = 6;
     bridge.receiveShadow = true;
+    bridge.castShadow = true;
     scene.add(bridge);
 
-    // 橋樑支撐結構
-    for (let i = 0; i < bridgeData.length + 1; i++) {
-      const supportGeometry = new THREE.CylinderGeometry(0.5, 0.5, 10);
-      const supportMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
-      const support = new THREE.Mesh(supportGeometry, supportMaterial);
-      support.position.set((i - bridgeData.length / 2) * 8, 0, 0);
-      support.castShadow = true;
-      scene.add(support);
+    // 橋樑裝飾邊緣
+    const edgeGeometry = new THREE.BoxGeometry(bridgeData.length * 8 + 22, 0.5, 14);
+    const edgeMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xFFA500, // 橙金色
+      metalness: 1.0,
+      roughness: 0.05,
+      clearcoat: 1.0,
+      emissive: 0x332200,
+      emissiveIntensity: 0.3
+    });
+    const edgeTop = new THREE.Mesh(edgeGeometry, edgeMaterial);
+    edgeTop.position.y = 7.75;
+    scene.add(edgeTop);
+    
+    const edgeBottom = new THREE.Mesh(edgeGeometry, edgeMaterial);
+    edgeBottom.position.y = 4.25;
+    scene.add(edgeBottom);
+
+    // 金色支撐柱 - 斜拉橋風格
+    const mainTowerHeight = 35;
+    for (let i = 0; i < 2; i++) {
+      const towerGeometry = new THREE.CylinderGeometry(1.5, 2, mainTowerHeight);
+      const towerMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xFFD700,
+        metalness: 0.95,
+        roughness: 0.05,
+        clearcoat: 1.0,
+        emissive: 0x221100,
+        emissiveIntensity: 0.2
+      });
+      const tower = new THREE.Mesh(towerGeometry, towerMaterial);
+      tower.position.set((i === 0 ? -1 : 1) * (bridgeData.length * 2), mainTowerHeight / 2, 0);
+      tower.castShadow = true;
+      scene.add(tower);
+
+      // 斜拉索
+      for (let j = 0; j < bridgeData.length + 1; j++) {
+        const cableGeometry = new THREE.CylinderGeometry(0.05, 0.05, 
+          Math.sqrt(Math.pow((j - bridgeData.length / 2) * 8 - tower.position.x, 2) + Math.pow(mainTowerHeight - 6, 2)));
+        const cableMaterial = new THREE.MeshPhysicalMaterial({
+          color: 0xFFD700,
+          metalness: 1.0,
+          roughness: 0.1,
+          emissive: 0x111100,
+          emissiveIntensity: 0.1
+        });
+        const cable = new THREE.Mesh(cableGeometry, cableMaterial);
+        
+        const midX = ((j - bridgeData.length / 2) * 8 + tower.position.x) / 2;
+        const midY = (6 + mainTowerHeight) / 2;
+        cable.position.set(midX, midY, 0);
+        
+        const angle = Math.atan2(mainTowerHeight - 6, (j - bridgeData.length / 2) * 8 - tower.position.x);
+        cable.rotation.z = angle;
+        
+        scene.add(cable);
+      }
     }
 
-    // 地面
-    const groundGeometry = new THREE.PlaneGeometry(200, 200);
-    const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -10;
-    ground.receiveShadow = true;
-    scene.add(ground);
+    // 深邃黑色水面
+    const waterGeometry = new THREE.PlaneGeometry(300, 300);
+    const waterMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x000011,
+      metalness: 0.1,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.8,
+      reflectivity: 0.9,
+      clearcoat: 1.0
+    });
+    const water = new THREE.Mesh(waterGeometry, waterMaterial);
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = -15;
+    water.receiveShadow = true;
+    scene.add(water);
+
+    // 添加橋樑反射效果
+    const reflectionGeometry = new THREE.BoxGeometry(bridgeData.length * 8 + 20, 3, 12);
+    const reflectionMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xFFD700,
+      metalness: 0.9,
+      roughness: 0.3,
+      transparent: true,
+      opacity: 0.3,
+      clearcoat: 0.5
+    });
+    const reflection = new THREE.Mesh(reflectionGeometry, reflectionMaterial);
+    reflection.position.y = -24;
+    reflection.scale.y = -1;
+    scene.add(reflection);
   };
 
   const createMemberPillars = (scene) => {
     const pillars = [];
     
     bridgeData.forEach((member, index) => {
-      // 橋墩主體
-      const pillarGeometry = new THREE.BoxGeometry(4, 8, 4);
-      const pillarMaterial = new THREE.MeshLambertMaterial({ 
-        color: new THREE.Color().setHSL(index / bridgeData.length, 0.7, 0.6) 
+      // 金色橋墩主體 - 八角柱設計
+      const pillarGeometry = new THREE.CylinderGeometry(2.5, 3, 12, 8);
+      const pillarMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xFFD700,
+        metalness: 0.8,
+        roughness: 0.2,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        emissive: 0x221100,
+        emissiveIntensity: 0.15
       });
       const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
-      pillar.position.set((index - bridgeData.length / 2) * 8, 9, 0);
+      pillar.position.set((index - bridgeData.length / 2) * 8, 12, 0);
       pillar.castShadow = true;
       pillar.userData = { member, index };
       scene.add(pillar);
 
-      // 會員名稱標籤
+      // 橋墩頂部裝飾
+      const capGeometry = new THREE.CylinderGeometry(3.2, 2.8, 1.5, 8);
+      const capMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xFFA500,
+        metalness: 1.0,
+        roughness: 0.05,
+        clearcoat: 1.0,
+        emissive: 0x332200,
+        emissiveIntensity: 0.3
+      });
+      const cap = new THREE.Mesh(capGeometry, capMaterial);
+      cap.position.set((index - bridgeData.length / 2) * 8, 18.75, 0);
+      cap.castShadow = true;
+      scene.add(cap);
+
+      // 橋墩底部基座
+      const baseGeometry = new THREE.CylinderGeometry(3.5, 4, 2, 8);
+      const baseMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xB8860B, // 深金色
+        metalness: 0.9,
+        roughness: 0.3,
+        clearcoat: 0.8
+      });
+      const base = new THREE.Mesh(baseGeometry, baseMaterial);
+      base.position.set((index - bridgeData.length / 2) * 8, 5, 0);
+      base.castShadow = true;
+      scene.add(base);
+
+      // 高級質感的會員名稱標籤
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
-      canvas.width = 256;
-      canvas.height = 128;
-      context.fillStyle = 'white';
-      context.fillRect(0, 0, 256, 128);
-      context.fillStyle = 'black';
-      context.font = '24px Arial';
+      canvas.width = 512;
+      canvas.height = 256;
+      
+      // 創建漸變背景
+      const gradient = context.createLinearGradient(0, 0, 512, 256);
+      gradient.addColorStop(0, '#1a1a1a');
+      gradient.addColorStop(0.5, '#2d2d2d');
+      gradient.addColorStop(1, '#1a1a1a');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 512, 256);
+      
+      // 添加金色邊框
+      context.strokeStyle = '#FFD700';
+      context.lineWidth = 8;
+      context.strokeRect(4, 4, 504, 248);
+      
+      // 內部金色細邊框
+      context.strokeStyle = '#FFA500';
+      context.lineWidth = 2;
+      context.strokeRect(12, 12, 488, 232);
+      
+      // 會員名稱 - 金色文字
+      context.fillStyle = '#FFD700';
+      context.font = 'bold 36px serif';
       context.textAlign = 'center';
-      context.fillText(member.name, 128, 50);
-      context.fillText(member.profession || '專業別', 128, 80);
+      context.shadowColor = '#000000';
+      context.shadowBlur = 4;
+      context.shadowOffsetX = 2;
+      context.shadowOffsetY = 2;
+      context.fillText(member.name, 256, 120);
+      
+      // 專業別 - 橙金色文字
+      context.fillStyle = '#FFA500';
+      context.font = '24px serif';
+      context.fillText(member.profession || '專業別', 256, 160);
+      
+      // 裝飾圖案
+      context.strokeStyle = '#FFD700';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(100, 200);
+      context.lineTo(412, 200);
+      context.stroke();
 
       const texture = new THREE.CanvasTexture(canvas);
-      const labelMaterial = new THREE.MeshBasicMaterial({ map: texture });
-      const labelGeometry = new THREE.PlaneGeometry(6, 3);
+      const labelMaterial = new THREE.MeshPhysicalMaterial({ 
+        map: texture,
+        transparent: true,
+        opacity: 0.95,
+        emissive: 0x111100,
+        emissiveIntensity: 0.1
+      });
+      const labelGeometry = new THREE.PlaneGeometry(8, 4);
       const label = new THREE.Mesh(labelGeometry, labelMaterial);
-      label.position.set((index - bridgeData.length / 2) * 8, 15, 0);
+      label.position.set((index - bridgeData.length / 2) * 8, 22, 0);
       scene.add(label);
 
-      pillars.push({ pillar, label, member });
+      // 添加光環效果
+      const haloGeometry = new THREE.RingGeometry(3.5, 4.5, 16);
+      const haloMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFFD700,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+      });
+      const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+      halo.position.set((index - bridgeData.length / 2) * 8, 12, 0);
+      halo.rotation.x = Math.PI / 2;
+      scene.add(halo);
+
+      pillars.push({ pillar, label, member, cap, base, halo });
     });
 
     pillarsRef.current = pillars;
@@ -487,32 +782,94 @@ const ConnectionCeremony = () => {
 
   const animate = () => {
     animationIdRef.current = requestAnimationFrame(animate);
+    const time = Date.now() * 0.001;
     
-    // 更新粒子系統
+    // 更新金色粒子系統
     if (particleSystemRef.current) {
       const positions = particleSystemRef.current.geometry.attributes.position.array;
+      const colors = particleSystemRef.current.geometry.attributes.color.array;
       const velocities = particleSystemRef.current.userData.velocities;
+      const lifetimes = particleSystemRef.current.userData.lifetimes;
       
       for (let i = 0; i < positions.length; i += 3) {
+        const index = i / 3;
+        
+        // 更新位置
         positions[i] += velocities[i];
         positions[i + 1] += velocities[i + 1];
         positions[i + 2] += velocities[i + 2];
         
+        // 更新生命週期和閃爍效果
+        lifetimes[index] += 1;
+        const intensity = (Math.sin(time * 3 + index * 0.1) + 1) * 0.5;
+        
+        // 金色閃爍效果
+        const baseGold = [1.0, 0.84, 0.0];
+        colors[i] = baseGold[0] * intensity;
+        colors[i + 1] = baseGold[1] * intensity;
+        colors[i + 2] = baseGold[2] * intensity;
+        
         // 重置超出邊界的粒子
-        if (positions[i + 1] > 50) {
-          positions[i] = (Math.random() - 0.5) * 100;
-          positions[i + 1] = 0;
-          positions[i + 2] = (Math.random() - 0.5) * 100;
+        if (positions[i + 1] > 50 || lifetimes[index] > 200) {
+          // 重新圍繞橋樑生成
+          const angle = Math.random() * Math.PI * 2;
+          const radius = Math.random() * 60 + 20;
+          positions[i] = Math.cos(angle) * radius;
+          positions[i + 1] = Math.random() * 5;
+          positions[i + 2] = Math.sin(angle) * radius;
+          
+          // 重置速度
+          velocities[i] = (Math.random() - 0.5) * 0.05;
+          velocities[i + 1] = Math.random() * 0.08 + 0.03;
+          velocities[i + 2] = (Math.random() - 0.5) * 0.05;
+          
+          lifetimes[index] = 0;
         }
       }
       
       particleSystemRef.current.geometry.attributes.position.needsUpdate = true;
+      particleSystemRef.current.geometry.attributes.color.needsUpdate = true;
+    }
+    
+    // 更新光塵系統
+    if (sceneRef.current && sceneRef.current.userData.dustSystem) {
+      const dustSystem = sceneRef.current.userData.dustSystem;
+      const dustPositions = dustSystem.geometry.attributes.position.array;
+      const dustColors = dustSystem.geometry.attributes.color.array;
+      
+      for (let i = 0; i < dustPositions.length; i += 3) {
+        // 緩慢飄動
+        dustPositions[i] += Math.sin(time * 0.5 + i * 0.01) * 0.01;
+        dustPositions[i + 1] += Math.sin(time * 0.3 + i * 0.02) * 0.005;
+        dustPositions[i + 2] += Math.cos(time * 0.4 + i * 0.015) * 0.008;
+        
+        // 閃爍效果
+        const intensity = (Math.sin(time * 2 + i * 0.05) + 1) * 0.25 + 0.3;
+        dustColors[i] = intensity;
+        dustColors[i + 1] = intensity * 0.8;
+        dustColors[i + 2] = intensity * 0.2;
+      }
+      
+      dustSystem.geometry.attributes.position.needsUpdate = true;
+      dustSystem.geometry.attributes.color.needsUpdate = true;
+    }
+    
+    // 星空閃爍動畫
+    if (sceneRef.current && sceneRef.current.userData.animateStars) {
+      sceneRef.current.userData.animateStars();
     }
     
     // 動態光照效果
     if (ambientLightRef.current) {
-      const time = Date.now() * 0.001;
       ambientLightRef.current.intensity = 0.3 + Math.sin(time * 0.5) * 0.1;
+    }
+    
+    // 動態金色光束效果
+    if (sceneRef.current && sceneRef.current.userData.dynamicLights) {
+      sceneRef.current.userData.dynamicLights.forEach((light, index) => {
+        light.intensity = 0.8 + Math.sin(time * 2 + index * 0.5) * 0.3;
+        light.position.y = 25 + Math.sin(time + index) * 2;
+      });
     }
     
     if (rendererRef.current && cameraRef.current && sceneRef.current) {
@@ -831,31 +1188,80 @@ const ConnectionCeremony = () => {
     setCeremonyProgress(progressMap[stage] || 0);
    };
 
-  // 進度指示器組件
+  // 進度指示器組件 - 奢華設計
   const ProgressIndicator = () => (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-      <div className="bg-black bg-opacity-80 rounded-lg p-4 min-w-96">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-white font-medium">儀式進度</span>
-          <span className="text-yellow-400 font-bold">{ceremonyProgress}%</span>
+    <div className="relative">
+      <div className="bg-gradient-to-br from-black/90 via-gray-900/95 to-black/90 backdrop-blur-md rounded-2xl p-6 min-w-96 border border-yellow-400/30 shadow-2xl">
+        {/* 頂部裝飾 */}
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-3 h-3 bg-black rounded-full"></div>
+          </div>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-2">
+        
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-white font-semibold text-lg tracking-wide">儀式進度</span>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+            <span className="text-yellow-400 font-bold text-xl">{ceremonyProgress}%</span>
+          </div>
+        </div>
+        
+        {/* 進度條容器 */}
+        <div className="relative mb-4">
+          <div className="w-full bg-gradient-to-r from-gray-800 to-gray-700 rounded-full h-3 shadow-inner">
+            <div 
+              className="bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 h-3 rounded-full transition-all duration-1000 ease-out relative overflow-hidden shadow-lg"
+              style={{ width: `${ceremonyProgress}%` }}
+            >
+              {/* 閃爍效果 */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+              {/* 流動光效 */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-200/50 to-transparent transform -skew-x-12 animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* 進度條光暈 */}
           <div 
-            className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all duration-1000 ease-out"
+            className="absolute top-0 h-3 bg-yellow-400/20 rounded-full blur-sm transition-all duration-1000 ease-out"
             style={{ width: `${ceremonyProgress}%` }}
           ></div>
         </div>
-        <div className="flex justify-between text-xs text-gray-400 mt-2">
-          <span className={ceremonyStage === 'oath' ? 'text-yellow-400' : ''}>誓詞</span>
-          <span className={ceremonyStage === 'bridge' ? 'text-yellow-400' : ''}>橋樑</span>
-          <span className={ceremonyStage === 'ceremony' ? 'text-yellow-400' : ''}>儀式</span>
-          <span className={ceremonyStage === 'completed' ? 'text-yellow-400' : ''}>完成</span>
+        
+        {/* 階段指示器 */}
+        <div className="flex justify-between text-sm">
+          {[
+            { stage: 'oath', label: '誓詞', icon: '📜' },
+            { stage: 'bridge', label: '橋樑', icon: '🌉' },
+            { stage: 'ceremony', label: '儀式', icon: '✨' },
+            { stage: 'completed', label: '完成', icon: '🎉' }
+          ].map((item, index) => (
+            <div 
+              key={item.stage}
+              className={`flex flex-col items-center space-y-1 transition-all duration-300 ${
+                ceremonyStage === item.stage 
+                  ? 'text-yellow-400 transform scale-110' 
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              <div className={`text-lg ${ceremonyStage === item.stage ? 'animate-bounce' : ''}`}>
+                {item.icon}
+              </div>
+              <span className="font-medium tracking-wide">{item.label}</span>
+              {ceremonyStage === item.stage && (
+                <div className="w-1 h-1 bg-yellow-400 rounded-full animate-pulse"></div>
+              )}
+            </div>
+          ))}
         </div>
+        
+        {/* 底部裝飾線 */}
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent"></div>
       </div>
     </div>
   );
 
-  // 用戶引導組件
+  // 用戶引導組件 - 奢華金色設計
   const UserGuide = () => {
     if (!showGuide) return null;
 
@@ -865,19 +1271,22 @@ const ConnectionCeremony = () => {
           return {
             title: '步驟 1: 朗讀誓詞',
             content: '請新會員大聲朗讀 GBC 會員誓詞，然後使用 NFC 卡片進行身份驗證。',
-            tips: ['確保 NFC 卡片已激活', '輸入完成後按 Enter 鍵', '按 Esc 鍵可清除輸入']
+            tips: ['確保 NFC 卡片已激活', '輸入完成後按 Enter 鍵', '按 Esc 鍵可清除輸入'],
+            icon: '📜'
           };
         case 'bridge':
           return {
             title: '步驟 2: 橋樑場景',
             content: '觀看 3D 橋樑場景，新會員的基石將被添加到成功之橋上。',
-            tips: ['拖動滑鼠旋轉視角', '滾輪縮放場景', '點擊橋墩查看會員資訊']
+            tips: ['拖動滑鼠旋轉視角', '滾輪縮放場景', '點擊橋墩查看會員資訊'],
+            icon: '🌉'
           };
         case 'ceremony':
           return {
             title: '步驟 3: 歡迎儀式',
             content: '歡迎新會員正式加入 GBC 大家庭！',
-            tips: ['儀式即將完成', '準備慶祝新會員的加入']
+            tips: ['儀式即將完成', '準備慶祝新會員的加入'],
+            icon: '✨'
           };
         default:
           return null;
@@ -888,32 +1297,67 @@ const ConnectionCeremony = () => {
     if (!guide) return null;
 
     return (
-      <div className="fixed top-20 right-4 z-40 max-w-sm">
-        <div className="bg-blue-900 bg-opacity-95 rounded-lg p-4 border border-blue-400">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-lg font-bold text-white">{guide.title}</h4>
+      <div className="fixed bottom-6 left-6 z-40 max-w-sm">
+        <div className="relative">
+          {/* 主容器 - 奢華黑金設計 */}
+          <div className="bg-gradient-to-br from-black/95 via-gray-900/98 to-black/95 backdrop-blur-lg rounded-2xl p-6 border border-yellow-400/40 shadow-2xl">
+            {/* 頂部裝飾和圖標 */}
+            <div className="absolute -top-3 left-6">
+              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full w-8 h-8 flex items-center justify-center shadow-lg border-2 border-black">
+                <span className="text-lg">{guide.icon}</span>
+              </div>
+            </div>
+            
+            {/* 標題區域 */}
+            <div className="flex items-center justify-between mb-4 pt-2">
+              <div className="flex items-center space-x-3">
+                <div className="w-1 h-6 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full"></div>
+                <h4 className="text-lg font-bold text-yellow-400 tracking-wide">{guide.title}</h4>
+              </div>
+              <button
+                onClick={() => setShowGuide(false)}
+                className="text-gray-400 hover:text-yellow-400 text-xl transition-colors duration-200 hover:scale-110 transform"
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* 內容描述 */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-lg border border-yellow-400/20">
+              <p className="text-gray-200 leading-relaxed">{guide.content}</p>
+            </div>
+            
+            {/* 提示列表 */}
+            <div className="space-y-2 mb-4">
+              <div className="text-sm text-yellow-400 font-semibold mb-2 flex items-center">
+                <span className="w-2 h-2 bg-yellow-400 rounded-full mr-2 animate-pulse"></span>
+                操作提示
+              </div>
+              {guide.tips.map((tip, index) => (
+                <div key={index} className="flex items-start text-sm text-gray-300 group hover:text-gray-100 transition-colors duration-200">
+                  <div className="w-1.5 h-1.5 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full mr-3 mt-2 group-hover:scale-125 transition-transform duration-200"></div>
+                  <span className="leading-relaxed">{tip}</span>
+                </div>
+              ))}
+            </div>
+            
+            {/* 底部按鈕 */}
             <button
               onClick={() => setShowGuide(false)}
-              className="text-gray-300 hover:text-white text-xl"
+              className="w-full mt-2 py-2 px-4 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 hover:from-yellow-400/30 hover:to-orange-500/30 text-yellow-400 hover:text-yellow-300 font-medium rounded-lg border border-yellow-400/30 hover:border-yellow-400/50 transition-all duration-200 text-sm"
             >
-              ×
+              我知道了，隱藏提示
             </button>
+            
+            {/* 底部裝飾線 */}
+            <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent"></div>
+            
+            {/* 側邊光效 */}
+            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-px h-16 bg-gradient-to-b from-transparent via-yellow-400/60 to-transparent"></div>
           </div>
-          <p className="text-blue-100 mb-3">{guide.content}</p>
-          <div className="space-y-1">
-            {guide.tips.map((tip, index) => (
-              <div key={index} className="flex items-center text-sm text-blue-200">
-                <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-                {tip}
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowGuide(false)}
-            className="mt-3 text-sm text-blue-300 hover:text-blue-100 underline"
-          >
-            我知道了，隱藏提示
-          </button>
+          
+          {/* 外部光暈效果 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 to-orange-500/5 rounded-2xl blur-xl -z-10"></div>
         </div>
       </div>
     );
@@ -1079,70 +1523,228 @@ const ConnectionCeremony = () => {
 
       case 'ceremony':
         return (
-          <div className="flex flex-col items-center justify-center h-full p-8">
-            <div className="text-center">
-              <h1 className="text-6xl font-bold text-yellow-400 mb-8">
-                歡迎加入 GBC！
-              </h1>
+          <div className="flex flex-col items-center justify-center h-full p-8 relative">
+            {/* 背景裝飾粒子 */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping opacity-60"></div>
+              <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-orange-500 rounded-full animate-pulse opacity-80"></div>
+              <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-yellow-300 rounded-full animate-bounce opacity-70"></div>
+              <div className="absolute top-2/3 right-1/4 w-1 h-1 bg-yellow-500 rounded-full animate-ping opacity-50"></div>
+            </div>
+            
+            <div className="text-center relative z-10">
+              {/* 主標題 - 奢華設計 */}
+              <div className="relative mb-12">
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 blur-3xl rounded-full"></div>
+                <h1 className="relative text-7xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent mb-4 tracking-wide">
+                  歡迎加入 GBC！
+                </h1>
+                <div className="flex justify-center items-center space-x-4 mt-4">
+                  <div className="w-16 h-px bg-gradient-to-r from-transparent to-yellow-400"></div>
+                  <div className="text-4xl">🎉</div>
+                  <div className="w-16 h-px bg-gradient-to-l from-transparent to-yellow-400"></div>
+                </div>
+              </div>
               
+              {/* 新會員信息卡片 - 奢華設計 */}
               {newMember && (
-                <div className="bg-black bg-opacity-50 rounded-lg p-8 mb-8">
-                  <h2 className="text-4xl font-bold text-white mb-6">
-                    {newMember.name}
-                  </h2>
-                  <p className="text-2xl text-gray-200 mb-4">
-                    專業：{newMember.profession}
-                  </p>
-                  <p className="text-xl text-gray-300">
-                    公司：{newMember.company}
-                  </p>
+                <div className="relative mb-12 max-w-lg mx-auto">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-orange-500/10 blur-xl rounded-2xl"></div>
+                  <div className="relative bg-gradient-to-br from-black/90 via-gray-900/95 to-black/90 backdrop-blur-lg rounded-2xl p-8 border border-yellow-400/40 shadow-2xl">
+                    {/* 頂部裝飾 */}
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-4 border-black">
+                        <span className="text-black font-bold text-xl">★</span>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <h2 className="text-5xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent mb-6 tracking-wide">
+                        {newMember.name}
+                      </h2>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-center space-x-3">
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                          <p className="text-2xl text-gray-200 font-medium">
+                            專業：<span className="text-yellow-400">{newMember.profession}</span>
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center justify-center space-x-3">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <p className="text-xl text-gray-300 font-medium">
+                            公司：<span className="text-orange-400">{newMember.company}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* 底部裝飾線 */}
+                    <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent"></div>
+                  </div>
                 </div>
               )}
 
-              <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-6 mb-8">
-                <h3 className="text-3xl font-bold text-black">
-                  共同搭建我們的未來！
-                </h3>
+              {/* 標語卡片 - 奢華設計 */}
+              <div className="relative mb-12 max-w-2xl mx-auto">
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 blur-2xl rounded-2xl"></div>
+                <div className="relative bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 rounded-2xl p-8 shadow-2xl">
+                  <div className="bg-black/20 rounded-xl p-6 backdrop-blur-sm">
+                    <h3 className="text-4xl font-bold text-black tracking-wide leading-relaxed">
+                      共同搭建我們的未來！
+                    </h3>
+                    <div className="flex justify-center mt-4 space-x-2">
+                      <div className="w-3 h-3 bg-black/30 rounded-full animate-bounce"></div>
+                      <div className="w-3 h-3 bg-black/30 rounded-full animate-bounce delay-100"></div>
+                      <div className="w-3 h-3 bg-black/30 rounded-full animate-bounce delay-200"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <button
-                onClick={completeCeremony}
-                className="px-8 py-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 transition-colors text-xl"
-              >
-                完成儀式
-              </button>
+              {/* 完成按鈕 - 奢華設計 */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-500/20 blur-xl rounded-2xl"></div>
+                <button
+                  onClick={completeCeremony}
+                  className="relative px-12 py-6 bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 hover:from-green-500 hover:via-emerald-500 hover:to-green-500 text-white font-bold rounded-2xl transition-all duration-300 text-2xl shadow-2xl border border-green-400/30 hover:border-green-400/50 transform hover:scale-105 hover:shadow-green-500/25"
+                >
+                  <span className="flex items-center space-x-3">
+                    <span>完成儀式</span>
+                    <span className="text-3xl">🎊</span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         );
 
       case 'completed':
         return (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="text-8xl mb-8">🎉</div>
-              <h2 className="text-4xl font-bold text-yellow-400 mb-4">
-                儀式完成！
-              </h2>
-              <p className="text-xl text-white mb-8">
-                新會員已成功加入 GBC 大家庭
-              </p>
-              <div className="space-x-4">
-                <button
-                  onClick={() => {
-                    setCeremonyStage('oath');
-                    setNewMember(null);
-                    setNfcCardId('');
-                  }}
-                  className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xl rounded-lg transition-colors"
-                >
-                  重新開始儀式
-                </button>
-                <button
-                  onClick={() => window.location.href = '/admin'}
-                  className="px-8 py-4 bg-gray-600 hover:bg-gray-500 text-white font-bold text-xl rounded-lg transition-colors"
-                >
-                  返回管理面板
-                </button>
+          <div className="flex items-center justify-center h-full relative overflow-hidden">
+            {/* 慶祝背景動畫 */}
+            <div className="absolute inset-0 pointer-events-none">
+              {/* 飄落的金色粒子 */}
+              <div className="absolute top-0 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-bounce opacity-80" style={{animationDelay: '0s', animationDuration: '3s'}}></div>
+              <div className="absolute top-0 left-1/2 w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce opacity-70" style={{animationDelay: '0.5s', animationDuration: '2.5s'}}></div>
+              <div className="absolute top-0 right-1/4 w-2.5 h-2.5 bg-yellow-300 rounded-full animate-bounce opacity-90" style={{animationDelay: '1s', animationDuration: '2s'}}></div>
+              <div className="absolute top-0 left-3/4 w-1 h-1 bg-orange-400 rounded-full animate-bounce opacity-60" style={{animationDelay: '1.5s', animationDuration: '3.5s'}}></div>
+              
+              {/* 光環效果 */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-full blur-3xl animate-pulse"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-orange-500/15 to-yellow-400/15 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
+            </div>
+            
+            <div className="text-center relative z-10 max-w-4xl mx-auto px-8">
+              {/* 主慶祝區域 */}
+              <div className="relative mb-12">
+                {/* 頂部慶祝圖標 */}
+                <div className="flex justify-center items-center space-x-6 mb-8">
+                  <div className="text-6xl animate-bounce">🎉</div>
+                  <div className="text-7xl animate-pulse">✨</div>
+                  <div className="text-6xl animate-bounce" style={{animationDelay: '0.5s'}}>🎊</div>
+                </div>
+                
+                {/* 主標題 */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 blur-3xl rounded-full"></div>
+                  <h2 className="relative text-7xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent mb-6 tracking-wide">
+                    儀式完成！
+                  </h2>
+                </div>
+                
+                {/* 裝飾線 */}
+                <div className="flex justify-center items-center space-x-4 mb-8">
+                  <div className="w-24 h-px bg-gradient-to-r from-transparent to-yellow-400"></div>
+                  <div className="w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full"></div>
+                  <div className="w-24 h-px bg-gradient-to-l from-transparent to-yellow-400"></div>
+                </div>
+              </div>
+              
+              {/* 成功信息卡片 */}
+              <div className="relative mb-12">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-orange-500/10 blur-xl rounded-3xl"></div>
+                <div className="relative bg-gradient-to-br from-black/90 via-gray-900/95 to-black/90 backdrop-blur-lg rounded-3xl p-8 border border-yellow-400/40 shadow-2xl">
+                  {/* 頂部裝飾 */}
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-4 border-black">
+                      <span className="text-black font-bold text-2xl">🏆</span>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-6">
+                    <p className="text-3xl text-gray-200 font-medium leading-relaxed">
+                      新會員已成功加入
+                    </p>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent mt-2">
+                      GBC 大家庭
+                    </p>
+                    
+                    {/* 成就徽章 */}
+                    <div className="flex justify-center mt-6 space-x-4">
+                      <div className="bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-full p-3 border border-yellow-400/30">
+                        <span className="text-2xl">🤝</span>
+                      </div>
+                      <div className="bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-full p-3 border border-yellow-400/30">
+                        <span className="text-2xl">🌟</span>
+                      </div>
+                      <div className="bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-full p-3 border border-yellow-400/30">
+                        <span className="text-2xl">🎯</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 底部裝飾線 */}
+                  <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent"></div>
+                </div>
+              </div>
+              
+              {/* 操作按鈕區域 */}
+              <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                {/* 重新開始按鈕 */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-cyan-500/20 blur-xl rounded-2xl"></div>
+                  <button
+                    onClick={() => {
+                      setCeremonyStage('oath');
+                      setNewMember(null);
+                      setNfcCardId('');
+                    }}
+                    className="relative px-10 py-5 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 hover:from-blue-500 hover:via-cyan-500 hover:to-blue-500 text-white font-bold rounded-2xl transition-all duration-300 text-xl shadow-2xl border border-blue-400/30 hover:border-blue-400/50 transform hover:scale-105"
+                  >
+                    <span className="flex items-center space-x-3">
+                      <span>🔄</span>
+                      <span>重新開始儀式</span>
+                    </span>
+                  </button>
+                </div>
+                
+                {/* 返回管理面板按鈕 */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-400/20 to-slate-500/20 blur-xl rounded-2xl"></div>
+                  <button
+                    onClick={() => window.location.href = '/admin'}
+                    className="relative px-10 py-5 bg-gradient-to-r from-gray-700 via-slate-700 to-gray-700 hover:from-gray-600 hover:via-slate-600 hover:to-gray-600 text-white font-bold rounded-2xl transition-all duration-300 text-xl shadow-2xl border border-gray-400/30 hover:border-gray-400/50 transform hover:scale-105"
+                  >
+                    <span className="flex items-center space-x-3">
+                      <span>🏠</span>
+                      <span>返回管理面板</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* 底部祝福語 */}
+              <div className="mt-12 text-center">
+                <p className="text-lg text-gray-400 italic">
+                  "連結成就未來，合作創造奇蹟"
+                </p>
+                <div className="flex justify-center mt-4 space-x-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                </div>
               </div>
             </div>
           </div>
@@ -1171,44 +1773,84 @@ const ConnectionCeremony = () => {
   return (
     <div 
       ref={ceremonyRef}
-      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900`}
+      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} relative overflow-hidden`}
+      style={{
+        background: 'radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 30%, #0f0f23 70%, #000000 100%)',
+        backgroundAttachment: 'fixed'
+      }}
     >
-      {/* 控制面板 */}
+      {/* 奢華背景裝飾 */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-400/20 via-transparent to-orange-500/20"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-yellow-400/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
+
+      {/* 金色邊框裝飾 */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-60"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-60"></div>
+        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-transparent via-yellow-400 to-transparent opacity-60"></div>
+        <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-transparent via-yellow-400 to-transparent opacity-60"></div>
+      </div>
+
+      {/* 控制面板 - 奢華設計 */}
       {!isFullscreen && (
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-6 right-6 z-10">
           <button
             onClick={enterFullscreen}
-            className="px-4 py-2 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors"
+            className="group relative px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold rounded-xl hover:from-yellow-300 hover:to-orange-400 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-yellow-400/50"
           >
-            進入全螢幕
+            <span className="relative z-10">進入全螢幕</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
           </button>
         </div>
       )}
 
       {isFullscreen && (
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-6 right-6 z-10">
           <button
             onClick={exitFullscreen}
-            className="px-4 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-400 transition-colors"
+            className="group relative px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl hover:from-red-400 hover:to-red-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-red-500/50"
           >
-            退出全螢幕
+            <span className="relative z-10">退出全螢幕</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-700 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
           </button>
         </div>
       )}
 
-      {/* 進度指示器 */}
-      <ProgressIndicator />
+      {/* GBC Logo 水印 */}
+      <div className="absolute top-6 left-6 z-10">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+            <span className="text-black font-bold text-lg">G</span>
+          </div>
+          <div className="text-yellow-400 font-bold text-xl tracking-wider">
+            GBC
+          </div>
+        </div>
+      </div>
+
+      {/* 進度指示器 - 奢華設計 */}
+      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-10">
+        <ProgressIndicator />
+      </div>
       
-      {/* 用戶引導 */}
-      <UserGuide />
+      {/* 用戶引導 - 優化位置 */}
+      <div className="absolute bottom-6 left-6 z-10">
+        <UserGuide />
+      </div>
       
       {/* 過渡動畫 */}
       <TransitionOverlay />
 
       {/* 主要內容 */}
-      <div className="w-full h-full">
+      <div className="w-full h-full relative z-5">
         {renderStageContent()}
       </div>
+
+      {/* 底部裝飾線 */}
+      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent"></div>
     </div>
   );
 };
