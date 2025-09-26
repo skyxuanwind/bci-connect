@@ -991,7 +991,7 @@ const CoachDashboard = () => {
                            completed: p?.hasInterview || false,
                            type: 'auto_detect',
                            progressBar: {
-                             show: true,
+                             show: false,
                              value: p?.hasInterview ? 100 : 0,
                              label: p?.hasInterview ? '已完成' : '未填寫'
                            }
@@ -1251,7 +1251,7 @@ const CoachDashboard = () => {
                                                   </div>
                                                 )}
                                                 {/* 進度條 */}
-                                                {item.progressBar && (
+                                                {item.progressBar?.show && (
                                                   <div className="mt-2">
                                                     <div className="flex items-center justify-between mb-1">
                                                       <span className="text-xs text-gold-400">填寫進度</span>

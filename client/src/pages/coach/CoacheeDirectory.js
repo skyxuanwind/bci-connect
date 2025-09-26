@@ -77,12 +77,12 @@ const CoacheeDirectory = () => {
         </div>
 
         <div className="mt-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gold-300">進度</span>
-            <span className="text-xs text-gold-100 font-semibold">{percent}%</span>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm sm:text-xs text-gold-300">進度</span>
+            <span className="text-sm sm:text-xs text-gold-100 font-semibold">{percent}%</span>
           </div>
-          <div className="w-full h-2 bg-primary-700 rounded mt-1">
-            <div className={`${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'} h-2 rounded`} style={{ width: `${percent}%` }} />
+          <div className="w-full h-3 sm:h-2 bg-primary-700 rounded">
+            <div className={`h-3 sm:h-2 rounded ${percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
           </div>
         </div>
 
