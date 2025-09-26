@@ -1157,9 +1157,7 @@ const MemberCard = () => {
                         {isInstagram && it.embed_code ? (
                           <div 
                             style={{ width: '100%', minHeight: '600px' }}
-                            dangerouslySetInnerHTML={{ 
-                              __html: it.embed_code + '<script async src="//www.instagram.com/embed.js"></script>'
-                            }} 
+                            dangerouslySetInnerHTML={{ __html: it.embed_code + '<script async src="https://www.instagram.com/embed.js"></script>' }}
                           />
                         ) : it.embed_code ? (
                           <div 

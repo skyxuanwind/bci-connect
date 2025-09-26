@@ -246,7 +246,7 @@ export default function BusinessMediaList() {
                       <div 
                         style={{ width: '100%', minHeight: '600px' }}
                         dangerouslySetInnerHTML={{ 
-                          __html: item.embed_code + '<script async src="//www.instagram.com/embed.js"></script>'
+                          __html: item.embed_code + '<script async src="https://www.instagram.com/embed.js"></script>'
                         }} 
                       />
                     ) : item.embed_code ? (
