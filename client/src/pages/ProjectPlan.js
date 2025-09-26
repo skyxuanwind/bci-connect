@@ -636,7 +636,7 @@ const ProjectPlan = () => {
                       description: '執行：1.兩天內確認系統是否能登入 2.教學系統個人深度交流表填寫 3.幫你的新會員曝光介紹及見證導生的產品或服務 4.多先參訪夥伴或體驗產品',
                       checklistItems: [
                         { id: 'check_login', text: '兩天內確認系統是否能登入' },
-                        { id: 'interview_form_check', text: '教學系統個人深度交流表填寫', subtext: `面談表狀態：${p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表'}`, completed: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false), progressBar: { show: true, value: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false) ? 100 : 0, label: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false) ? '已完成' : '未填寫' } },
+                        { id: 'interview_form_check', text: '教學系統個人深度交流表填寫', subtext: '', completed: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false), progressBar: { show: true, value: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false) ? 100 : 0, label: getCheckboxState(id, 'one_week_followup', 'interview_form_check', p?.hasInterview || false) ? '已完成' : '' } },
                         { id: 'expose_products', text: '幫你的新會員曝光介紹及見證導生的產品或服務，重點在讓新會員覺得有被重視' },
                         { id: 'visit_partners', text: '多先參訪夥伴或體驗產品' }
                       ],
@@ -652,7 +652,7 @@ const ProjectPlan = () => {
                       checklistItems: [
                         { id: 'guide_guest_purpose', text: '引導新會員為何帶來賓' },
                         { id: 'invite_agent_meeting', text: '引導新會員邀請代理人參觀例會議程' },
-                        { id: 'deep_communication_form', text: '深度交流表完成', subtext: p?.hasInterview ? '✅ 學員已完成面談表填寫' : '❌ 學員尚未填寫面談表', completed: p?.hasInterview || false, progressBar: { value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '未填寫', color: p?.hasInterview ? 'green' : 'red' } },
+                        { id: 'deep_communication_form', text: '深度交流表完成', subtext: '', completed: p?.hasInterview || false, progressBar: { value: p?.hasInterview ? 100 : 0, label: p?.hasInterview ? '已完成' : '', color: p?.hasInterview ? 'green' : 'red' } },
                         { id: 'core_member_one_on_one', text: '優先與核心一對一' }
                       ],
                       completed: p?.weekTwoComplete || false,
