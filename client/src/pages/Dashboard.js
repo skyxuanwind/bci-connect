@@ -82,7 +82,23 @@ const Dashboard = () => {
 
   // 檢查是否為 Core 或 Admin 用戶
   const isCoreOrAdmin = () => {
-    return user && (user.membershipLevel === 'core' || user.membershipLevel === 'admin' || user.membershipLevel === 1);
+    if (!user || !user.membershipLevel) return false;
+    
+    // Level 1 = Core 用戶，或者使用 AuthContext 的 isAdmin 函數
+    const isCore = Number(user.membershipLevel) === 1;
+    const isAdminUser = isAdmin();
+    
+    // 調試信息
+    console.log('用戶權限檢查:', {
+      user: user,
+      membershipLevel: user.membershipLevel,
+      membershipLevelNumber: Number(user.membershipLevel),
+      isCore,
+      isAdminUser,
+      result: isCore || isAdminUser
+    });
+    
+    return isCore || isAdminUser;
   };
 
   const quickActions = [
