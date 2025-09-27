@@ -20,13 +20,22 @@ const CLOUD_API_URL = process.env.CLOUD_API_URL || 'https://bci-connect.onrender
 let nfcActive = false;
 let readerName = null;
 let lastCardUid = null;
+let lastScanTime = null;
 
 app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'nfc-gateway', port: PORT });
 });
 
 app.get('/api/nfc-checkin/status', (req, res) => {
-  res.json({ status: 'running', nfcActive, readerConnected: !!readerName, readerName, cloudApiUrl: CLOUD_API_URL, lastCardUid });
+  res.json({ 
+    status: 'running', 
+    nfcActive, 
+    readerConnected: !!readerName, 
+    readerName, 
+    cloudApiUrl: CLOUD_API_URL, 
+    lastCardUid,
+    lastScanTime 
+  });
 });
 
 app.post('/api/nfc-checkin/start-reader', async (req, res) => {
@@ -77,6 +86,8 @@ app.post('/api/nfc-checkin/start-reader', async (req, res) => {
         const identifier = cardUrl || uid;
         if (identifier) {
           lastCardUid = identifier; // Store the identifier (URL or UID)
+          lastScanTime = new Date().toISOString(); // Record scan time
+          console.log('Card detected at:', lastScanTime);
           try {
             const payload = {
               timestamp: new Date().toISOString(),
@@ -138,8 +149,14 @@ app.post('/api/nfc-checkin/simulate-scan', async (req, res) => {
   }
   
   try {
+    const identifier = cardUrl || String(cardUid).toUpperCase();
+    
+    // Update local state for simulation
+    lastCardUid = identifier;
+    lastScanTime = new Date().toISOString();
+    
     const payload = {
-      timestamp: new Date().toISOString(),
+      timestamp: lastScanTime,
       readerName: 'SIMULATED',
       source: 'nfc-gateway'
     };
@@ -147,14 +164,14 @@ app.post('/api/nfc-checkin/simulate-scan', async (req, res) => {
     // Prefer URL over UID
     if (cardUrl) {
       payload.cardUrl = cardUrl.trim();
-      console.log('Simulating card URL:', cardUrl);
+      console.log('Simulating card URL:', cardUrl, 'at', lastScanTime);
     } else {
       payload.cardUid = String(cardUid).toUpperCase();
-      console.log('Simulating card UID:', cardUid);
+      console.log('Simulating card UID:', cardUid, 'at', lastScanTime);
     }
     
     await axios.post(`${CLOUD_API_URL}/api/nfc-checkin-mongo/submit`, payload, { timeout: 30000 });
-    res.json({ success: true, identifier: cardUrl || cardUid });
+    res.json({ success: true, identifier: identifier, scanTime: lastScanTime });
   } catch (e) {
     res.status(502).json({ success: false, message: 'Forward failed', error: e?.message });
   }

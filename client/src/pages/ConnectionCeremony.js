@@ -2141,6 +2141,7 @@ const ConnectionCeremony = () => {
   // NFC 輪詢相關
   const nfcPollingRef = useRef(null);
   const lastDetectedCardRef = useRef(null);
+  const lastScanTimeRef = useRef(null);
   
   const startNfcPolling = () => {
     if (nfcPollingRef.current) {
@@ -2154,14 +2155,28 @@ const ConnectionCeremony = () => {
         const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
         const data = await response.json();
         
-        // 檢查是否有新的卡片檢測
-        if (data.lastCardUid && data.lastCardUid !== lastDetectedCardRef.current) {
-          // 檢測到新的 NFC 卡片
-          console.log('檢測到新的 NFC 卡片:', data.lastCardUid);
-          console.log('上次檢測的卡片:', lastDetectedCardRef.current);
+        // 檢查是否有新的卡片檢測 - 必須同時滿足以下條件：
+        // 1. 有 lastCardUid
+        // 2. lastCardUid 與上次不同，或者是新的掃描時間
+        // 3. 有 lastScanTime 且是最近的（5秒內）
+        const hasNewCard = data.lastCardUid && data.lastCardUid !== lastDetectedCardRef.current;
+        const hasNewScanTime = data.lastScanTime && data.lastScanTime !== lastScanTimeRef.current;
+        const isRecentScan = data.lastScanTime && 
+          (new Date() - new Date(data.lastScanTime)) < 5000; // 5秒內的掃描才算有效
+        
+        if (data.lastCardUid && (hasNewCard || hasNewScanTime) && isRecentScan) {
+          // 檢測到新的 NFC 卡片感應
+          console.log('檢測到新的 NFC 卡片感應:', {
+            cardUid: data.lastCardUid,
+            scanTime: data.lastScanTime,
+            previousCard: lastDetectedCardRef.current,
+            previousScanTime: lastScanTimeRef.current,
+            timeDiff: new Date() - new Date(data.lastScanTime)
+          });
           
-          // 更新上次檢測的卡片引用
+          // 更新引用
           lastDetectedCardRef.current = data.lastCardUid;
+          lastScanTimeRef.current = data.lastScanTime;
           
           setNfcCardId(data.lastCardUid);
           
@@ -2188,8 +2203,9 @@ const ConnectionCeremony = () => {
       clearInterval(nfcPollingRef.current);
       nfcPollingRef.current = null;
     }
-    // 重置上次檢測的卡片引用
+    // 重置所有檢測相關的引用
     lastDetectedCardRef.current = null;
+    lastScanTimeRef.current = null;
     console.log('NFC 輪詢已停止，重置檢測狀態');
   };
 
