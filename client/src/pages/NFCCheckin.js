@@ -12,8 +12,8 @@ const NFCCheckin = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [totalCheckins, setTotalCheckins] = useState(0);
   const [lastUpdate, setLastUpdate] = useState('');
-  const [systemLoading, setSystemLoading] = useState(false);
-  const [systemMessage, setSystemMessage] = useState('');
+  const [sseConnected, setSseConnected] = useState(false);
+
 
   // 更新報到狀態
   // 統一報到資料格式（支援 SQLite 與 Mongo）
@@ -32,7 +32,7 @@ const NFCCheckin = () => {
     try {
       // 使用 fetch 而不是 api，因為這個端點不需要認證
       const apiUrl = process.env.REACT_APP_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/nfc-checkin/last-checkin`);
+      const response = await fetch(`${apiUrl}/api/nfc-checkin-mongo/last-checkin`);
       const data = await response.json();
       
       // 兼容 {success, data} 與直接物件兩種格式
@@ -74,7 +74,7 @@ const NFCCheckin = () => {
     try {
       // 使用 fetch 而不是 api，因為這個端點不需要認證
       const apiUrl = process.env.REACT_APP_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/nfc-checkin/status`);
+      const response = await fetch(`${apiUrl}/api/nfc-checkin-mongo/status`);
       const data = await response.json();
       setNfcStatus(data);
     } catch (error) {
@@ -88,7 +88,7 @@ const NFCCheckin = () => {
     
     try {
       // 獲取NFC報到記錄
-      const nfcResponse = await api.get('/api/nfc-checkin/all-checkins');
+      const nfcResponse = await api.get('/api/nfc-checkin-mongo/records');
       const nfcPayload = nfcResponse.data;
       let nfcList = [];
       if (Array.isArray(nfcPayload)) {
@@ -133,7 +133,7 @@ const NFCCheckin = () => {
         console.warn('獲取QR Code報到記錄失敗:', error);
       }
       
-      // 合併NFC和QR Code報到記錄
+      // 合併並QR Code報到記錄
       const normalizedNfcList = (nfcList || []).map(record => ({
         ...normalizeCheckinRecord(record),
         source: 'NFC',
@@ -152,7 +152,7 @@ const NFCCheckin = () => {
     }
   };
 
-  // 手動新增報到紀錄
+  // 手動新增報到
   const handleManualCheckin = async (e) => {
     e.preventDefault();
     if (!user) return;
@@ -170,110 +170,36 @@ const NFCCheckin = () => {
     setLoading(true);
     
     try {
-      const response = await api.post('/api/nfc-checkin/manual-checkin', {
+      const response = await api.post('/api/nfc-checkin-mongo/manual', {
         cardUid,
         userName,
         notes
       });
       
-      if (response.data.success) {
-        alert('手動新增報到成功！');
-        e.target.reset();
-        fetchAllCheckins();
-        updateCheckinStatus();
-      } else {
-        alert(response.data.message || '新增報到失敗');
-      }
-    } catch (error) {
-      console.error('手動新增報到錯誤:', error);
-      alert('新增報到失敗');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 啟動 NFC 讀卡機
-  const startNFCReader = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    
-    try {
-      const response = await api.post('/api/nfc-checkin/start-reader');
-      alert(response.data.message);
-      fetchNFCStatus();
-    } catch (error) {
-      console.error('啟動 NFC 讀卡機錯誤:', error);
-      alert('啟動 NFC 讀卡機失敗');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 模擬 NFC 卡片掃描
-  const simulateNFCScan = async () => {
-    if (!user) return;
-    
-    const cardUid = prompt('請輸入要模擬的卡片 UID (例：04:A1:B2:C3):');
-    if (!cardUid) return;
-    
-    setLoading(true);
-    
-    try {
-      const response = await api.post('/api/nfc-checkin/simulate-scan', { cardUid });
-      alert(`模擬掃描成功！\n卡片 UID: ${response.data.cardUid}\n報到時間: ${response.data.checkinTime}`);
+      alert(`手動報到成功！\n卡片 UID: ${cardUid}\n報到時間: ${new Date().toLocaleString('zh-TW')}`);
+      
+      // 清空表單
+      e.target.reset();
+      
+      // 更新報到狀態
       updateCheckinStatus();
       fetchNFCStatus();
+      fetchAllCheckins();
+      
     } catch (error) {
-      console.error('模擬 NFC 掃描錯誤:', error);
-      const errorMessage = error.response?.data?.message || '模擬掃描失敗';
-      alert(`模擬掃描失敗: ${errorMessage}`);
+      console.error('手動報到錯誤:', error);
+      const errorMessage = error.response?.data?.message || '手動報到失敗';
+      alert(`手動報到失敗: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // 啟動 NFC 系統
-  const startNFCSystem = async () => {
-    setSystemLoading(true);
-    setSystemMessage('');
-    try {
-      const response = await api.post('/api/nfc-checkin/start-system');
-      if (response.data.success) {
-        setSystemMessage('✅ NFC 系統啟動成功！');
-        console.log('系統啟動輸出:', response.data.output);
-        // 3秒後清除訊息
-        setTimeout(() => setSystemMessage(''), 5000);
-      }
-    } catch (error) {
-      console.error('系統啟動錯誤:', error);
-      setSystemMessage('❌ 系統啟動失敗: ' + (error.response?.data?.error || error.message));
-      setTimeout(() => setSystemMessage(''), 5000);
-    } finally {
-      setSystemLoading(false);
-    }
-  };
 
-  // 停止 NFC 系統
-  const stopNFCSystem = async () => {
-    setSystemLoading(true);
-    setSystemMessage('');
-    try {
-      const response = await api.post('/api/nfc-checkin/stop-system');
-      if (response.data.success) {
-        setSystemMessage('✅ NFC 系統停止成功！');
-        console.log('系統停止輸出:', response.data.output);
-        // 3秒後清除訊息
-        setTimeout(() => setSystemMessage(''), 5000);
-      }
-    } catch (error) {
-      console.error('系統停止錯誤:', error);
-      setSystemMessage('❌ 系統停止失敗: ' + (error.response?.data?.error || error.message));
-      setTimeout(() => setSystemMessage(''), 5000);
-    } finally {
-      setSystemLoading(false);
-    }
-  };
+
+
+
+
 
   useEffect(() => {
     // 初始載入
@@ -295,6 +221,69 @@ const NFCCheckin = () => {
     };
   }, [user, lastCheckinId]);
 
+  // SSE 即時接收新的 NFC 報到
+  useEffect(() => {
+    let es;
+    try {
+      const base = process.env.REACT_APP_API_URL || '';
+      es = new EventSource(`${base}/api/nfc-checkin-mongo/events`);
+
+      es.onopen = () => {
+        console.log('✅ SSE 連線已建立');
+        setSseConnected(true);
+      };
+
+      es.addEventListener('nfc-checkin', (event) => {
+        try {
+          const payload = JSON.parse(event.data || '{}');
+          const normalized = normalizeCheckinRecord({
+            id: payload.id,
+            cardUid: payload.cardUid,
+            checkinTime: payload.checkinTime,
+            readerName: payload.readerName,
+            source: payload.source,
+            timestamp: payload.timestamp,
+          });
+          
+          if (normalized && normalized.id !== lastCheckinId) {
+            console.log('🔄 SSE 收到新報到:', normalized);
+            setLastCheckinId(normalized.id);
+            setLastCheckin(normalized);
+            setShowSuccess(true);
+            setLastUpdate(new Date().toLocaleTimeString('zh-TW'));
+            
+            // 更新報到列表
+            if (user) {
+              fetchAllCheckins();
+            }
+            
+            // 3秒後隱藏成功提示
+            setTimeout(() => setShowSuccess(false), 3000);
+          }
+        } catch (e) {
+          console.warn('解析 SSE 資料失敗:', e);
+        }
+      });
+
+      es.onerror = (e) => {
+        console.warn('SSE 連線錯誤', e);
+        setSseConnected(false);
+      };
+    } catch (e) {
+      console.warn('建立 SSE 連線失敗:', e);
+      setSseConnected(false);
+    }
+
+    return () => {
+      try { 
+        if (es) {
+          es.close();
+          setSseConnected(false);
+        }
+      } catch (_) {}
+    };
+  }, [user, lastCheckinId]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 py-8">
       <div className="container mx-auto px-4">
@@ -303,6 +292,20 @@ const NFCCheckin = () => {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-white mb-2">📱 NFC 報到系統</h1>
             <p className="text-blue-100">GBC Connect - NFC 卡片報到功能</p>
+            
+            {/* SSE 連接狀態指示器 */}
+            <div className="mt-4 flex justify-center">
+              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                sseConnected 
+                  ? 'bg-green-100 text-green-800 border border-green-300' 
+                  : 'bg-red-100 text-red-800 border border-red-300'
+              }`}>
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  sseConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                }`}></div>
+                {sseConnected ? '即時通訊已連接' : '即時通訊未連接'}
+              </div>
+            </div>
           </div>
 
           {/* 主要報到區域 */}
@@ -379,88 +382,7 @@ const NFCCheckin = () => {
               <div className="border-t pt-6">
                 <h3 className="text-lg font-bold mb-4">管理功能</h3>
                 
-                {/* 系統管理按鈕 */}
-                <div className="mb-6">
-                  <h4 className="font-bold mb-3 text-gray-700">🖥️ 系統管理</h4>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <button
-                      onClick={startNFCSystem}
-                      disabled={systemLoading}
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 flex items-center"
-                    >
-                      {systemLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          處理中...
-                        </>
-                      ) : (
-                        <>🚀 啟動 NFC 系統</>
-                      )}
-                    </button>
-                    
-                    <button
-                      onClick={stopNFCSystem}
-                      disabled={systemLoading}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 flex items-center"
-                    >
-                      {systemLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          處理中...
-                        </>
-                      ) : (
-                        <>🛑 停止 NFC 系統</>
-                      )}
-                    </button>
-                  </div>
-                  
-                  {/* 系統管理狀態訊息 */}
-                  {systemMessage && (
-                    <div className={`px-3 py-2 rounded-lg text-sm ${
-                      systemMessage.includes('✅') 
-                        ? 'bg-green-100 border border-green-300 text-green-700'
-                        : 'bg-red-100 border border-red-300 text-red-700'
-                    }`}>
-                      {systemMessage}
-                    </div>
-                  )}
-                  
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 mt-3">
-                    <span className="font-medium">💡 提示：</span> 這些按鈕會執行系統腳本來啟動或停止完整的 NFC 系統（包括前端、後端和 NFC Gateway 服務）。
-                  </div>
-                </div>
-                
-                {/* NFC 控制按鈕 */}
-                <div className="mb-4 space-y-2">
-                  <h4 className="font-bold mb-3 text-gray-700">🏷️ NFC 讀卡機控制</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={startNFCReader}
-                      disabled={loading}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
-                    >
-                      {loading ? '處理中...' : '啟動 NFC 讀卡機'}
-                    </button>
-                    
-                    {/* 模擬 NFC 掃描按鈕 (僅在模擬模式下顯示) */}
-                    {nfcStatus?.simulated && (
-                      <button
-                        onClick={simulateNFCScan}
-                        disabled={loading}
-                        className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
-                      >
-                        {loading ? '處理中...' : '🔮 模擬 NFC 掃描'}
-                      </button>
-                    )}
-                  </div>
-                  
-                  {/* 模擬模式提示 */}
-                  {nfcStatus?.simulated && (
-                    <div className="bg-purple-100 border border-purple-300 text-purple-700 px-3 py-2 rounded-lg text-sm">
-                      <span className="font-medium">🔮 模擬模式：</span> 由於生產環境無法使用實體 NFC 硬體，系統已啟用模擬模式供測試使用。
-                    </div>
-                  )}
-                </div>
+
 
                 {/* 手動新增報到 */}
                 <form onSubmit={handleManualCheckin} className="bg-gray-50 rounded-xl p-4">

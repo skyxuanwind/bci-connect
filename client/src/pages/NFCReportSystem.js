@@ -79,7 +79,7 @@ const GATEWAY_URL = process.env.NODE_ENV === 'production'
   const fetchLastCheckin = async () => {
     try {
       // 使用雲端 API 獲取最後報到紀錄
-      const response = await fetch('/api/nfc-checkin/last-checkin');
+      const response = await fetch('/api/nfc-checkin-mongo/last-checkin');
       const data = await response.json();
       // 兼容 {success, data} 與直接物件兩種格式
       const raw = (data && Object.prototype.hasOwnProperty.call(data, 'success')) ? data.data : data;
@@ -99,7 +99,7 @@ const GATEWAY_URL = process.env.NODE_ENV === 'production'
     if (!user) return;
     
     try {
-      const response = await api.get('/api/nfc-checkin/records?limit=20');
+      const response = await api.get('/api/nfc-checkin-mongo/records?limit=20');
       const payload = response?.data;
       let list = [];
       if (payload && Object.prototype.hasOwnProperty.call(payload, 'success')) {
