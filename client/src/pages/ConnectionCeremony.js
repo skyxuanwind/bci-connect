@@ -63,6 +63,8 @@ const ConnectionCeremony = () => {
   const animationIdRef = useRef();
   const nfcInputRef = useRef(null);
   const videoRef = useRef(null);
+  // 記錄使用者按下「啟動自動感應」的時間，僅接受此時間之後的掃描
+  const readerStartAtRef = useRef(0);
   
   // 添加粒子系統和光影效果的引用
   const particleSystemRef = useRef(null);
@@ -116,6 +118,16 @@ const ConnectionCeremony = () => {
       priority: 2, // 高優先級（連結之橋儀式優先於報到系統）
       onCardDetected: (data) => {
         console.log('🎭 連結之橋儀式收到卡片:', data);
+        // 僅接受啟動之後的真實掃描事件
+        const scanTs = data.lastScanTime ? new Date(data.lastScanTime).getTime() : 0;
+        if (!readerStartAtRef.current || scanTs <= readerStartAtRef.current) {
+          console.log('⛔ 忽略啟動前或同時期的掃描事件', {
+            scanTs,
+            readerStartAt: readerStartAtRef.current,
+            lastCardUid: data.lastCardUid
+          });
+          return;
+        }
         if (data.lastCardUid) {
           setNfcCardId(data.lastCardUid);
           // 自動觸發驗證
@@ -2102,6 +2114,8 @@ const ConnectionCeremony = () => {
       const success = await nfcCoordinator.startReader(systemId);
       
       if (success) {
+        // 設定啟動時間門檻（只接受此時間之後的掃描）
+        readerStartAtRef.current = Date.now();
         setIsNfcReading(true);
         setNfcSuccess('NFC 讀卡機啟動成功！請將 NFC 卡片靠近讀卡機');
         toast.success('🎭 連結之橋儀式 NFC 自動感應已啟動');
@@ -2137,6 +2151,8 @@ const ConnectionCeremony = () => {
         setNfcSuccess('NFC 讀卡機已停止');
         toast.info('🎭 連結之橋儀式 NFC 自動感應已停止');
         setTimeout(() => setNfcSuccess(null), 3000);
+        // 重置啟動時間門檻
+        readerStartAtRef.current = 0;
         
         // 注意：不釋放控制權，保持註冊狀態以便重新啟動
         // nfcCoordinator.releaseControl(systemId);

@@ -15,6 +15,8 @@ class NFCCoordinator {
     this.isPaused = false; // 暫停狀態
     // 調整最近掃描有效時間窗（預設 60 秒，可由環境變數覆寫）
     this.recentWindowMs = Number(process.env.REACT_APP_NFC_RECENT_WINDOW_MS) || 60000;
+    // 啟動後的短暫抑制時間點（毫秒時間戳）。在此之前不派發事件，用於避免立即吃到舊掃描。
+    this.suppressUntil = 0;
   }
 
   /**
@@ -139,6 +141,30 @@ class NFCCoordinator {
 
     console.log('🔄 開始 NFC 輪詢...');
     this.isPaused = false;
+    this.suppressUntil = 0;
+
+    // 先嘗試同步啟動基線，避免第一輪就把舊的最近掃描當成新事件
+    (async () => {
+      try {
+        const status = await this.getGatewayStatus();
+        if (status) {
+          this.lastCardUid = status.lastCardUid || null;
+          this.lastScanTime = status.lastScanTime || null;
+          console.log('🧭 輪詢啟動基線已同步', {
+            baselineLastCardUid: this.lastCardUid,
+            baselineLastScanTime: this.lastScanTime,
+            activeSystem: this.activeSystem
+          });
+        } else {
+          // 若無法取得狀態，設置短暫抑制期，並在抑制期內僅同步狀態不派發
+          this.suppressUntil = Date.now() + 1500;
+          console.warn('⚠️ 無法取得 Gateway 狀態，將短暫抑制派發以避免誤觸發');
+        }
+      } catch (e) {
+        this.suppressUntil = Date.now() + 1500;
+        console.warn('⚠️ 同步啟動基線失敗，將短暫抑制派發以避免誤觸發:', e);
+      }
+    })();
     
     this.pollingInterval = setInterval(async () => {
       // 如果暫停，跳過此次輪詢
@@ -149,6 +175,14 @@ class NFCCoordinator {
       try {
         const response = await fetch(`${this.gatewayUrl}/api/nfc-checkin/status`);
         const data = await response.json();
+
+        // 在抑制期內：只同步內部快照，不派發事件
+        if (Date.now() < this.suppressUntil) {
+          this.lastCardUid = data.lastCardUid;
+          this.lastScanTime = data.lastScanTime;
+          console.log('⏳ 啟動冷卻期內，同步快照但不派發事件');
+          return;
+        }
         
         // 檢查是否有新的卡片檢測
         const hasNewCard = data.lastCardUid && data.lastCardUid !== this.lastCardUid;
@@ -220,6 +254,7 @@ class NFCCoordinator {
       this.lastCardUid = null;
       this.lastScanTime = null;
       this.isPaused = false;
+      this.suppressUntil = 0;
       console.log('⏹️ NFC 輪詢已停止');
     }
   }
@@ -286,7 +321,30 @@ class NFCCoordinator {
       const data = await response.json();
       
       if (data.success) {
-        // 恢復輪詢（如果之前被暫停）
+        // 先設定啟動時的基準快照：避免啟動後立刻因既有最近掃描而派發
+        let baselineOK = false;
+        try {
+          const status = await this.getGatewayStatus();
+          if (status) {
+            this.lastCardUid = status.lastCardUid || null;
+            this.lastScanTime = status.lastScanTime || null;
+            baselineOK = true;
+            console.log('🧭 已設定啟動基準快照（避免立即派發舊事件）', {
+              baselineLastCardUid: this.lastCardUid,
+              baselineLastScanTime: this.lastScanTime,
+              activeSystem: this.activeSystem
+            });
+          }
+        } catch (baselineErr) {
+          console.warn('設置啟動基準快照失敗（將使用短暫抑制避免誤觸發）:', baselineErr);
+        }
+
+        if (!baselineOK) {
+          // 若基準不同步，設置短暫抑制期
+          this.suppressUntil = Date.now() + 1500;
+        }
+
+        // 最後再恢復輪詢（如果之前被暫停）
         this.resumePolling();
       }
       
