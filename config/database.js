@@ -904,7 +904,84 @@ const initializeDatabase = async () => {
       )
     `);
 
-    // Create videos table (影片管理)
+    // Create video_categories table (影片分類)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS video_categories (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description TEXT,
+        color_code VARCHAR(7) DEFAULT '#3B82F6',
+        sort_order INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create ceremony_videos table (儀式影片主表)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ceremony_videos (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        filename VARCHAR(255) NOT NULL,
+        file_path VARCHAR(500) NOT NULL,
+        file_url VARCHAR(500),
+        file_size BIGINT,
+        duration INTEGER,
+        format VARCHAR(10) NOT NULL,
+        resolution VARCHAR(20),
+        thumbnail_url VARCHAR(500),
+        category_id INTEGER REFERENCES video_categories(id) ON DELETE SET NULL,
+        is_default BOOLEAN DEFAULT false,
+        is_active BOOLEAN DEFAULT true,
+        upload_user_id INTEGER,
+        view_count INTEGER DEFAULT 0,
+        last_played_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create video_tags table (影片標籤)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS video_tags (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(50) NOT NULL UNIQUE,
+        color VARCHAR(7) DEFAULT '#6B7280',
+        usage_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create video_tag_relations table (影片標籤關聯)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS video_tag_relations (
+        id SERIAL PRIMARY KEY,
+        video_id INTEGER NOT NULL REFERENCES ceremony_videos(id) ON DELETE CASCADE,
+        tag_id INTEGER NOT NULL REFERENCES video_tags(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(video_id, tag_id)
+      )
+    `);
+
+    // Create video_play_statistics table (影片播放統計)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS video_play_statistics (
+        id SERIAL PRIMARY KEY,
+        video_id INTEGER NOT NULL REFERENCES ceremony_videos(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        play_count INTEGER DEFAULT 0,
+        total_duration INTEGER DEFAULT 0,
+        completion_rate DECIMAL(5,2) DEFAULT 0.00,
+        avg_response_time_ms INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(video_id, date)
+      )
+    `);
+
+    // Create videos table (保持向後兼容)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS videos (
         id SERIAL PRIMARY KEY,
