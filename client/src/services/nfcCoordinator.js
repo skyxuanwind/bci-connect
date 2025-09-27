@@ -192,13 +192,16 @@ class NFCCoordinator {
             }
           }
         } else if ((hasNewCard || hasNewScanTime) && !isRecentScan) {
-          // 有新值但超出有效時間窗，提示以利除錯
+          // 有新值但超出有效時間窗，提示以利除錯，並同步內部狀態避免重複視為新卡
           console.warn('⏱️ 偵測到卡片資訊變化，但因超出有效時間窗而忽略', {
             gatewayLastCardUid: data.lastCardUid,
             gatewayLastScanTime: data.lastScanTime,
             diffMs,
             recentWindowMs: this.recentWindowMs
           });
+          // 將外部狀態同步到內部，避免每次輪詢都觸發 hasNewCard=true
+          this.lastCardUid = data.lastCardUid;
+          this.lastScanTime = data.lastScanTime;
         }
         
       } catch (error) {
