@@ -36,6 +36,8 @@ const notificationsRoutes = require('./routes/notifications');
 const aiProfilesRoutes = require('./routes/ai-profiles');
 const emailRoutes = require('./routes/emails');
 const ceremonyRoutes = require('./routes/ceremony');
+const videoManagementRoutes = require('./routes/videoManagement');
+const nfcTriggerRoutes = require('./routes/nfcTrigger');
 const { initializeDatabase, pool } = require('./config/database');
 const { connectMongoDB } = require('./config/mongodb');
 
@@ -157,6 +159,8 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/ai-profiles', aiProfilesRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/ceremony', ceremonyRoutes);
+app.use('/api/video-management', videoManagementRoutes);
+app.use('/api/nfc-trigger', nfcTriggerRoutes);
 
 // 新增 AI 聯絡人端點
 const aiContactsRoutes = require('./routes/ai-contacts');

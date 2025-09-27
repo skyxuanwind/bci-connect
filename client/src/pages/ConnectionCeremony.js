@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
+import videoCacheService from '../services/videoCacheService';
 
 const ConnectionCeremony = () => {
   const { user } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [ceremonyStage, setCeremonyStage] = useState('loading'); // loading, oath, bridge, ceremony, completed
+  const [ceremonyStage, setCeremonyStage] = useState('loading'); // loading, oath, video, welcome, bridge, ceremony, completed
   const [bridgeData, setBridgeData] = useState([]);
   const [oath, setOath] = useState('');
   const [newMember, setNewMember] = useState(null);
@@ -28,6 +29,18 @@ const ConnectionCeremony = () => {
     transitionDuration: 500
   });
   
+  // 影片播放相關狀態
+  const [videoData, setVideoData] = useState(null);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState(null);
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+  
+  // 影片緩存相關狀態
+  const [videoBlobUrl, setVideoBlobUrl] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [cacheStats, setCacheStats] = useState(null);
+  
   const ceremonyRef = useRef(null);
   const canvasRef = useRef(null);
   const sceneRef = useRef();
@@ -37,6 +50,7 @@ const ConnectionCeremony = () => {
   const pillarsRef = useRef([]);
   const animationIdRef = useRef();
   const nfcInputRef = useRef(null);
+  const videoRef = useRef(null);
   
   // 添加粒子系統和光影效果的引用
   const particleSystemRef = useRef(null);
@@ -79,6 +93,48 @@ const ConnectionCeremony = () => {
       }
     };
   }, [user]);
+
+  // 初始化影片緩存服務
+  useEffect(() => {
+    // 設置下載進度回調
+    videoCacheService.setDownloadProgressCallback((downloaded, total, videoUrl) => {
+      const progress = Math.round((downloaded / total) * 100);
+      setDownloadProgress(progress);
+      console.log(`影片下載進度: ${progress}% (${videoUrl})`);
+    });
+
+    // 獲取緩存統計信息
+    const updateCacheStats = async () => {
+      try {
+        const stats = await videoCacheService.getCacheStats();
+        setCacheStats(stats);
+      } catch (error) {
+        console.error('獲取緩存統計失敗:', error);
+      }
+    };
+
+    // 預加載默認影片
+    const preloadDefaultVideo = async () => {
+      try {
+        console.log('開始預加載默認影片...');
+        await fetchWelcomeVideo();
+        console.log('默認影片預加載完成');
+      } catch (error) {
+        console.error('預加載默認影片失敗:', error);
+      }
+    };
+
+    updateCacheStats();
+    preloadDefaultVideo();
+    
+    // 清理函數
+    return () => {
+      // 清理 blob URL
+      if (videoBlobUrl) {
+        URL.revokeObjectURL(videoBlobUrl);
+      }
+    };
+  }, []);
 
   // 監聽儀式階段變化，更新進度
   useEffect(() => {
@@ -1489,6 +1545,173 @@ const ConnectionCeremony = () => {
     }
   };
 
+  // ==================== 影片播放系統開始 ====================
+  
+  // 獲取默認歡迎影片
+  const fetchWelcomeVideo = async () => {
+    try {
+      setIsVideoLoading(true);
+      setVideoError(null);
+      setIsDownloading(false);
+      setDownloadProgress(0);
+      
+      const response = await fetch('/api/video-management/default-video', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('無法獲取歡迎影片');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.video) {
+        setVideoData(data.video);
+        
+        // 預加載影片到緩存
+        if (data.video.file_url) {
+          try {
+            setIsDownloading(true);
+            const { blobUrl } = await preloadVideo(data.video.file_url);
+            setVideoBlobUrl(blobUrl);
+            console.log('影片預加載完成，blob URL:', blobUrl);
+          } catch (preloadError) {
+            console.error('影片預加載失敗:', preloadError);
+            // 預加載失敗時仍然可以使用原始 URL
+          } finally {
+            setIsDownloading(false);
+          }
+        }
+        
+        return data.video;
+      } else {
+        throw new Error(data.message || '沒有設置默認歡迎影片');
+      }
+    } catch (error) {
+      console.error('獲取歡迎影片失敗:', error);
+      setVideoError(error.message);
+      toast.error('獲取歡迎影片失敗: ' + error.message);
+      return null;
+    } finally {
+      setIsVideoLoading(false);
+    }
+  };
+  
+  // 觸發 NFC 影片播放
+  const triggerNfcVideoPlay = async (memberData) => {
+    try {
+      const response = await fetch('/api/nfc-trigger/play-video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          nfc_card_id: memberData.nfc_card_id,
+          member_id: memberData.id
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.video) {
+        setVideoData(result.video);
+        return result.video;
+      } else {
+        // 如果沒有特定影片，使用默認影片
+        return await fetchWelcomeVideo();
+      }
+    } catch (error) {
+      console.error('觸發 NFC 影片播放失敗:', error);
+      // 降級到默認影片
+      return await fetchWelcomeVideo();
+    }
+  };
+  
+  // 處理影片播放結束
+  const handleVideoEnded = () => {
+    // 記錄播放完成
+    if (videoData && newMember) {
+      fetch('/api/nfc-trigger/play-complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          video_id: videoData.id,
+          member_id: newMember.id,
+          nfc_card_id: newMember.nfc_card_id
+        })
+      }).catch(error => {
+        console.error('記錄播放完成失敗:', error);
+      });
+    }
+    
+    // 轉換到歡迎界面
+    setCeremonyStage('welcome');
+    setShowWelcomeMessage(true);
+    
+    // 3秒後自動進入橋樑場景
+    setTimeout(() => {
+      transitionToStage('bridge');
+    }, 3000);
+  };
+  
+  // 預載影片資源 - 使用緩存服務
+  const preloadVideo = async (videoUrl) => {
+    try {
+      console.log('開始預載影片:', videoUrl);
+      
+      // 首先檢查緩存中是否已有影片
+      let videoBlob = await videoCacheService.getVideoFromCache(videoUrl);
+      
+      if (!videoBlob) {
+        // 如果緩存中沒有，則預加載影片
+        console.log('緩存中未找到影片，開始下載...');
+        videoBlob = await videoCacheService.preloadVideo(videoUrl, {
+          priority: 'high',
+          chunkSize: 2 * 1024 * 1024 // 2MB 分塊
+        });
+      } else {
+        console.log('從緩存中獲取影片成功');
+      }
+      
+      // 創建 video 元素並設置 blob URL
+      const video = document.createElement('video');
+      const blobUrl = URL.createObjectURL(videoBlob);
+      video.src = blobUrl;
+      video.preload = 'auto';
+      
+      return new Promise((resolve, reject) => {
+        video.addEventListener('canplaythrough', () => {
+          console.log('影片預載完成');
+          resolve({ video, blobUrl });
+        });
+        
+        video.addEventListener('error', (error) => {
+          console.error('影片預載失敗:', error);
+          URL.revokeObjectURL(blobUrl);
+          reject(error);
+        });
+        
+        // 10秒超時
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+          reject(new Error('影片預載超時'));
+        }, 10000);
+      });
+      
+    } catch (error) {
+      console.error('影片預載過程中發生錯誤:', error);
+      throw error;
+    }
+  };
+  
+  // ==================== 影片播放系統結束 ====================
+
   // 豪華場景過渡音效
   const playTransitionSound = () => {
     if (!ceremonySettings.enableSound) return;
@@ -1740,30 +1963,68 @@ const ConnectionCeremony = () => {
         toast.success(`歡迎 ${result.member.name} 加入連結之橋！`);
         playSuccessSound();
         
-        // 直接跳轉到橋樑場景，實現完全自動化
-        transitionToStage('bridge');
-        
-        // 延遲觸發動畫，確保場景已完全載入
-        setTimeout(() => {
-          // 觸發新基石奠定動畫
-          triggerNewPillarAnimation(result.member);
-          
-          // 自動觸發專業運鏡動畫序列
-          setTimeout(() => {
-            const animationSequences = createCameraAnimationSequence(result.member.name);
-            playCameraAnimation(animationSequences);
-            
-            // 設置自動播放狀態
-            setCameraAnimation(prev => ({ 
-              ...prev, 
-              autoPlay: true,
-              isPlaying: true 
-            }));
-          }, 1500); // 延遲1.5秒開始運鏡動畫，讓基石動畫先開始
-        }, 500); // 延遲0.5秒確保場景轉換完成
-        
         // 清空輸入框
         setNfcCardId('');
+        
+        // 觸發 NFC 影片播放
+        const startVideoPlayback = async () => {
+          try {
+            const video = await triggerNfcVideoPlay(result.member);
+            if (video) {
+              // 轉換到影片播放階段
+              setCeremonyStage('video');
+              
+              // 預載影片以確保流暢播放
+              if (video.file_url) {
+                try {
+                  await preloadVideo(video.file_url);
+                } catch (preloadError) {
+                  console.warn('影片預載失敗，但仍會嘗試播放:', preloadError);
+                }
+              }
+            } else {
+              // 如果沒有影片，直接跳轉到歡迎界面
+              setCeremonyStage('welcome');
+              setShowWelcomeMessage(true);
+              
+              // 3秒後自動進入橋樑場景
+              setTimeout(() => {
+                transitionToStage('bridge');
+                
+                // 延遲觸發動畫，確保場景已完全載入
+                setTimeout(() => {
+                  // 觸發新基石奠定動畫
+                  triggerNewPillarAnimation(result.member);
+                  
+                  // 自動觸發專業運鏡動畫序列
+                  setTimeout(() => {
+                    const animationSequences = createCameraAnimationSequence(result.member.name);
+                    playCameraAnimation(animationSequences);
+                    
+                    // 設置自動播放狀態
+                    setCameraAnimation(prev => ({ 
+                      ...prev, 
+                      autoPlay: true,
+                      isPlaying: true 
+                    }));
+                  }, 1500); // 延遲1.5秒開始運鏡動畫，讓基石動畫先開始
+                }, 500); // 延遲0.5秒確保場景轉換完成
+              }, 3000);
+            }
+          } catch (error) {
+            console.error('影片播放觸發失敗:', error);
+            // 降級到直接進入歡迎界面
+            setCeremonyStage('welcome');
+            setShowWelcomeMessage(true);
+            
+            setTimeout(() => {
+              transitionToStage('bridge');
+            }, 3000);
+          }
+        };
+        
+        // 立即開始影片播放流程
+        startVideoPlayback();
       } else {
         toast.error(result.message || 'NFC 驗證失敗');
         playErrorSound();
@@ -2328,6 +2589,222 @@ const ConnectionCeremony = () => {
               >
                 開始橋樑場景
               </button>
+            </div>
+          </div>
+        );
+
+      case 'video':
+        return (
+          <div className="flex flex-col items-center justify-center h-full p-8 relative">
+            {/* 背景裝飾 */}
+            <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black"></div>
+            
+            {/* 影片播放區域 */}
+            <div className="relative z-10 w-full max-w-6xl mx-auto">
+              {(isVideoLoading || isDownloading) && (
+                <div className="text-center mb-8">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+                  <h2 className="text-2xl font-bold text-white">
+                    {isDownloading ? '正在下載影片...' : '正在載入歡迎影片...'}
+                  </h2>
+                  {isDownloading && downloadProgress > 0 && (
+                    <div className="mt-4 max-w-md mx-auto">
+                      <div className="bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-yellow-400 to-orange-500 h-full transition-all duration-300"
+                          style={{ width: `${downloadProgress}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm text-gray-300 mt-2">{Math.round(downloadProgress)}% 完成</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {videoError && (
+                <div className="text-center mb-8">
+                  <div className="bg-red-500/20 border border-red-500/40 rounded-lg p-6 mb-4">
+                    <h3 className="text-xl font-bold text-red-400 mb-2">影片載入失敗</h3>
+                    <p className="text-gray-300">{videoError}</p>
+                  </div>
+                  <button
+                    onClick={handleVideoEnded}
+                    className="px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors"
+                  >
+                    跳過影片，繼續儀式
+                  </button>
+                </div>
+              )}
+              
+              {videoData && !isVideoLoading && !videoError && (
+                <div className="relative">
+                  {/* 影片標題 */}
+                  <div className="text-center mb-6">
+                    <h2 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent mb-2">
+                      {videoData.title || '歡迎加入 GBC'}
+                    </h2>
+                    {videoData.description && (
+                      <p className="text-lg text-gray-300">{videoData.description}</p>
+                    )}
+                  </div>
+                  
+                  {/* 影片播放器 */}
+                  <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl border border-yellow-400/30">
+                    <video
+                      ref={videoRef}
+                      className="w-full h-auto max-h-[70vh] object-contain"
+                      controls
+                      autoPlay
+                      onEnded={handleVideoEnded}
+                      onError={() => {
+                        setVideoError('影片播放失敗');
+                        console.error('影片播放錯誤');
+                      }}
+                      style={{ backgroundColor: '#000' }}
+                    >
+                      <source src={videoBlobUrl || videoData.file_url} type="video/mp4" />
+                      您的瀏覽器不支援影片播放。
+                    </video>
+                    
+                    {/* 影片控制覆蓋層 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                      <div className="flex items-center justify-between text-white">
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm opacity-80">
+                            {videoData.duration ? `時長: ${Math.floor(videoData.duration / 60)}:${(videoData.duration % 60).toString().padStart(2, '0')}` : ''}
+                          </span>
+                        </div>
+                        <button
+                          onClick={handleVideoEnded}
+                          className="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-lg border border-yellow-400/30 transition-colors text-sm"
+                        >
+                          跳過影片
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 底部提示 */}
+                  <div className="text-center mt-6">
+                    <p className="text-gray-400 text-sm">
+                      影片播放完成後將自動進入歡迎界面
+                    </p>
+                    {videoBlobUrl && (
+                      <p className="text-green-400 text-xs mt-2">
+                        ✓ 影片已緩存，播放更流暢
+                      </p>
+                    )}
+                    {cacheStats && (
+                      <div className="text-xs text-gray-500 mt-2 space-x-4">
+                        <span>緩存: {cacheStats.totalFiles} 個文件</span>
+                        <span>大小: {(cacheStats.totalSize / 1024 / 1024).toFixed(1)} MB</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 'welcome':
+        return (
+          <div className="flex flex-col items-center justify-center h-full p-8 relative">
+            {/* 背景裝飾 */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping opacity-60"></div>
+              <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-orange-500 rounded-full animate-pulse opacity-80"></div>
+              <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-yellow-300 rounded-full animate-bounce opacity-70"></div>
+              <div className="absolute top-2/3 right-1/4 w-1 h-1 bg-yellow-500 rounded-full animate-ping opacity-50"></div>
+            </div>
+            
+            <div className="text-center relative z-10 max-w-4xl mx-auto">
+              {/* 主標題 */}
+              <div className="relative mb-12">
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 blur-3xl rounded-full"></div>
+                <h1 className="relative text-6xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent mb-4 tracking-wide">
+                  歡迎加入 GBC！
+                </h1>
+                <div className="flex justify-center items-center space-x-4 mt-4">
+                  <div className="w-16 h-px bg-gradient-to-r from-transparent to-yellow-400"></div>
+                  <div className="text-4xl">🎉</div>
+                  <div className="w-16 h-px bg-gradient-to-l from-transparent to-yellow-400"></div>
+                </div>
+              </div>
+              
+              {/* 新會員歡迎卡片 */}
+              {newMember && (
+                <div className="relative mb-12">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-orange-500/10 blur-xl rounded-3xl"></div>
+                  <div className="relative bg-gradient-to-br from-black/90 via-gray-900/95 to-black/90 backdrop-blur-lg rounded-3xl p-8 border border-yellow-400/40 shadow-2xl">
+                    {/* 頂部裝飾 */}
+                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                      <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-4 border-black">
+                        <span className="text-black font-bold text-2xl">👋</span>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-6">
+                      <h2 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent mb-4">
+                        {newMember.name}
+                      </h2>
+                      
+                      {/* 會員信息 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        {newMember.profession && (
+                          <div className="bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-lg p-4 border border-yellow-400/20">
+                            <h3 className="text-yellow-400 font-semibold mb-2">專業領域</h3>
+                            <p className="text-gray-200 text-lg">{newMember.profession}</p>
+                          </div>
+                        )}
+                        
+                        {newMember.company && (
+                          <div className="bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-lg p-4 border border-yellow-400/20">
+                            <h3 className="text-yellow-400 font-semibold mb-2">所屬公司</h3>
+                            <p className="text-gray-200 text-lg">{newMember.company}</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 定制歡迎語 */}
+                      <div className="bg-gradient-to-r from-blue-400/10 to-purple-500/10 rounded-lg p-6 border border-blue-400/20 mb-6">
+                        <h3 className="text-blue-400 font-semibold mb-3 text-lg">專屬歡迎語</h3>
+                        <p className="text-gray-200 text-xl leading-relaxed italic">
+                          "歡迎 {newMember.name} 加入 GBC 大家庭！我們期待與您一起在{newMember.profession || '您的專業領域'}中創造更多合作機會，共同搭建通往成功的橋樑。"
+                        </p>
+                      </div>
+                      
+                      {/* 成就徽章 */}
+                      <div className="flex justify-center space-x-4">
+                        <div className="bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-full p-3 border border-yellow-400/30">
+                          <span className="text-2xl">🤝</span>
+                        </div>
+                        <div className="bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-full p-3 border border-yellow-400/30">
+                          <span className="text-2xl">🌟</span>
+                        </div>
+                        <div className="bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-full p-3 border border-yellow-400/30">
+                          <span className="text-2xl">🎯</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* 底部裝飾線 */}
+                    <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent"></div>
+                  </div>
+                </div>
+              )}
+              
+              {/* 自動進入提示 */}
+              <div className="text-center">
+                <p className="text-lg text-gray-400 mb-4">
+                  即將自動進入橋樑場景...
+                </p>
+                <div className="flex justify-center space-x-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                </div>
+              </div>
             </div>
           </div>
         );

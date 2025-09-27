@@ -66,6 +66,7 @@ import CoacheeDirectory from './pages/coach/CoacheeDirectory';
 import MemberProgress from './pages/MemberProgress';
 import ConnectionCeremony from './pages/ConnectionCeremony';
 import AdminPanel from './pages/AdminPanel';
+import VideoManagementDashboard from './components/admin/AdminDashboard';
 
 
 
@@ -377,6 +378,12 @@ function App() {
               <Layout>
                 <BusinessMediaAdmin />
               </Layout>
+            </AdminRoute>
+          } />
+          
+          <Route path="/admin/video-management" element={
+            <AdminRoute>
+              <VideoManagementDashboard />
             </AdminRoute>
           } />
           

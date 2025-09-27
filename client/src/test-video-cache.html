@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影片緩存測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        video {
+            width: 100%;
+            max-width: 500px;
+            margin: 10px 0;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <h1>影片緩存功能測試</h1>
+    
+    <div class="test-section">
+        <h2>1. API 連接測試</h2>
+        <button onclick="testAPI()">測試默認影片 API</button>
+        <div id="api-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 影片緩存測試</h2>
+        <button onclick="testVideoCache()">測試影片緩存</button>
+        <div id="cache-status"></div>
+        <div id="download-progress"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 影片播放測試</h2>
+        <button onclick="testVideoPlayback()">測試影片播放</button>
+        <div id="playback-status"></div>
+        <video id="test-video" controls style="display: none;"></video>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc1ODk2Mzc1NCwiZXhwIjoxNzU5NTY4NTU0fQ.YXwfj6sOlhdL5uqtWB0zLUZxMWj13L7Fmxhr3X80Z2I';
+
+        // 模擬 videoCacheService
+        class VideoCacheService {
+            constructor() {
+                this.cache = new Map();
+                this.downloadCallbacks = new Map();
+            }
+
+            async isVideoCached(videoId) {
+                return this.cache.has(videoId);
+            }
+
+            async preloadVideo(videoId, videoUrl, options = {}) {
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', videoUrl, true);
+                    xhr.responseType = 'blob';
+
+                    xhr.onprogress = (event) => {
+                        if (event.lengthComputable && options.onProgress) {
+                            const progress = (event.loaded / event.total) * 100;
+                            options.onProgress(progress);
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status === 200) {
+                            const blob = xhr.response;
+                            this.cache.set(videoId, blob);
+                            resolve(blob);
+                        } else {
+                            reject(new Error(`HTTP ${xhr.status}`));
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error('網絡錯誤'));
+                    xhr.send();
+                });
+            }
+
+            async getCachedVideo(videoId) {
+                return this.cache.get(videoId);
+            }
+        }
+
+        const videoCacheService = new VideoCacheService();
+
+        async function testAPI() {
+            const statusDiv = document.getElementById('api-status');
+            statusDiv.innerHTML = '<div class="status info">正在測試 API...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/video-management/default-video`, {
+                    headers: {
+                        'Authorization': `Bearer ${AUTH_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = `
+                        <div class="status success">✅ API 測試成功</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    return data;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ API 測試失敗: ${error.message}</div>`;
+                throw error;
+            }
+        }
+
+        async function testVideoCache() {
+            const statusDiv = document.getElementById('cache-status');
+            const progressDiv = document.getElementById('download-progress');
+            
+            statusDiv.innerHTML = '<div class="status info">正在測試影片緩存...</div>';
+            progressDiv.innerHTML = `
+                <div>下載進度:</div>
+                <div class="progress">
+                    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                </div>
+                <div id="progress-text">0%</div>
+            `;
+
+            try {
+                // 首先獲取影片數據
+                const videoData = await testAPI();
+                const video = videoData.video;
+
+                // 檢查是否已緩存
+                const isCached = await videoCacheService.isVideoCached(video.id);
+                if (isCached) {
+                    statusDiv.innerHTML = '<div class="status info">影片已在緩存中</div>';
+                    return;
+                }
+
+                // 開始下載和緩存
+                const blob = await videoCacheService.preloadVideo(video.id, video.file_url, {
+                    onProgress: (progress) => {
+                        const progressBar = document.getElementById('progress-bar');
+                        const progressText = document.getElementById('progress-text');
+                        if (progressBar && progressText) {
+                            progressBar.style.width = `${progress}%`;
+                            progressText.textContent = `${Math.round(progress)}%`;
+                        }
+                    }
+                });
+
+                statusDiv.innerHTML = `
+                    <div class="status success">✅ 影片緩存成功</div>
+                    <div>緩存大小: ${(blob.size / 1024 / 1024).toFixed(2)} MB</div>
+                `;
+
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ 影片緩存失敗: ${error.message}</div>`;
+            }
+        }
+
+        async function testVideoPlayback() {
+            const statusDiv = document.getElementById('playback-status');
+            const videoElement = document.getElementById('test-video');
+            
+            statusDiv.innerHTML = '<div class="status info">正在測試影片播放...</div>';
+
+            try {
+                // 首先獲取影片數據
+                const videoData = await testAPI();
+                const video = videoData.video;
+
+                // 檢查緩存
+                const cachedBlob = await videoCacheService.getCachedVideo(video.id);
+                
+                if (cachedBlob) {
+                    // 使用緩存的影片
+                    const blobUrl = URL.createObjectURL(cachedBlob);
+                    videoElement.src = blobUrl;
+                    videoElement.style.display = 'block';
+                    
+                    videoElement.oncanplaythrough = () => {
+                        statusDiv.innerHTML = '<div class="status success">✅ 影片播放準備就緒 (使用緩存)</div>';
+                    };
+                } else {
+                    // 直接使用網絡 URL
+                    videoElement.src = video.file_url;
+                    videoElement.style.display = 'block';
+                    
+                    videoElement.oncanplaythrough = () => {
+                        statusDiv.innerHTML = '<div class="status success">✅ 影片播放準備就緒 (直接網絡)</div>';
+                    };
+                }
+
+                videoElement.onerror = (error) => {
+                    statusDiv.innerHTML = `<div class="status error">❌ 影片播放失敗: ${error.message}</div>`;
+                };
+
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ 影片播放測試失敗: ${error.message}</div>`;
+            }
+        }
+
+        // 頁面加載時自動運行 API 測試
+        window.onload = () => {
+            testAPI();
+        };
+    </script>
+</body>
+</html>

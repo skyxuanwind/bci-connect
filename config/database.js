@@ -904,7 +904,46 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create videos table (影片管理)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS videos (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        file_url VARCHAR(500) NOT NULL,
+        file_size BIGINT,
+        duration INTEGER, -- 影片時長（秒）
+        is_default BOOLEAN DEFAULT false,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
+    // Create nfc_video_mappings table (NFC 卡片與影片的映射關係)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS nfc_video_mappings (
+        id SERIAL PRIMARY KEY,
+        nfc_card_id VARCHAR(255) NOT NULL,
+        video_id INTEGER NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(nfc_card_id)
+      )
+    `);
+
+    // Create video_play_logs table (影片播放記錄)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS video_play_logs (
+        id SERIAL PRIMARY KEY,
+        nfc_card_id VARCHAR(255),
+        video_id INTEGER NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+        member_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        play_duration INTEGER, -- 實際播放時長（秒）
+        completed BOOLEAN DEFAULT false, -- 是否播放完成
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
     // Create indexes for better performance
     await pool.query(`
@@ -937,6 +976,17 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_ai_notifications_created_at ON ai_notifications(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_meeting_ai_analysis_meeting_id ON meeting_ai_analysis(meeting_id);
       CREATE INDEX IF NOT EXISTS idx_users_ai_deep_profile ON users USING gin(ai_deep_profile);
+      
+      -- 影片管理系統索引
+      CREATE INDEX IF NOT EXISTS idx_videos_is_default ON videos(is_default);
+      CREATE INDEX IF NOT EXISTS idx_videos_is_active ON videos(is_active);
+      CREATE INDEX IF NOT EXISTS idx_videos_created_at ON videos(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_nfc_video_mappings_nfc_card_id ON nfc_video_mappings(nfc_card_id);
+      CREATE INDEX IF NOT EXISTS idx_nfc_video_mappings_video_id ON nfc_video_mappings(video_id);
+      CREATE INDEX IF NOT EXISTS idx_video_play_logs_nfc_card_id ON video_play_logs(nfc_card_id);
+      CREATE INDEX IF NOT EXISTS idx_video_play_logs_video_id ON video_play_logs(video_id);
+      CREATE INDEX IF NOT EXISTS idx_video_play_logs_member_id ON video_play_logs(member_id);
+      CREATE INDEX IF NOT EXISTS idx_video_play_logs_created_at ON video_play_logs(created_at DESC);
     `);
 
     // Insert default chapters
