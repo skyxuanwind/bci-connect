@@ -36,10 +36,8 @@ const ConnectionCeremony = () => {
   const [nfcSuccess, setNfcSuccess] = useState(null);
   const [connecting, setConnecting] = useState(false);
   
-  // Gateway Service URL - 在生產環境使用當前域名，開發環境使用本地服務
-  const GATEWAY_URL = process.env.NODE_ENV === 'production'
-    ? window.location.origin
-    : process.env.REACT_APP_NFC_GATEWAY_URL || 'http://localhost:3002';
+  // Gateway Service URL - 始終使用本地 NFC Gateway 服務
+  const GATEWAY_URL = process.env.REACT_APP_NFC_GATEWAY_URL || 'http://localhost:3002';
   
   // 影片播放相關狀態
   const [videoData, setVideoData] = useState(null);
@@ -1988,9 +1986,24 @@ const ConnectionCeremony = () => {
   const checkGatewayStatus = async () => {
     try {
       setConnecting(true);
+      setNfcError(null);
+      
       const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
+      
+      // 檢查響應狀態
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      // 檢查響應內容類型
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Gateway 服務返回了非 JSON 響應，請確認 NFC Gateway 服務正在運行');
+      }
+      
       const data = await response.json();
       console.log('Gateway 狀態:', data);
+      
       setGatewayStatus({
         ...data,
         success: data.status === 'running',
@@ -2002,10 +2015,21 @@ const ConnectionCeremony = () => {
       return true;
     } catch (error) {
       console.error('檢查 Gateway 狀態失敗:', error);
+      
+      let errorMessage = '無法連接到本地 NFC Gateway Service';
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'NFC Gateway 服務未運行，請先啟動 Gateway 服務';
+      } else if (error.message.includes('non-JSON')) {
+        errorMessage = error.message;
+      } else if (error.message.includes('HTTP')) {
+        errorMessage = `Gateway 服務錯誤: ${error.message}`;
+      }
+      
       setGatewayStatus({
         success: false,
-        message: '無法連接到本地 NFC Gateway Service'
+        message: errorMessage
       });
+      setNfcError(errorMessage);
       setConnecting(false);
       return false;
     }
@@ -2023,6 +2047,15 @@ const ConnectionCeremony = () => {
         }
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Gateway 服務返回了非 JSON 響應');
+      }
+      
       const data = await response.json();
       
       if (data.success) {
@@ -2039,8 +2072,16 @@ const ConnectionCeremony = () => {
       }
     } catch (error) {
       console.error('啟動 NFC 讀卡機失敗:', error);
-      setNfcError('無法連接到本地 NFC Gateway Service');
-      toast.error('無法連接到 NFC Gateway');
+      
+      let errorMessage = '無法連接到本地 NFC Gateway Service';
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'NFC Gateway 服務未運行，請先啟動 Gateway 服務';
+      } else if (error.message.includes('HTTP')) {
+        errorMessage = `Gateway 服務錯誤: ${error.message}`;
+      }
+      
+      setNfcError(errorMessage);
+      toast.error(errorMessage);
     }
   };
   
@@ -2053,6 +2094,15 @@ const ConnectionCeremony = () => {
           'Content-Type': 'application/json'
         }
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Gateway 服務返回了非 JSON 響應');
+      }
       
       const data = await response.json();
       
@@ -2069,7 +2119,15 @@ const ConnectionCeremony = () => {
       }
     } catch (error) {
       console.error('停止 NFC 讀卡機失敗:', error);
-      setNfcError('無法連接到本地 NFC Gateway Service');
+      
+      let errorMessage = '無法連接到本地 NFC Gateway Service';
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'NFC Gateway 服務未運行';
+      } else if (error.message.includes('HTTP')) {
+        errorMessage = `Gateway 服務錯誤: ${error.message}`;
+      }
+      
+      setNfcError(errorMessage);
     }
   };
   
