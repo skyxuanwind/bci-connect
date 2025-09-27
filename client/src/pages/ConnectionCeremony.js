@@ -139,23 +139,8 @@ const ConnectionCeremony = () => {
       }
     });
 
-    // 自動請求 NFC 控制權（確保本頁獲得控制權並開始輪詢）
-    (async () => {
-      const success = await nfcCoordinator.requestControl(systemId);
-      if (!success) {
-        console.warn('⚠️ 連結之橋儀式無法獲得控制權');
-        setGatewayStatus(prev => ({
-          ...prev,
-          hasControl: false,
-          conflictDetected: true
-        }));
-      } else {
-        // 取得控制權後自動啟動讀卡器
-        await nfcCoordinator.startReader(systemId);
-      }
-    })();
-    
-    // 初始化 NFC Gateway
+    // 不在載入時自動請求控制權或啟動讀卡機；改為由使用者按下「啟動自動感應」按鈕後再開始。
+    // 初始化 NFC Gateway 狀態顯示
     checkGatewayStatus();
     
     return () => {
@@ -2911,31 +2896,12 @@ const ConnectionCeremony = () => {
                     ref={nfcInputRef}
                     type="text"
                     value={nfcCardId}
-                    onChange={(e) => setNfcCardId(e.target.value.toUpperCase())}
-                    onKeyPress={handleKeyPress}
-                    placeholder="請輸入或感應 NFC 卡片"
+                    placeholder="請以 NFC 感應卡片以繼續"
                     className="w-full max-w-md mx-auto px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-center font-mono tracking-wider bg-white text-black"
                     autoComplete="off"
-                    autoFocus
+                    readOnly
                   />
-                  <div className="flex gap-4 justify-center">
-                    <button
-                      onClick={handleNfcVerification}
-                      disabled={!nfcCardId.trim()}
-                      className="px-8 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                    >
-                      驗證並加入橋樑
-                    </button>
-                    <button
-                      onClick={() => setNfcCardId('')}
-                      className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                    >
-                      清除
-                    </button>
-                  </div>
-                  <p className="text-sm text-white/80 mt-4">
-                    提示：輸入完成後按 Enter 鍵驗證，按 Esc 鍵清除
-                  </p>
+                  {/* 手動按鈕已隱藏：請以 NFC 感應卡片以繼續 */}
                 </div>
               </div>
 
