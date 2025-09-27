@@ -2043,10 +2043,9 @@ const ConnectionCeremony = () => {
       });
       setIsNfcReading(data.nfcActive);
       
-      // 如果 NFC 已經是活躍狀態，自動啟動輪詢
+      // NFC 輪詢現在由協調器處理，無需手動啟動
       if (data.nfcActive && data.readerConnected) {
-        console.log('NFC 已啟動，開始自動輪詢...');
-        startNfcPolling();
+        console.log('NFC 已啟動，協調器將自動處理輪詢...');
       }
       
       setConnecting(false);
