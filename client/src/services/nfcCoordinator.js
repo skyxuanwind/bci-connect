@@ -12,6 +12,7 @@ class NFCCoordinator {
     this.lastCardUid = null;
     this.lastScanTime = null;
     this.listeners = new Set(); // 事件監聽器
+    this.isPaused = false; // 暫停狀態
   }
 
   /**
@@ -135,8 +136,14 @@ class NFCCoordinator {
     }
 
     console.log('🔄 開始 NFC 輪詢...');
+    this.isPaused = false;
     
     this.pollingInterval = setInterval(async () => {
+      // 如果暫停，跳過此次輪詢
+      if (this.isPaused) {
+        return;
+      }
+      
       try {
         const response = await fetch(`${this.gatewayUrl}/api/nfc-checkin/status`);
         const data = await response.json();
@@ -152,7 +159,8 @@ class NFCCoordinator {
           console.log('🆔 檢測到新的 NFC 卡片:', {
             cardUid: data.lastCardUid,
             scanTime: data.lastScanTime,
-            activeSystem: this.activeSystem
+            activeSystem: this.activeSystem,
+            isPaused: this.isPaused
           });
           
           this.lastCardUid = data.lastCardUid;
@@ -182,8 +190,25 @@ class NFCCoordinator {
       this.pollingInterval = null;
       this.lastCardUid = null;
       this.lastScanTime = null;
+      this.isPaused = false;
       console.log('⏹️ NFC 輪詢已停止');
     }
+  }
+
+  /**
+   * 暫停 NFC 輪詢（不停止輪詢間隔，只是跳過處理）
+   */
+  pausePolling() {
+    this.isPaused = true;
+    console.log('⏸️ NFC 輪詢已暫停');
+  }
+
+  /**
+   * 恢復 NFC 輪詢
+   */
+  resumePolling() {
+    this.isPaused = false;
+    console.log('▶️ NFC 輪詢已恢復');
   }
 
   /**
@@ -230,6 +255,12 @@ class NFCCoordinator {
       });
       
       const data = await response.json();
+      
+      if (data.success) {
+        // 恢復輪詢（如果之前被暫停）
+        this.resumePolling();
+      }
+      
       return data.success;
     } catch (error) {
       console.error('啟動 NFC 讀卡器失敗:', error);
@@ -255,6 +286,12 @@ class NFCCoordinator {
       });
       
       const data = await response.json();
+      
+      if (data.success) {
+        // 暫停輪詢而不是完全停止
+        this.pausePolling();
+      }
+      
       return data.success;
     } catch (error) {
       console.error('停止 NFC 讀卡器失敗:', error);

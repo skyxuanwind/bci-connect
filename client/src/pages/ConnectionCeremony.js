@@ -2127,8 +2127,8 @@ const ConnectionCeremony = () => {
         toast.info('🎭 連結之橋儀式 NFC 自動感應已停止');
         setTimeout(() => setNfcSuccess(null), 3000);
         
-        // 釋放控制權
-        nfcCoordinator.releaseControl(systemId);
+        // 注意：不釋放控制權，保持註冊狀態以便重新啟動
+        // nfcCoordinator.releaseControl(systemId);
       } else {
         setNfcError('NFC 讀卡機停止失敗');
       }
