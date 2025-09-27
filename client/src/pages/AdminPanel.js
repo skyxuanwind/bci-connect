@@ -4,6 +4,58 @@ import { useNavigate } from 'react-router-dom';
 
 // 添加橋樑設計的CSS樣式
 const bridgeStyles = `
+  @keyframes luxuryFloat {
+    0%, 100% { 
+      transform: translateY(0px) translateX(0px) scale(1); 
+      opacity: 0.6; 
+    }
+    25% { 
+      transform: translateY(-15px) translateX(5px) scale(1.1); 
+      opacity: 0.8; 
+    }
+    50% { 
+      transform: translateY(-25px) translateX(-3px) scale(1.2); 
+      opacity: 1; 
+    }
+    75% { 
+      transform: translateY(-10px) translateX(8px) scale(1.1); 
+      opacity: 0.9; 
+    }
+  }
+  
+  @keyframes sparkle {
+    0%, 100% { 
+      transform: scale(0.8) rotate(0deg); 
+      opacity: 0.5; 
+    }
+    50% { 
+      transform: scale(1.3) rotate(180deg); 
+      opacity: 1; 
+    }
+  }
+  
+  @keyframes twinkle {
+    0%, 100% { 
+      opacity: 0.3; 
+      transform: scale(0.5); 
+    }
+    50% { 
+      opacity: 1; 
+      transform: scale(1.5); 
+    }
+  }
+  
+  @keyframes wave {
+    0%, 100% { 
+      transform: translateX(0px) scaleX(1); 
+      opacity: 0.2; 
+    }
+    50% { 
+      transform: translateX(10px) scaleX(1.1); 
+      opacity: 0.4; 
+    }
+  }
+
   @keyframes float {
     0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
     25% { transform: translateY(-10px) rotate(90deg); opacity: 1; }
@@ -13,23 +65,23 @@ const bridgeStyles = `
 
   .slider-yellow::-webkit-slider-thumb {
     appearance: none;
-    height: 20px;
-    width: 20px;
+    height: 22px;
+    width: 22px;
     border-radius: 50%;
-    background: linear-gradient(45deg, #fbbf24, #f59e0b);
+    background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706);
     cursor: pointer;
-    border: 2px solid #ffffff;
-    box-shadow: 0 2px 6px rgba(251, 191, 36, 0.4);
+    border: 2px solid #fbbf24;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.7), 0 0 30px rgba(251, 191, 36, 0.3);
   }
 
   .slider-yellow::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
+    height: 22px;
+    width: 22px;
     border-radius: 50%;
-    background: linear-gradient(45deg, #fbbf24, #f59e0b);
+    background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706);
     cursor: pointer;
-    border: 2px solid #ffffff;
-    box-shadow: 0 2px 6px rgba(251, 191, 36, 0.4);
+    border: 2px solid #fbbf24;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.7), 0 0 30px rgba(251, 191, 36, 0.3);
   }
 
   .bg-gradient-radial {
@@ -460,21 +512,66 @@ const AdminPanel = () => {
   const renderBridgeDesign = () => (
     <div className="space-y-6">
       {/* 橋樑預覽區域 */}
-      <div className="bg-black rounded-lg shadow-2xl overflow-hidden relative" style={{ height: '600px' }}>
-        {/* 背景裝飾 */}
-        <div className="absolute inset-0 bg-gradient-radial from-yellow-900/20 via-black to-black"></div>
+      <div className="bg-black rounded-lg shadow-2xl overflow-hidden relative" style={{ height: '700px' }}>
+        {/* 深度背景層 */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-black to-gray-800"></div>
+          <div className="absolute inset-0 bg-gradient-radial from-yellow-900/10 via-transparent to-black/50"></div>
+        </div>
         
-        {/* 金色粒子動畫 */}
+        {/* 環境光效 */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-yellow-400/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-yellow-300/5 rounded-full blur-3xl"></div>
+        </div>
+
+        {/* 高級金色粒子系統 */}
         <div className="absolute inset-0 overflow-hidden">
-          {[...Array(50)].map((_, i) => (
+          {/* 大型光點 */}
+          {[...Array(15)].map((_, i) => (
             <div
-              key={i}
-              className="absolute w-1 h-1 bg-yellow-400 rounded-full opacity-70"
+              key={`large-${i}`}
+              className="absolute bg-yellow-300 rounded-full opacity-60"
               style={{
+                width: `${2 + Math.random() * 3}px`,
+                height: `${2 + Math.random() * 3}px`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                animation: `luxuryFloat ${4 + Math.random() * 6}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 3}s`,
+                boxShadow: '0 0 10px rgba(255, 215, 0, 0.8)'
+              }}
+            ></div>
+          ))}
+          
+          {/* 中型粒子 */}
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={`medium-${i}`}
+              className="absolute bg-yellow-400 rounded-full opacity-50"
+              style={{
+                width: '1.5px',
+                height: '1.5px',
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `sparkle ${3 + Math.random() * 4}s ease-in-out infinite`,
                 animationDelay: `${Math.random() * 2}s`
+              }}
+            ></div>
+          ))}
+          
+          {/* 微型閃爍粒子 */}
+          {[...Array(60)].map((_, i) => (
+            <div
+              key={`small-${i}`}
+              className="absolute bg-yellow-200 rounded-full opacity-30"
+              style={{
+                width: '0.5px',
+                height: '0.5px',
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 1.5}s`
               }}
             ></div>
           ))}
@@ -482,57 +579,153 @@ const AdminPanel = () => {
 
         {/* 主橋樑結構 */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-full max-w-4xl h-80">
-            {/* 水面 */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-900 to-transparent opacity-60"></div>
+          <div className="relative w-full max-w-5xl h-96" style={{ transform: `perspective(1000px) rotateY(${bridgeSettings.cameraAngle}deg)` }}>
             
-            {/* 橋樑主體 */}
-            <div className="absolute bottom-32 left-0 right-0 h-2 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 shadow-lg shadow-yellow-400/50">
-              {/* 橋樑光暈 */}
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 blur-sm opacity-80"></div>
+            {/* 水面和環境 */}
+            <div className="absolute bottom-0 left-0 right-0 h-40">
+              {/* 水面基層 */}
+              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-800 via-gray-700/50 to-transparent"></div>
+              {/* 水面波紋 */}
+              <div className="absolute bottom-0 left-0 right-0 h-32 opacity-30">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent"
+                    style={{
+                      bottom: `${i * 4}px`,
+                      animation: `wave ${3 + i * 0.5}s ease-in-out infinite`,
+                      animationDelay: `${i * 0.2}s`
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+            
+            {/* 橋樑主體結構 */}
+            <div className="absolute bottom-40 left-0 right-0">
+              {/* 主橋面 */}
+              <div className="relative h-4 bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-700 shadow-2xl">
+                {/* 金屬質感層 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 opacity-90"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-yellow-300/50 via-transparent to-yellow-800/30"></div>
+                
+                {/* 橋面細節 */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-300 opacity-80"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-800 via-yellow-700 to-yellow-800 opacity-60"></div>
+                
+                {/* 橋面光暈 */}
+                <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400/30 via-yellow-300/50 to-yellow-400/30 blur-md"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400/20 via-yellow-300/30 to-yellow-400/20 blur-sm"></div>
+              </div>
+
+              {/* 橋墩支撐結構 */}
+              <div className="absolute -bottom-8 left-1/4 w-2 h-8 bg-gradient-to-t from-yellow-700 to-yellow-500 shadow-lg"></div>
+              <div className="absolute -bottom-8 right-1/4 w-2 h-8 bg-gradient-to-t from-yellow-700 to-yellow-500 shadow-lg"></div>
             </div>
 
-            {/* 主塔 */}
-            <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 w-3 h-48 bg-gradient-to-t from-yellow-600 to-yellow-400 shadow-lg shadow-yellow-400/50">
-              {/* 塔頂裝飾 */}
-              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-yellow-300 rounded-full shadow-lg shadow-yellow-300/70"></div>
+            {/* 主塔結構 */}
+            <div className="absolute bottom-40 left-1/2 transform -translate-x-1/2">
+              {/* 主塔基座 */}
+              <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 w-8 h-12 bg-gradient-to-t from-yellow-800 to-yellow-600 shadow-xl"></div>
+              
+              {/* 主塔身 */}
+              <div className="relative w-4 h-56 bg-gradient-to-t from-yellow-700 via-yellow-500 to-yellow-400 shadow-2xl">
+                {/* 塔身金屬質感 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/80 via-yellow-400/90 to-yellow-600/80"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-yellow-300/40 via-transparent to-yellow-800/20"></div>
+                
+                {/* 塔身細節線條 */}
+                <div className="absolute top-1/4 left-0 right-0 h-px bg-yellow-300/60"></div>
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-yellow-300/60"></div>
+                <div className="absolute top-3/4 left-0 right-0 h-px bg-yellow-300/60"></div>
+                
+                {/* 塔身光暈 */}
+                <div className="absolute -inset-2 bg-yellow-400/20 blur-lg"></div>
+              </div>
+
+              {/* 塔頂結構 */}
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <div className="w-8 h-8 bg-gradient-radial from-yellow-300 to-yellow-500 rounded-full shadow-2xl">
+                  <div className="absolute inset-1 bg-gradient-radial from-yellow-200 to-yellow-400 rounded-full"></div>
+                  <div className="absolute inset-2 bg-yellow-100 rounded-full opacity-80"></div>
+                </div>
+                {/* 塔頂光暈 */}
+                <div className="absolute -inset-4 bg-yellow-300/40 rounded-full blur-xl"></div>
+              </div>
             </div>
 
-            {/* 斜拉索 */}
-            {[...Array(12)].map((_, i) => {
-              const isLeft = i < 6;
-              const index = isLeft ? i : i - 6;
-              const angle = isLeft ? -15 - index * 8 : 15 + index * 8;
-              const length = 80 + index * 20;
+            {/* 精緻斜拉索系統 */}
+            {[...Array(16)].map((_, i) => {
+              const isLeft = i < 8;
+              const index = isLeft ? i : i - 8;
+              const angle = isLeft ? -12 - index * 6 : 12 + index * 6;
+              const length = 60 + index * 15;
+              const thickness = Math.max(0.5, 2 - index * 0.2);
               
               return (
-                <div
-                  key={i}
-                  className="absolute bottom-32 left-1/2 origin-bottom bg-gradient-to-t from-yellow-500 to-yellow-300 opacity-90"
-                  style={{
-                    width: '1px',
-                    height: `${length}px`,
-                    transform: `translateX(-50%) rotate(${angle}deg)`,
-                    boxShadow: '0 0 4px rgba(255, 215, 0, 0.6)'
-                  }}
-                ></div>
+                <div key={i} className="absolute bottom-40 left-1/2 origin-bottom">
+                  {/* 主拉索 */}
+                  <div
+                    className="absolute bg-gradient-to-t from-yellow-600 via-yellow-400 to-yellow-300 opacity-95"
+                    style={{
+                      width: `${thickness}px`,
+                      height: `${length}px`,
+                      transform: `translateX(-50%) rotate(${angle}deg)`,
+                      boxShadow: `0 0 ${thickness * 2}px rgba(255, 215, 0, 0.8), 0 0 ${thickness * 4}px rgba(255, 215, 0, 0.4)`
+                    }}
+                  ></div>
+                  
+                  {/* 拉索光效 */}
+                  <div
+                    className="absolute bg-gradient-to-t from-yellow-400/60 to-yellow-200/80 opacity-70 blur-sm"
+                    style={{
+                      width: `${thickness + 1}px`,
+                      height: `${length}px`,
+                      transform: `translateX(-50%) rotate(${angle}deg)`
+                    }}
+                  ></div>
+                </div>
               );
             })}
 
-            {/* 橋樑倒影 */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">
-              <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-yellow-600/40 via-yellow-400/40 to-yellow-600/40 transform scale-y-[-1] blur-sm"></div>
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-24 bg-gradient-to-b from-yellow-600/40 to-yellow-400/40 transform scale-y-[-1] blur-sm"></div>
+            {/* 橋樑完美倒影 */}
+            <div className="absolute bottom-0 left-0 right-0 h-40 overflow-hidden">
+              {/* 主橋面倒影 */}
+              <div className="absolute bottom-32 left-0 right-0 h-4 bg-gradient-to-r from-yellow-700/30 via-yellow-500/40 to-yellow-700/30 transform scale-y-[-1] blur-sm opacity-70"></div>
+              
+              {/* 主塔倒影 */}
+              <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 w-4 h-28 bg-gradient-to-b from-yellow-700/30 to-yellow-400/40 transform scale-y-[-1] blur-sm opacity-60"></div>
+              
+              {/* 拉索倒影 */}
+              {[...Array(8)].map((_, i) => {
+                const angle = i < 4 ? -12 - i * 6 : 12 + (i - 4) * 6;
+                const length = 30 + i * 8;
+                
+                return (
+                  <div
+                    key={`reflection-${i}`}
+                    className="absolute bottom-32 left-1/2 origin-top bg-gradient-to-b from-yellow-600/20 to-yellow-300/30 opacity-50 blur-sm"
+                    style={{
+                      width: '1px',
+                      height: `${length}px`,
+                      transform: `translateX(-50%) rotate(${-angle}deg)`
+                    }}
+                  ></div>
+                );
+              })}
+              
+              {/* 倒影波紋效果 */}
+              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
             </div>
           </div>
         </div>
 
         {/* 標題覆蓋層 */}
         <div className="absolute top-6 left-6 right-6">
-          <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 mb-2">
+          <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 mb-2 drop-shadow-lg">
             奢華金色斜拉橋
           </h2>
-          <p className="text-yellow-200/80 text-sm">
+          <p className="text-yellow-200/90 text-sm font-medium">
             A luxurious golden cable-stayed bridge with premium metallic texture and cinematic HDR lighting
           </p>
         </div>
@@ -541,13 +734,13 @@ const AdminPanel = () => {
         <div className="absolute bottom-6 right-6 flex space-x-2">
           <button
             onClick={() => setBridgeSettings(prev => ({ ...prev, cameraAngle: prev.cameraAngle - 15 }))}
-            className="px-3 py-2 bg-yellow-600/80 text-white rounded-lg hover:bg-yellow-500/80 transition-colors text-sm"
+            className="px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-all duration-300 text-sm font-medium shadow-lg"
           >
             ← 旋轉
           </button>
           <button
             onClick={() => setBridgeSettings(prev => ({ ...prev, cameraAngle: prev.cameraAngle + 15 }))}
-            className="px-3 py-2 bg-yellow-600/80 text-white rounded-lg hover:bg-yellow-500/80 transition-colors text-sm"
+            className="px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-all duration-300 text-sm font-medium shadow-lg"
           >
             旋轉 →
           </button>
