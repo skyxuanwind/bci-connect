@@ -29,6 +29,18 @@ const ConnectionCeremony = () => {
     transitionDuration: 500
   });
   
+  // NFC Gateway 相關狀態
+  const [isNfcReading, setIsNfcReading] = useState(false);
+  const [gatewayStatus, setGatewayStatus] = useState(null);
+  const [nfcError, setNfcError] = useState(null);
+  const [nfcSuccess, setNfcSuccess] = useState(null);
+  const [connecting, setConnecting] = useState(false);
+  
+  // Gateway Service URL - 在生產環境使用當前域名，開發環境使用本地服務
+  const GATEWAY_URL = process.env.NODE_ENV === 'production'
+    ? window.location.origin
+    : process.env.REACT_APP_NFC_GATEWAY_URL || 'http://localhost:3002';
+  
   // 影片播放相關狀態
   const [videoData, setVideoData] = useState(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
@@ -84,6 +96,9 @@ const ConnectionCeremony = () => {
     initializeCeremony();
     updateProgress(ceremonyStage); // 初始化進度
     
+    // 初始化 NFC Gateway
+    checkGatewayStatus();
+    
     return () => {
       // 清理 Three.js 資源
       if (animationIdRef.current) {
@@ -92,6 +107,9 @@ const ConnectionCeremony = () => {
       if (rendererRef.current) {
         rendererRef.current.dispose();
       }
+      
+      // 清理 NFC 輪詢
+      stopNfcPolling();
     };
   }, [user]);
 
@@ -1965,9 +1983,144 @@ const ConnectionCeremony = () => {
     }, 5000);
   };
 
+  // NFC Gateway 功能
+  // 檢查 NFC Gateway Service 狀態
+  const checkGatewayStatus = async () => {
+    try {
+      setConnecting(true);
+      const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
+      const data = await response.json();
+      console.log('Gateway 狀態:', data);
+      setGatewayStatus({
+        ...data,
+        success: data.status === 'running',
+        nfcAvailable: data.readerConnected !== undefined,
+        isActive: data.nfcActive
+      });
+      setIsNfcReading(data.nfcActive);
+      setConnecting(false);
+      return true;
+    } catch (error) {
+      console.error('檢查 Gateway 狀態失敗:', error);
+      setGatewayStatus({
+        success: false,
+        message: '無法連接到本地 NFC Gateway Service'
+      });
+      setConnecting(false);
+      return false;
+    }
+  };
+  
+  // 啟動 NFC 讀卡機
+  const startNFCReading = async () => {
+    setNfcError(null);
+    
+    try {
+      const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/start-reader`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsNfcReading(true);
+        setNfcSuccess('NFC 讀卡機啟動成功！請將 NFC 卡片靠近讀卡機');
+        toast.success('NFC 自動感應已啟動');
+        setTimeout(() => setNfcSuccess(null), 5000);
+        
+        // 開始輪詢 NFC 卡片
+        startNfcPolling();
+      } else {
+        setNfcError(data.message || 'NFC 讀卡機啟動失敗');
+        toast.error('NFC 讀卡機啟動失敗');
+      }
+    } catch (error) {
+      console.error('啟動 NFC 讀卡機失敗:', error);
+      setNfcError('無法連接到本地 NFC Gateway Service');
+      toast.error('無法連接到 NFC Gateway');
+    }
+  };
+  
+  // 停止 NFC 讀卡機
+  const stopNFCReading = async () => {
+    try {
+      const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/stop-reader`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsNfcReading(false);
+        setNfcSuccess('NFC 讀卡機已停止');
+        toast.info('NFC 自動感應已停止');
+        setTimeout(() => setNfcSuccess(null), 3000);
+        
+        // 停止輪詢
+        stopNfcPolling();
+      } else {
+        setNfcError(data.message || 'NFC 讀卡機停止失敗');
+      }
+    } catch (error) {
+      console.error('停止 NFC 讀卡機失敗:', error);
+      setNfcError('無法連接到本地 NFC Gateway Service');
+    }
+  };
+  
+  // NFC 輪詢相關
+  const nfcPollingRef = useRef(null);
+  
+  const startNfcPolling = () => {
+    if (nfcPollingRef.current) {
+      clearInterval(nfcPollingRef.current);
+    }
+    
+    nfcPollingRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
+        const data = await response.json();
+        
+        if (data.lastCardUid && data.lastCardUid !== gatewayStatus?.lastCardUid) {
+          // 檢測到新的 NFC 卡片
+          console.log('檢測到 NFC 卡片:', data.lastCardUid);
+          setNfcCardId(data.lastCardUid);
+          
+          // 自動觸發驗證
+          setTimeout(() => {
+            handleNfcVerification(data.lastCardUid);
+          }, 500);
+        }
+        
+        setGatewayStatus(prev => ({
+          ...prev,
+          ...data,
+          lastCardUid: data.lastCardUid,
+          lastScanTime: data.lastScanTime
+        }));
+      } catch (error) {
+        console.error('NFC 輪詢錯誤:', error);
+      }
+    }, 1000); // 每秒檢查一次
+  };
+  
+  const stopNfcPolling = () => {
+    if (nfcPollingRef.current) {
+      clearInterval(nfcPollingRef.current);
+      nfcPollingRef.current = null;
+    }
+  };
+
   // 改善的 NFC 驗證處理
-  const handleNfcVerification = async () => {
-    if (!nfcCardId.trim()) {
+  const handleNfcVerification = async (cardId = null) => {
+    const targetCardId = cardId || nfcCardId.trim();
+    
+    if (!targetCardId) {
       toast.error('請輸入 NFC 卡片 ID');
       playErrorSound();
       // 自動聚焦到輸入框
@@ -1984,7 +2137,7 @@ const ConnectionCeremony = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ nfc_card_id: nfcCardId })
+        body: JSON.stringify({ nfc_card_id: targetCardId })
       });
 
       const result = await response.json();
@@ -2579,6 +2732,114 @@ const ConnectionCeremony = () => {
                 <p className="text-xl text-gray-200 leading-relaxed whitespace-pre-line">
                   {oath}
                 </p>
+              </div>
+
+              {/* NFC Gateway 控制面板 */}
+              <div className="bg-black bg-opacity-50 rounded-lg p-6 mb-8">
+                <h3 className="text-xl font-bold text-white mb-4">🏷️ NFC Gateway 狀態</h3>
+                
+                {gatewayStatus ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white">Gateway 服務:</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        gatewayStatus.success ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                      }`}>
+                        {gatewayStatus.success ? '運行中' : '未連接'}
+                      </span>
+                    </div>
+                    
+                    {gatewayStatus.success && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-white">NFC 讀卡機:</span>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            gatewayStatus.readerConnected ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                          }`}>
+                            {gatewayStatus.readerConnected ? '已連接' : '未連接'}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-white">自動感應:</span>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            isNfcReading ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'
+                          }`}>
+                            {isNfcReading ? '已啟動' : '未啟動'}
+                          </span>
+                        </div>
+                        
+                        {gatewayStatus.readerName && (
+                          <div className="text-sm text-gray-300">
+                            讀卡機型號: {gatewayStatus.readerName}
+                          </div>
+                        )}
+                        
+                        {gatewayStatus.lastCardUid && (
+                          <div className="bg-gray-700 rounded p-3">
+                            <div className="text-sm text-gray-300">最後讀取卡片:</div>
+                            <div className="font-mono text-lg text-white">{gatewayStatus.lastCardUid}</div>
+                            {gatewayStatus.lastScanTime && (
+                              <div className="text-sm text-gray-400">{gatewayStatus.lastScanTime}</div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    <div className="flex gap-3 justify-center">
+                      {gatewayStatus.success && gatewayStatus.readerConnected && (
+                        <>
+                          {!isNfcReading ? (
+                            <button
+                              onClick={startNFCReading}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
+                            >
+                              啟動自動感應
+                            </button>
+                          ) : (
+                            <button
+                              onClick={stopNFCReading}
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors"
+                            >
+                              停止自動感應
+                            </button>
+                          )}
+                        </>
+                      )}
+                      <button
+                        onClick={checkGatewayStatus}
+                        disabled={connecting}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:bg-gray-400 transition-colors"
+                      >
+                        {connecting ? '檢查中...' : '重新檢查'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <div className="text-gray-400">正在檢查 NFC Gateway 狀態...</div>
+                  </div>
+                )}
+                
+                {/* 錯誤和成功訊息 */}
+                {nfcError && (
+                  <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <div className="flex items-center">
+                      <span className="text-xl mr-2">⚠️</span>
+                      <span>{nfcError}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {nfcSuccess && (
+                  <div className="mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                    <div className="flex items-center">
+                      <span className="text-xl mr-2">✅</span>
+                      <span>{nfcSuccess}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="bg-black bg-opacity-50 rounded-lg p-8 mb-8">
