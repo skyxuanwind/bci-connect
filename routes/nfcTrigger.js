@@ -192,6 +192,110 @@ router.delete('/mapping/:nfcId', async (req, res) => {
   }
 });
 
+// NFC 觸發播放影片
+router.post('/play-video', async (req, res) => {
+  try {
+    const { nfcId, memberId } = req.body;
+    
+    if (!nfcId) {
+      return res.status(400).json({
+        success: false,
+        message: 'NFC 卡片 ID 是必需的'
+      });
+    }
+    
+    // 首先查找是否有為該 NFC 卡片指定的特定影片
+    const nfcVideoResult = await pool.query(`
+      SELECT v.* FROM videos v
+      JOIN nfc_video_mappings nvm ON v.id = nvm.video_id
+      WHERE nvm.nfc_card_id = $1 AND v.is_active = true
+    `, [nfcId]);
+    
+    if (nfcVideoResult.rows.length > 0) {
+      const video = nfcVideoResult.rows[0];
+      
+      // 記錄播放事件
+      if (memberId) {
+        await pool.query(`
+          INSERT INTO video_play_logs (nfc_card_id, video_id, member_id, play_duration)
+          VALUES ($1, $2, $3, $4)
+        `, [nfcId, video.id, memberId, 0]);
+      }
+      
+      return res.json({
+        success: true,
+        video: video,
+        source: 'nfc_specific',
+        message: '找到 NFC 專用影片'
+      });
+    }
+    
+    // 如果沒有特定影片，返回默認影片
+    const defaultVideoResult = await pool.query(
+      'SELECT * FROM videos WHERE is_default = true AND is_active = true LIMIT 1'
+    );
+    
+    if (defaultVideoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '沒有可用的影片'
+      });
+    }
+    
+    const video = defaultVideoResult.rows[0];
+    
+    // 記錄播放事件
+    if (memberId) {
+      await pool.query(`
+        INSERT INTO video_play_logs (nfc_card_id, video_id, member_id, play_duration)
+        VALUES ($1, $2, $3, $4)
+      `, [nfcId, video.id, memberId, 0]);
+    }
+    
+    res.json({
+      success: true,
+      video: video,
+      source: 'default',
+      message: '使用默認影片'
+    });
+  } catch (error) {
+    console.error('NFC 觸發播放影片錯誤:', error);
+    res.status(500).json({
+      success: false,
+      message: '觸發播放影片失敗',
+      error: error.message
+    });
+  }
+});
+
+// 播放完成通知
+router.post('/play-complete', async (req, res) => {
+  try {
+    const { nfcId, videoId, memberId, playDuration } = req.body;
+    
+    // 更新播放記錄的播放時長和完成狀態
+    if (memberId && videoId) {
+      await pool.query(`
+        UPDATE video_play_logs 
+        SET play_duration = $1, completed = true
+        WHERE nfc_card_id = $2 AND video_id = $3 AND member_id = $4 AND completed = false
+      `, [playDuration, nfcId, videoId, memberId]);
+    }
+    
+    res.json({
+      success: true,
+      message: '播放完成記錄已更新'
+    });
+  } catch (error) {
+    console.error('播放完成記錄錯誤:', error);
+    res.status(500).json({
+      success: false,
+      message: '記錄播放完成失敗',
+      error: error.message
+    });
+  }
+});
+
 // 記錄影片播放事件
 router.post('/play-log', async (req, res) => {
   try {
