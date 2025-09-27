@@ -13,6 +13,8 @@ class NFCCoordinator {
     this.lastScanTime = null;
     this.listeners = new Set(); // 事件監聽器
     this.isPaused = false; // 暫停狀態
+    // 調整最近掃描有效時間窗（預設 60 秒，可由環境變數覆寫）
+    this.recentWindowMs = Number(process.env.REACT_APP_NFC_RECENT_WINDOW_MS) || 60000;
   }
 
   /**
@@ -151,8 +153,23 @@ class NFCCoordinator {
         // 檢查是否有新的卡片檢測
         const hasNewCard = data.lastCardUid && data.lastCardUid !== this.lastCardUid;
         const hasNewScanTime = data.lastScanTime && data.lastScanTime !== this.lastScanTime;
-        const isRecentScan = data.lastScanTime && 
-          (new Date() - new Date(data.lastScanTime)) < 5000; // 5秒內的掃描才算有效
+        const diffMs = data.lastScanTime ? (Date.now() - new Date(data.lastScanTime).getTime()) : null;
+        const isRecentScan = !!data.lastScanTime && diffMs < this.recentWindowMs; // 在有效時間窗內才算有效
+        
+        // 輪詢快照診斷
+        console.log('🧪 NFC 輪詢快照', {
+          gatewayLastCardUid: data.lastCardUid,
+          gatewayLastScanTime: data.lastScanTime,
+          diffMs,
+          recentWindowMs: this.recentWindowMs,
+          hasNewCard,
+          hasNewScanTime,
+          isRecentScan,
+          prevLastCardUid: this.lastCardUid,
+          prevLastScanTime: this.lastScanTime,
+          activeSystem: this.activeSystem,
+          isPaused: this.isPaused
+        });
         
         if (data.lastCardUid && (hasNewCard || hasNewScanTime) && isRecentScan) {
           // 檢測到新的 NFC 卡片
@@ -170,9 +187,18 @@ class NFCCoordinator {
           if (this.activeSystem) {
             const system = this.systems.get(this.activeSystem);
             if (system && system.onCardDetected) {
+              console.log(`📨 派發卡片事件給系統: ${this.activeSystem}`);
               system.onCardDetected(data);
             }
           }
+        } else if ((hasNewCard || hasNewScanTime) && !isRecentScan) {
+          // 有新值但超出有效時間窗，提示以利除錯
+          console.warn('⏱️ 偵測到卡片資訊變化，但因超出有效時間窗而忽略', {
+            gatewayLastCardUid: data.lastCardUid,
+            gatewayLastScanTime: data.lastScanTime,
+            diffMs,
+            recentWindowMs: this.recentWindowMs
+          });
         }
         
       } catch (error) {
