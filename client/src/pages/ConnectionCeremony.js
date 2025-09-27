@@ -138,15 +138,30 @@ const ConnectionCeremony = () => {
         }
       }
     });
+
+    // 自動請求 NFC 控制權（確保本頁獲得控制權並開始輪詢）
+    (async () => {
+      const success = await nfcCoordinator.requestControl(systemId);
+      if (!success) {
+        console.warn('⚠️ 連結之橋儀式無法獲得控制權');
+        setGatewayStatus(prev => ({
+          ...prev,
+          hasControl: false,
+          conflictDetected: true
+        }));
+      }
+    })();
     
     // 初始化 NFC Gateway
     checkGatewayStatus();
     
     return () => {
       // 只在組件真正卸載時才釋放 NFC 控制權和取消註冊
-      console.log('📡 NFC 系統正在取消註冊: connection-ceremony');
+      console.log('📡 NFC 系統暫停並釋放控制權: connection-ceremony');
+      nfcCoordinator.stopReader(systemId);
       nfcCoordinator.releaseControl(systemId);
-      nfcCoordinator.unregisterSystem(systemId);
+      // 不再取消註冊，避免 StrictMode 雙重調用導致瞬間無法感應
+      // nfcCoordinator.unregisterSystem(systemId);
     };
   }, []); // 空依賴數組，只在組件掛載/卸載時執行
 

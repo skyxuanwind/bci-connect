@@ -261,11 +261,12 @@ const NFCCheckin = () => {
     return () => {
       clearInterval(interval);
       clearInterval(statusInterval);
-      // 釋放控制權並取消註冊
+      // 清理：停止讀卡器並釋放控制權，但不取消註冊，避免 StrictMode 造成瞬斷
+      nfcCoordinator.stopReader(systemId);
       nfcCoordinator.releaseControl(systemId);
-      nfcCoordinator.unregisterSystem(systemId);
+      // nfcCoordinator.unregisterSystem(systemId);
     };
-  }, [user]);
+  }, []);
 
   // SSE 即時接收新的 NFC 報到
   useEffect(() => {
