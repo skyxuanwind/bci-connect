@@ -42,6 +42,17 @@ const ConnectionCeremony = () => {
   const particleSystemRef = useRef(null);
   const lightBeamRef = useRef(null);
   const ambientLightRef = useRef(null);
+  
+  // 攝影機動畫系統的狀態和引用
+  const [cameraAnimation, setCameraAnimation] = useState({
+    isPlaying: false,
+    currentSequence: null,
+    progress: 0,
+    autoPlay: true
+  });
+  const cameraAnimationRef = useRef(null);
+  const animationTimelineRef = useRef([]);
+  const animationStartTimeRef = useRef(0);
 
   // 檢查權限
   useEffect(() => {
@@ -877,7 +888,539 @@ const ConnectionCeremony = () => {
     }
   };
 
+  // ==================== 專業運鏡動畫系統 ====================
+  
+  // 創建電影級攝影機動畫序列
+  const createCameraAnimationSequence = (newMemberName) => {
+    const sequences = [
+      {
+        name: 'opening_establishing_shot',
+        duration: 4000,
+        description: '電影級開場建立鏡頭',
+        keyframes: [
+          { time: 0, position: { x: 0, y: 80, z: 120 }, target: { x: 0, y: 0, z: 0 }, fov: 85 },
+          { time: 0.3, position: { x: 15, y: 70, z: 100 }, target: { x: 0, y: 5, z: 0 }, fov: 80 },
+          { time: 0.7, position: { x: -10, y: 60, z: 80 }, target: { x: 0, y: 8, z: 0 }, fov: 75 },
+          { time: 1, position: { x: 0, y: 50, z: 70 }, target: { x: 0, y: 10, z: 0 }, fov: 70 }
+        ],
+        effects: {
+          particleIntensity: 0.3,
+          lightIntensity: 0.8,
+          fogDensity: 0.1
+        }
+      },
+      {
+        name: 'dramatic_descent',
+        duration: 5000,
+        description: '戲劇性俯衝鏡頭',
+        keyframes: [
+          { time: 0, position: { x: 0, y: 50, z: 70 }, target: { x: 0, y: 10, z: 0 }, fov: 70 },
+          { time: 0.2, position: { x: -25, y: 45, z: 55 }, target: { x: 0, y: 12, z: 0 }, fov: 68 },
+          { time: 0.5, position: { x: -15, y: 35, z: 45 }, target: { x: 0, y: 15, z: 0 }, fov: 65 },
+          { time: 0.8, position: { x: 10, y: 30, z: 40 }, target: { x: 0, y: 12, z: 0 }, fov: 62 },
+          { time: 1, position: { x: 0, y: 25, z: 35 }, target: { x: 0, y: 12, z: 0 }, fov: 60 }
+        ],
+        effects: {
+          particleIntensity: 0.5,
+          lightIntensity: 1.0,
+          fogDensity: 0.05
+        }
+      },
+      {
+        name: 'epic_bridge_orbit',
+        duration: 8000,
+        description: '史詩級橋樑環繞鏡頭',
+        keyframes: [
+          { time: 0, position: { x: 0, y: 25, z: 35 }, target: { x: 0, y: 12, z: 0 }, fov: 60 },
+          { time: 0.15, position: { x: 35, y: 30, z: 25 }, target: { x: 0, y: 10, z: 0 }, fov: 65 },
+          { time: 0.3, position: { x: 40, y: 35, z: 0 }, target: { x: 0, y: 8, z: 0 }, fov: 70 },
+          { time: 0.45, position: { x: 35, y: 40, z: -25 }, target: { x: 0, y: 12, z: 0 }, fov: 68 },
+          { time: 0.6, position: { x: 0, y: 45, z: -35 }, target: { x: 0, y: 10, z: 0 }, fov: 65 },
+          { time: 0.75, position: { x: -35, y: 40, z: -25 }, target: { x: 0, y: 8, z: 0 }, fov: 68 },
+          { time: 0.9, position: { x: -40, y: 35, z: 0 }, target: { x: 0, y: 12, z: 0 }, fov: 70 },
+          { time: 1, position: { x: -35, y: 30, z: 25 }, target: { x: 0, y: 10, z: 0 }, fov: 65 }
+        ],
+        effects: {
+          particleIntensity: 0.8,
+          lightIntensity: 1.2,
+          fogDensity: 0.02
+        }
+      },
+      {
+        name: 'member_spotlight_sequence',
+        duration: 7000,
+        description: '新會員聚光燈特寫序列',
+        keyframes: [
+          { time: 0, position: { x: -35, y: 30, z: 25 }, target: { x: 0, y: 10, z: 0 }, fov: 65 },
+          { time: 0.2, position: { x: -25, y: 25, z: 30 }, target: { x: 0, y: 15, z: 0 }, fov: 55 },
+          { time: 0.4, position: { x: -15, y: 22, z: 28 }, target: { x: 0, y: 18, z: 0 }, fov: 50 },
+          { time: 0.6, position: { x: -5, y: 20, z: 25 }, target: { x: 0, y: 20, z: 0 }, fov: 45 },
+          { time: 0.8, position: { x: 0, y: 18, z: 22 }, target: { x: 0, y: 22, z: 0 }, fov: 42 },
+          { time: 1, position: { x: 0, y: 16, z: 18 }, target: { x: 0, y: 24, z: 0 }, fov: 38 }
+        ],
+        effects: {
+          particleIntensity: 1.0,
+          lightIntensity: 1.5,
+          fogDensity: 0.01,
+          spotlight: true
+        }
+      },
+      {
+        name: 'bridge_completion_reveal',
+        duration: 6000,
+        description: '橋樑完成揭示鏡頭',
+        keyframes: [
+          { time: 0, position: { x: 0, y: 16, z: 18 }, target: { x: 0, y: 24, z: 0 }, fov: 38 },
+          { time: 0.2, position: { x: 5, y: 20, z: 25 }, target: { x: 0, y: 20, z: 0 }, fov: 45 },
+          { time: 0.4, position: { x: 0, y: 25, z: 35 }, target: { x: 0, y: 15, z: 0 }, fov: 55 },
+          { time: 0.6, position: { x: 0, y: 30, z: 45 }, target: { x: 0, y: 10, z: 0 }, fov: 65 },
+          { time: 0.8, position: { x: 0, y: 40, z: 55 }, target: { x: 0, y: 8, z: 0 }, fov: 75 },
+          { time: 1, position: { x: 0, y: 35, z: 50 }, target: { x: 0, y: 10, z: 0 }, fov: 70 }
+        ],
+        effects: {
+          particleIntensity: 1.2,
+          lightIntensity: 1.8,
+          fogDensity: 0.03,
+          celebration: true
+        }
+      },
+      {
+        name: 'final_hero_shot',
+        duration: 5000,
+        description: '最終英雄鏡頭定格',
+        keyframes: [
+          { time: 0, position: { x: 0, y: 35, z: 50 }, target: { x: 0, y: 10, z: 0 }, fov: 70 },
+          { time: 0.3, position: { x: 0, y: 32, z: 45 }, target: { x: 0, y: 12, z: 0 }, fov: 68 },
+          { time: 0.7, position: { x: 0, y: 30, z: 42 }, target: { x: 0, y: 14, z: 0 }, fov: 66 },
+          { time: 1, position: { x: 0, y: 28, z: 40 }, target: { x: 0, y: 15, z: 0 }, fov: 65 }
+        ],
+        effects: {
+          particleIntensity: 0.6,
+          lightIntensity: 1.0,
+          fogDensity: 0.02,
+          finalFrame: true
+        }
+      }
+    ];
+    
+    return sequences;
+  };
 
+  // 執行攝影機動畫
+  const playCameraAnimation = (sequences) => {
+    if (!cameraRef.current || !sequences || sequences.length === 0) return;
+    
+    setCameraAnimation(prev => ({ ...prev, isPlaying: true, progress: 0 }));
+    animationStartTimeRef.current = Date.now();
+    animationTimelineRef.current = sequences;
+    
+    let currentSequenceIndex = 0;
+    let sequenceStartTime = Date.now();
+    
+    const animateCamera = () => {
+      if (currentSequenceIndex >= sequences.length) {
+        // 動畫完成
+        setCameraAnimation(prev => ({ 
+          ...prev, 
+          isPlaying: false, 
+          progress: 100,
+          currentSequence: null 
+        }));
+        return;
+      }
+      
+      const currentSequence = sequences[currentSequenceIndex];
+      const elapsed = Date.now() - sequenceStartTime;
+      const progress = Math.min(elapsed / currentSequence.duration, 1);
+      
+      // 更新當前序列信息
+      setCameraAnimation(prev => ({ 
+        ...prev, 
+        currentSequence: currentSequence.name,
+        progress: ((currentSequenceIndex + progress) / sequences.length) * 100
+      }));
+      
+      // 計算當前關鍵幀之間的插值
+      const keyframes = currentSequence.keyframes;
+      let currentKeyframe = null;
+      let nextKeyframe = null;
+      let keyframeProgress = 0;
+      
+      for (let i = 0; i < keyframes.length - 1; i++) {
+        if (progress >= keyframes[i].time && progress <= keyframes[i + 1].time) {
+          currentKeyframe = keyframes[i];
+          nextKeyframe = keyframes[i + 1];
+          const keyframeDuration = nextKeyframe.time - currentKeyframe.time;
+          keyframeProgress = keyframeDuration > 0 ? 
+            (progress - currentKeyframe.time) / keyframeDuration : 0;
+          break;
+        }
+      }
+      
+      if (!currentKeyframe || !nextKeyframe) {
+        currentKeyframe = keyframes[keyframes.length - 1];
+        nextKeyframe = currentKeyframe;
+        keyframeProgress = 1;
+      }
+      
+      // 使用緩動函數進行平滑插值
+      const easeInOutCubic = (t) => {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      };
+      
+      const smoothProgress = easeInOutCubic(keyframeProgress);
+      
+      // 插值計算攝影機位置
+      const position = {
+        x: currentKeyframe.position.x + (nextKeyframe.position.x - currentKeyframe.position.x) * smoothProgress,
+        y: currentKeyframe.position.y + (nextKeyframe.position.y - currentKeyframe.position.y) * smoothProgress,
+        z: currentKeyframe.position.z + (nextKeyframe.position.z - currentKeyframe.position.z) * smoothProgress
+      };
+      
+      const target = {
+        x: currentKeyframe.target.x + (nextKeyframe.target.x - currentKeyframe.target.x) * smoothProgress,
+        y: currentKeyframe.target.y + (nextKeyframe.target.y - currentKeyframe.target.y) * smoothProgress,
+        z: currentKeyframe.target.z + (nextKeyframe.target.z - currentKeyframe.target.z) * smoothProgress
+      };
+      
+      const fov = currentKeyframe.fov + (nextKeyframe.fov - currentKeyframe.fov) * smoothProgress;
+      
+      // 應用到攝影機
+       cameraRef.current.position.set(position.x, position.y, position.z);
+       cameraRef.current.lookAt(target.x, target.y, target.z);
+       cameraRef.current.fov = fov;
+       cameraRef.current.updateProjectionMatrix();
+       
+       // 應用動態視覺效果
+       if (currentSequence.effects) {
+         applySequenceEffects(currentSequence.effects, smoothProgress);
+       }
+      
+      // 檢查當前序列是否完成
+      if (progress >= 1) {
+        currentSequenceIndex++;
+        sequenceStartTime = Date.now();
+      }
+      
+      // 繼續動畫
+      cameraAnimationRef.current = requestAnimationFrame(animateCamera);
+    };
+    
+    // 開始動畫
+    cameraAnimationRef.current = requestAnimationFrame(animateCamera);
+  };
+
+  // 停止攝影機動畫
+  const stopCameraAnimation = () => {
+    if (cameraAnimationRef.current) {
+      cancelAnimationFrame(cameraAnimationRef.current);
+      cameraAnimationRef.current = null;
+    }
+    setCameraAnimation(prev => ({ 
+      ...prev, 
+      isPlaying: false, 
+      currentSequence: null,
+      progress: 0 
+    }));
+  };
+
+  // 重置攝影機到初始位置
+  const resetCameraPosition = () => {
+    if (cameraRef.current) {
+      cameraRef.current.position.set(0, 20, 30);
+      cameraRef.current.lookAt(0, 0, 0);
+      cameraRef.current.fov = 75;
+      cameraRef.current.updateProjectionMatrix();
+    }
+  };
+
+  // 應用序列視覺效果
+  const applySequenceEffects = (effects, progress) => {
+    if (!sceneRef.current) return;
+    
+    // 調整粒子系統強度
+    if (effects.particleIntensity !== undefined && goldParticlesRef.current) {
+      const targetIntensity = effects.particleIntensity;
+      goldParticlesRef.current.material.opacity = targetIntensity * 0.8;
+      
+      // 調整粒子數量和速度
+      const particles = goldParticlesRef.current.geometry.attributes.position.array;
+      for (let i = 0; i < particles.length; i += 3) {
+        const speedMultiplier = targetIntensity * 2;
+        particles[i + 1] += speedMultiplier * 0.01; // Y軸移動
+      }
+      goldParticlesRef.current.geometry.attributes.position.needsUpdate = true;
+    }
+    
+    // 調整光照強度
+    if (effects.lightIntensity !== undefined) {
+      const targetIntensity = effects.lightIntensity;
+      
+      // 調整主方向光
+      if (sceneRef.current.children) {
+        sceneRef.current.children.forEach(child => {
+          if (child.type === 'DirectionalLight') {
+            child.intensity = targetIntensity * 0.8;
+          } else if (child.type === 'SpotLight') {
+            child.intensity = targetIntensity * 1.2;
+          } else if (child.type === 'AmbientLight') {
+            child.intensity = targetIntensity * 0.3;
+          }
+        });
+      }
+    }
+    
+    // 特殊效果處理
+    if (effects.spotlight && progress > 0.5) {
+      // 聚光燈效果 - 增強新會員區域的光照
+      createMemberSpotlight();
+    }
+    
+    if (effects.celebration && progress > 0.7) {
+      // 慶祝效果 - 觸發粒子爆發
+      triggerCelebrationParticles();
+    }
+    
+    if (effects.finalFrame && progress > 0.9) {
+      // 最終定格效果 - 優化會員姓名顯示
+      enhanceMemberNameDisplay();
+    }
+  };
+
+  // 創建會員聚光燈
+  const createMemberSpotlight = () => {
+    if (!sceneRef.current || !newMember) return;
+    
+    // 移除舊的聚光燈
+    const existingSpotlight = sceneRef.current.getObjectByName('memberSpotlight');
+    if (existingSpotlight) {
+      sceneRef.current.remove(existingSpotlight);
+    }
+    
+    // 創建新的聚光燈
+    const spotlight = new THREE.SpotLight(0xffd700, 2, 100, Math.PI / 6, 0.5);
+    spotlight.name = 'memberSpotlight';
+    spotlight.position.set(0, 40, 20);
+    spotlight.target.position.set(0, 20, 0);
+    spotlight.castShadow = true;
+    
+    sceneRef.current.add(spotlight);
+    sceneRef.current.add(spotlight.target);
+  };
+
+  // 觸發慶祝粒子效果
+  const triggerCelebrationParticles = () => {
+    if (!sceneRef.current) return;
+    
+    // 創建慶祝粒子系統
+    const particleCount = 200;
+    const particles = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      
+      // 從橋樑中心向外爆發
+      const angle = (i / particleCount) * Math.PI * 2;
+      const radius = Math.random() * 30 + 10;
+      
+      positions[i3] = Math.cos(angle) * radius;
+      positions[i3 + 1] = Math.random() * 20 + 15;
+      positions[i3 + 2] = Math.sin(angle) * radius;
+      
+      // 金色系顏色
+      colors[i3] = 1.0; // R
+      colors[i3 + 1] = 0.8 + Math.random() * 0.2; // G
+      colors[i3 + 2] = 0.0; // B
+    }
+    
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    
+    const material = new THREE.PointsMaterial({
+      size: 0.5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+    
+    const celebrationParticles = new THREE.Points(particles, material);
+    celebrationParticles.name = 'celebrationParticles';
+    sceneRef.current.add(celebrationParticles);
+    
+    // 動畫粒子消散
+    setTimeout(() => {
+      if (sceneRef.current) {
+        sceneRef.current.remove(celebrationParticles);
+      }
+    }, 3000);
+  };
+
+  // 增強會員姓名顯示
+  const enhanceMemberNameDisplay = () => {
+    if (!newMember || !sceneRef.current) return;
+    
+    // 找到新會員的標籤
+    const memberLabels = sceneRef.current.children.filter(child => 
+      child.geometry && child.geometry.type === 'PlaneGeometry' && 
+      child.material && child.material.map
+    );
+    
+    // 找到最新添加的會員標籤（通常是最後一個）
+    const newMemberLabel = memberLabels[memberLabels.length - 1];
+    
+    if (newMemberLabel) {
+      // 創建增強版的會員姓名標籤
+      const enhancedCanvas = document.createElement('canvas');
+      const context = enhancedCanvas.getContext('2d');
+      enhancedCanvas.width = 1024; // 更高解析度
+      enhancedCanvas.height = 512;
+      
+      // 創建豪華漸變背景
+      const gradient = context.createRadialGradient(512, 256, 0, 512, 256, 400);
+      gradient.addColorStop(0, '#2a2a2a');
+      gradient.addColorStop(0.3, '#1a1a1a');
+      gradient.addColorStop(0.7, '#0a0a0a');
+      gradient.addColorStop(1, '#000000');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 1024, 512);
+      
+      // 多層金色邊框效果
+      const borderColors = ['#FFD700', '#FFA500', '#FF8C00'];
+      const borderWidths = [12, 8, 4];
+      
+      borderColors.forEach((color, i) => {
+        context.strokeStyle = color;
+        context.lineWidth = borderWidths[i];
+        const offset = i * 6 + 8;
+        context.strokeRect(offset, offset, 1024 - offset * 2, 512 - offset * 2);
+      });
+      
+      // 添加發光效果
+      context.shadowColor = '#FFD700';
+      context.shadowBlur = 20;
+      
+      // 會員名稱 - 超大金色文字
+      context.fillStyle = '#FFD700';
+      context.font = 'bold 72px serif';
+      context.textAlign = 'center';
+      context.fillText(newMember.name, 512, 240);
+      
+      // 重複繪製以增強發光效果
+      context.shadowBlur = 40;
+      context.fillText(newMember.name, 512, 240);
+      
+      // 專業別 - 橙金色文字
+      context.shadowBlur = 15;
+      context.fillStyle = '#FFA500';
+      context.font = 'bold 36px serif';
+      context.fillText(newMember.profession || '專業別', 512, 320);
+      
+      // 裝飾圖案 - 更複雜的設計
+      context.shadowBlur = 10;
+      context.strokeStyle = '#FFD700';
+      context.lineWidth = 4;
+      
+      // 上裝飾線
+      context.beginPath();
+      context.moveTo(200, 380);
+      context.lineTo(824, 380);
+      context.stroke();
+      
+      // 下裝飾線
+      context.beginPath();
+      context.moveTo(200, 400);
+      context.lineTo(824, 400);
+      context.stroke();
+      
+      // 側邊裝飾
+      for (let i = 0; i < 5; i++) {
+        const x = 150 + i * 150;
+        context.beginPath();
+        context.arc(x, 390, 8, 0, Math.PI * 2);
+        context.fill();
+      }
+      
+      // 更新材質
+      const enhancedTexture = new THREE.CanvasTexture(enhancedCanvas);
+      enhancedTexture.needsUpdate = true;
+      
+      const enhancedMaterial = new THREE.MeshPhysicalMaterial({
+        map: enhancedTexture,
+        transparent: true,
+        opacity: 1.0,
+        emissive: 0x222200,
+        emissiveIntensity: 0.3,
+        roughness: 0.1,
+        metalness: 0.8,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1
+      });
+      
+      // 更新標籤幾何體為更大尺寸
+      const enhancedGeometry = new THREE.PlaneGeometry(12, 6);
+      newMemberLabel.geometry.dispose();
+      newMemberLabel.material.dispose();
+      newMemberLabel.geometry = enhancedGeometry;
+      newMemberLabel.material = enhancedMaterial;
+      
+      // 添加脈衝動畫效果
+      let pulseDirection = 1;
+      let pulseScale = 1;
+      
+      const pulseAnimation = () => {
+        if (!newMemberLabel.parent) return; // 如果標籤已被移除，停止動畫
+        
+        pulseScale += pulseDirection * 0.005;
+        if (pulseScale > 1.1) {
+          pulseDirection = -1;
+        } else if (pulseScale < 0.95) {
+          pulseDirection = 1;
+        }
+        
+        newMemberLabel.scale.set(pulseScale, pulseScale, 1);
+        requestAnimationFrame(pulseAnimation);
+      };
+      
+      // 開始脈衝動畫
+      pulseAnimation();
+      
+      // 添加額外的光環效果
+      const enhancedHaloGeometry = new THREE.RingGeometry(5, 7, 32);
+      const enhancedHaloMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFFD700,
+        transparent: true,
+        opacity: 0.5,
+        side: THREE.DoubleSide
+      });
+      
+      const enhancedHalo = new THREE.Mesh(enhancedHaloGeometry, enhancedHaloMaterial);
+      enhancedHalo.position.copy(newMemberLabel.position);
+      enhancedHalo.position.y -= 10;
+      enhancedHalo.name = 'enhancedHalo';
+      
+      // 移除舊的光環
+      const oldHalo = sceneRef.current.getObjectByName('enhancedHalo');
+      if (oldHalo) {
+        sceneRef.current.remove(oldHalo);
+      }
+      
+      sceneRef.current.add(enhancedHalo);
+      
+      // 光環旋轉動畫
+      const rotateHalo = () => {
+        if (!enhancedHalo.parent) return;
+        enhancedHalo.rotation.z += 0.01;
+        requestAnimationFrame(rotateHalo);
+      };
+      
+      rotateHalo();
+    }
+  };
+
+  // ==================== 專業運鏡動畫系統結束 ====================
 
   // 改善的音效系統
   const playClickSound = () => {
@@ -942,6 +1485,104 @@ const ConnectionCeremony = () => {
       oscillator.stop(audioContext.currentTime + 0.5);
     } catch (error) {
       console.warn('音效播放失敗:', error);
+    }
+  };
+
+  // 豪華場景過渡音效
+  const playTransitionSound = () => {
+    if (!ceremonySettings.enableSound) return;
+    
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // 創建多層音效，營造豪華感
+      const createTone = (frequency, startTime, duration, volume = 0.1) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime + startTime);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+        gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + startTime + 0.1);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + duration);
+        
+        oscillator.start(audioContext.currentTime + startTime);
+        oscillator.stop(audioContext.currentTime + startTime + duration);
+      };
+      
+      // 豪華和弦進行：C大調 - F大調 - G大調 - C大調
+      // 第一個和弦 (C大調)
+      createTone(261.63, 0, 0.8, 0.08);    // C4
+      createTone(329.63, 0, 0.8, 0.06);    // E4
+      createTone(392.00, 0, 0.8, 0.05);    // G4
+      
+      // 第二個和弦 (F大調)
+      createTone(349.23, 0.3, 0.8, 0.08);  // F4
+      createTone(440.00, 0.3, 0.8, 0.06);  // A4
+      createTone(523.25, 0.3, 0.8, 0.05);  // C5
+      
+      // 第三個和弦 (G大調)
+      createTone(392.00, 0.6, 0.8, 0.08);  // G4
+      createTone(493.88, 0.6, 0.8, 0.06);  // B4
+      createTone(587.33, 0.6, 0.8, 0.05);  // D5
+      
+      // 最終解決 (C大調，更高音域)
+      createTone(523.25, 0.9, 1.2, 0.1);   // C5
+      createTone(659.25, 0.9, 1.2, 0.08);  // E5
+      createTone(783.99, 0.9, 1.2, 0.06);  // G5
+    } catch (error) {
+      console.warn('過渡音效播放失敗:', error);
+    }
+  };
+
+  // 慶祝音效（用於儀式完成）
+  const playCelebrationSound = () => {
+    if (!ceremonySettings.enableSound) return;
+    
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // 創建上升音階效果
+      const frequencies = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50]; // C5到C6
+      
+      frequencies.forEach((freq, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        const startTime = index * 0.1;
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + startTime);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + startTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + 0.4);
+        
+        oscillator.start(audioContext.currentTime + startTime);
+        oscillator.stop(audioContext.currentTime + startTime + 0.4);
+      });
+      
+      // 添加最終的和弦爆發
+      setTimeout(() => {
+        [523.25, 659.25, 783.99, 1046.50].forEach(freq => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 1.5);
+        });
+      }, 800);
+    } catch (error) {
+      console.warn('慶祝音效播放失敗:', error);
     }
   };
 
@@ -1095,11 +1736,31 @@ const ConnectionCeremony = () => {
 
       if (result.success) {
         setNewMember(result.member);
-        transitionToStage('ceremony');
         toast.success(`歡迎 ${result.member.name} 加入連結之橋！`);
         playSuccessSound();
-        // 觸發新基石奠定動畫
-        triggerNewPillarAnimation(result.member);
+        
+        // 直接跳轉到橋樑場景，實現完全自動化
+        transitionToStage('bridge');
+        
+        // 延遲觸發動畫，確保場景已完全載入
+        setTimeout(() => {
+          // 觸發新基石奠定動畫
+          triggerNewPillarAnimation(result.member);
+          
+          // 自動觸發專業運鏡動畫序列
+          setTimeout(() => {
+            const animationSequences = createCameraAnimationSequence(result.member.name);
+            playCameraAnimation(animationSequences);
+            
+            // 設置自動播放狀態
+            setCameraAnimation(prev => ({ 
+              ...prev, 
+              autoPlay: true,
+              isPlaying: true 
+            }));
+          }, 1500); // 延遲1.5秒開始運鏡動畫，讓基石動畫先開始
+        }, 500); // 延遲0.5秒確保場景轉換完成
+        
         // 清空輸入框
         setNfcCardId('');
       } else {
@@ -1162,18 +1823,127 @@ const ConnectionCeremony = () => {
     }, 5000);
   };
 
-  // 改善的階段切換函數
+  // 增強的階段切換函數，包含豪華過渡效果
   const transitionToStage = (newStage) => {
     setIsTransitioning(true);
     
-    // 使用設置中的過渡時長
-    const duration = ceremonySettings.transitionDuration || 500;
+    // 播放場景過渡音效
+    playTransitionSound();
+    
+    // 觸發場景過渡動畫
+    triggerSceneTransition(newStage);
+    
+    // 如果是完成階段，播放慶祝音效
+    if (newStage === 'completed') {
+      setTimeout(() => {
+        playCelebrationSound();
+      }, 500);
+    }
+    
+    // 使用設置中的過渡時長，增加到更流暢的時間
+    const duration = ceremonySettings.transitionDuration || 1500;
+    
+    // 分階段過渡，創造更流暢的體驗
+    setTimeout(() => {
+      // 第一階段：淡出當前場景
+      if (sceneRef.current) {
+        sceneRef.current.traverse((child) => {
+          if (child.material) {
+            if (child.material.opacity !== undefined) {
+              child.material.transparent = true;
+              child.material.opacity = 0.3;
+            }
+          }
+        });
+      }
+    }, duration * 0.3);
     
     setTimeout(() => {
+      // 第二階段：切換場景狀態
       setCeremonyStage(newStage);
       updateProgress(newStage);
+    }, duration * 0.6);
+    
+    setTimeout(() => {
+      // 第三階段：淡入新場景
+      if (sceneRef.current) {
+        sceneRef.current.traverse((child) => {
+          if (child.material) {
+            if (child.material.opacity !== undefined) {
+              child.material.transparent = true;
+              child.material.opacity = 1.0;
+            }
+          }
+        });
+      }
       setIsTransitioning(false);
     }, duration);
+  };
+
+  // 場景過渡動畫觸發器
+  const triggerSceneTransition = (targetStage) => {
+    if (!sceneRef.current || !cameraRef.current) return;
+
+    // 根據目標場景調整視覺效果
+    const transitionEffects = {
+      'oath': {
+        cameraPosition: { x: 0, y: 5, z: 15 },
+        lightIntensity: 0.8,
+        fogDensity: 0.01
+      },
+      'bridge': {
+        cameraPosition: { x: 0, y: 8, z: 20 },
+        lightIntensity: 1.2,
+        fogDensity: 0.005
+      },
+      'ceremony': {
+        cameraPosition: { x: 0, y: 6, z: 12 },
+        lightIntensity: 1.5,
+        fogDensity: 0.003
+      },
+      'completed': {
+        cameraPosition: { x: 0, y: 10, z: 25 },
+        lightIntensity: 2.0,
+        fogDensity: 0.001
+      }
+    };
+
+    const effects = transitionEffects[targetStage];
+    if (effects) {
+      // 平滑過渡攝影機位置
+      const startPos = cameraRef.current.position.clone();
+      const targetPos = new THREE.Vector3(effects.cameraPosition.x, effects.cameraPosition.y, effects.cameraPosition.z);
+      
+      let progress = 0;
+      const transitionAnimation = () => {
+        progress += 0.02;
+        if (progress <= 1) {
+          cameraRef.current.position.lerpVectors(startPos, targetPos, progress);
+          
+          // 調整光照強度
+          if (ambientLightRef.current) {
+            ambientLightRef.current.intensity = THREE.MathUtils.lerp(
+              ambientLightRef.current.intensity,
+              effects.lightIntensity,
+              progress * 0.1
+            );
+          }
+          
+          // 調整霧效果
+          if (sceneRef.current.fog) {
+            sceneRef.current.fog.density = THREE.MathUtils.lerp(
+              sceneRef.current.fog.density,
+              effects.fogDensity,
+              progress * 0.1
+            );
+          }
+          
+          requestAnimationFrame(transitionAnimation);
+        }
+      };
+      
+      transitionAnimation();
+    }
   };
 
   // 更新進度
@@ -1363,16 +2133,123 @@ const ConnectionCeremony = () => {
     );
   };
 
-  // 過渡動畫組件
+  // 豪華過渡動畫組件
   const TransitionOverlay = () => {
     if (!isTransitioning) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-400 mx-auto mb-4"></div>
-          <p className="text-white text-xl">正在切換階段...</p>
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        {/* 豪華漸變背景 */}
+        <div 
+          className="absolute inset-0 transition-all duration-1000"
+          style={{
+            background: `
+              radial-gradient(circle at 50% 50%, 
+                rgba(255, 215, 0, 0.1) 0%,
+                rgba(184, 134, 11, 0.2) 30%,
+                rgba(0, 0, 0, 0.8) 70%,
+                rgba(0, 0, 0, 0.95) 100%
+              )
+            `
+          }}
+        />
+        
+        {/* 動態粒子背景 */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-yellow-400 rounded-full opacity-70"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
         </div>
+
+        {/* 主要內容區域 */}
+        <div className="relative text-center z-10">
+          {/* 豪華旋轉環 */}
+          <div className="relative mb-8">
+            {/* 外環 */}
+            <div 
+              className="w-24 h-24 border-4 border-transparent rounded-full mx-auto"
+              style={{
+                background: 'linear-gradient(45deg, #FFD700, #FFA500, #FFD700)',
+                animation: 'spin 2s linear infinite'
+              }}
+            />
+            {/* 內環 */}
+            <div 
+              className="absolute top-2 left-1/2 transform -translate-x-1/2 w-16 h-16 border-4 border-transparent rounded-full"
+              style={{
+                background: 'linear-gradient(-45deg, #FFA500, #FFD700, #FFA500)',
+                animation: 'spin 1.5s linear infinite reverse'
+              }}
+            />
+            {/* 中心光點 */}
+            <div 
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-yellow-300 rounded-full"
+              style={{
+                boxShadow: '0 0 20px #FFD700, 0 0 40px #FFD700, 0 0 60px #FFD700',
+                animation: 'pulse 1s ease-in-out infinite'
+              }}
+            />
+          </div>
+
+          {/* 豪華標題 */}
+          <h3 
+            className="text-3xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 bg-clip-text text-transparent"
+            style={{
+              textShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
+              animation: 'glow 2s ease-in-out infinite alternate'
+            }}
+          >
+            場景轉換中
+          </h3>
+
+          {/* 優雅的描述文字 */}
+          <p className="text-white text-lg opacity-90 mb-6">
+            正在為您準備下一個精彩時刻...
+          </p>
+
+          {/* 進度條 */}
+          <div className="w-64 h-2 bg-gray-700 rounded-full mx-auto overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full"
+              style={{
+                animation: 'progress 1.5s ease-in-out infinite'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 添加 CSS 動畫樣式 */}
+        <style jsx>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+          }
+          
+          @keyframes glow {
+            0% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+            100% { text-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.6); }
+          }
+          
+          @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+          }
+          
+          @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+          }
+        `}</style>
       </div>
     );
   };
