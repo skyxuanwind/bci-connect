@@ -58,7 +58,29 @@ router.get('/debug', async (req, res) => {
   }
 });
 
-// Configure multer for avatar upload
+// Check authentication status
+router.get('/check', authenticateToken, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      authenticated: true,
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        name: req.user.name,
+        role: req.user.role
+      }
+    });
+  } catch (error) {
+    console.error('Auth check error:', error);
+    res.status(500).json({
+      success: false,
+      message: '認證檢查失敗'
+    });
+  }
+});
+
+// Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
