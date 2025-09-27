@@ -40,6 +40,7 @@ const ConnectionCeremony = () => {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [cacheStats, setCacheStats] = useState(null);
+  const [isFullscreenVideo, setIsFullscreenVideo] = useState(false);
   
   const ceremonyRef = useRef(null);
   const canvasRef = useRef(null);
@@ -140,6 +141,20 @@ const ConnectionCeremony = () => {
   useEffect(() => {
     updateProgress(ceremonyStage);
   }, [ceremonyStage]);
+
+  // 監聽全螢幕變化
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreenVideo(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (ceremonyStage === 'bridge' && bridgeData.length > 0) {
@@ -1630,8 +1645,24 @@ const ConnectionCeremony = () => {
     }
   };
   
+  // 處理影片開始播放
+  const handleVideoPlay = () => {
+    // 進入全螢幕模式
+    setIsFullscreenVideo(true);
+    
+    // 嘗試進入瀏覽器全螢幕
+    if (videoRef.current && videoRef.current.requestFullscreen) {
+      videoRef.current.requestFullscreen().catch(err => {
+        console.log('無法進入全螢幕模式:', err);
+      });
+    }
+  };
+
   // 處理影片播放結束
   const handleVideoEnded = () => {
+    // 退出全螢幕模式
+    setIsFullscreenVideo(false);
+    
     // 記錄播放完成
     if (videoData && newMember) {
       fetch('/api/nfc-trigger/play-complete', {
@@ -1650,13 +1681,13 @@ const ConnectionCeremony = () => {
       });
     }
     
-    // 轉換到歡迎界面
+    // 轉換到歡迎界面，跳過橋樑場景
     setCeremonyStage('welcome');
     setShowWelcomeMessage(true);
     
-    // 3秒後自動進入橋樑場景
+    // 3秒後自動進入完成階段
     setTimeout(() => {
-      transitionToStage('bridge');
+      transitionToStage('completed');
     }, 3000);
   };
   
@@ -2087,6 +2118,11 @@ const ConnectionCeremony = () => {
 
   // 增強的階段切換函數，包含豪華過渡效果
   const transitionToStage = (newStage) => {
+    // 跳過橋樑場景，直接從 welcome 到 completed
+    if (newStage === 'bridge') {
+      newStage = 'completed';
+    }
+    
     setIsTransitioning(true);
     
     // 播放場景過渡音效
@@ -2212,9 +2248,10 @@ const ConnectionCeremony = () => {
   const updateProgress = (stage) => {
     const progressMap = {
       'loading': 0,
-      'oath': 25,
-      'bridge': 50,
-      'ceremony': 75,
+      'oath': 20,
+      'video': 40,
+      'welcome': 70,
+      'ceremony': 85,
       'completed': 100
     };
     setCeremonyProgress(progressMap[stage] || 0);
@@ -2594,30 +2631,64 @@ const ConnectionCeremony = () => {
         );
 
       case 'video':
+        // 全螢幕影片播放模式
+        if (isFullscreenVideo) {
+          return (
+            <div className="fixed inset-0 z-50 bg-black">
+              {videoData && !isVideoLoading && !videoError && (
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  onPlay={handleVideoPlay}
+                  onEnded={handleVideoEnded}
+                  onError={() => {
+                    setVideoError('影片播放失敗');
+                    console.error('影片播放錯誤');
+                  }}
+                  style={{ 
+                    backgroundColor: '#000',
+                    cursor: 'none' // 隱藏滑鼠游標
+                  }}
+                  controls={false} // 完全隱藏控制項
+                >
+                  <source src={videoBlobUrl || videoData.file_url} type="video/mp4" />
+                </video>
+              )}
+            </div>
+          );
+        }
+
+        // 非全螢幕模式的影片播放界面
         return (
           <div className="flex flex-col items-center justify-center h-full p-8 relative">
             {/* 背景裝飾 */}
-            <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black"></div>
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping opacity-60"></div>
+              <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-orange-500 rounded-full animate-pulse opacity-80"></div>
+              <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-yellow-300 rounded-full animate-bounce opacity-70"></div>
+              <div className="absolute top-2/3 right-1/4 w-1 h-1 bg-yellow-500 rounded-full animate-ping opacity-50"></div>
+            </div>
             
-            {/* 影片播放區域 */}
-            <div className="relative z-10 w-full max-w-6xl mx-auto">
-              {(isVideoLoading || isDownloading) && (
+            <div className="max-w-6xl w-full">
+              {isVideoLoading && (
                 <div className="text-center mb-8">
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-400 mx-auto mb-4"></div>
-                  <h2 className="text-2xl font-bold text-white">
-                    {isDownloading ? '正在下載影片...' : '正在載入歡迎影片...'}
-                  </h2>
-                  {isDownloading && downloadProgress > 0 && (
-                    <div className="mt-4 max-w-md mx-auto">
-                      <div className="bg-gray-700 rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-yellow-400 to-orange-500 h-full transition-all duration-300"
-                          style={{ width: `${downloadProgress}%` }}
-                        ></div>
+                  <div className="bg-gray-800/50 backdrop-blur-sm border border-yellow-400/30 rounded-lg p-8 mb-4">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+                    <h3 className="text-2xl font-bold text-yellow-400 mb-2">正在載入歡迎影片</h3>
+                    <p className="text-gray-300">請稍候，我們正在為您準備專屬的歡迎體驗...</p>
+                    {downloadProgress > 0 && (
+                      <div className="mt-4">
+                        <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+                          <div 
+                            className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${downloadProgress}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-sm text-gray-300 mt-2">{Math.round(downloadProgress)}% 完成</p>
                       </div>
-                      <p className="text-sm text-gray-300 mt-2">{Math.round(downloadProgress)}% 完成</p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
               
@@ -2638,75 +2709,49 @@ const ConnectionCeremony = () => {
               
               {videoData && !isVideoLoading && !videoError && (
                 <div className="relative">
-                  {/* 影片標題 */}
-                  <div className="text-center mb-6">
-                    <h2 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent mb-2">
-                      {videoData.title || '歡迎加入 GBC'}
-                    </h2>
-                    {videoData.description && (
-                      <p className="text-lg text-gray-300">{videoData.description}</p>
-                    )}
-                  </div>
-                  
                   {/* 影片播放器 */}
                   <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl border border-yellow-400/30">
                     <video
                       ref={videoRef}
-                      className="w-full h-auto max-h-[70vh] object-contain"
-                      controls
+                      className="w-full h-auto max-h-[80vh] object-contain"
                       autoPlay
+                      onPlay={handleVideoPlay}
                       onEnded={handleVideoEnded}
                       onError={() => {
                         setVideoError('影片播放失敗');
                         console.error('影片播放錯誤');
                       }}
                       style={{ backgroundColor: '#000' }}
+                      controls={false} // 隱藏預設控制項
                     >
                       <source src={videoBlobUrl || videoData.file_url} type="video/mp4" />
                       您的瀏覽器不支援影片播放。
                     </video>
                     
-                    {/* 影片控制覆蓋層 */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                      <div className="flex items-center justify-between text-white">
-                        <div className="flex items-center space-x-4">
-                          <span className="text-sm opacity-80">
-                            {videoData.duration ? `時長: ${Math.floor(videoData.duration / 60)}:${(videoData.duration % 60).toString().padStart(2, '0')}` : ''}
-                          </span>
-                        </div>
-                        <button
-                          onClick={handleVideoEnded}
-                          className="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-lg border border-yellow-400/30 transition-colors text-sm"
-                        >
-                          跳過影片
-                        </button>
-                      </div>
+                    {/* 簡化的控制覆蓋層 */}
+                    <div className="absolute bottom-4 right-4">
+                      <button
+                        onClick={handleVideoEnded}
+                        className="px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-lg border border-white/30 transition-colors text-sm backdrop-blur-sm"
+                      >
+                        跳過
+                      </button>
                     </div>
                   </div>
                   
                   {/* 底部提示 */}
                   <div className="text-center mt-6">
                     <p className="text-gray-400 text-sm">
-                      影片播放完成後將自動進入歡迎界面
+                      影片將自動全螢幕播放，播放完成後將進入歡迎界面
                     </p>
-                    {videoBlobUrl && (
-                      <p className="text-green-400 text-xs mt-2">
-                        ✓ 影片已緩存，播放更流暢
-                      </p>
-                    )}
-                    {cacheStats && (
-                      <div className="text-xs text-gray-500 mt-2 space-x-4">
-                        <span>緩存: {cacheStats.totalFiles} 個文件</span>
-                        <span>大小: {(cacheStats.totalSize / 1024 / 1024).toFixed(1)} MB</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
             </div>
           </div>
         );
-
+      break;
+      
       case 'welcome':
         return (
           <div className="flex flex-col items-center justify-center h-full p-8 relative">
@@ -2808,6 +2853,7 @@ const ConnectionCeremony = () => {
             </div>
           </div>
         );
+        break;
 
       case 'bridge':
         return (
@@ -2875,6 +2921,7 @@ const ConnectionCeremony = () => {
             </div>
           </div>
         );
+        break;
 
       case 'ceremony':
         return (
@@ -2974,6 +3021,7 @@ const ConnectionCeremony = () => {
             </div>
           </div>
         );
+        break;
 
       case 'completed':
         return (
@@ -3104,6 +3152,7 @@ const ConnectionCeremony = () => {
             </div>
           </div>
         );
+        break;
 
       default:
         return null;
