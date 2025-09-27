@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import videoCacheService from '../services/videoCacheService';
+import nfcCoordinator from '../services/nfcCoordinator';
 
 const ConnectionCeremony = () => {
   const { user } = useAuth();
@@ -94,6 +95,35 @@ const ConnectionCeremony = () => {
     initializeCeremony();
     updateProgress(ceremonyStage); // 初始化進度
     
+    // 註冊 NFC 協調器
+    const systemId = 'connection-ceremony';
+    nfcCoordinator.registerSystem(systemId, {
+      priority: 2, // 高優先級（連結之橋儀式優先於報到系統）
+      onCardDetected: (data) => {
+        console.log('🎭 連結之橋儀式收到卡片:', data);
+        if (data.lastCardUid) {
+          setNfcCardId(data.lastCardUid);
+          // 自動觸發驗證
+          setTimeout(() => {
+            handleNfcVerification(data.lastCardUid);
+          }, 500);
+        }
+      },
+      onStatusChange: (active) => {
+        setGatewayStatus(prev => ({
+          ...prev,
+          hasControl: active,
+          conflictDetected: !active
+        }));
+        
+        if (active) {
+          toast.success('🎭 連結之橋儀式已獲得 NFC 控制權');
+        } else {
+          toast.warn('⚠️ NFC 控制權被其他系統佔用');
+        }
+      }
+    });
+    
     // 初始化 NFC Gateway
     checkGatewayStatus();
     
@@ -106,8 +136,9 @@ const ConnectionCeremony = () => {
         rendererRef.current.dispose();
       }
       
-      // 清理 NFC 輪詢
-      stopNfcPolling();
+      // 釋放 NFC 控制權
+      nfcCoordinator.releaseControl(systemId);
+      nfcCoordinator.unregisterSystem(systemId);
     };
   }, [user]);
 
@@ -2046,35 +2077,27 @@ const ConnectionCeremony = () => {
   const startNFCReading = async () => {
     setNfcError(null);
     
+    // 首先請求 NFC 控制權
+    const systemId = 'connection-ceremony';
+    const hasControl = await nfcCoordinator.requestControl(systemId);
+    
+    if (!hasControl) {
+      const activeSystem = nfcCoordinator.getActiveSystem();
+      setNfcError(`NFC 控制權被 ${activeSystem} 佔用，請先停止其他 NFC 系統`);
+      toast.error(`NFC 控制權被 ${activeSystem} 佔用`);
+      return;
+    }
+    
     try {
-      const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/start-reader`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const success = await nfcCoordinator.startReader(systemId);
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Gateway 服務返回了非 JSON 響應');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
+      if (success) {
         setIsNfcReading(true);
         setNfcSuccess('NFC 讀卡機啟動成功！請將 NFC 卡片靠近讀卡機');
-        toast.success('NFC 自動感應已啟動');
+        toast.success('🎭 連結之橋儀式 NFC 自動感應已啟動');
         setTimeout(() => setNfcSuccess(null), 5000);
-        
-        // 開始輪詢 NFC 卡片
-        startNfcPolling();
       } else {
-        setNfcError(data.message || 'NFC 讀卡機啟動失敗');
+        setNfcError('NFC 讀卡機啟動失敗');
         toast.error('NFC 讀卡機啟動失敗');
       }
     } catch (error) {
@@ -2094,35 +2117,21 @@ const ConnectionCeremony = () => {
   
   // 停止 NFC 讀卡機
   const stopNFCReading = async () => {
+    const systemId = 'connection-ceremony';
+    
     try {
-      const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/stop-reader`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const success = await nfcCoordinator.stopReader(systemId);
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Gateway 服務返回了非 JSON 響應');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
+      if (success) {
         setIsNfcReading(false);
         setNfcSuccess('NFC 讀卡機已停止');
-        toast.info('NFC 自動感應已停止');
+        toast.info('🎭 連結之橋儀式 NFC 自動感應已停止');
         setTimeout(() => setNfcSuccess(null), 3000);
         
-        // 停止輪詢
-        stopNfcPolling();
+        // 釋放控制權
+        nfcCoordinator.releaseControl(systemId);
       } else {
-        setNfcError(data.message || 'NFC 讀卡機停止失敗');
+        setNfcError('NFC 讀卡機停止失敗');
       }
     } catch (error) {
       console.error('停止 NFC 讀卡機失敗:', error);
@@ -2138,76 +2147,7 @@ const ConnectionCeremony = () => {
     }
   };
   
-  // NFC 輪詢相關
-  const nfcPollingRef = useRef(null);
-  const lastDetectedCardRef = useRef(null);
-  const lastScanTimeRef = useRef(null);
-  
-  const startNfcPolling = () => {
-    if (nfcPollingRef.current) {
-      clearInterval(nfcPollingRef.current);
-    }
-    
-    console.log('開始 NFC 輪詢...');
-    
-    nfcPollingRef.current = setInterval(async () => {
-      try {
-        const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
-        const data = await response.json();
-        
-        // 檢查是否有新的卡片檢測 - 必須同時滿足以下條件：
-        // 1. 有 lastCardUid
-        // 2. lastCardUid 與上次不同，或者是新的掃描時間
-        // 3. 有 lastScanTime 且是最近的（5秒內）
-        const hasNewCard = data.lastCardUid && data.lastCardUid !== lastDetectedCardRef.current;
-        const hasNewScanTime = data.lastScanTime && data.lastScanTime !== lastScanTimeRef.current;
-        const isRecentScan = data.lastScanTime && 
-          (new Date() - new Date(data.lastScanTime)) < 5000; // 5秒內的掃描才算有效
-        
-        if (data.lastCardUid && (hasNewCard || hasNewScanTime) && isRecentScan) {
-          // 檢測到新的 NFC 卡片感應
-          console.log('檢測到新的 NFC 卡片感應:', {
-            cardUid: data.lastCardUid,
-            scanTime: data.lastScanTime,
-            previousCard: lastDetectedCardRef.current,
-            previousScanTime: lastScanTimeRef.current,
-            timeDiff: new Date() - new Date(data.lastScanTime)
-          });
-          
-          // 更新引用
-          lastDetectedCardRef.current = data.lastCardUid;
-          lastScanTimeRef.current = data.lastScanTime;
-          
-          setNfcCardId(data.lastCardUid);
-          
-          // 自動觸發驗證
-          setTimeout(() => {
-            handleNfcVerification(data.lastCardUid);
-          }, 500);
-        }
-        
-        setGatewayStatus(prev => ({
-          ...prev,
-          ...data,
-          lastCardUid: data.lastCardUid,
-          lastScanTime: data.lastScanTime
-        }));
-      } catch (error) {
-        console.error('NFC 輪詢錯誤:', error);
-      }
-    }, 1000); // 每秒檢查一次
-  };
-  
-  const stopNfcPolling = () => {
-    if (nfcPollingRef.current) {
-      clearInterval(nfcPollingRef.current);
-      nfcPollingRef.current = null;
-    }
-    // 重置所有檢測相關的引用
-    lastDetectedCardRef.current = null;
-    lastScanTimeRef.current = null;
-    console.log('NFC 輪詢已停止，重置檢測狀態');
-  };
+  // NFC 輪詢已由協調器處理，移除舊的輪詢函數
 
   // 改善的 NFC 驗證處理
   const handleNfcVerification = async (cardId = null) => {

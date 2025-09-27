@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import nfcCoordinator from '../services/nfcCoordinator';
 
 const NFCCheckin = () => {
   const { user } = useAuth();
@@ -13,6 +14,11 @@ const NFCCheckin = () => {
   const [totalCheckins, setTotalCheckins] = useState(0);
   const [lastUpdate, setLastUpdate] = useState('');
   const [sseConnected, setSseConnected] = useState(false);
+  const [nfcControlStatus, setNfcControlStatus] = useState({
+    hasControl: false,
+    activeSystem: null,
+    conflictDetected: false
+  });
 
 
   // 更新報到狀態
@@ -201,7 +207,44 @@ const NFCCheckin = () => {
 
 
 
+  // NFC 協調器管理
   useEffect(() => {
+    const systemId = 'nfc-checkin';
+    
+    // 註冊 NFC 報到系統
+    nfcCoordinator.registerSystem(systemId, {
+      priority: 1, // 中等優先級
+      onCardDetected: (data) => {
+        console.log('🆔 NFC 報到系統收到卡片:', data);
+        // 觸發報到狀態更新
+        updateCheckinStatus();
+      },
+      onStatusChange: (active) => {
+        setNfcControlStatus(prev => ({
+          ...prev,
+          hasControl: active,
+          activeSystem: active ? systemId : nfcCoordinator.getActiveSystem(),
+          conflictDetected: !active && nfcCoordinator.getActiveSystem() !== null
+        }));
+      }
+    });
+
+    // 請求 NFC 控制權
+    const requestControl = async () => {
+      const success = await nfcCoordinator.requestControl(systemId);
+      if (!success) {
+        console.warn('⚠️ NFC 報到系統無法獲得控制權');
+        setNfcControlStatus(prev => ({
+          ...prev,
+          hasControl: false,
+          activeSystem: nfcCoordinator.getActiveSystem(),
+          conflictDetected: true
+        }));
+      }
+    };
+
+    requestControl();
+
     // 初始載入
     updateCheckinStatus();
     fetchNFCStatus();
@@ -209,17 +252,20 @@ const NFCCheckin = () => {
       fetchAllCheckins();
     }
     
-    // 每2秒自動更新
-    const interval = setInterval(updateCheckinStatus, 2000);
+    // 每5秒更新報到狀態（降低頻率避免衝突）
+    const interval = setInterval(updateCheckinStatus, 5000);
     
-    // 每10秒更新 NFC 狀態
-    const statusInterval = setInterval(fetchNFCStatus, 10000);
+    // 每30秒更新 NFC 狀態（降低頻率）
+    const statusInterval = setInterval(fetchNFCStatus, 30000);
     
     return () => {
       clearInterval(interval);
       clearInterval(statusInterval);
+      // 釋放控制權並取消註冊
+      nfcCoordinator.releaseControl(systemId);
+      nfcCoordinator.unregisterSystem(systemId);
     };
-  }, [user, lastCheckinId]);
+  }, [user]);
 
   // SSE 即時接收新的 NFC 報到
   useEffect(() => {
@@ -293,8 +339,9 @@ const NFCCheckin = () => {
             <h1 className="text-4xl font-bold text-white mb-2">📱 NFC 報到系統</h1>
             <p className="text-blue-100">GBC Connect - NFC 卡片報到功能</p>
             
-            {/* SSE 連接狀態指示器 */}
-            <div className="mt-4 flex justify-center">
+            {/* 狀態指示器 */}
+            <div className="mt-4 flex justify-center space-x-4">
+              {/* SSE 連接狀態 */}
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
                 sseConnected 
                   ? 'bg-green-100 text-green-800 border border-green-300' 
@@ -304,6 +351,28 @@ const NFCCheckin = () => {
                   sseConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
                 }`}></div>
                 {sseConnected ? '即時通訊已連接' : '即時通訊未連接'}
+              </div>
+              
+              {/* NFC 控制狀態 */}
+              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                nfcControlStatus.hasControl 
+                  ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                  : nfcControlStatus.conflictDetected
+                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                    : 'bg-gray-100 text-gray-800 border border-gray-300'
+              }`}>
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  nfcControlStatus.hasControl 
+                    ? 'bg-blue-500 animate-pulse' 
+                    : nfcControlStatus.conflictDetected 
+                      ? 'bg-yellow-500 animate-pulse' 
+                      : 'bg-gray-500'
+                }`}></div>
+                {nfcControlStatus.hasControl 
+                  ? 'NFC 控制權已獲得' 
+                  : nfcControlStatus.conflictDetected 
+                    ? `NFC 被 ${nfcControlStatus.activeSystem} 佔用`
+                    : 'NFC 控制權待獲得'}
               </div>
             </div>
           </div>
