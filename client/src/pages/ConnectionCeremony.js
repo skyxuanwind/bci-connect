@@ -95,8 +95,23 @@ const ConnectionCeremony = () => {
     initializeCeremony();
     updateProgress(ceremonyStage); // 初始化進度
     
+    return () => {
+      // 清理 Three.js 資源
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current);
+      }
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
+    };
+  }, [user]);
+
+  // 獨立的 NFC 註冊 useEffect，只在組件掛載時執行一次
+  useEffect(() => {
     // 註冊 NFC 協調器
     const systemId = 'connection-ceremony';
+    console.log('📡 註冊 NFC 系統: connection-ceremony');
+    
     nfcCoordinator.registerSystem(systemId, {
       priority: 2, // 高優先級（連結之橋儀式優先於報到系統）
       onCardDetected: (data) => {
@@ -128,19 +143,12 @@ const ConnectionCeremony = () => {
     checkGatewayStatus();
     
     return () => {
-      // 清理 Three.js 資源
-      if (animationIdRef.current) {
-        cancelAnimationFrame(animationIdRef.current);
-      }
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-      }
-      
-      // 釋放 NFC 控制權
+      // 只在組件真正卸載時才釋放 NFC 控制權和取消註冊
+      console.log('📡 NFC 系統正在取消註冊: connection-ceremony');
       nfcCoordinator.releaseControl(systemId);
       nfcCoordinator.unregisterSystem(systemId);
     };
-  }, [user]);
+  }, []); // 空依賴數組，只在組件掛載/卸載時執行
 
   // 初始化影片緩存服務
   useEffect(() => {
