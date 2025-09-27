@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC 協調器測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 NFC 協調器衝突管理測試</h1>
+    
+    <div class="test-section">
+        <h2>📊 系統狀態</h2>
+        <div id="systemStatus" class="status info">正在檢查系統狀態...</div>
+        <button onclick="checkSystemStatus()">🔄 刷新狀態</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 衝突測試</h2>
+        <p>這個測試會模擬兩個系統同時嘗試使用 NFC 的情況：</p>
+        <button onclick="testConflictScenario()">🚀 開始衝突測試</button>
+        <div id="conflictResults" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 測試日誌</h2>
+        <button onclick="clearLog()">🗑️ 清除日誌</button>
+        <div id="testLog" class="log"></div>
+    </div>
+
+    <script>
+        let logElement = document.getElementById('testLog');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logElement.textContent += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(`[NFC Coordinator Test] ${message}`);
+        }
+        
+        function clearLog() {
+            logElement.textContent = '';
+        }
+        
+        async function checkSystemStatus() {
+            const statusElement = document.getElementById('systemStatus');
+            statusElement.textContent = '正在檢查系統狀態...';
+            statusElement.className = 'status info';
+            
+            try {
+                // 檢查前端服務
+                const frontendResponse = await fetch('http://localhost:3000/');
+                const frontendOk = frontendResponse.ok;
+                
+                // 檢查後端服務
+                const backendResponse = await fetch('http://localhost:8000/api/users/profile');
+                const backendOk = backendResponse.status === 401 || backendResponse.ok; // 401 表示服務運行但需要認證
+                
+                // 檢查 NFC Gateway
+                const gatewayResponse = await fetch('http://localhost:3002/api/nfc-checkin/status');
+                const gatewayData = await gatewayResponse.json();
+                const gatewayOk = gatewayResponse.ok && gatewayData.status === 'running';
+                
+                let statusText = '';
+                let statusClass = 'status ';
+                
+                if (frontendOk && backendOk && gatewayOk) {
+                    statusText = '✅ 所有服務正常運行\n';
+                    statusText += `📱 前端服務: 正常 (http://localhost:3000)\n`;
+                    statusText += `🖥️ 後端服務: 正常 (http://localhost:8000)\n`;
+                    statusText += `🔗 NFC Gateway: 正常 (http://localhost:3002)\n`;
+                    statusText += `📡 NFC 讀卡器: ${gatewayData.readerConnected ? '已連接' : '未連接'} (${gatewayData.readerName || 'N/A'})`;
+                    statusClass += 'success';
+                } else {
+                    statusText = '⚠️ 部分服務異常\n';
+                    statusText += `📱 前端服務: ${frontendOk ? '✅ 正常' : '❌ 異常'}\n`;
+                    statusText += `🖥️ 後端服務: ${backendOk ? '✅ 正常' : '❌ 異常'}\n`;
+                    statusText += `🔗 NFC Gateway: ${gatewayOk ? '✅ 正常' : '❌ 異常'}`;
+                    statusClass += 'warning';
+                }
+                
+                statusElement.textContent = statusText;
+                statusElement.className = statusClass;
+                
+                log(`系統狀態檢查完成: 前端=${frontendOk}, 後端=${backendOk}, Gateway=${gatewayOk}`);
+                
+            } catch (error) {
+                statusElement.textContent = `❌ 檢查系統狀態時發生錯誤: ${error.message}`;
+                statusElement.className = 'status error';
+                log(`系統狀態檢查失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testConflictScenario() {
+            const resultsElement = document.getElementById('conflictResults');
+            resultsElement.textContent = '開始衝突測試...\n';
+            
+            log('🧪 開始 NFC 協調器衝突測試');
+            
+            try {
+                // 測試 1: 檢查 NFC Gateway 狀態
+                log('📡 測試 1: 檢查 NFC Gateway 狀態');
+                const gatewayStatus = await fetch('http://localhost:3002/api/nfc-checkin/status');
+                const gatewayData = await gatewayStatus.json();
+                
+                resultsElement.textContent += `✅ NFC Gateway 狀態: ${gatewayData.status}\n`;
+                resultsElement.textContent += `📡 讀卡器: ${gatewayData.readerConnected ? '已連接' : '未連接'}\n`;
+                resultsElement.textContent += `🔄 NFC 活動狀態: ${gatewayData.nfcActive ? '活動中' : '非活動'}\n`;
+                
+                if (gatewayData.lastCardUid) {
+                    resultsElement.textContent += `💳 最後檢測到的卡片: ${gatewayData.lastCardUid}\n`;
+                    resultsElement.textContent += `⏰ 最後掃描時間: ${new Date(gatewayData.lastScanTime).toLocaleString()}\n`;
+                }
+                
+                log(`Gateway 狀態: ${gatewayData.status}, 讀卡器: ${gatewayData.readerConnected ? '已連接' : '未連接'}`);
+                
+                // 測試 2: 模擬系統衝突
+                log('🔄 測試 2: 模擬系統衝突場景');
+                resultsElement.textContent += '\n🔄 模擬系統衝突場景...\n';
+                
+                // 模擬第一個系統啟動讀卡器
+                log('📱 模擬 "NFC 報到系統" 啟動讀卡器');
+                const startReader1 = await fetch('http://localhost:3002/api/nfc-checkin/start-reader', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const startResult1 = await startReader1.json();
+                
+                resultsElement.textContent += `📱 NFC 報到系統啟動讀卡器: ${startResult1.success ? '✅ 成功' : '❌ 失敗'}\n`;
+                log(`NFC 報到系統啟動讀卡器: ${startResult1.success ? '成功' : '失敗'}`);
+                
+                // 等待一秒
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 模擬第二個系統嘗試啟動讀卡器
+                log('🎭 模擬 "連結之橋儀式" 嘗試啟動讀卡器');
+                const startReader2 = await fetch('http://localhost:3002/api/nfc-checkin/start-reader', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const startResult2 = await startReader2.json();
+                
+                resultsElement.textContent += `🎭 連結之橋儀式啟動讀卡器: ${startResult2.success ? '✅ 成功' : '❌ 失敗'}\n`;
+                log(`連結之橋儀式啟動讀卡器: ${startResult2.success ? '成功' : '失敗'}`);
+                
+                // 測試 3: 檢查當前狀態
+                log('📊 測試 3: 檢查衝突後的系統狀態');
+                const finalStatus = await fetch('http://localhost:3002/api/nfc-checkin/status');
+                const finalData = await finalStatus.json();
+                
+                resultsElement.textContent += `\n📊 最終狀態:\n`;
+                resultsElement.textContent += `🔄 NFC 活動狀態: ${finalData.nfcActive ? '活動中' : '非活動'}\n`;
+                resultsElement.textContent += `📡 讀卡器連接: ${finalData.readerConnected ? '已連接' : '未連接'}\n`;
+                
+                // 測試 4: 停止讀卡器
+                log('🛑 測試 4: 停止讀卡器');
+                const stopReader = await fetch('http://localhost:3002/api/nfc-checkin/stop-reader', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const stopResult = await stopReader.json();
+                
+                resultsElement.textContent += `🛑 停止讀卡器: ${stopResult.success ? '✅ 成功' : '❌ 失敗'}\n`;
+                log(`停止讀卡器: ${stopResult.success ? '成功' : '失敗'}`);
+                
+                resultsElement.textContent += '\n✅ 衝突測試完成！\n';
+                resultsElement.textContent += '\n💡 說明: 在實際使用中，NFC 協調器會在前端防止衝突，\n';
+                resultsElement.textContent += '確保只有一個系統能控制 NFC 讀卡器。\n';
+                
+                log('✅ NFC 協調器衝突測試完成');
+                
+            } catch (error) {
+                resultsElement.textContent += `\n❌ 測試過程中發生錯誤: ${error.message}\n`;
+                log(`衝突測試失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 頁面載入時自動檢查系統狀態
+        window.addEventListener('load', checkSystemStatus);
+    </script>
+</body>
+</html>
