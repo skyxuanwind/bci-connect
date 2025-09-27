@@ -42,6 +42,7 @@ const ConnectionCeremony = () => {
   const particleSystemRef = useRef(null);
   const lightBeamRef = useRef(null);
   const ambientLightRef = useRef(null);
+  const goldParticlesRef = useRef(null);
   
   // 攝影機動畫系統的狀態和引用
   const [cameraAnimation, setCameraAnimation] = useState({
