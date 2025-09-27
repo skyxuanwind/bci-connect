@@ -149,6 +149,9 @@ const ConnectionCeremony = () => {
           hasControl: false,
           conflictDetected: true
         }));
+      } else {
+        // 取得控制權後自動啟動讀卡器
+        await nfcCoordinator.startReader(systemId);
       }
     })();
     
