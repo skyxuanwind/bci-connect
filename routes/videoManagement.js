@@ -436,6 +436,42 @@ router.get('/videos/default/current', async (req, res) => {
   }
 });
 
+// 獲取默認影片 (為 ConnectionCeremony 組件提供兼容端點)
+router.get('/default-video', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        v.*,
+        c.name as category_name,
+        c.color_code as category_color
+      FROM ceremony_videos v
+      LEFT JOIN video_categories c ON v.category_id = c.id
+      WHERE v.is_default = true AND v.is_active = true
+      LIMIT 1
+    `);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '未設定預設影片' 
+      });
+    }
+    
+    // 返回與 nfcTrigger 路由兼容的格式
+    res.json({ 
+      success: true, 
+      video: result.rows[0] 
+    });
+  } catch (error) {
+    console.error('獲取預設影片失敗:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '獲取預設影片失敗',
+      error: error.message 
+    });
+  }
+});
+
 // 11. 獲取影片播放統計
 router.get('/videos/:id/statistics', async (req, res) => {
   const { id } = req.params;
