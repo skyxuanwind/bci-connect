@@ -1,18 +1,18 @@
 #!/bin/bash
-# BCI NFC Gateway 啟動器 (macOS)
+# GBC NFC Gateway 啟動器 (macOS)
 # 下載→按兩下執行→自動安裝並啟動本機 Gateway，支援 ACR122U 讀卡機
 # 若被安全性阻擋，請右鍵 → 開啟（首次可能需要到「系統設定 > 隱私權與安全性 > 仍要打開」）
 
 set -e
 # 在本機專案中若已存在 Gateway 啟動腳本，則直接呼叫以簡化操作
-LOCAL_CMD="/Users/xuan/Desktop/BCI Connect/nfc-gateway-service/Start-NFC-Gateway.command"
+LOCAL_CMD="/Users/xuan/Desktop/GBC Connect/nfc-gateway-service/Start-NFC-Gateway.command"
 if [ -x "$LOCAL_CMD" ]; then
-  echo "[BCI] 發現本機 Gateway 啟動器，直接執行：$LOCAL_CMD"
+  echo "[GBC] 發現本機 Gateway 啟動器，直接執行：$LOCAL_CMD"
   exec "$LOCAL_CMD"
 fi
 
-APP_NAME="BCI NFC Gateway 啟動器"
-DEST_DIR="$HOME/BCI-NFC-Gateway"
+APP_NAME="GBC NFC Gateway 啟動器"
+DEST_DIR="$HOME/GBC-NFC-Gateway"
 REPO_ZIP_URL="https://github.com/skyxuanwind/bci-connect/archive/refs/heads/main.zip"
 GATEWAY_SUBPATH="bci-connect-main/nfc-gateway-service"
 CLOUD_API_URL_DEFAULT="https://bci-connect.onrender.com"

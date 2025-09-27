@@ -1,10 +1,10 @@
-' BCI NFC Gateway - Windows One-Click Launcher (VBS single-file)
+' GBC NFC Gateway - Windows One-Click Launcher (VBS single-file)
 Dim fso, shell, scriptDir, ps1Path, url, http, stream, cmd
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
-ps1Path = scriptDir & "\BCI-NFC-Gateway-Launcher-Windows.ps1"
-url = "https://raw.githubusercontent.com/skyxuanwind/bci-connect/main/client/public/BCI-NFC-Gateway-Launcher-Windows.ps1"
+ps1Path = scriptDir & "\GBC-NFC-Gateway-Launcher-Windows.ps1"
+url = "https://raw.githubusercontent.com/skyxuanwind/bci-connect/main/client/public/GBC-NFC-Gateway-Launcher-Windows.ps1"
 
 If Not fso.FileExists(ps1Path) Then
   On Error Resume Next

@@ -1,4 +1,4 @@
-# BCI NFC Gateway - Windows One-Click Launcher (PowerShell)
+# GBC NFC Gateway - Windows One-Click Launcher (PowerShell)
 # This script will:
 # - Ensure Node.js 20 LTS is available (via winget or MSI fallback)
 # - Ensure PC/SC service is running (for NFC readers)
@@ -9,12 +9,12 @@
 
 $ErrorActionPreference = 'Stop'
 
-function Write-Info($msg) { Write-Host "[BCI] $msg" -ForegroundColor Cyan }
-function Write-Warn($msg) { Write-Host "[BCI] $msg" -ForegroundColor Yellow }
-function Write-Err($msg)  { Write-Host "[BCI] $msg" -ForegroundColor Red }
+function Write-Info($msg) { Write-Host "[GBC] $msg" -ForegroundColor Cyan }
+function Write-Warn($msg) { Write-Host "[GBC] $msg" -ForegroundColor Yellow }
+function Write-Err($msg)  { Write-Host "[GBC] $msg" -ForegroundColor Red }
 
 # --- Paths ---
-$BaseDir = Join-Path $env:USERPROFILE 'BCI-Connect'
+$BaseDir = Join-Path $env:USERPROFILE 'GBC-Connect'
 $GatewayDir = Join-Path $BaseDir 'nfc-gateway-service'
 $ClientDir  = Join-Path $BaseDir 'client'
 $Global:NodePath = 'node'

@@ -656,7 +656,7 @@ const CheckInScanner = () => {
                   <div className="flex flex-wrap gap-2">
                     <div className="inline-flex items-center gap-2">
                       <a
-                        href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-macOS.zip`}
+                        href={`${process.env.PUBLIC_URL || ''}/GBC-NFC-Gateway-Launcher-macOS.zip`}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
@@ -666,7 +666,7 @@ const CheckInScanner = () => {
                       </a>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-macOS.zip`, 'macOS App 下載連結')}
+                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/GBC-NFC-Gateway-Launcher-macOS.zip`, 'macOS App 下載連結')}
                         className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
                       >
                         複製連結
@@ -675,7 +675,7 @@ const CheckInScanner = () => {
 
                     <div className="inline-flex items-center gap-2">
                       <a
-                        href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher.command`}
+                        href={`${process.env.PUBLIC_URL || ''}/GBC-NFC-Gateway-Launcher.command`}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
@@ -685,7 +685,7 @@ const CheckInScanner = () => {
                       </a>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher.command`, 'macOS Script（.command）下載連結')}
+                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/GBC-NFC-Gateway-Launcher.command`, 'macOS Script（.command）下載連結')}
                         className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
                       >
                         複製連結
@@ -694,7 +694,7 @@ const CheckInScanner = () => {
 
                     <div className="inline-flex items-center gap-2">
                       <a
-                        href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.vbs`}
+                        href={`${process.env.PUBLIC_URL || ''}/GBC-NFC-Gateway-Launcher-Windows.vbs`}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
@@ -704,7 +704,7 @@ const CheckInScanner = () => {
                       </a>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.vbs`, 'Windows VBS 下載連結')}
+                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/GBC-NFC-Gateway-Launcher-Windows.vbs`, 'Windows VBS 下載連結')}
                         className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
                       >
                         複製連結
@@ -713,7 +713,7 @@ const CheckInScanner = () => {
 
                     <div className="inline-flex items-center gap-2">
                       <a
-                        href={`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.bat`}
+                        href={`${process.env.PUBLIC_URL || ''}/GBC-NFC-Gateway-Launcher-Windows.bat`}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
@@ -723,7 +723,7 @@ const CheckInScanner = () => {
                       </a>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/BCI-NFC-Gateway-Launcher-Windows.bat`, 'Windows .bat 下載連結')}
+                        onClick={() => copyToClipboard(`${process.env.PUBLIC_URL || ''}/GBC-NFC-Gateway-Launcher-Windows.bat`, 'Windows .bat 下載連結')}
                         className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
                       >
                         複製連結
