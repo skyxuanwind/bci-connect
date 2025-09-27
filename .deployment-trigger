@@ -1,1 +1,1 @@
-# Force deployment at Fri Sep 27 23:20:37 CST 2025 - NFC Detection Logic Fix: Added lastScanTime validation, fixed auto-trigger issue, enhanced NFC Gateway service
+# Force deployment at Sun Sep 28 00:52:19 CST 2025 - NFC Coordinator Fix: Added pause/resume mechanism, fixed control release issue, improved NFC restart functionality
