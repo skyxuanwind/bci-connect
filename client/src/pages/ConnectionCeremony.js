@@ -2011,6 +2011,13 @@ const ConnectionCeremony = () => {
         isActive: data.nfcActive
       });
       setIsNfcReading(data.nfcActive);
+      
+      // 如果 NFC 已經是活躍狀態，自動啟動輪詢
+      if (data.nfcActive && data.readerConnected) {
+        console.log('NFC 已啟動，開始自動輪詢...');
+        startNfcPolling();
+      }
+      
       setConnecting(false);
       return true;
     } catch (error) {
@@ -2133,20 +2140,29 @@ const ConnectionCeremony = () => {
   
   // NFC 輪詢相關
   const nfcPollingRef = useRef(null);
+  const lastDetectedCardRef = useRef(null);
   
   const startNfcPolling = () => {
     if (nfcPollingRef.current) {
       clearInterval(nfcPollingRef.current);
     }
     
+    console.log('開始 NFC 輪詢...');
+    
     nfcPollingRef.current = setInterval(async () => {
       try {
         const response = await fetch(`${GATEWAY_URL}/api/nfc-checkin/status`);
         const data = await response.json();
         
-        if (data.lastCardUid && data.lastCardUid !== gatewayStatus?.lastCardUid) {
+        // 檢查是否有新的卡片檢測
+        if (data.lastCardUid && data.lastCardUid !== lastDetectedCardRef.current) {
           // 檢測到新的 NFC 卡片
-          console.log('檢測到 NFC 卡片:', data.lastCardUid);
+          console.log('檢測到新的 NFC 卡片:', data.lastCardUid);
+          console.log('上次檢測的卡片:', lastDetectedCardRef.current);
+          
+          // 更新上次檢測的卡片引用
+          lastDetectedCardRef.current = data.lastCardUid;
+          
           setNfcCardId(data.lastCardUid);
           
           // 自動觸發驗證
@@ -2172,6 +2188,9 @@ const ConnectionCeremony = () => {
       clearInterval(nfcPollingRef.current);
       nfcPollingRef.current = null;
     }
+    // 重置上次檢測的卡片引用
+    lastDetectedCardRef.current = null;
+    console.log('NFC 輪詢已停止，重置檢測狀態');
   };
 
   // 改善的 NFC 驗證處理
