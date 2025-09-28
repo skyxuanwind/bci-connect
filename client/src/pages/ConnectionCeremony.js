@@ -1761,10 +1761,7 @@ const ConnectionCeremony = () => {
     }
     setPrestigeOverlayVisible(true);
     setPrestigeOverlayShown(true);
-    overlayTimeoutRef.current = setTimeout(() => {
-      setPrestigeOverlayVisible(false);
-      overlayTimeoutRef.current = null;
-    }, 3000);
+    // 改為持續顯示到影片結束，不再自動隱藏
   };
 
   const handleVideoTimeUpdate = () => {
@@ -1780,6 +1777,13 @@ const ConnectionCeremony = () => {
   const handleVideoEnded = () => {
     // 退出全螢幕模式
     setIsFullscreenVideo(false);
+    
+    // 結束時隱藏尊榮文字覆蓋層並清理計時器
+    if (overlayTimeoutRef.current) {
+      clearTimeout(overlayTimeoutRef.current);
+      overlayTimeoutRef.current = null;
+    }
+    setPrestigeOverlayVisible(false);
     
     // 記錄播放完成
     if (videoData && newMember) {
@@ -3061,18 +3065,19 @@ const ConnectionCeremony = () => {
                 {prestigeOverlayVisible && (
                   <>
                     <style>{`
-                      @keyframes shineMove {
-                        0% { transform: translateX(-30%); }
-                        50% { transform: translateX(120%); }
-                        100% { transform: translateX(130%); }
+                      @keyframes shineSweep {
+                        0% { transform: translateX(-100%); opacity: 0; }
+                        10% { opacity: 1; }
+                        100% { transform: translateX(120%); opacity: 0; }
                       }
                       .prestige-text {
                         position: relative;
                         color: transparent;
-                        background-image: linear-gradient(135deg, #2b2b2b 0%, #3a3a3a 10%, #B58E31 25%, #E3C770 40%, #F5DFA0 55%, #C8A548 70%, #AE8A2B 85%, #2b2b2b 100%);
+                        background-image: linear-gradient(135deg, #1d1d1d 0%, #3a3a3a 8%, #a67c00 22%, #ffd76a 38%, #ffe9a3 52%, #ffc94d 66%, #e0b347 80%, #2b2b2b 100%);
                         -webkit-background-clip: text;
                         background-clip: text;
-                        text-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06);
+                        -webkit-text-stroke: 0.8px rgba(0,0,0,0.55);
+                        text-shadow: 0 6px 18px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.08), 0 0 24px rgba(255,215,120,0.18);
                         letter-spacing: 0.1em;
                       }
                       .prestige-overlay {
@@ -3087,12 +3092,13 @@ const ConnectionCeremony = () => {
                         position: absolute;
                         top: 0;
                         left: 0;
-                        width: 25%;
+                        width: 22%;
                         height: 100%;
-                        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%);
+                        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 100%);
                         filter: blur(2px);
                         mix-blend-mode: screen;
-                        animation: shineMove 2.5s ease-in-out forwards;
+                        will-change: transform, opacity;
+                        animation: shineSweep 4s ease-out forwards;
                       }
                       .prestige-frame {
                         border: 1px solid rgba(218,165,32,0.25);
@@ -3189,18 +3195,19 @@ const ConnectionCeremony = () => {
                     {prestigeOverlayVisible && (
                       <>
                         <style>{`
-                          @keyframes shineMove {
-                            0% { transform: translateX(-30%); }
-                            50% { transform: translateX(120%); }
-                            100% { transform: translateX(130%); }
+                          @keyframes shineSweep {
+                            0% { transform: translateX(-100%); opacity: 0; }
+                            10% { opacity: 1; }
+                            100% { transform: translateX(120%); opacity: 0; }
                           }
                           .prestige-text {
                             position: relative;
                             color: transparent;
-                            background-image: linear-gradient(135deg, #2b2b2b 0%, #3a3a3a 10%, #B58E31 25%, #E3C770 40%, #F5DFA0 55%, #C8A548 70%, #AE8A2B 85%, #2b2b2b 100%);
+                            background-image: linear-gradient(135deg, #1d1d1d 0%, #3a3a3a 8%, #a67c00 22%, #ffd76a 38%, #ffe9a3 52%, #ffc94d 66%, #e0b347 80%, #2b2b2b 100%);
                             -webkit-background-clip: text;
                             background-clip: text;
-                            text-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06);
+                            -webkit-text-stroke: 0.8px rgba(0,0,0,0.55);
+                            text-shadow: 0 6px 18px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.08), 0 0 24px rgba(255,215,120,0.18);
                             letter-spacing: 0.1em;
                           }
                           .prestige-overlay {
@@ -3215,12 +3222,13 @@ const ConnectionCeremony = () => {
                             position: absolute;
                             top: 0;
                             left: 0;
-                            width: 25%;
+                            width: 22%;
                             height: 100%;
-                            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%);
+                            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 100%);
                             filter: blur(2px);
                             mix-blend-mode: screen;
-                            animation: shineMove 2.5s ease-in-out forwards;
+                            will-change: transform, opacity;
+                            animation: shineSweep 4s ease-out forwards;
                           }
                           .prestige-frame {
                             border: 1px solid rgba(218,165,32,0.25);
