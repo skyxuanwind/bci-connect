@@ -67,6 +67,7 @@ import MemberProgress from './pages/MemberProgress';
 import ConnectionCeremony from './pages/ConnectionCeremony';
 import AdminPanel from './pages/AdminPanel';
 import VideoManagementDashboard from './components/admin/AdminDashboard';
+import FoundationManagement from './pages/admin/FoundationManagement';
 
 
 
@@ -371,7 +372,16 @@ function App() {
             </AdminRoute>
           } />
           
-
+          <Route
+            path="/admin/foundation-management"
+            element={
+              <AdminRoute>
+                <Layout>
+                  <FoundationManagement />
+                </Layout>
+              </AdminRoute>
+            }
+          />
           
           <Route path="/admin/business-media" element={
             <AdminRoute>

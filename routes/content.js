@@ -167,4 +167,58 @@ router.put('/presentation-url', authenticateToken, requireAdmin, async (req, res
   }
 });
 
+// 新增：地基卡片式內容 - 以 JSON 儲存於 static_content
+router.get('/foundation/cards', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT content FROM static_content WHERE type = $1',
+      ['foundation_cards']
+    );
+    const raw = result.rows.length > 0 ? result.rows[0].content : '[]';
+    let cards = [];
+    try {
+      cards = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(cards)) cards = [];
+    } catch (e) {
+      cards = [];
+    }
+    res.json({ success: true, cards });
+  } catch (error) {
+    console.error('Error fetching foundation cards:', error);
+    res.status(500).json({ success: false, message: '獲取地基卡片內容失敗' });
+  }
+});
+
+router.put('/foundation/cards', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { cards } = req.body;
+    if (!Array.isArray(cards)) {
+      return res.status(400).json({ success: false, message: '資料格式錯誤：cards 應為陣列' });
+    }
+    // 基本欄位驗證
+    const normalized = cards.map((c, idx) => ({
+      id: String(c.id || `${Date.now()}_${idx}`),
+      title: String(c.title || '').trim(),
+      description: String(c.description || '').trim(),
+      icon: c.icon ? String(c.icon) : null,
+      updatedAt: new Date().toISOString()
+    })).filter(c => c.title && c.description);
+
+    await pool.query(`
+      INSERT INTO static_content (type, content, updated_by_id, updated_at)
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+      ON CONFLICT (type)
+      DO UPDATE SET 
+        content = EXCLUDED.content,
+        updated_by_id = EXCLUDED.updated_by_id,
+        updated_at = CURRENT_TIMESTAMP
+    `, ['foundation_cards', JSON.stringify(normalized), req.user.id]);
+
+    res.json({ success: true, message: '地基卡片內容更新成功', count: normalized.length });
+  } catch (error) {
+    console.error('Error updating foundation cards:', error);
+    res.status(500).json({ success: false, message: '更新地基卡片內容失敗' });
+  }
+});
+
 module.exports = router;
