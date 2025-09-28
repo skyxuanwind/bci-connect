@@ -158,8 +158,18 @@ const ConnectionCeremony = () => {
     return () => {
       // 只在組件真正卸載時才釋放 NFC 控制權和取消註冊
       console.log('📡 NFC 系統暫停並釋放控制權: connection-ceremony');
-      nfcCoordinator.stopReader(systemId);
-      nfcCoordinator.releaseControl(systemId);
+      try {
+        const hasCtrl = (typeof nfcCoordinator.hasControl === 'function' && nfcCoordinator.hasControl(systemId))
+          || (typeof nfcCoordinator.getActiveSystem === 'function' && nfcCoordinator.getActiveSystem() === systemId);
+        if (hasCtrl) {
+          nfcCoordinator.stopReader(systemId);
+          nfcCoordinator.releaseControl(systemId);
+        } else {
+          console.log('⛔ 跳過停止/釋放，因為當前無 NFC 控制權');
+        }
+      } catch (e) {
+        console.warn('清理 NFC 控制權時發生非致命錯誤，已忽略:', e?.message || e);
+      }
       // 不再取消註冊，避免 StrictMode 雙重調用導致瞬間無法感應
       // nfcCoordinator.unregisterSystem(systemId);
     };
@@ -2142,6 +2152,23 @@ const ConnectionCeremony = () => {
   // 停止 NFC 讀卡機
   const stopNFCReading = async () => {
     const systemId = 'connection-ceremony';
+    
+    // 若當前無控制權，視為已停止，避免不必要的錯誤提示
+    try {
+      const hasCtrl = (typeof nfcCoordinator.hasControl === 'function' && nfcCoordinator.hasControl(systemId))
+        || (typeof nfcCoordinator.getActiveSystem === 'function' && nfcCoordinator.getActiveSystem() === systemId);
+      if (!hasCtrl) {
+        setIsNfcReading(false);
+        setNfcSuccess('NFC 讀卡機已停止');
+        toast.info('🎭 連結之橋儀式 NFC 自動感應已停止（無控制權，跳過停止）');
+        setTimeout(() => setNfcSuccess(null), 3000);
+        // 重置啟動時間門檻
+        readerStartAtRef.current = 0;
+        return;
+      }
+    } catch (_) {
+      // 檢查控制權時出現例外，忽略並嘗試進行停止
+    }
     
     try {
       const success = await nfcCoordinator.stopReader(systemId);
