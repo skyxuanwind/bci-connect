@@ -70,6 +70,8 @@ const ConnectionCeremony = () => {
   const videoRef = useRef(null);
   // 記錄使用者按下「啟動自動感應」的時間，僅接受此時間之後的掃描
   const readerStartAtRef = useRef(0);
+  // 自動啟動僅執行一次的守門旗標（避免 StrictMode/重入）
+  const autoStartInitiatedRef = useRef(false);
   
   // 添加粒子系統和光影效果的引用
   const particleSystemRef = useRef(null);
@@ -2115,6 +2117,41 @@ const ConnectionCeremony = () => {
       // NFC 輪詢現在由協調器處理，無需手動啟動
       if (data.nfcActive && data.readerConnected) {
         console.log('NFC 已啟動，協調器將自動處理輪詢...');
+      }
+
+      // 方案 A：頁面載入並確認 Gateway 可用後，自動 requestControl + startReader（只執行一次）
+      try {
+        const systemId = 'connection-ceremony';
+        const gatewayOk = data.status === 'running' && !!data.readerConnected;
+        const notStartedYet = !autoStartInitiatedRef.current;
+        const alreadyActive = typeof nfcCoordinator.getActiveSystem === 'function' && nfcCoordinator.getActiveSystem() === systemId;
+        
+        if (gatewayOk && notStartedYet) {
+          autoStartInitiatedRef.current = true; // 防止 StrictMode/多次呼叫重入
+          console.log('⚙️ 檢測到 Gateway 可用，嘗試自動取得控制權並啟動讀卡機');
+          
+          const hasControl = alreadyActive ? true : await nfcCoordinator.requestControl(systemId);
+          if (!hasControl) {
+            const activeSystem = nfcCoordinator.getActiveSystem();
+            console.warn(`⚠️ 自動取得控制權失敗，當前活躍系統: ${activeSystem}`);
+            toast.warn(`NFC 控制權被 ${activeSystem || '其他系統'} 佔用，請關閉該頁面或稍後重試`);
+          } else {
+            const started = await nfcCoordinator.startReader(systemId);
+            if (started) {
+              readerStartAtRef.current = Date.now();
+              setIsNfcReading(true);
+              setNfcSuccess('NFC 讀卡機啟動成功！（自動）請將 NFC 卡片靠近讀卡機');
+              toast.success('🎭 連結之橋儀式 NFC 自動感應已啟動（自動）');
+              setTimeout(() => setNfcSuccess(null), 5000);
+            } else {
+              console.error('❌ 自動啟動讀卡機失敗');
+              setNfcError('自動啟動讀卡機失敗，請手動啟動');
+              toast.error('自動啟動讀卡機失敗，請手動啟動');
+            }
+          }
+        }
+      } catch (autoErr) {
+        console.warn('自動啟動流程發生非致命錯誤，將允許手動啟動:', autoErr);
       }
       
       setConnecting(false);
