@@ -143,7 +143,6 @@ const Layout = ({ children }) => {
     { name: '活動管理', href: '/admin/events', icon: CalendarIcon },
     { name: '靜態內容管理', href: '/admin/content', icon: Cog6ToothIcon },
     { name: '商媒體管理', href: '/admin/business-media', icon: DocumentMagnifyingGlassIcon },
-    { name: '地基管理', href: '/admin/foundation-management', icon: InformationCircleIcon },
   ];
 
   const isCurrentPath = (path) => {
