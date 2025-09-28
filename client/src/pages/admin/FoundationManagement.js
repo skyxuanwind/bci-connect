@@ -2,16 +2,51 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from '../../config/axios';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { DocumentTextIcon, PlusIcon, TrashIcon, PencilIcon, ClipboardDocumentIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, PlusIcon, TrashIcon, PencilIcon, ClipboardDocumentIcon, CheckCircleIcon, LightBulbIcon, BuildingOfficeIcon, StarIcon, HeartIcon, UsersIcon, BriefcaseIcon, ChartBarIcon, GlobeAltIcon, FlagIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
-const emptyCard = () => ({ id: `${Date.now()}`, title: '', description: '', icon: null });
+const emptyCard = () => ({ id: `${Date.now()}`, title: '', description: '', icon: 'document' });
+
+// 供顯示與選擇用的圖標映射
+const iconMap = {
+  document: DocumentTextIcon,
+  lightbulb: LightBulbIcon,
+  building: BuildingOfficeIcon,
+  star: StarIcon,
+  heart: HeartIcon,
+  users: UsersIcon,
+  briefcase: BriefcaseIcon,
+  chart: ChartBarIcon,
+  globe: GlobeAltIcon,
+  flag: FlagIcon,
+  sparkles: SparklesIcon,
+  clipboard: ClipboardDocumentIcon,
+};
+
+const iconOptions = [
+  { key: 'document', label: '文件' },
+  { key: 'lightbulb', label: '靈感' },
+  { key: 'building', label: '商會' },
+  { key: 'star', label: '星標' },
+  { key: 'heart', label: '願景' },
+  { key: 'users', label: '夥伴' },
+  { key: 'briefcase', label: '使命' },
+  { key: 'chart', label: '指標' },
+  { key: 'globe', label: '全球' },
+  { key: 'flag', label: '旗幟' },
+  { key: 'sparkles', label: '亮點' },
+  { key: 'clipboard', label: '清單' },
+];
 
 const CardItem = ({ card, index, onEdit, onDelete, onCopy }) => {
+  const Icon = card?.icon && iconMap[card.icon] ? iconMap[card.icon] : DocumentTextIcon;
   return (
     <div className="bg-primary-800 border border-gold-600 rounded-lg p-4 mb-3">
       <div className="flex items-start justify-between">
-        <div>
-          <h4 className="text-lg font-semibold text-gold-100">{card.title || '未命名地基'}</h4>
+        <div className="flex-1">
+          <div className="flex items-center">
+            <Icon className="h-5 w-5 text-gold-400 mr-2" />
+            <h4 className="text-lg font-semibold text-gold-100">{card.title || '未命名地基'}</h4>
+          </div>
           <p className="mt-1 text-gold-300 whitespace-pre-line">{card.description || '（尚未填寫描述）'}</p>
         </div>
         <div className="flex space-x-2">
@@ -39,7 +74,7 @@ const FoundationManagement = () => {
   const [success, setSuccess] = useState('');
 
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ title: '', description: '' });
+  const [form, setForm] = useState({ title: '', description: '', icon: 'document' });
   const [formErrors, setFormErrors] = useState({});
 
   const isAdmin = () => user && user.membershipLevel === 1 && user.email.includes('admin');
@@ -60,13 +95,13 @@ const FoundationManagement = () => {
 
   const openNew = () => {
     setEditing({ id: null });
-    setForm({ title: '', description: '' });
+    setForm({ title: '', description: '', icon: 'document' });
     setFormErrors({});
   };
 
   const openEdit = (card) => {
     setEditing(card);
-    setForm({ title: card.title || '', description: card.description || '' });
+    setForm({ title: card.title || '', description: card.description || '', icon: card.icon || 'document' });
     setFormErrors({});
   };
 
@@ -92,10 +127,10 @@ const FoundationManagement = () => {
     if (!validate()) return;
     if (editing?.id) {
       // 更新既有
-      setCards((prev) => prev.map((c) => (c.id === editing.id ? { ...c, title: form.title.trim(), description: form.description.trim() } : c)));
+      setCards((prev) => prev.map((c) => (c.id === editing.id ? { ...c, title: form.title.trim(), description: form.description.trim(), icon: form.icon } : c)));
     } else {
       // 新增
-      const newCard = { id: `${Date.now()}`, title: form.title.trim(), description: form.description.trim() };
+      const newCard = { id: `${Date.now()}`, title: form.title.trim(), description: form.description.trim(), icon: form.icon };
       setCards((prev) => [...prev, newCard]);
     }
     setEditing(null);
@@ -120,7 +155,7 @@ const FoundationManagement = () => {
     setError('');
     setSuccess('');
     try {
-      const payload = cards.map((c) => ({ id: c.id, title: c.title, description: c.description }));
+      const payload = cards.map((c) => ({ id: c.id, title: c.title, description: c.description, icon: c.icon || null }));
       const res = await axios.put('/api/content/foundation/cards', { cards: payload });
       if (res.data.success) {
         setSuccess('地基卡片已儲存');
@@ -207,12 +242,18 @@ const FoundationManagement = () => {
             <p className="text-gold-300">尚未有內容。</p>
           ) : (
             <div className="space-y-3">
-              {cards.map((c) => (
-                <div key={`preview-${c.id}`} className="bg-primary-900 border border-gold-600 rounded p-4">
-                  <h4 className="text-gold-100 font-medium">{c.title}</h4>
-                  <p className="text-gold-300 whitespace-pre-line mt-1">{c.description}</p>
-                </div>
-              ))}
+              {cards.map((c) => {
+                const Icon = c?.icon && iconMap[c.icon] ? iconMap[c.icon] : DocumentTextIcon;
+                return (
+                  <div key={`preview-${c.id}`} className="bg-primary-900 border border-gold-600 rounded p-4">
+                    <div className="flex items-center mb-1">
+                      <Icon className="h-5 w-5 text-gold-400 mr-2" />
+                      <h4 className="text-gold-100 font-medium">{c.title}</h4>
+                    </div>
+                    <p className="text-gold-300 whitespace-pre-line mt-1">{c.description}</p>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -245,12 +286,31 @@ const FoundationManagement = () => {
                   />
                   {formErrors.description && <p className="text-red-400 text-sm mt-1">{formErrors.description}</p>}
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gold-300 mb-2">選擇圖標</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {iconOptions.map(({ key, label }) => {
+                      const Icon = iconMap[key];
+                      const selected = form.icon === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, icon: key }))}
+                          className={`flex flex-col items-center justify-center border rounded-lg p-2 ${selected ? 'border-gold-500 bg-primary-700' : 'border-gold-600 bg-primary-800'} hover:bg-primary-700`}
+                          title={label}
+                        >
+                          <Icon className="h-6 w-6 text-gold-400" />
+                          <span className="mt-1 text-xs text-gold-200">{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
               <div className="mt-6 flex justify-end space-x-2">
                 <button className="bg-primary-700 hover:bg-primary-600 text-gold-200 border border-gold-600 font-medium py-2 px-4 rounded-lg" onClick={handleCancelEdit}>取消</button>
-                <button className="bg-gold-600 hover:bg-gold-700 text-primary-900 font-semibold py-2 px-4 rounded-lg" onClick={handleSaveCard}>
-                  儲存
-                </button>
+                <button className="bg-gold-600 hover:bg-gold-700 text-primary-900 font-semibold py-2 px-4 rounded-lg" onClick={handleSaveCard}>儲存</button>
               </div>
             </div>
           </div>
