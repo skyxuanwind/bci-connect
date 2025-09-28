@@ -80,6 +80,12 @@ const Events = () => {
             <InfoButton tooltip="這裡顯示所有可報名的商會活動，包括商務聚會、研討會、工作坊等。您可以查看活動詳情並進行報名，擴展您的商業人脈網絡。" />
           </div>
           <p className="mt-2 text-gray-600">參與 GBC 商會的各種活動，擴展您的商業網絡</p>
+          <div className="mt-4">
+            <Link to="/events/calendar" className="btn-light inline-flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              切換至月曆視圖
+            </Link>
+          </div>
         </div>
 
         {/* Error Message */}

@@ -131,6 +131,27 @@ const EventDetail = () => {
     return true;
   };
 
+  const toUTCString = (date) => {
+    const d = new Date(date);
+    const iso = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString();
+    return iso.replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  };
+
+  const buildGoogleEventUrl = () => {
+    if (!event) return '#';
+    const start = toUTCString(String(event.event_date).replace('Z',''));
+    const end2h = toUTCString(new Date(new Date(String(event.event_date).replace('Z','')).getTime() + 2 * 60 * 60 * 1000));
+    const text = encodeURIComponent(event.title);
+    const details = encodeURIComponent(event.description || '');
+    const location = encodeURIComponent(event.location || '');
+    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end2h}&details=${details}&location=${location}&ctz=Asia/Taipei`;
+  };
+
+  const buildIcsUrl = () => {
+    const base = process.env.REACT_APP_API_URL || window.location.origin;
+    return `${base}/api/events/${id}.ics`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -269,16 +290,18 @@ const EventDetail = () => {
                 ) : (
                   <button
                     onClick={handleRegister}
-                    disabled={!canRegister() || registering}
-                    className={`w-full px-4 py-2 rounded-md font-medium transition-colors duration-200 ${
-                      canRegister() && !registering
-                        ? 'btn-primary'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
+                    disabled={registering || !canRegister()}
+                    className={`w-full btn-primary ${registering ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    {registering ? '報名中...' : canRegister() ? '立即報名' : '無法報名'}
+                    {registering ? '處理中...' : '立即報名'}
                   </button>
                 )}
+
+                {/* Calendar integration */}
+                <div className="flex items-center gap-2 mt-2">
+                  <a href={buildGoogleEventUrl()} target="_blank" rel="noopener noreferrer" className="btn-secondary">加入 Google 行事曆</a>
+                  <a href={buildIcsUrl()} className="btn-outline">下載 .ics</a>
+                </div>
               </div>
             </div>
             

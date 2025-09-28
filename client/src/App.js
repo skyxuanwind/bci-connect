@@ -68,6 +68,7 @@ import ConnectionCeremony from './pages/ConnectionCeremony';
 import AdminPanel from './pages/AdminPanel';
 import VideoManagementDashboard from './components/admin/AdminDashboard';
 import FoundationManagement from './pages/admin/FoundationManagement';
+import EventsCalendar from './pages/EventsCalendar';
 
 
 
@@ -181,13 +182,22 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/events/:id" element={
-            <ProtectedRoute>
-              <Layout>
-                <EventDetail />
-              </Layout>
-            </ProtectedRoute>
-          } />
+-          <Route path="/events/calendar" element={<EventsCalendar />} />
+-          <Route path="/events/:id" element={<EventDetail />} />
++          <Route path="/events/calendar" element={
++            <ProtectedRoute>
++              <Layout>
++                <EventsCalendar />
++              </Layout>
++            </ProtectedRoute>
++          } />
++          <Route path="/events/:id" element={
++            <ProtectedRoute>
++              <Layout>
++                <EventDetail />
++              </Layout>
++            </ProtectedRoute>
++          } />
           
           <Route path="/foundation" element={
             <ProtectedRoute>
