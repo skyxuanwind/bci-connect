@@ -53,6 +53,11 @@ const ConnectionCeremony = () => {
   const [cacheStats, setCacheStats] = useState(null);
   const [isFullscreenVideo, setIsFullscreenVideo] = useState(false);
   
+  // 黑金尊榮文字特效狀態
+  const [prestigeOverlayVisible, setPrestigeOverlayVisible] = useState(false);
+  const [prestigeOverlayShown, setPrestigeOverlayShown] = useState(false);
+  const overlayTimeoutRef = useRef(null);
+  
   const ceremonyRef = useRef(null);
   const canvasRef = useRef(null);
   const sceneRef = useRef();
@@ -1729,6 +1734,14 @@ const ConnectionCeremony = () => {
   const handleVideoPlay = () => {
     // 進入全螢幕模式
     setIsFullscreenVideo(true);
+
+    // 播放前重置尊榮特效狀態
+    if (overlayTimeoutRef.current) {
+      clearTimeout(overlayTimeoutRef.current);
+      overlayTimeoutRef.current = null;
+    }
+    setPrestigeOverlayVisible(false);
+    setPrestigeOverlayShown(false);
     
     // 嘗試進入瀏覽器全螢幕
     if (videoRef.current && videoRef.current.requestFullscreen) {
@@ -1738,6 +1751,29 @@ const ConnectionCeremony = () => {
     }
   };
 
+  // 在影片時間更新時，於 10 秒觸發尊榮特效（僅 NFC 觸發的儀式影片）
+  const showPrestigeOverlay = () => {
+    if (overlayTimeoutRef.current) {
+      clearTimeout(overlayTimeoutRef.current);
+      overlayTimeoutRef.current = null;
+    }
+    setPrestigeOverlayVisible(true);
+    setPrestigeOverlayShown(true);
+    overlayTimeoutRef.current = setTimeout(() => {
+      setPrestigeOverlayVisible(false);
+      overlayTimeoutRef.current = null;
+    }, 3000);
+  };
+
+  const handleVideoTimeUpdate = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    // 僅在影片階段、存在新會員資訊、且尚未顯示過時觸發
+    if (ceremonyStage === 'video' && newMember && !prestigeOverlayShown && v.currentTime >= 10) {
+      showPrestigeOverlay();
+    }
+  };
+  
   // 處理影片播放結束
   const handleVideoEnded = () => {
     // 退出全螢幕模式
@@ -2964,11 +3000,13 @@ const ConnectionCeremony = () => {
           return (
             <div className="fixed inset-0 z-50 bg-black">
               {videoData && !isVideoLoading && !videoError && (
+                <>
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
                   autoPlay
                   onPlay={handleVideoPlay}
+                  onTimeUpdate={handleVideoTimeUpdate}
                   onEnded={handleVideoEnded}
                   onError={() => {
                     setVideoError('影片播放失敗');
@@ -2982,6 +3020,60 @@ const ConnectionCeremony = () => {
                 >
                   <source src={videoBlobUrl || videoData.file_url} type="video/mp4" />
                 </video>
+
+                {prestigeOverlayVisible && (
+                  <>
+                    <style>{`
+                      @keyframes shineMove {
+                        0% { transform: translateX(-30%); }
+                        50% { transform: translateX(120%); }
+                        100% { transform: translateX(130%); }
+                      }
+                      .prestige-text {
+                        position: relative;
+                        color: transparent;
+                        background-image: linear-gradient(135deg, #2b2b2b 0%, #3a3a3a 10%, #B58E31 25%, #E3C770 40%, #F5DFA0 55%, #C8A548 70%, #AE8A2B 85%, #2b2b2b 100%);
+                        -webkit-background-clip: text;
+                        background-clip: text;
+                        text-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06);
+                        letter-spacing: 0.1em;
+                      }
+                      .prestige-overlay {
+                        position: absolute;
+                        inset: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        pointer-events: none;
+                      }
+                      .shine {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 25%;
+                        height: 100%;
+                        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%);
+                        filter: blur(2px);
+                        mix-blend-mode: screen;
+                        animation: shineMove 2.5s ease-in-out forwards;
+                      }
+                      .prestige-frame {
+                        border: 1px solid rgba(218,165,32,0.25);
+                        box-shadow: 0 0 30px rgba(218,165,32,0.25), inset 0 0 20px rgba(0,0,0,0.4);
+                        background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.0) 100%);
+                      }
+                    `}</style>
+                    <div className="prestige-overlay">
+                      <div className="relative px-10 py-6 rounded-2xl prestige-frame">
+                        <h2 className="prestige-text text-center text-3xl md:text-5xl font-extrabold tracking-widest">
+                          {`歡迎 ${(newMember?.industry ?? newMember?.profession ?? newMember?.company ?? '尊貴來賓')} ${(newMember?.name ?? '新會員')} 加入GBC`}
+                          <span className="shine" />
+                        </h2>
+                      </div>
+                    </div>
+                  </>
+                )}
+                </>
               )}
             </div>
           );
@@ -3044,6 +3136,7 @@ const ConnectionCeremony = () => {
                       className="w-full h-auto max-h-[80vh] object-contain"
                       autoPlay
                       onPlay={handleVideoPlay}
+                      onTimeUpdate={handleVideoTimeUpdate}
                       onEnded={handleVideoEnded}
                       onError={() => {
                         setVideoError('影片播放失敗');
@@ -3055,6 +3148,59 @@ const ConnectionCeremony = () => {
                       <source src={videoBlobUrl || videoData.file_url} type="video/mp4" />
                       您的瀏覽器不支援影片播放。
                     </video>
+
+                    {prestigeOverlayVisible && (
+                      <>
+                        <style>{`
+                          @keyframes shineMove {
+                            0% { transform: translateX(-30%); }
+                            50% { transform: translateX(120%); }
+                            100% { transform: translateX(130%); }
+                          }
+                          .prestige-text {
+                            position: relative;
+                            color: transparent;
+                            background-image: linear-gradient(135deg, #2b2b2b 0%, #3a3a3a 10%, #B58E31 25%, #E3C770 40%, #F5DFA0 55%, #C8A548 70%, #AE8A2B 85%, #2b2b2b 100%);
+                            -webkit-background-clip: text;
+                            background-clip: text;
+                            text-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06);
+                            letter-spacing: 0.1em;
+                          }
+                          .prestige-overlay {
+                            position: absolute;
+                            inset: 0;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            pointer-events: none;
+                          }
+                          .shine {
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 25%;
+                            height: 100%;
+                            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%);
+                            filter: blur(2px);
+                            mix-blend-mode: screen;
+                            animation: shineMove 2.5s ease-in-out forwards;
+                          }
+                          .prestige-frame {
+                            border: 1px solid rgba(218,165,32,0.25);
+                            box-shadow: 0 0 30px rgba(218,165,32,0.25), inset 0 0 20px rgba(0,0,0,0.4);
+                            background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.0) 100%);
+                          }
+                        `}</style>
+                        <div className="prestige-overlay">
+                          <div className="relative px-8 py-5 rounded-2xl prestige-frame">
+                            <h2 className="prestige-text text-center text-2xl md:text-4xl font-extrabold tracking-widest">
+                              {`歡迎 ${(newMember?.industry ?? newMember?.profession ?? newMember?.company ?? '尊貴來賓')} ${(newMember?.name ?? '新會員')} 加入GBC`}
+                              <span className="shine" />
+                            </h2>
+                          </div>
+                        </div>
+                      </>
+                    )}
                     
                     {/* 簡化的控制覆蓋層 */}
                     <div className="absolute bottom-4 right-4">
