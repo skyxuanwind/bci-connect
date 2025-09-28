@@ -2892,13 +2892,13 @@ const ConnectionCeremony = () => {
               
               <div className="bg-black bg-opacity-50 rounded-lg p-8 mb-8">
                 <h2 className="text-3xl font-bold text-white mb-6">會員誓詞</h2>
-                <p className="text-xl text-gray-200 leading-relaxed whitespace-pre-line">
+                <p className="text-3xl text-yellow-200 leading-relaxed tracking-wide whitespace-pre-line text-center">
                   {oath}
                 </p>
               </div>
 
-              {/* NFC Gateway 控制面板 */}
-              <div className="bg-black bg-opacity-50 rounded-lg p-6 mb-8">
+              {/* NFC Gateway 控制面板（已隱藏） */}
+              <div className="hidden">
                 <h3 className="text-xl font-bold text-white mb-4">🏷️ NFC Gateway 狀態</h3>
                 
                 {gatewayStatus ? (
@@ -3027,7 +3027,7 @@ const ConnectionCeremony = () => {
 
               <button
                 onClick={startBridgeScene}
-                className="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-colors text-xl"
+                className="hidden"
               >
                 開始橋樑場景
               </button>
@@ -3072,13 +3072,10 @@ const ConnectionCeremony = () => {
                       }
                       .prestige-text {
                         position: relative;
-                        color: transparent;
-                        background-image: linear-gradient(135deg, #1d1d1d 0%, #3a3a3a 8%, #a67c00 22%, #ffd76a 38%, #ffe9a3 52%, #ffc94d 66%, #e0b347 80%, #2b2b2b 100%);
-                        -webkit-background-clip: text;
-                        background-clip: text;
+                        color: #d4af37; /* 質感金色 */
                         -webkit-text-stroke: 0.8px rgba(0,0,0,0.55);
-                        text-shadow: 0 6px 18px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.08), 0 0 24px rgba(255,215,120,0.18);
-                        letter-spacing: 0.1em;
+                        text-shadow: 0 6px 18px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.06), 0 0 24px rgba(212,175,55,0.22);
+                        letter-spacing: 0.08em;
                       }
                       .prestige-overlay {
                         position: absolute;
@@ -3202,13 +3199,10 @@ const ConnectionCeremony = () => {
                           }
                           .prestige-text {
                             position: relative;
-                            color: transparent;
-                            background-image: linear-gradient(135deg, #1d1d1d 0%, #3a3a3a 8%, #a67c00 22%, #ffd76a 38%, #ffe9a3 52%, #ffc94d 66%, #e0b347 80%, #2b2b2b 100%);
-                            -webkit-background-clip: text;
-                            background-clip: text;
+                            color: #d4af37; /* 質感金色 */
                             -webkit-text-stroke: 0.8px rgba(0,0,0,0.55);
-                            text-shadow: 0 6px 18px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.08), 0 0 24px rgba(255,215,120,0.18);
-                            letter-spacing: 0.1em;
+                            text-shadow: 0 6px 18px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.06), 0 0 24px rgba(212,175,55,0.22);
+                            letter-spacing: 0.08em;
                           }
                           .prestige-overlay {
                             position: absolute;
@@ -3698,23 +3692,49 @@ const ConnectionCeremony = () => {
       ref={ceremonyRef}
       className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} relative overflow-hidden`}
       style={{
-        background: 'radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 30%, #0f0f23 70%, #000000 100%)',
+        background: '#000000',
         backgroundAttachment: 'fixed'
       }}
     >
-      {/* 奢華背景裝飾 */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-400/20 via-transparent to-orange-500/20"></div>
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-yellow-400/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      </div>
-
-      {/* 金色邊框裝飾 */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-60"></div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-60"></div>
-        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-transparent via-yellow-400 to-transparent opacity-60"></div>
-        <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-transparent via-yellow-400 to-transparent opacity-60"></div>
+      {/* 頁面金色掃光與粒子特效 */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="page-shine"></div>
+        <div className="gold-particles"></div>
+        <style>{`
+          @keyframes pageShineSweep {
+            0% { transform: translateX(-30%); opacity: 0; }
+            12% { opacity: 0.35; }
+            100% { transform: translateX(130%); opacity: 0; }
+          }
+          .page-shine {
+            position: absolute; top: 0; left: 0; width: 22%; height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,215,120,0.85) 50%, rgba(255,255,255,0) 100%);
+            filter: blur(4px); mix-blend-mode: screen; will-change: transform, opacity;
+            animation: pageShineSweep 5s ease-out forwards;
+          }
+          @keyframes particleDrift {
+            0% { background-position: 0 0, 0 0, 0 0; }
+            50% { background-position: 60px -40px, -70px 35px, 40px 60px; }
+            100% { background-position: 0 0, 0 0, 0 0; }
+          }
+          .gold-particles {
+            position: absolute; inset: 0; opacity: 0.22;
+            background-image:
+              radial-gradient(circle at 18% 28%, rgba(212,175,55,0.15) 0px, rgba(212,175,55,0.15) 2px, transparent 3px),
+              radial-gradient(circle at 74% 56%, rgba(212,175,55,0.15) 0px, rgba(212,175,55,0.15) 2px, transparent 3px),
+              radial-gradient(circle at 42% 82%, rgba(212,175,55,0.15) 0px, rgba(212,175,55,0.15) 2px, transparent 3px);
+            background-size: 200px 200px, 220px 220px, 180px 180px;
+            animation: particleDrift 20s linear infinite;
+          }
+          /* 覆蓋尊榮文字為質感金色 */
+          .prestige-text {
+            position: relative;
+            color: #d4af37;
+            -webkit-text-stroke: 0.8px rgba(0,0,0,0.55);
+            text-shadow: 0 6px 18px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.06), 0 0 24px rgba(212,175,55,0.22);
+            letter-spacing: 0.08em;
+          }
+        `}</style>
       </div>
 
       {/* 控制面板 - 奢華設計 */}
@@ -3754,11 +3774,6 @@ const ConnectionCeremony = () => {
         </div>
       </div>
 
-      {/* 進度指示器 - 奢華設計 */}
-      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-10">
-        <ProgressIndicator />
-      </div>
-      
       {/* 用戶引導 - 優化位置 */}
       <div className="absolute bottom-6 left-6 z-10">
         <UserGuide />
@@ -3772,8 +3787,8 @@ const ConnectionCeremony = () => {
         {renderStageContent()}
       </div>
 
-      {/* 底部裝飾線 */}
-      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent"></div>
+      {/* 底部裝飾線（已隱藏） */}
+      <div className="hidden"></div>
     </div>
   );
 };
