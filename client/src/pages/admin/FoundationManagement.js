@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from '../../config/axios';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@hello-pangea/dnd';
 import { DocumentTextIcon, PlusIcon, TrashIcon, PencilIcon, ClipboardDocumentIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 const emptyCard = () => ({ id: `${Date.now()}`, title: '', description: '', icon: null });

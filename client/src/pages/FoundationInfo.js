@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { DocumentTextIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import axios from '../config/axios';
+import { useNavigate } from 'react-router-dom';
 
 const FoundationInfo = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [editContent, setEditContent] = useState('');
@@ -14,10 +16,12 @@ const FoundationInfo = () => {
   const [success, setSuccess] = useState('');
   const [viewChecked, setViewChecked] = useState(false);
   const [viewSaving, setViewSaving] = useState(false);
+  const [cards, setCards] = useState([]);
 
   useEffect(() => {
     fetchContent();
     fetchViewStatus();
+    fetchCards();
   }, []);
 
   const fetchContent = async () => {
@@ -33,6 +37,15 @@ const FoundationInfo = () => {
       setError('載入內容失敗');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCards = async () => {
+    try {
+      const res = await axios.get('/api/content/foundation/cards');
+      setCards(Array.isArray(res.data.cards) ? res.data.cards : []);
+    } catch (err) {
+      console.error('Error fetching foundation cards:', err);
     }
   };
 
@@ -127,6 +140,14 @@ const FoundationInfo = () => {
                 編輯內容
               </button>
             )}
+            {isAdmin() && (
+              <button
+                onClick={() => navigate('/admin/foundation-management')}
+                className="bg-gold-600 hover:bg-gold-700 text-primary-900 font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              >
+                管理地基卡片
+              </button>
+            )}
           </div>
         </div>
 
@@ -184,7 +205,16 @@ const FoundationInfo = () => {
           ) : (
             // 顯示模式
             <div className="p-6">
-              {content ? (
+              {cards.length > 0 ? (
+                <div className="space-y-4">
+                  {cards.map((c) => (
+                    <div key={c.id} className="bg-primary-900 border border-gold-600 rounded p-4">
+                      <h3 className="text-gold-100 font-semibold">{c.title}</h3>
+                      <p className="text-gold-300 whitespace-pre-line mt-1">{c.description}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : content ? (
                 <div 
                   className="prose prose-invert max-w-none text-gold-100"
                   dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }}
@@ -194,7 +224,7 @@ const FoundationInfo = () => {
                   <DocumentTextIcon className="mx-auto h-12 w-12 text-gold-400" />
                   <h3 className="mt-2 text-sm font-medium text-gold-100">暫無內容</h3>
                   <p className="mt-1 text-sm text-gold-300">
-                    {isAdmin() ? '點擊「編輯內容」開始添加商會地基資訊' : '管理員尚未設定商會地基內容'}
+                    {isAdmin() ? '點擊右上角「管理地基卡片」設定商會地基資訊' : '管理員尚未設定商會地基內容'}
                   </p>
                 </div>
               )}

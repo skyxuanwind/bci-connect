@@ -126,7 +126,7 @@ const ContentManagement = () => {
             className="btn-secondary inline-flex items-center"
           >
             <DocumentTextIcon className="h-4 w-4 mr-2" />
-            前往編輯商會地基
+            前往地基管理（統一管理介面）
           </a>
         </div>
       </div>
@@ -201,7 +201,7 @@ const ContentManagement = () => {
             </h3>
             <div className="mt-2 text-sm text-blue-700">
               <ul className="list-disc list-inside space-y-1">
-                <li>商會地基：點擊上方連結可直接編輯商會地基頁面內容</li>
+                <li>商會地基：點擊上方連結進入「地基管理」統一介面，集中管理卡片內容</li>
                 <li>商會簡報：設定Google簡報的分享連結，會員可從導覽列直接開啟</li>
                 <li>所有會員都可以查看商會地基內容和開啟商會簡報</li>
                 <li>只有管理員可以編輯這些內容</li>
