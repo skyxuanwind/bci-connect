@@ -153,12 +153,10 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-gold-400 to-amber-600 rounded-xl flex items-center justify-center shadow-xl shadow-gold-500/25">
-                <span className="text-black font-bold text-lg">GBC</span>
-              </div>
+              <img src="/images/gbc-logo.svg" alt="GBC Logo" className="h-12 w-auto" />
               <div className="ml-4">
                 <span className="text-2xl font-bold bg-gradient-to-r from-gold-300 to-amber-400 bg-clip-text text-transparent">商務菁英會</span>
-                <div className="text-xs text-gold-400/80 font-medium tracking-wider">BUSINESS ELITE CLUB</div>
+                <div className="text-xs text-gold-400/80 font-medium tracking-wider">Golden Bridge Conference</div>
               </div>
             </div>
             
@@ -197,7 +195,7 @@ const Home = () => {
           <div className="text-center">
             {/* Premium Badge */}
             <div className="inline-flex items-center px-6 py-2 rounded-full bg-gradient-to-r from-gold-500/20 to-amber-600/20 border border-gold-400/30 backdrop-blur-sm mb-8">
-              <span className="text-gold-300 font-semibold text-sm tracking-wide">PREMIUM BUSINESS NETWORK</span>
+              <span className="text-gold-300 font-semibold text-sm tracking-wide">Golden Bridge Conference</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight">
@@ -337,11 +335,11 @@ const Home = () => {
           <div className="text-center">
             <div className="flex items-center justify-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-br from-gold-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-xl shadow-gold-500/25">
-                <span className="text-black font-bold text-xl">GBC</span>
+                <img src="/images/gbc-logo.svg" alt="GBC Logo" className="h-16 w-auto" />
               </div>
               <div className="ml-4">
                 <span className="text-3xl font-bold bg-gradient-to-r from-gold-300 to-amber-400 bg-clip-text text-transparent">商務菁英會</span>
-                <div className="text-sm text-gold-400/80 font-medium tracking-wider">BUSINESS ELITE CLUB</div>
+                <div className="text-sm text-gold-400/80 font-medium tracking-wider">Golden Bridge Conference</div>
               </div>
             </div>
             <p className="text-xl text-gold-200 mb-6 font-light">
@@ -349,7 +347,8 @@ const Home = () => {
             </p>
             <div className="w-24 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent mx-auto mb-6"></div>
             <p className="text-gray-400 text-sm">
-              © 2025 GBC Business Elite Club. All rights reserved.
+-              © 2025 GBC Business Elite Club. All rights reserved.
++              © 2025 GBC Golden Bridge Conference. All rights reserved.
             </p>
           </div>
         </div>

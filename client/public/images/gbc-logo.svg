@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 310" width="1024" height="310">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f5d77c"/>
+      <stop offset="35%" stop-color="#f0c54f"/>
+      <stop offset="60%" stop-color="#e3a535"/>
+      <stop offset="85%" stop-color="#d8891f"/>
+      <stop offset="100%" stop-color="#c97312"/>
+    </linearGradient>
+    <linearGradient id="goldGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f8e59a"/>
+      <stop offset="50%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Left emblem: circle with bridge symbol -->
+  <g filter="url(#softShadow)">
+    <circle cx="155" cy="155" r="135" fill="none" stroke="url(#goldGradient)" stroke-width="18"/>
+    <!-- Bridge mast -->
+    <path d="M155 75 L155 235" stroke="url(#goldGradient2)" stroke-width="14" stroke-linecap="round"/>
+    <!-- Deck -->
+    <path d="M65 170 L245 170" stroke="url(#goldGradient)" stroke-width="12" stroke-linecap="round"/>
+    <!-- Cables left -->
+    <path d="M155 95 C135 130, 115 150, 95 170" stroke="url(#goldGradient2)" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M155 120 C145 140, 130 150, 120 170" stroke="url(#goldGradient2)" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <!-- Cables right -->
+    <path d="M155 95 C175 130, 195 150, 215 170" stroke="url(#goldGradient2)" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M155 120 C165 140, 180 150, 190 170" stroke="url(#goldGradient2)" stroke-width="7" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Brand text -->
+  <text x="330" y="210" font-family="Inter, Arial, Helvetica, sans-serif" font-size="180" font-weight="800" fill="url(#goldGradient)" letter-spacing="8">GBC</text>
+</svg>
