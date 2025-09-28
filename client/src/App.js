@@ -182,22 +182,20 @@ function App() {
             </ProtectedRoute>
           } />
           
--          <Route path="/events/calendar" element={<EventsCalendar />} />
--          <Route path="/events/:id" element={<EventDetail />} />
-+          <Route path="/events/calendar" element={
-+            <ProtectedRoute>
-+              <Layout>
-+                <EventsCalendar />
-+              </Layout>
-+            </ProtectedRoute>
-+          } />
-+          <Route path="/events/:id" element={
-+            <ProtectedRoute>
-+              <Layout>
-+                <EventDetail />
-+              </Layout>
-+            </ProtectedRoute>
-+          } />
+          <Route path="/events/calendar" element={
+            <ProtectedRoute>
+              <Layout>
+                <EventsCalendar />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id" element={
+            <ProtectedRoute>
+              <Layout>
+                <EventDetail />
+              </Layout>
+            </ProtectedRoute>
+          } />
           
           <Route path="/foundation" element={
             <ProtectedRoute>
