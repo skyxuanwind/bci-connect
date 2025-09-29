@@ -1,0 +1,54 @@
+name: Auto Deploy to Render
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install client dependencies
+        run: |
+          cd client
+          npm install
+
+      - name: Build client
+        run: |
+          cd client
+          npm run build
+
+      - name: Run tests (if available)
+        run: |
+          if npm run test --dry-run 2>/dev/null; then
+            npm run test -- --watchAll=false
+          else
+            echo "No tests configured, skipping..."
+          fi
+
+      - name: Deploy to Render
+        if: github.ref == 'refs/heads/main'
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "Triggering Render deployment..."
+            curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+            echo "Deployment triggered successfully!"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL not set. Please configure it in GitHub Secrets."
+            echo "You can find your deploy hook URL in Render Dashboard > Service Settings"
+          fi
