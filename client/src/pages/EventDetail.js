@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../config/axios';
+import Button from '../components/Button';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -173,12 +174,9 @@ const EventDetail = () => {
           <h3 className="mt-2 text-sm font-medium text-gray-900">載入失敗</h3>
           <p className="mt-1 text-sm text-gray-500">{error || '活動不存在'}</p>
           <div className="mt-6">
-            <button
-              onClick={() => navigate('/events')}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
-            >
+            <Button variant="secondary" onClick={() => navigate('/events')}>
               返回活動列表
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -192,7 +190,7 @@ const EventDetail = () => {
         <div className="mb-6">
           <button
             onClick={() => navigate('/events')}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+            className="inline-flex items-center text-sm text-gold-300 hover:text-gold-100"
           >
             <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -299,8 +297,8 @@ const EventDetail = () => {
 
                 {/* Calendar integration */}
                 <div className="flex items-center gap-2 mt-2">
-                  <a href={buildGoogleEventUrl()} target="_blank" rel="noopener noreferrer" className="btn-secondary">加入 Google 行事曆</a>
-                  <a href={buildIcsUrl()} className="btn-outline">下載 .ics</a>
+                  <Button href={buildGoogleEventUrl()} target="_blank" rel="noopener noreferrer" variant="secondary">加入 Google 行事曆</Button>
+                  <Button href={buildIcsUrl()} variant="outline">下載 .ics</Button>
                 </div>
               </div>
             </div>
@@ -331,21 +329,22 @@ const EventDetail = () => {
                       readOnly
                       className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm"
                     />
-                    <button
+                    <Button
                       onClick={copyInviteLink}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-r-md text-sm hover:bg-blue-700"
+                      variant="primary"
+                      className="rounded-r-md text-sm"
                     >
                       複製
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div className="flex justify-end space-x-3">
-                  <button
+                  <Button
                     onClick={() => setShowInviteLink(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                    variant="outline"
                   >
                     關閉
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

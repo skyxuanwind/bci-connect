@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Button from '../components/Button';
 
 const GuestRegistration = () => {
   const [searchParams] = useSearchParams();
@@ -111,12 +112,9 @@ const GuestRegistration = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">活動不存在</h2>
           <p className="text-gray-600 mb-4">抱歉，找不到相關的活動資訊。</p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-          >
+          <Button to="/" variant="secondary">
             返回首頁
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -295,20 +293,21 @@ const GuestRegistration = () => {
 
             {/* 提交按鈕 */}
             <div className="flex justify-end space-x-4">
-              <button
+              <Button
                 type="button"
                 onClick={() => navigate('/')}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                variant="outline"
               >
                 取消
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? '報名中...' : '確認報名'}
-              </button>
+              </Button>
             </div>
           </form>
         </div>

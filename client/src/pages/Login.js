@@ -169,13 +169,13 @@ const Login = () => {
             <div className="flex items-center justify-between">
               <Link
                 to="/forgot-password"
-                className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                className="text-sm font-medium text-gold-300 hover:text-gold-100"
               >
                 忘記密碼？
               </Link>
               <Link
                 to="/register"
-                className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                className="text-sm font-medium text-gold-300 hover:text-gold-100"
               >
                 還沒有帳號？立即註冊
               </Link>
@@ -183,7 +183,7 @@ const Login = () => {
             
             <Link
               to="/"
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-gold-300 hover:text-gold-100"
             >
               返回首頁
             </Link>
