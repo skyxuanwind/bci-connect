@@ -634,6 +634,78 @@ const sendApprovalNotification = async ({ email, name, membershipLevel }) => {
   }
 };
 
+// 發送新會員申請待審核通知（給管理員）
+const sendNewApplicationNotification = async ({ applicant, approvalUrl }) => {
+  try {
+    const transporter = createTransporter();
+    
+    // 驗證 SMTP 連接
+    await transporter.verify();
+    console.log('SMTP server connection verified successfully for new application');
+
+    const to = process.env.ADMIN_NOTICE_EMAIL || 'gbc.notice@gmail.com';
+    const frontendUrl = approvalUrl || (process.env.FRONTEND_URL 
+      || (process.env.NODE_ENV === 'production' 
+          ? 'https://bci-connect.onrender.com/admin/pending' 
+          : 'http://localhost:3001/admin/pending'));
+
+    const safe = (v) => (v === null || v === undefined || v === '' ? '—' : v);
+    const created = applicant.createdAt 
+      ? new Date(applicant.createdAt).toLocaleString('zh-TW') 
+      : new Date().toLocaleString('zh-TW');
+
+    const mailOptions = {
+      from: `"GBC商務菁英會" <${process.env.SMTP_USER}>`,
+      to,
+      bcc: process.env.SMTP_BCC || process.env.SMTP_USER,
+      subject: 'GBC Connect - 新會員申請待審核通知',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px; background-color: #0b1020;">
+          <div style="background: linear-gradient(135deg, #111827 0%, #0b1020 100%); padding: 24px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.35); border: 1px solid #d4af37;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h1 style="color: #d4af37; margin: 0; font-size: 22px;">GBC Connect</h1>
+              <p style="color: #f5f5dc; margin: 6px 0 0 0; font-size: 13px;">新會員申請待審核</p>
+            </div>
+
+            <div style="background-color: #0f172a; border: 1px solid #1f2937; border-radius: 10px; padding: 16px; margin-top: 10px;">
+              <p style="color: #f5f5dc; font-size: 14px; margin: 0 0 12px 0;">系統剛收到一位新會員申請，請儘速進行審核：</p>
+              <ul style="list-style: none; padding: 0; margin: 0; color: #e5e7eb; font-size: 14px;">
+                <li><strong style="color:#d4af37;">姓名：</strong>${safe(applicant.name)}</li>
+                <li><strong style="color:#d4af37;">Email：</strong>${safe(applicant.email)}</li>
+                <li><strong style="color:#d4af37;">公司：</strong>${safe(applicant.company)}</li>
+                <li><strong style="color:#d4af37;">產業：</strong>${safe(applicant.industry)}</li>
+                <li><strong style="color:#d4af37;">職稱：</strong>${safe(applicant.title)}</li>
+                <li><strong style="color:#d4af37;">聯絡電話：</strong>${safe(applicant.contactNumber)}</li>
+                <li><strong style="color:#d4af37;">申請分會：</strong>${safe(applicant.chapterName || applicant.chapterId)}</li>
+                <li><strong style="color:#d4af37;">申請時間：</strong>${created}</li>
+                <li><strong style="color:#d4af37;">用戶ID：</strong>${safe(applicant.id)}</li>
+              </ul>
+            </div>
+
+            <div style="text-align: center; margin: 22px 0 6px 0;">
+              <a href="${frontendUrl}" style="display: inline-block; background-color: #d4af37; color: #111827; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: 1px solid #f5f5dc;">前往審核</a>
+            </div>
+
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 10px;">此郵件由系統自動發送到管理員通知信箱（${to}），請勿回覆。</p>
+          </div>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('New application admin notice email sent:', {
+      to,
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected
+    });
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Send new application admin notice failed:', error);
+    throw error;
+  }
+};
+
 // 教練發送郵件給學員
 const sendCoachToMemberEmail = async ({ to, subject, content, type = 'general', coachId, coachName }) => {
   try {
@@ -725,5 +797,6 @@ module.exports = {
   sendPasswordResetEmail,
   sendWelcomeEmail,
   sendApprovalNotification,
-  sendCoachToMemberEmail
+  sendCoachToMemberEmail,
+  sendNewApplicationNotification
 };

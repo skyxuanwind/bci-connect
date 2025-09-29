@@ -9,7 +9,8 @@ const {
   generateVerificationCode, 
   sendEmailVerification, 
   sendPasswordResetEmail, 
-  sendWelcomeEmail 
+  sendWelcomeEmail,
+  sendNewApplicationNotification
 } = require('../services/emailService');
 const { cloudinary } = require('../config/cloudinary');
 
@@ -346,6 +347,17 @@ router.post('/register', upload.single('avatar'), async (req, res) => {  try {
 
     const newUser = result.rows[0];
 
+    // 取得分會名稱（若有）以便通知內容更完整
+    let chapterName = null;
+    try {
+      if (newUser.chapter_id) {
+        const chapterRes = await pool.query('SELECT name FROM chapters WHERE id = $1', [newUser.chapter_id]);
+        chapterName = chapterRes.rows[0]?.name || null;
+      }
+    } catch (chapterErr) {
+      console.warn('查詢分會名稱失敗，將在通知中略過：', chapterErr?.message);
+    }
+
     // Send welcome email
     try {
       await sendWelcomeEmail({
@@ -367,6 +379,29 @@ router.post('/register', upload.single('avatar'), async (req, res) => {  try {
     } catch (cleanupError) {
       console.error('清理Email驗證記錄失敗:', cleanupError);
       // 不影響註冊流程，只記錄錯誤
+    }
+
+    // 發送管理員通知：有新會員申請待審核
+    try {
+      const frontendBase = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://bci-connect.onrender.com' : 'http://localhost:3001');
+      await sendNewApplicationNotification({
+        applicant: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          company: newUser.company,
+          industry: newUser.industry,
+          title: newUser.title,
+          contactNumber: newUser.contact_number,
+          chapterId: newUser.chapter_id,
+          chapterName,
+          createdAt: newUser.created_at
+        },
+        approvalUrl: `${frontendBase}/admin/pending`
+      });
+      console.log('New application admin notification dispatched for user:', newUser.email);
+    } catch (adminEmailErr) {
+      console.error('發送新申請管理員通知失敗（不影響註冊流程）：', adminEmailErr);
     }
 
     res.status(201).json({
