@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 const CoacheeDirectory = () => {
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);

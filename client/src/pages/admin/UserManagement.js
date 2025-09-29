@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -77,20 +77,7 @@ const UserManagement = () => {
     loadChapters();
   }, []);
 
-  useEffect(() => {
-    loadUsers();
-  }, [currentPage, searchTerm, selectedStatus, selectedLevel, selectedChapter]);
-
-  const loadChapters = async () => {
-    try {
-      const response = await axios.get('/api/chapters');
-      setChapters(response.data);
-    } catch (error) {
-      console.error('Failed to load chapters:', error);
-    }
-  };
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -113,7 +100,22 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
+  }, [currentPage, searchTerm, selectedStatus, selectedLevel, selectedChapter]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  const loadChapters = async () => {
+    try {
+      const response = await axios.get('/api/chapters');
+      setChapters(response.data);
+    } catch (error) {
+      console.error('Failed to load chapters:', error);
+    }
   };
+
+  
 
   const handleSearch = (e) => {
     e.preventDefault();

@@ -11,7 +11,6 @@ const EventManagement = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
-  const [showGuestRegistrationsModal, setShowGuestRegistrationsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [guestRegistrations, setGuestRegistrations] = useState([]);

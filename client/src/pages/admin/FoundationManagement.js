@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from '../../config/axios';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { DocumentTextIcon, PlusIcon, TrashIcon, PencilIcon, ClipboardDocumentIcon, CheckCircleIcon, LightBulbIcon, BuildingOfficeIcon, StarIcon, HeartIcon, UsersIcon, BriefcaseIcon, ChartBarIcon, GlobeAltIcon, FlagIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, PlusIcon, TrashIcon, PencilIcon, ClipboardDocumentIcon, LightBulbIcon, BuildingOfficeIcon, StarIcon, HeartIcon, UsersIcon, BriefcaseIcon, ChartBarIcon, GlobeAltIcon, FlagIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
-const emptyCard = () => ({ id: `${Date.now()}`, title: '', description: '', icon: 'document' });
 
 // 供顯示與選擇用的圖標映射
 const iconMap = {
@@ -68,7 +67,6 @@ const CardItem = ({ card, index, onEdit, onDelete, onCopy }) => {
 const FoundationManagement = () => {
   const { user } = useAuth();
   const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -86,8 +84,6 @@ const FoundationManagement = () => {
         setCards(Array.isArray(res.data.cards) ? res.data.cards : []);
       } catch (e) {
         setError('載入地基卡片失敗');
-      } finally {
-        setLoading(false);
       }
     };
     load();

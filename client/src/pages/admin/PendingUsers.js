@@ -4,7 +4,6 @@ import axios from 'axios';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { toast } from 'react-hot-toast';
 import {
-  UserIcon,
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
@@ -12,7 +11,6 @@ import {
   BriefcaseIcon,
   EnvelopeIcon,
   PhoneIcon,
-  CalendarIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 

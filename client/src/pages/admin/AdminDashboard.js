@@ -11,13 +11,11 @@ import {
   ChartBarIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  XCircleIcon,
   ArrowTrendingUpIcon,
   ArrowRightIcon,
   CalendarIcon,
   CreditCardIcon,
   CogIcon,
-  ArrowPathIcon,
   ShieldExclamationIcon
 } from '@heroicons/react/24/outline';
 

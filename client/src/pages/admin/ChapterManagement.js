@@ -9,7 +9,6 @@ import {
   PencilIcon,
   TrashIcon,
   UserGroupIcon,
-  ExclamationTriangleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
@@ -53,30 +52,28 @@ const ChapterManagement = () => {
     }
   };
 
-  const loadChapterDetails = async () => {
-    try {
-      // Load chapters with member counts
-      const response = await axios.get('/api/admin/dashboard');
-      if (response.data.chapterStats) {
-        const chaptersWithStats = chapters.map(chapter => {
-          const stat = response.data.chapterStats.find(s => s.id === chapter.id);
-          return {
-            ...chapter,
-            memberCount: stat ? stat.memberCount : 0
-          };
-        });
-        setChapters(chaptersWithStats);
-      }
-    } catch (error) {
-      console.error('Failed to load chapter details:', error);
-    }
-  };
-
   useEffect(() => {
     if (chapters.length > 0) {
-      loadChapterDetails();
+      (async () => {
+        try {
+          // Load chapters with member counts
+          const response = await axios.get('/api/admin/dashboard');
+          if (response.data.chapterStats) {
+            const chaptersWithStats = chapters.map(chapter => {
+              const stat = response.data.chapterStats.find(s => s.id === chapter.id);
+              return {
+                ...chapter,
+                memberCount: stat ? stat.memberCount : 0
+              };
+            });
+            setChapters(chaptersWithStats);
+          }
+        } catch (error) {
+          console.error('Failed to load chapter details:', error);
+        }
+      })();
     }
-  }, [chapters.length]);
+  }, [chapters]);
 
   const handleCreateChapter = async (data) => {
     setProcessingChapter('create');

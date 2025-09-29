@@ -1,13 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../config/axios';
 import Avatar from '../../components/Avatar';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import DressCodeExamples from '../../components/DressCodeExamples';
 import {
-  BuildingOfficeIcon,
-  BriefcaseIcon,
-  PhoneIcon,
   EyeIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -17,9 +14,7 @@ import {
   CalendarIcon,
   ClipboardDocumentListIcon,
   EnvelopeIcon,
-  ChartBarIcon,
-  ClockIcon,
-  CreditCardIcon
+  ClockIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -57,18 +52,17 @@ const CoachDashboard = () => {
   }, [selectedMember?.id]);
 
   // Modal 內操作狀態
-  const [actionLoading, setActionLoading] = useState(false);
+  
   
   // 專案計劃狀態
   const [projectPlans, setProjectPlans] = useState({});
   const [projectPlanLoading, setProjectPlanLoading] = useState({});
 
   // 學員視圖（非教練）
-  const [myTasks, setMyTasks] = useState([]);
-  const [myTasksLoading, setMyTasksLoading] = useState(false);
+  const [, setMyTasks] = useState([]);
+  const [, setMyTasksLoading] = useState(false);
   const [myCoach, setMyCoach] = useState(null);
-  const [myTaskUpdating, setMyTaskUpdating] = useState({}); // { [taskId]: true }
-  const [myCoachLogs, setMyCoachLogs] = useState([]);
+  
   
   // 卡片勾選狀態管理 - 添加持久化
   const [checklistStates, setChecklistStates] = useState(() => {
@@ -154,7 +148,7 @@ const CoachDashboard = () => {
     
     try {
       // 使用 GBC 系統發送郵件
-      const response = await axios.post('/api/emails/send', {
+      await axios.post('/api/emails/send', {
         to: memberEmail,
         subject: 'GBC新會員歡迎信',
         content: emailContent,
@@ -177,21 +171,9 @@ const CoachDashboard = () => {
     }
   };
 
-  const getMembershipLevelBadge = (level) => {
-    const badges = {
-      1: { text: '核心', class: 'level-1' },
-      2: { text: '幹部', class: 'level-2' },
-      3: { text: '會員', class: 'level-3' }
-    };
-    const badge = badges[level] || { text: '未設定', class: 'bg-gray-500' };
-    return (
-      <span className={`badge ${badge.class} text-xs px-2 py-1 rounded-full font-medium`}>
-        {badge.text}
-      </span>
-    );
-  };
+  
 
-  const fetchCoachees = async () => {
+  const fetchCoachees = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -211,9 +193,9 @@ const CoachDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, sortKey]);
 
-  const fetchTaskStats = async () => {
+  const fetchTaskStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       const resp = await axios.get('/api/users/my-coachees/task-stats');
@@ -230,9 +212,9 @@ const CoachDashboard = () => {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, []);
 
-  const fetchProgress = async () => {
+  const fetchProgress = useCallback(async () => {
     try {
       const resp = await axios.get('/api/users/my-coachees/progress');
       const list = resp.data?.progress || [];
@@ -246,10 +228,10 @@ const CoachDashboard = () => {
     } finally {
       // no-op
     }
-  };
+  }, []);
 
   // 非教練視圖：載入自己的任務與教練資訊
-  const fetchMyView = async () => {
+  const fetchMyView = useCallback(async () => {
     if (!user?.id) return;
     setMyTasksLoading(true);
     try {
@@ -270,47 +252,35 @@ const CoachDashboard = () => {
         setMyCoach(null);
       }
 
-      // 取得教練紀錄（唯讀）
-      try {
-        const lResp = await axios.get(`/api/users/member/${user.id}/coach-logs`);
-        setMyCoachLogs(Array.isArray(lResp.data?.logs) ? lResp.data.logs : []);
-      } catch (err) {
-        console.warn('取得教練紀錄失敗');
-        setMyCoachLogs([]);
-      }
+      // 取得教練紀錄（唯讀）— 已移除未使用狀態
     } catch (e) {
       console.error('載入我的任務失敗:', e);
       setMyTasks([]);
-      setMyCoachLogs([]);
     } finally {
       setMyTasksLoading(false);
     }
-  };
+  }, [user?.id, user?.coachUserId]);
 
-  const updateTaskStatus = async (taskId, status) => {
-    if (!taskId) return;
-    setMyTaskUpdating(prev => ({ ...prev, [taskId]: true }));
+  // 獲取專案計劃（前移以避免 no-use-before-define）
+  const fetchProjectPlan = useCallback(async (memberId, force = false) => {
+    if (!force && (projectPlans[memberId] || projectPlanLoading[memberId])) return;
+    
+    setProjectPlanLoading(prev => ({ ...prev, [memberId]: true }));
     try {
-      const p = axios.put(`/api/users/onboarding-tasks/${taskId}`, { status });
-      await toast.promise(p, {
-        loading: '更新任務中…',
-        success: status === 'completed' ? '任務已完成' : '已更新任務狀態',
-        error: (err) => err?.response?.data?.message || '更新任務失敗'
-      }, {
-        id: `task-${taskId}`,
-        duration: 4000,
-        style: { background: '#1f2937', color: '#fde68a', border: '1px solid #b45309' }
-      });
-      await fetchMyView();
-    } catch (e) {
-      // 錯誤已由 toast 顯示
+      const response = await axios.get(`/api/users/member/${memberId}/project-plan`);
+      setProjectPlans(prev => ({ ...prev, [memberId]: response.data }));
+    } catch (error) {
+      console.error('獲取專案計劃失敗:', error);
+      setProjectPlans(prev => ({ ...prev, [memberId]: null }));
     } finally {
-      setMyTaskUpdating(prev => ({ ...prev, [taskId]: false }));
+      setProjectPlanLoading(prev => ({ ...prev, [memberId]: false }));
     }
-  };
+  }, [projectPlans, projectPlanLoading]);
+
+  
 
   // 獲取核心會員名單
-  const fetchCoreMembers = async () => {
+  const fetchCoreMembers = useCallback(async () => {
     try {
       setCoreMembersLoading(true);
       const resp = await axios.get('/api/users/core-members');
@@ -321,10 +291,10 @@ const CoachDashboard = () => {
     } finally {
       setCoreMembersLoading(false);
     }
-  };
+  }, []);
 
   // 獲取幹部會員名單
-  const fetchStaffMembers = async () => {
+  const fetchStaffMembers = useCallback(async () => {
     try {
       setStaffMembersLoading(true);
       const resp = await axios.get('/api/users/staff-members');
@@ -335,19 +305,17 @@ const CoachDashboard = () => {
     } finally {
       setStaffMembersLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (iAmCoach) return;
     fetchMyView();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [iAmCoach, user?.id, user?.coachUserId]);
+  }, [iAmCoach, fetchMyView]);
 
   useEffect(() => {
     if (!iAmCoach) return;
     fetchCoachees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, sortKey, iAmCoach]);
+  }, [iAmCoach, fetchCoachees]);
 
   useEffect(() => {
     if (!iAmCoach) return;
@@ -355,7 +323,7 @@ const CoachDashboard = () => {
     fetchProgress();
     fetchCoreMembers();
     fetchStaffMembers();
-  }, [iAmCoach]);
+  }, [iAmCoach, fetchTaskStats, fetchProgress, fetchCoreMembers, fetchStaffMembers]);
 
   // SSE：教練端事件訂閱，當任務新增/更新時更新 UI
   useEffect(() => {
@@ -417,7 +385,7 @@ const CoachDashboard = () => {
         if (reconnectTimer) clearTimeout(reconnectTimer);
       } catch {}
     };
-  }, [iAmCoach, selectedMember?.id]);
+  }, [iAmCoach, selectedMember, fetchProgress, fetchTaskStats, fetchProjectPlan]);
 
   // SSE：會員端事件訂閱，當自己的任務更新時實時同步
   useEffect(() => {
@@ -448,7 +416,7 @@ const CoachDashboard = () => {
         const handleMemberTaskEvent = (evt) => {
           try {
             const payload = JSON.parse(evt.data);
-            const { memberId, task, eventType } = payload || {};
+            const { memberId, eventType } = payload || {};
             
             // 確認是自己的任務更新
             if (memberId === user.id) {
@@ -482,7 +450,7 @@ const CoachDashboard = () => {
         if (reconnectTimer) clearTimeout(reconnectTimer);
       } catch {}
     };
-  }, [iAmCoach, user?.id]);
+  }, [iAmCoach, user?.id, fetchMyView]);
 
   // 持久化：排序（舊的兩個篩選已移除）
   useEffect(() => {
@@ -515,44 +483,9 @@ const CoachDashboard = () => {
     setSelectedMember(null);
   };
 
-  // 獲取專案計劃
-  const fetchProjectPlan = async (memberId, force = false) => {
-    if (!force && (projectPlans[memberId] || projectPlanLoading[memberId])) return;
-    
-    setProjectPlanLoading(prev => ({ ...prev, [memberId]: true }));
-    try {
-      const response = await axios.get(`/api/users/member/${memberId}/project-plan`);
-      setProjectPlans(prev => ({ ...prev, [memberId]: response.data }));
-    } catch (error) {
-      console.error('獲取專案計劃失敗:', error);
-      setProjectPlans(prev => ({ ...prev, [memberId]: null }));
-    } finally {
-      setProjectPlanLoading(prev => ({ ...prev, [memberId]: false }));
-    }
-  };
-
-
-
-  // 更新會員狀態
-  const updateMemberStatus = async (memberId, newStatus) => {
-    setActionLoading(true);
-    try {
-      await axios.put(`/api/admin/users/${memberId}/status`, { status: newStatus });
-      toast.success(`會員狀態已更新為${newStatus === 'active' ? '活躍' : '非活躍'}`);
-      // 更新本地狀態
-      setCoachees(prev => prev.map(member => 
-        member.id === memberId ? { ...member, status: newStatus } : member
-      ));
-      if (selectedMember && selectedMember.id === memberId) {
-        setSelectedMember(prev => ({ ...prev, status: newStatus }));
-      }
-    } catch (error) {
-      console.error('更新會員狀態失敗:', error);
-      toast.error(error.response?.data?.message || '更新會員狀態失敗');
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  
+  // 更新會員狀態（目前未使用）
+  // 已移除未使用的函數以清理警告
 
   const progressSummary = (memberId) => {
     const p = progressById[memberId] || {};
@@ -693,13 +626,7 @@ const CoachDashboard = () => {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:p-4 sm:gap-3 sm:p-4 sm:p-6">
               {visibleCoachees.map((member) => {
-                const { p, percent } = progressSummary(member.id);
-                const missing = {
-                  interview: !(p?.hasInterview),
-                  mbti: !(p?.hasMbtiType),
-                  nfc: !(p?.hasNfcCard),
-                  foundation: !(p?.foundationViewed)
-                };
+                const { percent } = progressSummary(member.id);
                 return (
                   <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer relative" onClick={() => {
                   navigate(`/project-plans/${member.id}`);
@@ -795,7 +722,7 @@ const CoachDashboard = () => {
             <div className="p-3 sm:p-4 md:p-3 sm:p-4 sm:p-6">
               {/* 進度概覽 */}
               {(() => {
-                const { p, percent, profileScore, systemScore, bonusMbti } = progressSummary(selectedMember.id);
+                const { percent } = progressSummary(selectedMember.id);
                 return (
                   <div>
                     <div className="flex items-center justify-between">
