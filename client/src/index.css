@@ -43,26 +43,78 @@
     display: none;             /* Chrome, Safari and Opera */
   }
   
-  /* Button Components */
+  /* Button Components - 優化黑金色調配置 */
   .btn-primary {
-    @apply bg-gold-600 hover:bg-gold-700 text-primary-900 font-medium py-2 px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-primary-900 shadow-lg hover:shadow-xl;
-    /* 金色主按鈕：#D4AF37 到較深金色，提升金屬質感 */
-    background: linear-gradient(135deg, var(--gold-true) 0%, var(--gold-dark) 100%);
-    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.35);
+    @apply font-medium py-2 px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg hover:shadow-xl;
+    /* 金色主按鈕：優化金屬質感與對比度 */
+    background: linear-gradient(135deg, #D4AF37 0%, #B8860B 50%, #DAA520 100%);
+    color: #1a1a1a;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    focus-ring-color: rgba(212, 175, 55, 0.6);
+    focus-ring-offset-color: #121212;
+  }
+  
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #DAA520 0%, #CD853F 50%, #D4AF37 100%);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
   }
   
   .btn-secondary {
-    @apply bg-primary-800 hover:bg-primary-700 text-gold-400 font-medium py-2 px-4 rounded-lg border border-gold-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-primary-900 shadow-lg hover:shadow-xl;
-    /* 黑色次按鈕：#121212 到較亮黑，文字與邊框為金色 */
-    background: linear-gradient(135deg, var(--black-true) 0%, var(--black-light) 100%);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(212, 175, 55, 0.25);
+    @apply font-medium py-2 px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg hover:shadow-xl;
+    /* 黑色次按鈕：深邃黑底配金色文字與邊框 */
+    background: linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #2a2a2a 100%);
+    color: #D4AF37;
+    border: 1px solid rgba(212, 175, 55, 0.6);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.3);
+    focus-ring-color: rgba(212, 175, 55, 0.6);
+    focus-ring-offset-color: #121212;
+  }
+  
+  .btn-secondary:hover {
+    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 50%, #363636 100%);
+    color: #DAA520;
+    border-color: rgba(218, 165, 32, 0.8);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(218, 165, 32, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  .btn-outline {
+    @apply font-medium py-2 px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg hover:shadow-xl;
+    /* 輪廓按鈕：透明背景配金色邊框與文字 */
+    background: rgba(18, 18, 18, 0.3);
+    color: #D4AF37;
+    border: 2px solid rgba(212, 175, 55, 0.7);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    focus-ring-color: rgba(212, 175, 55, 0.6);
+    focus-ring-offset-color: #121212;
+  }
+  
+  .btn-outline:hover {
+    background: rgba(212, 175, 55, 0.15);
+    color: #DAA520;
+    border-color: rgba(218, 165, 32, 0.9);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3), 0 2px 8px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
   }
   
   .btn-gold {
-    @apply bg-accent-500 hover:bg-accent-600 text-primary-900 font-medium py-2 px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2 focus:ring-offset-primary-900 shadow-lg hover:shadow-xl;
-    /* 與主按鈕一致的金色梯度與陰影 */
-    background: linear-gradient(135deg, var(--gold-true) 0%, var(--gold-dark) 100%);
-    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.35);
+    @apply font-medium py-2 px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg hover:shadow-xl;
+    /* 金色變體：與主按鈕一致但更突出的金色效果 */
+    background: linear-gradient(135deg, #D4AF37 0%, #B8860B 50%, #DAA520 100%);
+    color: #1a1a1a;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    focus-ring-color: rgba(212, 175, 55, 0.6);
+    focus-ring-offset-color: #121212;
+  }
+  
+  .btn-gold:hover {
+    background: linear-gradient(135deg, #DAA520 0%, #CD853F 50%, #D4AF37 100%);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
   }
   
   .btn-danger {
