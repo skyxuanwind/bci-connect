@@ -31,7 +31,7 @@ import {
 } from 'react-icons/fa';
 
 const MemberCard = () => {
-  const { memberId } = useParams();
+  const { id: memberId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [cardData, setCardData] = useState(null);
