@@ -498,6 +498,14 @@ async function initializeDatabasesAsync() {
     
     await dbInitPromise;
     console.log('✅ PostgreSQL database initialized successfully');
+
+    // Ensure latest NFC templates exist (idempotent)
+    try {
+      const { ensureLatestTemplatesExist } = require('./config/database');
+      await ensureLatestTemplatesExist();
+    } catch (tplErr) {
+      console.warn('⚠️ Failed ensuring latest NFC templates:', tplErr.message);
+    }
     
     // Create test accounts in production if they don't exist
     if (process.env.NODE_ENV === 'production') {
