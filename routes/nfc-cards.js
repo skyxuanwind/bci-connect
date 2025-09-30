@@ -305,7 +305,7 @@ router.get('/member/:memberId/vcard', async (req, res) => {
       `TITLE:${member.title || ''}`,
       `EMAIL:${member.email}`,
       `TEL:${member.contact_number || ''}`,
-      `URL:${process.env.CLIENT_URL || 'http://localhost:3000'}/member/${memberId}`,
+      `URL:${process.env.CLIENT_URL || 'http://localhost:3000'}/member-card/${memberId}`,
       'END:VCARD'
     ].join('\r\n');
     

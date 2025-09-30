@@ -202,7 +202,7 @@ const DigitalCardWallet = () => {
   };
 
   const shareCard = async (bookmark) => {
-    const cardUrl = `${window.location.origin}/member/${bookmark.userId}`;
+    const cardUrl = `${window.location.origin}/member-card/${bookmark.userId}`;
     const shareData = {
       title: `${bookmark.userName}的電子名片`,
       text: `查看 ${bookmark.userName} 的電子名片`,

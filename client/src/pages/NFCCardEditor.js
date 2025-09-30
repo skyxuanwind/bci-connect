@@ -529,7 +529,7 @@ const NFCCardEditor = () => {
   };
 
   const copyCardUrl = () => {
-    const cardUrl = `${window.location.origin}/member/${user.id}`;
+    const cardUrl = `${window.location.origin}/member-card/${user.id}`;
     navigator.clipboard.writeText(cardUrl);
     alert('名片網址已複製到剪貼板！');
   };
@@ -795,7 +795,7 @@ const NFCCardEditor = () => {
                   
                   <div className="p-4 bg-black/20 border-t border-gold-600 text-center">
                     <a 
-                      href={`/member-card/${user.id}`}
+                      href={`/member-card/${user?.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-medium text-sm rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-all duration-200 shadow-lg"
@@ -851,14 +851,14 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
               value={data.title || ''}
               onChange={(e) => setData({ ...data, title: e.target.value })}
               placeholder="標題"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
             <textarea
               value={data.content || ''}
               onChange={(e) => setData({ ...data, content: e.target.value })}
               placeholder="內容"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
           </div>
         );
@@ -871,14 +871,14 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
               value={data.title || ''}
               onChange={(e) => setData({ ...data, title: e.target.value })}
               placeholder="連結標題"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
             <input
               type="url"
               value={data.url || ''}
               onChange={(e) => setData({ ...data, url: e.target.value })}
               placeholder="https://example.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
           </div>
         );
@@ -891,12 +891,12 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
               value={data.title || ''}
               onChange={(e) => setData({ ...data, title: e.target.value })}
               placeholder="影片標題"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
             <select
               value={data.type || 'youtube'}
               onChange={(e) => setData({ ...data, type: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             >
               <option value="youtube">YouTube</option>
               <option value="upload">上傳影片</option>
@@ -910,7 +910,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                   setData({ ...data, url, videoId: getYouTubeVideoId(url) });
                 }}
                 placeholder="YouTube 網址 (例如: https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
               />
             ) : (
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -928,9 +928,9 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                   id={`video-upload-${block.id}`}
                 />
                 <label htmlFor={`video-upload-${block.id}`} className="cursor-pointer">
-                  <PlayIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-600">點擊上傳影片文件</p>
-                  {data.file && <p className="text-xs text-green-600 mt-1">已選擇: {data.file}</p>}
+                  <PlayIcon className="h-8 w-8 mx-auto mb-2 text-amber-400" />
+                  <p className="text-sm text-amber-200">點擊上傳影片文件</p>
+                  {data.file && <p className="text-xs text-amber-400 mt-1">已選擇: {data.file}</p>}
                 </label>
               </div>
             )}
@@ -945,7 +945,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
               value={data.title || ''}
               onChange={(e) => setData({ ...data, title: e.target.value })}
               placeholder="圖片標題"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
               <input
@@ -972,8 +972,8 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                   </div>
                 ) : (
                   <div>
-                    <PhotoIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600">點擊上傳圖片</p>
+                    <PhotoIcon className="h-8 w-8 mx-auto mb-2 text-amber-400" />
+                    <p className="text-sm text-amber-200">點擊上傳圖片</p>
                   </div>
                 )}
               </label>
@@ -983,7 +983,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
               value={data.alt || ''}
               onChange={(e) => setData({ ...data, alt: e.target.value })}
               placeholder="圖片描述"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
           </div>
         );
@@ -991,7 +991,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
       case 'social':
         return (
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-700 mb-3">社群媒體連結</h4>
+            <h4 className="font-medium text-amber-200 mb-3">社群媒體連結</h4>
             {[
               { key: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin />, color: 'bg-blue-600' },
               { key: 'facebook', name: 'Facebook', icon: <FaFacebook />, color: 'bg-blue-500' },
@@ -1010,7 +1010,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                     value={data[platform.key] || ''}
                     onChange={(e) => setData({ ...data, [platform.key]: e.target.value })}
                     placeholder={`${platform.name} 網址`}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -1026,25 +1026,25 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
               value={data.title || ''}
               onChange={(e) => setData({ ...data, title: e.target.value })}
               placeholder="地點名稱"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
             <textarea
               value={data.address || ''}
               onChange={(e) => setData({ ...data, address: e.target.value })}
               placeholder="完整地址"
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
             <input
               type="text"
               value={data.map_url || ''}
               onChange={(e) => setData({ ...data, map_url: e.target.value })}
               placeholder="Google Maps 網址 (可選)"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
             {data.address && (
-              <div className="bg-gray-50 p-3 rounded border">
-                <p className="text-sm text-gray-600 mb-2">地圖預覽:</p>
+              <div className="bg-gray-800 p-3 rounded border border-amber-300">
+                <p className="text-sm text-amber-200 mb-2">地圖預覽:</p>
                 <iframe
                   src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(data.address)}`}
                   width="100%"
@@ -1056,7 +1056,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                   className="rounded"
                   title="地圖預覽"
                 ></iframe>
-                <p className="text-xs text-gray-500 mt-1">注意：需要設定 Google Maps API Key 才能正常顯示地圖</p>
+                <p className="text-xs text-amber-300 mt-1">注意：需要設定 Google Maps API Key 才能正常顯示地圖</p>
               </div>
             )}
           </div>
@@ -1077,13 +1077,13 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
       <div className="flex justify-end space-x-2 mt-4">
         <button
           onClick={onCancel}
-          className="px-3 py-1 text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+          className="px-3 py-1 text-amber-200 bg-gray-800 border border-amber-300 rounded hover:bg-gray-700 transition-colors"
         >
           取消
         </button>
         <button
           onClick={handleSave}
-          className="px-3 py-1 text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+          className="px-3 py-1 text-gray-900 bg-amber-500 rounded hover:bg-amber-400 transition-colors"
         >
           保存
         </button>
@@ -1159,10 +1159,10 @@ const BlockPreview = ({ block }) => {
     case 'text':
       return (
         <div>
-          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             {content_data?.title || '文字區塊'}
           </div>
-          <div className="text-gray-600 text-xs">
+          <div className="text-amber-100 text-xs">
             {content_data?.content || '內容文字'}
           </div>
         </div>
@@ -1171,10 +1171,10 @@ const BlockPreview = ({ block }) => {
     case 'link':
       return (
         <div>
-          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             {content_data?.title || '連結標題'}
           </div>
-          <div className="text-blue-600 text-xs">
+          <div className="text-amber-300 text-xs">
             {content_data?.url || 'https://example.com'}
           </div>
         </div>
@@ -1183,10 +1183,10 @@ const BlockPreview = ({ block }) => {
     case 'video':
       return (
         <div>
-          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             {content_data?.title || '影片標題'}
           </div>
-          <div className="text-gray-500 text-xs">
+          <div className="text-amber-100 text-xs">
             {content_data?.type === 'youtube' ? (
               (content_data?.url || content_data?.videoId) ? (
                 <div className="flex items-center gap-1">
@@ -1213,7 +1213,7 @@ const BlockPreview = ({ block }) => {
     case 'image':
       return (
         <div>
-          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             {content_data?.title || '圖片標題'}
           </div>
           {content_data?.url ? (
@@ -1226,12 +1226,12 @@ const BlockPreview = ({ block }) => {
               />
             </div>
           ) : (
-            <div className="text-gray-500 text-xs mb-2">
+            <div className="text-amber-100 text-xs mb-2">
               <span>🖼️ 請上傳圖片</span>
             </div>
           )}
           {content_data?.alt && (
-            <div className="text-gray-400 text-xs italic">
+            <div className="text-amber-300 text-xs italic">
               {content_data.alt}
             </div>
           )}
@@ -1241,7 +1241,7 @@ const BlockPreview = ({ block }) => {
     case 'social':
       return (
         <div>
-          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             社群媒體
           </div>
           <div className="flex flex-wrap gap-1">
@@ -1253,13 +1253,13 @@ const BlockPreview = ({ block }) => {
               { key: 'youtube', name: 'YouTube', icon: <FaYoutube /> },
               { key: 'tiktok', name: 'TikTok', icon: <FaTiktok /> }
             ].filter(platform => content_data?.[platform.key]).map(platform => (
-              <span key={platform.key} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded flex items-center gap-1">
+              <span key={platform.key} className="px-2 py-1 bg-amber-600 text-amber-100 text-xs rounded flex items-center gap-1">
                 <span>{platform.icon}</span>
                 <span>{platform.name}</span>
               </span>
             ))}
             {!Object.values(content_data || {}).some(url => url) && (
-              <span className="text-gray-500 text-xs">請添加社群媒體連結</span>
+              <span className="text-amber-100 text-xs">請添加社群媒體連結</span>
             )}
           </div>
         </div>
@@ -1268,14 +1268,14 @@ const BlockPreview = ({ block }) => {
     case 'map':
       return (
         <div>
-          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             {content_data?.title || '地點名稱'}
           </div>
-          <div className="text-gray-600 text-xs mb-1">
+          <div className="text-amber-100 text-xs mb-1">
             📍 {content_data?.address || '請輸入地址'}
           </div>
           {content_data?.address && (
-            <div className="bg-gray-100 rounded text-xs p-2 text-gray-500">
+            <div className="bg-gray-800 rounded text-xs p-2 text-amber-200">
               🗺️ Google Maps 地圖
             </div>
           )}
@@ -1284,7 +1284,7 @@ const BlockPreview = ({ block }) => {
     
     default:
       return (
-        <div className="text-gray-500 text-xs">
+        <div className="text-amber-100 text-xs">
           {getBlockTypeLabel(block.content_type)} 內容
         </div>
       );

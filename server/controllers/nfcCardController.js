@@ -401,7 +401,7 @@ const generateVCard = async (req, res) => {
     }
     
     // 添加名片頁面 URL
-    const cardUrl = `${req.protocol}://${req.get('host')}/member/${cardId}`;
+    const cardUrl = `${req.protocol}://${req.get('host')}/member-card/${cardId}`;
     vcard.note = `電子名片: ${cardUrl}`;
     
     // 設置響應頭

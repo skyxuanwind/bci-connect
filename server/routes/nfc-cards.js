@@ -208,7 +208,7 @@ router.post('/my-card', auth, async (req, res) => {
       message: '名片保存成功',
       data: {
         cardId,
-        cardUrl: `${req.protocol}://${req.get('host')}/member/${userId}`
+        cardUrl: `${req.protocol}://${req.get('host')}/member-card/${userId}`
       }
     });
   } catch (error) {
