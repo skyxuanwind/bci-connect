@@ -700,6 +700,10 @@ const MemberCard = () => {
         return 'template-modern';
       case '環保綠意版':
         return 'template-eco';
+      case '質感黑金版':
+        return 'template-luxury';
+      case '插畫塗鴉版':
+        return 'template-graffiti';
       default:
         return 'template-minimal';
     }

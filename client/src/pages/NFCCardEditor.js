@@ -1104,7 +1104,9 @@ const TemplatePreview = ({ template, cardConfig }) => {
       '簡約質感版': 'template-minimal',
       '商務專業版': 'template-business',
       '現代簡約版': 'template-modern',
-      '環保綠意版': 'template-eco'
+      '環保綠意版': 'template-eco',
+      '質感黑金版': 'template-luxury',
+      '插畫塗鴉版': 'template-graffiti'
     };
     
     return templateClassMap[template.name] || 'template-default';

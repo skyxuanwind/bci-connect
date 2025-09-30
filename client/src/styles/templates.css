@@ -1209,27 +1209,635 @@
   box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
 }
 
+/* ==============================================
+   模板七：質感黑金風格 (高級商務質感)
+   風格：黑金配色、粒子動效、光束效果、奢華質感
+   ============================================== */
+
+.template-luxury {
+  background: radial-gradient(ellipse at center, #1a1a1a 0%, #000000 70%);
+  color: #f5f5f5;
+  min-height: 100vh;
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 粒子背景動效 */
+.template-luxury::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #ffd700, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 215, 0, 0.6), transparent),
+    radial-gradient(1px 1px at 90px 40px, #ffd700, transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 215, 0, 0.4), transparent),
+    radial-gradient(2px 2px at 160px 30px, #ffd700, transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  animation: particles 20s linear infinite;
+  opacity: 0.3;
+  z-index: 1;
+}
+
+/* 光束效果 */
+.template-luxury::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 215, 0, 0.1) 50%,
+    transparent 70%
+  );
+  animation: lightBeam 15s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes particles {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(-100px) rotate(360deg); }
+}
+
+@keyframes lightBeam {
+  0%, 100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+.template-luxury .card-content {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  position: relative;
+  z-index: 10;
+}
+
+.template-luxury .card-header {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(26, 26, 26, 0.9) 100%);
+  border: 2px solid #ffd700;
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  margin-bottom: 3rem;
+  text-align: center;
+  position: relative;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 215, 0, 0.2);
+}
+
+.template-luxury .card-header::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700, #ffed4e);
+  border-radius: 22px;
+  z-index: -1;
+  animation: borderGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes borderGlow {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.template-luxury .card-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #ffd700;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+}
+
+.template-luxury .card-subtitle {
+  font-size: 1.3rem;
+  color: #e5e5e5;
+  font-weight: 300;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.template-luxury .company-name {
+  font-size: 1rem;
+  color: #ffd700;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.template-luxury .content-block {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(26, 26, 26, 0.8) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.template-luxury .content-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.template-luxury .content-block:hover::before {
+  left: 100%;
+}
+
+.template-luxury .content-block:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255, 215, 0, 0.6);
+  box-shadow: 0 15px 30px rgba(255, 215, 0, 0.2);
+}
+
+.template-luxury .block-title {
+  color: #ffd700;
+  font-weight: 600;
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.template-luxury .service-description {
+  line-height: 1.8;
+  color: #e5e5e5;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.template-luxury .contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.template-luxury .contact-list li {
+  padding: 1.2rem 0;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.template-luxury .contact-list li:hover {
+  padding-left: 1rem;
+  background: rgba(255, 215, 0, 0.05);
+  margin: 0 -1rem;
+  border-radius: 10px;
+  border-bottom: 1px solid transparent;
+}
+
+.template-luxury .contact-list li:last-child {
+  border-bottom: none;
+}
+
+.template-luxury .contact-label {
+  font-size: 0.9rem;
+  color: #ffd700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.template-luxury .contact-value {
+  color: #f5f5f5;
+  font-weight: 400;
+  font-size: 1.1rem;
+}
+
+.template-luxury .social-links {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.3);
+  justify-content: center;
+}
+
+.template-luxury .social-link {
+  color: #e5e5e5;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  padding: 0.8rem 1.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 25px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+.template-luxury .social-link:hover {
+  color: #000;
+  background: #ffd700;
+  border-color: #ffd700;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
+}
+
+.template-luxury .save-contact-btn {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #000;
+  border-radius: 25px;
+  padding: 1.2rem 2.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+}
+
+.template-luxury .save-contact-btn:hover {
+  background: linear-gradient(135deg, #ffed4e, #ffd700);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(255, 215, 0, 0.4);
+}
+
+.template-luxury .add-to-wallet-btn {
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffd700;
+  border: 2px solid #ffd700;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  backdrop-filter: blur(5px);
+}
+
+.template-luxury .add-to-wallet-btn:hover {
+  background: #ffd700;
+  color: #000;
+  transform: scale(1.1);
+  box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
+}
+
+/* ==============================================
+   模板八：插畫風格 (美式塗鴉設計)
+   風格：活潑色彩、塗鴉元素、手繪質感、創意排版
+   ============================================== */
+
+.template-graffiti {
+  background: linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 25%, #45b7d1 50%, #96ceb4 75%, #ffeaa7 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+  color: #2d3436;
+  min-height: 100vh;
+  font-family: 'Comic Sans MS', 'Marker Felt', cursive;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 塗鴉裝飾元素 */
+.template-graffiti::before {
+  content: '★ ♪ ♦ ◆ ● ▲ ■ ♠ ♥ ♣ ♦ ☆ ✦ ✧ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.1);
+  word-spacing: 3rem;
+  line-height: 4rem;
+  animation: float 20s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@keyframes float {
+  0% { transform: translateY(100vh) rotate(0deg); }
+  100% { transform: translateY(-100px) rotate(360deg); }
+}
+
+.template-graffiti .card-content {
+  max-width: 650px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.template-graffiti .card-header {
+  background: rgba(255, 255, 255, 0.95);
+  border: 4px solid #2d3436;
+  border-radius: 25px;
+  padding: 2.5rem 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  position: relative;
+  transform: rotate(-1deg);
+  box-shadow: 
+    8px 8px 0px #2d3436,
+    0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.template-graffiti .card-header::before {
+  content: '✨';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 2rem;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.template-graffiti .card-header::after {
+  content: '🎨';
+  position: absolute;
+  bottom: -10px;
+  left: -10px;
+  font-size: 2rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(180deg); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.template-graffiti .card-title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #2d3436;
+  margin-bottom: 0.5rem;
+  text-shadow: 3px 3px 0px #fff, 6px 6px 0px #ff6b6b;
+  transform: rotate(1deg);
+  letter-spacing: 0.02em;
+}
+
+.template-graffiti .card-subtitle {
+  font-size: 1.2rem;
+  color: #636e72;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transform: rotate(-0.5deg);
+}
+
+.template-graffiti .company-name {
+  font-size: 1rem;
+  color: #e17055;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  background: #fff;
+  padding: 0.3rem 1rem;
+  border-radius: 15px;
+  display: inline-block;
+  border: 2px solid #e17055;
+}
+
+.template-graffiti .content-block {
+  background: rgba(255, 255, 255, 0.9);
+  border: 3px solid #2d3436;
+  border-radius: 20px;
+  padding: 1.8rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  transform: rotate(0.5deg);
+  box-shadow: 5px 5px 0px #2d3436;
+  transition: all 0.3s ease;
+}
+
+.template-graffiti .content-block:nth-child(even) {
+  transform: rotate(-0.5deg);
+  box-shadow: -5px 5px 0px #2d3436;
+}
+
+.template-graffiti .content-block:hover {
+  transform: rotate(0deg) scale(1.02);
+  box-shadow: 8px 8px 0px #2d3436;
+}
+
+.template-graffiti .content-block::before {
+  content: '💫';
+  position: absolute;
+  top: -15px;
+  right: 20px;
+  font-size: 1.5rem;
+  animation: wiggle 3s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+}
+
+.template-graffiti .block-title {
+  color: #2d3436;
+  font-weight: 900;
+  font-size: 1.4rem;
+  margin-bottom: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 2px 2px 0px #fff;
+}
+
+.template-graffiti .service-description {
+  line-height: 1.7;
+  color: #2d3436;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.template-graffiti .contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.template-graffiti .contact-list li {
+  padding: 1rem 0;
+  border-bottom: 2px dashed #ddd;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.template-graffiti .contact-list li:hover {
+  background: rgba(255, 107, 107, 0.1);
+  padding-left: 1rem;
+  margin: 0 -1rem;
+  border-radius: 15px;
+  border-bottom: 2px dashed transparent;
+}
+
+.template-graffiti .contact-list li:last-child {
+  border-bottom: none;
+}
+
+.template-graffiti .contact-label {
+  font-size: 0.9rem;
+  color: #e17055;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 80px;
+  font-weight: 800;
+  background: #fff;
+  padding: 0.2rem 0.8rem;
+  border-radius: 10px;
+  border: 2px solid #e17055;
+}
+
+.template-graffiti .contact-value {
+  color: #2d3436;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.template-graffiti .social-links {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 3px dashed #ddd;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.template-graffiti .social-link {
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 800;
+  transition: all 0.3s ease;
+  padding: 0.8rem 1.5rem;
+  border-radius: 20px;
+  background: #ff6b6b;
+  border: 3px solid #2d3436;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 3px 3px 0px #2d3436;
+}
+
+.template-graffiti .social-link:nth-child(2n) {
+  background: #4ecdc4;
+}
+
+.template-graffiti .social-link:nth-child(3n) {
+  background: #45b7d1;
+}
+
+.template-graffiti .social-link:hover {
+  transform: translateY(-3px) rotate(5deg);
+  box-shadow: 5px 8px 0px #2d3436;
+}
+
+.template-graffiti .save-contact-btn {
+  background: #ff6b6b;
+  color: #fff;
+  border: 4px solid #2d3436;
+  border-radius: 25px;
+  padding: 1.2rem 2.5rem;
+  font-weight: 900;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 6px 6px 0px #2d3436;
+  transform: rotate(-1deg);
+}
+
+.template-graffiti .save-contact-btn:hover {
+  background: #fd79a8;
+  transform: rotate(0deg) translateY(-3px);
+  box-shadow: 8px 10px 0px #2d3436;
+}
+
+.template-graffiti .add-to-wallet-btn {
+  background: #ffeaa7;
+  color: #2d3436;
+  border: 4px solid #2d3436;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-weight: 900;
+  box-shadow: 4px 4px 0px #2d3436;
+}
+
+.template-graffiti .add-to-wallet-btn:hover {
+  background: #fdcb6e;
+  transform: rotate(15deg) scale(1.1);
+  box-shadow: 6px 6px 0px #2d3436;
+}
+
 /* 響應式設計增強 */
 @media (max-width: 768px) {
   .template-business .card-header,
   .template-modern .card-content,
-  .template-eco .card-header {
+  .template-eco .card-header,
+  .template-luxury .card-header,
+  .template-graffiti .card-header {
     padding: 2rem 1.5rem;
   }
   
   .template-business .card-title,
   .template-modern .card-title,
-  .template-eco .card-title {
+  .template-eco .card-title,
+  .template-luxury .card-title,
+  .template-graffiti .card-title {
     font-size: 1.8rem;
   }
   
   .template-business .content-block,
-  .template-eco .content-block {
+  .template-eco .content-block,
+  .template-luxury .content-block,
+  .template-graffiti .content-block {
     padding: 1.5rem;
   }
   
-  .template-modern .contact-list li:hover {
+  .template-modern .contact-list li:hover,
+  .template-luxury .contact-list li:hover,
+  .template-graffiti .contact-list li:hover {
     margin: 0;
     padding-left: 0;
+  }
+  
+  .template-luxury::before,
+  .template-luxury::after {
+    display: none;
+  }
+  
+  .template-graffiti::before {
+    font-size: 1.5rem;
+    line-height: 3rem;
+  }
+  
+  .template-graffiti .social-links {
+    gap: 0.5rem;
   }
 }
