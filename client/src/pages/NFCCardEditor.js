@@ -638,12 +638,12 @@ const NFCCardEditor = () => {
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* 左側：基本設定 */}
             <div className="xl:col-span-3">
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">基本設定</h2>
+              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-6 mb-6">
+                <h2 className="text-lg font-semibold text-gold-100 mb-4">基本設定</h2>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gold-300 mb-2">
                       名片標題
                     </label>
                     <input
@@ -653,13 +653,13 @@ const NFCCardEditor = () => {
                         ...cardConfig,
                         card_title: e.target.value
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 placeholder-gold-400 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
                       placeholder="輸入名片標題"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gold-300 mb-2">
                       副標題
                     </label>
                     <input
@@ -669,34 +669,34 @@ const NFCCardEditor = () => {
                         ...cardConfig,
                         card_subtitle: e.target.value
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 placeholder-gold-400 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
                       placeholder="輸入副標題"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gold-300 mb-2">
                       選擇模板
                     </label>
                     <select
                       value={cardConfig?.template_id || ''}
                       onChange={(e) => handleTemplateChange(parseInt(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
                     >
                       {templates.map(template => (
-                        <option key={template.id} value={template.id}>
+                        <option key={template.id} value={template.id} className="bg-black text-gold-100">
                           {template.name}
                         </option>
                       ))}
                     </select>
                     {/* 模板預覽 */}
                     <div className="mt-3">
-                      <div className="text-sm text-gray-600 mb-2">模板預覽</div>
-                      <div className="border border-gray-200 rounded-lg p-3 flex items-center space-x-3">
-                        <img src={selectedPreview} alt="模板預覽" className="w-20 h-14 object-cover rounded" />
+                      <div className="text-sm text-gold-300 mb-2">模板預覽</div>
+                      <div className="border border-gold-600 bg-black/20 rounded-lg p-3 flex items-center space-x-3">
+                        <img src={selectedPreview} alt="模板預覽" className="w-20 h-14 object-cover rounded border border-gold-600" />
                         <div>
-                          <div className="font-medium text-gray-900">{selectedTemplate?.name || '未選擇模板'}</div>
-                          <div className="text-xs text-gray-500">{selectedTemplate?.description || '請選擇一個模板以查看預覽'}</div>
+                          <div className="font-medium text-gold-100">{selectedTemplate?.name || '未選擇模板'}</div>
+                          <div className="text-xs text-gold-400">{selectedTemplate?.description || '請選擇一個模板以查看預覽'}</div>
                         </div>
                       </div>
                     </div>
@@ -780,25 +780,25 @@ const NFCCardEditor = () => {
             
             {/* 右側：即時預覽 */}
             <div className="xl:col-span-4">
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <EyeIcon className="h-5 w-5 mr-2 text-blue-600" />
+              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-6 sticky top-8">
+                <h2 className="text-lg font-semibold text-gold-100 mb-4 flex items-center">
+                  <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
                   即時預覽
                 </h2>
                 
-                <div className="border border-gray-200 rounded-lg overflow-hidden min-h-[32rem] max-h-[32rem] overflow-y-auto">
+                <div className="border border-gold-600 rounded-lg overflow-hidden min-h-[32rem] max-h-[32rem] overflow-y-auto">
                   {/* 套用模板樣式的預覽 */}
                   <TemplatePreview 
                     template={selectedTemplate}
                     cardConfig={cardConfig}
                   />
                   
-                  <div className="p-4 bg-gray-50 border-t border-gray-200 text-center">
+                  <div className="p-4 bg-black/20 border-t border-gold-600 text-center">
                     <a 
                       href={`/member-card/${user.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-medium text-sm rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-all duration-200 shadow-lg"
                     >
                       <EyeIcon className="h-3 w-3 mr-1" />
                       完整版本
@@ -806,7 +806,7 @@ const NFCCardEditor = () => {
                   </div>
                 </div>
                 
-                <div className="mt-4 text-xs text-gray-500 text-center">
+                <div className="mt-4 text-xs text-gold-300 text-center">
                   💡 修改會即時反映在預覽中
                 </div>
               </div>
