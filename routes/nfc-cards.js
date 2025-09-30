@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../config/database');
+const { pool, ensureLatestTemplatesExist } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -215,6 +215,14 @@ router.put('/my-card', authenticateToken, async (req, res) => {
 // 獲取所有可用模板
 router.get('/templates', async (req, res) => {
   try {
+    // 確保最新模板存在（在雲端部署啟動未執行時補救）
+    try {
+      await ensureLatestTemplatesExist();
+    } catch (e) {
+      // 非關鍵，僅記錄警告
+      console.warn('ensureLatestTemplatesExist in route failed:', e.message);
+    }
+
     const result = await pool.query(
       'SELECT * FROM nfc_card_templates ORDER BY id ASC'
     );
