@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import InfoButton from '../components/InfoButton';
+import Button from '../components/Button';
 
 const Events = () => {
   const { user, token } = useAuth();
@@ -81,10 +82,10 @@ const Events = () => {
           </div>
           <p className="mt-2 text-gray-600">參與 GBC 商會的各種活動，擴展您的商業網絡</p>
           <div className="mt-4">
-            <Link to="/events/calendar" className="btn-light inline-flex items-center">
+            <Button to="/events/calendar" variant="outline" className="inline-flex items-center">
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               切換至月曆視圖
-            </Link>
+            </Button>
           </div>
         </div>
 
@@ -181,12 +182,13 @@ const Events = () => {
                   </div>
                   
                   <div className="mt-6">
-                    <Link
+                    <Button
                       to={`/events/${event.id}`}
-                      className="w-full btn-primary inline-block text-center"
+                      variant="primary"
+                      className="w-full inline-block text-center"
                     >
                       查看詳情
-                    </Link>
+                    </Button>
                   </div>
                 </div>
               </div>

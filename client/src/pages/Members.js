@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -219,13 +220,14 @@ const Members = () => {
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <button
+          <Button
             onClick={() => setShowFilters(!showFilters)}
-            className="btn-secondary flex items-center"
+            variant="secondary"
+            className="flex items-center"
           >
             <FunnelIcon className="h-4 w-4 mr-2" />
             篩選
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -302,9 +304,9 @@ const Members = () => {
                 清除篩選
               </button>
               <div className="space-x-3">
-                <button type="submit" className="btn-primary">
+                <Button type="submit" variant="primary">
                   搜尋
-                </button>
+                </Button>
               </div>
             </div>
           </form>
@@ -383,63 +385,68 @@ const Members = () => {
                     <div className="mt-4 space-y-2">
                       {/* 快速操作按鈕組 */}
                       <div className="grid grid-cols-2 gap-2">
-                        <Link
+                        <Button
                           to={`/members/${member.id}`}
-                          className="btn-secondary flex items-center justify-center text-xs py-2"
+                          variant="secondary"
+                          className="flex items-center justify-center text-xs py-2"
                           title="查看會員詳細資料"
                         >
                           <EyeIcon className="h-3 w-3 mr-1" />
                           詳情
-                        </Link>
+                        </Button>
                         
                         {/* 聯絡按鈕 */}
                         {member.contactNumber && (
-                          <a
+                          <Button
                             href={`tel:${member.contactNumber}`}
-                            className="btn-secondary flex items-center justify-center text-xs py-2"
+                            variant="secondary"
+                            className="flex items-center justify-center text-xs py-2"
                             title="撥打電話"
                           >
                             <PhoneIcon className="h-3 w-3 mr-1" />
                             電話
-                          </a>
+                          </Button>
                         )}
                         
                         {/* Email按鈕 */}
                         {member.email && (
-                          <a
+                          <Button
                             href={`mailto:${member.email}`}
-                            className="btn-secondary flex items-center justify-center text-xs py-2"
+                            variant="secondary"
+                            className="flex items-center justify-center text-xs py-2"
                             title="發送郵件"
                           >
                             <EnvelopeIcon className="h-3 w-3 mr-1" />
                             郵件
-                          </a>
+                          </Button>
                         )}
                         
                         {/* 名片按鈕 */}
                         {member.nfcCardUrl && (
-                          <a
+                          <Button
                             href={member.nfcCardUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn-secondary flex items-center justify-center text-xs py-2"
+                            variant="secondary"
+                            className="flex items-center justify-center text-xs py-2"
                             title="查看電子名片"
                           >
                             <CreditCardIcon className="h-3 w-3 mr-1" />
                             名片
-                          </a>
+                          </Button>
                         )}
                       </div>
                       
                       {/* Interview Schedule Button */}
                       {member.interviewData && (
-                        <Link
+                        <Button
                           to={`/member-interview/${member.id}`}
-                          className="w-full btn-primary flex items-center justify-center text-sm"
+                          variant="primary"
+                          className="w-full flex items-center justify-center text-sm"
                         >
                           <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
                           面談表
-                        </Link>
+                        </Button>
                       )}
                     </div>
                   )}

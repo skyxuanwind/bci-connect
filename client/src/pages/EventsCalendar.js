@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Button from '../components/Button';
 import axios from '../config/axios';
 import {
   format,
@@ -122,30 +123,30 @@ const EventsCalendar = () => {
               <p className="mt-1 text-gray-600">清晰掌握本月活動安排，點擊日期查看當日活動</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <a
+              <Button
                 href={googleSubscribeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-secondary"
+                variant="secondary"
               >
                 Google 訂閱所有活動
-              </a>
-              <a
+              </Button>
+              <Button
                 href={icsFeedUrl}
-                className="btn-outline"
+                variant="outline"
               >
                 下載所有活動 .ics
-              </a>
-              <Link to="/events" className="btn-light">返回列表視圖</Link>
+              </Button>
+              <Button to="/events" variant="outline">返回列表視圖</Button>
             </div>
           </div>
         </div>
 
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-4">
-          <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="btn-light">上個月</button>
+          <Button onClick={() => setCurrentDate(subMonths(currentDate, 1))} variant="outline">上個月</Button>
           <div className="text-xl font-semibold">{format(currentDate, 'yyyy/MM')}</div>
-          <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="btn-light">下個月</button>
+          <Button onClick={() => setCurrentDate(addMonths(currentDate, 1))} variant="outline">下個月</Button>
         </div>
 
         {/* Weekday labels */}
