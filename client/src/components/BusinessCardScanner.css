@@ -276,22 +276,31 @@
 }
 
 .business-card-scanner .btn-primary {
-  background: #3b82f6;
-  color: white;
+  background: linear-gradient(135deg, #D4AF37 0%, #B8860B 50%, #DAA520 100%);
+  color: #1a1a1a;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .business-card-scanner .btn-primary:hover {
-  background: #2563eb;
+  background: linear-gradient(135deg, #DAA520 0%, #CD853F 50%, #D4AF37 100%);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
 }
 
 .business-card-scanner .btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #2a2a2a 100%);
+  color: #D4AF37;
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.3);
 }
 
 .business-card-scanner .btn-secondary:hover {
-  background: #e5e7eb;
+  background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 50%, #363636 100%);
+  color: #DAA520;
+  border-color: rgba(218, 165, 32, 0.8);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(218, 165, 32, 0.4);
+  transform: translateY(-1px);
 }
 
 /* 掃描結果確認按鈕 */
@@ -430,12 +439,17 @@
   }
   
   .business-card-scanner .btn-secondary {
-    background: #374151;
-    color: #f9fafb;
-    border-color: #4b5563;
+    background: linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #2a2a2a 100%);
+    color: #D4AF37;
+    border: 1px solid rgba(212, 175, 55, 0.6);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.3);
   }
   
   .business-card-scanner .btn-secondary:hover {
-    background: #4b5563;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 50%, #363636 100%);
+    color: #DAA520;
+    border-color: rgba(218, 165, 32, 0.8);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(218, 165, 32, 0.4);
+    transform: translateY(-1px);
   }
 }
