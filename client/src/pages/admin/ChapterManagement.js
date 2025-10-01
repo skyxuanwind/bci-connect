@@ -9,7 +9,8 @@ import {
   PencilIcon,
   TrashIcon,
   UserGroupIcon,
-  XMarkIcon
+  XMarkIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 
 const ChapterManagement = () => {
@@ -19,6 +20,10 @@ const ChapterManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [processingChapter, setProcessingChapter] = useState(null);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [chapterMembers, setChapterMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [selectedChapterForMembers, setSelectedChapterForMembers] = useState(null);
 
   const {
     register: registerCreate,
@@ -136,6 +141,47 @@ const ChapterManagement = () => {
     }
   };
 
+  const handleViewMembers = async (chapter) => {
+    setSelectedChapterForMembers(chapter);
+    setShowMembersModal(true);
+    setMembersLoading(true);
+    setChapterMembers([]);
+    
+    try {
+      const response = await axios.get(`/api/chapters/${chapter.id}/members`);
+      setChapterMembers(response.data.members || []);
+    } catch (error) {
+      console.error('Failed to load chapter members:', error);
+      toast.error('載入分會成員失敗');
+      setChapterMembers([]);
+    } finally {
+      setMembersLoading(false);
+    }
+  };
+
+  const getMembershipLevelText = (level) => {
+    const levels = {
+      1: '核心',
+      2: '幹部',
+      3: '會員'
+    };
+    return levels[level] || '未設定';
+  };
+
+  const getMembershipLevelBadge = (level) => {
+    const badges = {
+      1: 'bg-yellow-500',
+      2: 'bg-blue-500',
+      3: 'bg-green-500'
+    };
+    
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${badges[level] || 'bg-gray-500'}`}>
+        {getMembershipLevelText(level)}
+      </span>
+    );
+  };
+
   const closeCreateModal = () => {
     setShowCreateModal(false);
     resetCreate();
@@ -222,37 +268,50 @@ const ChapterManagement = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2">
+                <div className="space-y-2">
+                  {/* View Members Button */}
                   <button
-                    onClick={() => handleEditChapter(chapter)}
+                    onClick={() => handleViewMembers(chapter)}
                     disabled={processingChapter === chapter.id}
-                    className="flex-1 btn-secondary flex items-center justify-center text-sm"
+                    className="w-full btn-primary flex items-center justify-center text-sm"
                   >
-                    {processingChapter === chapter.id ? (
-                      <LoadingSpinner size="small" />
-                    ) : (
-                      <>
-                        <PencilIcon className="h-4 w-4 mr-1" />
-                        編輯
-                      </>
-                    )}
+                    <EyeIcon className="h-4 w-4 mr-1" />
+                    查看成員 ({chapter.memberCount || 0})
                   </button>
                   
-                  <button
-                    onClick={() => handleDeleteChapter(chapter)}
-                    disabled={processingChapter === chapter.id || (chapter.memberCount && chapter.memberCount > 0)}
-                    className="flex-1 btn-danger flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={chapter.memberCount && chapter.memberCount > 0 ? '有會員的分會無法刪除' : '刪除分會'}
-                  >
-                    {processingChapter === chapter.id ? (
-                      <LoadingSpinner size="small" />
-                    ) : (
-                      <>
-                        <TrashIcon className="h-4 w-4 mr-1" />
-                        刪除
-                      </>
-                    )}
-                  </button>
+                  {/* Edit and Delete Buttons */}
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEditChapter(chapter)}
+                      disabled={processingChapter === chapter.id}
+                      className="flex-1 btn-secondary flex items-center justify-center text-sm"
+                    >
+                      {processingChapter === chapter.id ? (
+                        <LoadingSpinner size="small" />
+                      ) : (
+                        <>
+                          <PencilIcon className="h-4 w-4 mr-1" />
+                          編輯
+                        </>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => handleDeleteChapter(chapter)}
+                      disabled={processingChapter === chapter.id || (chapter.memberCount && chapter.memberCount > 0)}
+                      className="flex-1 btn-danger flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={chapter.memberCount && chapter.memberCount > 0 ? '有會員的分會無法刪除' : '刪除分會'}
+                    >
+                      {processingChapter === chapter.id ? (
+                        <LoadingSpinner size="small" />
+                      ) : (
+                        <>
+                          <TrashIcon className="h-4 w-4 mr-1" />
+                          刪除
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -408,6 +467,101 @@ const ChapterManagement = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Chapter Members Modal */}
+      {showMembersModal && selectedChapterForMembers && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                {selectedChapterForMembers.name} - 成員列表
+              </h3>
+              <button
+                onClick={() => setShowMembersModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            {membersLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <LoadingSpinner size="large" />
+              </div>
+            ) : chapterMembers.length === 0 ? (
+              <div className="text-center py-12">
+                <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">沒有成員</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  此分會目前沒有任何成員
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <UserGroupIcon className="h-4 w-4 mr-2" />
+                        <span>總計 {chapterMembers.length} 位成員</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                  {chapterMembers.map((member) => (
+                    <div key={member.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-primary-600 font-medium text-sm">
+                            {member.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">
+                              {member.name}
+                            </h4>
+                            {getMembershipLevelBadge(member.membershipLevel)}
+                          </div>
+                          <p className="text-xs text-gray-500 truncate mt-1">
+                            {member.email}
+                          </p>
+                          {member.company && (
+                            <p className="text-xs text-gray-600 truncate mt-1">
+                              {member.company}
+                            </p>
+                          )}
+                          {member.title && (
+                            <p className="text-xs text-gray-500 truncate mt-1">
+                              {member.title}
+                            </p>
+                          )}
+                          {member.contactNumber && (
+                            <p className="text-xs text-gray-500 truncate mt-1">
+                              📞 {member.contactNumber}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowMembersModal(false)}
+                className="btn-secondary"
+              >
+                關閉
+              </button>
+            </div>
           </div>
         </div>
       )}

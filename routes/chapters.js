@@ -214,4 +214,98 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// @route   GET /api/chapters/:id/members
+// @desc    Get chapter members list
+// @access  Private (Admin only)
+router.get('/:id/members', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+    const offset = (page - 1) * limit;
+
+    // 檢查分會是否存在
+    const chapterResult = await pool.query(
+      'SELECT id, name FROM chapters WHERE id = $1',
+      [id]
+    );
+
+    if (chapterResult.rows.length === 0) {
+      return res.status(404).json({ message: '分會不存在' });
+    }
+
+    // 構建查詢條件
+    let memberQuery = `
+      SELECT u.id, u.name, u.email, u.company, u.industry, u.title, 
+             u.membership_level, u.status, u.created_at, u.contact_number,
+             u.profile_picture_url
+      FROM users u 
+      WHERE u.chapter_id = $1 AND u.status = 'active'
+    `;
+    let countQuery = `
+      SELECT COUNT(*) as total_count 
+      FROM users u 
+      WHERE u.chapter_id = $1 AND u.status = 'active'
+    `;
+    
+    let queryParams = [id];
+    let countParams = [id];
+    
+    // 在正式環境中過濾測試資料
+    if (!shouldShowTestData()) {
+      const productionFilter = getProductionWhereClause('u');
+      if (productionFilter) {
+        memberQuery += ` ${productionFilter}`;
+        countQuery += ` ${productionFilter}`;
+        logDataFilter('chapter_members', id, 'filtered');
+      }
+    }
+    
+    // 添加排序和分頁
+    memberQuery += ` ORDER BY u.name ASC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    queryParams.push(limit, offset);
+
+    // 執行查詢
+    const [membersResult, countResult] = await Promise.all([
+      pool.query(memberQuery, queryParams),
+      pool.query(countQuery, countParams)
+    ]);
+
+    const members = membersResult.rows.map(member => ({
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      company: member.company,
+      industry: member.industry,
+      title: member.title,
+      membershipLevel: member.membership_level,
+      status: member.status,
+      contactNumber: member.contact_number,
+      profilePictureUrl: member.profile_picture_url,
+      createdAt: member.created_at
+    }));
+
+    const totalCount = parseInt(countResult.rows[0].total_count);
+    const totalPages = Math.ceil(totalCount / limit);
+
+    res.json({
+      chapter: chapterResult.rows[0],
+      members,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalCount,
+        limit: parseInt(limit),
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      },
+      isProduction: process.env.NODE_ENV === 'production',
+      showTestData: shouldShowTestData()
+    });
+
+  } catch (error) {
+    console.error('Get chapter members error:', error);
+    res.status(500).json({ message: '獲取分會成員列表時發生錯誤' });
+  }
+});
+
 module.exports = router;
