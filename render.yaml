@@ -9,12 +9,12 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_URL
-        value: https://gbc-connect.com
+        value: https://www.gbc-connect.com
       - key: FRONTEND_URL
-        value: https://gbc-connect.com
+        value: https://www.gbc-connect.com
       - key: QR_CODE_BASE_URL
-        value: https://gbc-connect.com
+        value: https://www.gbc-connect.com
       - key: BACKEND_URL
-        value: https://gbc-connect.com
+        value: https://www.gbc-connect.com
     autoDeploy: true
     branch: main
