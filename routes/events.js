@@ -45,6 +45,20 @@ const upload = multer({
   }
 });
 
+// 診斷端點 - 檢查環境變數配置（必須在 /:id 路由之前）
+router.get('/debug/env', (req, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    CLIENT_URL: process.env.CLIENT_URL,
+    FRONTEND_URL: process.env.FRONTEND_URL,
+    QR_CODE_BASE_URL: process.env.QR_CODE_BASE_URL,
+    BACKEND_URL: process.env.BACKEND_URL,
+    host: req.get('host'),
+    protocol: req.protocol,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // 獲取所有活動 (會員可見)
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -422,20 +436,6 @@ router.post('/guest-registration', async (req, res) => {
 router.get('/test', (req, res) => {
   console.log('Test endpoint hit');
   res.json({ message: 'Events route is working' });
-});
-
-// 診斷端點 - 檢查環境變數配置
-router.get('/debug/env', (req, res) => {
-  res.json({
-    NODE_ENV: process.env.NODE_ENV,
-    CLIENT_URL: process.env.CLIENT_URL,
-    FRONTEND_URL: process.env.FRONTEND_URL,
-    QR_CODE_BASE_URL: process.env.QR_CODE_BASE_URL,
-    BACKEND_URL: process.env.BACKEND_URL,
-    host: req.get('host'),
-    protocol: req.protocol,
-    timestamp: new Date().toISOString()
-  });
 });
 
 // 創建活動 (僅管理員)
