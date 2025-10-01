@@ -255,7 +255,13 @@ router.get('/:id/invite-link', authenticateToken, async (req, res) => {
       });
     }
     
-    const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:5002'}/guest-registration?event_id=${id}&inviter_id=${req.user.id}`;
+    // 更穩健的前端網址推導：優先使用環境變數，否則採用當前請求主機
+    const derivedOrigin = `${req.protocol}://${req.get('host')}`;
+    const frontendBase = (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim())
+      ? process.env.FRONTEND_URL.trim().replace(/\/$/, '')
+      : derivedOrigin.replace(/\/$/, '');
+
+    const inviteLink = `${frontendBase}/guest-registration?event_id=${id}&inviter_id=${req.user.id}`;
     
     res.json({
       success: true,

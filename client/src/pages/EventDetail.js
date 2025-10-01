@@ -327,7 +327,7 @@ const EventDetail = () => {
                       type="text"
                       value={inviteLink}
                       readOnly
-                      className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm"
+                      className="input flex-1 rounded-l-md text-sm placeholder-gold-300"
                     />
                     <Button
                       onClick={copyInviteLink}
