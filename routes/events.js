@@ -255,13 +255,45 @@ router.get('/:id/invite-link', authenticateToken, async (req, res) => {
       });
     }
     
-    // 更穩健的前端網址推導：優先使用環境變數，否則採用當前請求主機
-    const derivedOrigin = `${req.protocol}://${req.get('host')}`;
-    const frontendBase = (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim())
-      ? process.env.FRONTEND_URL.trim().replace(/\/$/, '')
-      : derivedOrigin.replace(/\/$/, '');
-
+    // 更穩健的前端網址推導邏輯
+    let frontendBase;
+    
+    // 1. 優先使用環境變數 FRONTEND_URL
+    if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim()) {
+      frontendBase = process.env.FRONTEND_URL.trim().replace(/\/$/, '');
+    }
+    // 2. 如果沒有設置 FRONTEND_URL，使用當前請求的主機
+    else {
+      const currentHost = req.get('host');
+      const protocol = req.protocol;
+      
+      // 處理常見的域名變體
+      if (currentHost && currentHost.includes('onrender.com')) {
+        // Render 部署的情況
+        frontendBase = `${protocol}://${currentHost}`;
+      } else if (currentHost && (currentHost.includes('gbc-connect.com') || currentHost.includes('www.gbc-connect.com'))) {
+        // 自定義域名的情況，確保使用正確的域名
+        frontendBase = currentHost.startsWith('www.') 
+          ? `${protocol}://${currentHost}` 
+          : `${protocol}://www.${currentHost}`;
+      } else {
+        // 其他情況，直接使用當前主機
+        frontendBase = `${protocol}://${currentHost}`;
+      }
+    }
+    
     const inviteLink = `${frontendBase}/guest-registration?event_id=${id}&inviter_id=${req.user.id}`;
+    
+    // 記錄邀請連結生成日誌，便於調試
+    console.log('Generated invite link:', {
+      eventId: id,
+      inviterId: req.user.id,
+      frontendBase,
+      inviteLink,
+      requestHost: req.get('host'),
+      protocol: req.protocol,
+      frontendUrlEnv: process.env.FRONTEND_URL
+    });
     
     res.json({
       success: true,
