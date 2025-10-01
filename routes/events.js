@@ -424,6 +424,20 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Events route is working' });
 });
 
+// 診斷端點 - 檢查環境變數配置
+router.get('/debug/env', (req, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    CLIENT_URL: process.env.CLIENT_URL,
+    FRONTEND_URL: process.env.FRONTEND_URL,
+    QR_CODE_BASE_URL: process.env.QR_CODE_BASE_URL,
+    BACKEND_URL: process.env.BACKEND_URL,
+    host: req.get('host'),
+    protocol: req.protocol,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // 創建活動 (僅管理員)
 router.post('/', authenticateToken, requireAdmin, upload.single('poster'), async (req, res) => {
   try {
