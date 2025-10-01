@@ -2,6 +2,7 @@ const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { sendApprovalNotification } = require('../services/emailService');
+const { getProductionWhereClause, shouldShowTestData, logDataFilter } = require('../utils/dataFilter');
 
 const router = express.Router();
 
@@ -171,6 +172,14 @@ router.get('/users', async (req, res) => {
     let paramIndex = 1;
 
     const whereConditions = [];
+
+    // 在正式環境中添加測試資料過濾條件
+    if (!shouldShowTestData()) {
+      const productionFilter = getProductionWhereClause('u');
+      if (productionFilter) {
+        whereConditions.push(productionFilter.replace('AND ', ''));
+      }
+    }
 
     if (status !== 'all') {
       whereConditions.push(`u.status = $${paramIndex}`);

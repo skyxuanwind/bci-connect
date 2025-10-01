@@ -7,6 +7,7 @@ const { authenticateToken, requireMembershipLevel, requireCoach } = require('../
 const { cloudinary } = require('../config/cloudinary');
 const { AINotificationService } = require('../services/aiNotificationService');
 const { addClient: addSseClient, removeClient: removeSseClient, broadcastTo } = require('../utils/sse');
+const { getProductionWhereClause, shouldShowTestData, logDataFilter } = require('../utils/dataFilter');
 
 const router = express.Router();
 const aiNotificationService = new AINotificationService();
@@ -609,13 +610,21 @@ router.get('/members', async (req, res) => {
     const { page = 1, limit = 20, chapterId = 'all', search = '' } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    // 取消會員等級限制：所有會員皆可查看所有等級
+    // 基本條件：活躍用戶且排除系統管理員
     let whereConditions = [
       'u.status = $1',
       `NOT (u.membership_level = 1 AND u.email LIKE '%admin%')`  // 排除系統管理員
     ];
     let queryParams = ['active'];
     let paramIndex = 2;
+
+    // 在正式環境中添加測試資料過濾條件
+    if (!shouldShowTestData()) {
+      const productionFilter = getProductionWhereClause('u');
+      if (productionFilter) {
+        whereConditions.push(productionFilter.replace('AND ', ''));
+      }
+    }
 
     if (chapterId !== 'all') {
       whereConditions.push(`u.chapter_id = $${paramIndex}`);
@@ -656,6 +665,17 @@ router.get('/members', async (req, res) => {
     queryParams.push(parseInt(limit), offset);
     const membersResult = await pool.query(membersQuery, queryParams);
 
+    // 記錄過濾日誌（如果有過濾的話）
+    if (!shouldShowTestData()) {
+      // 獲取未過濾的總數進行比較
+      const unfiltered = await pool.query(`
+        SELECT COUNT(*) as total
+        FROM users u
+        WHERE u.status = 'active' AND NOT (u.membership_level = 1 AND u.email LIKE '%admin%')
+      `);
+      logDataFilter('會員目錄', parseInt(unfiltered.rows[0].total), totalMembers);
+    }
+
     res.json({
       members: membersResult.rows.map(member => ({
         id: member.id,
@@ -675,7 +695,9 @@ router.get('/members', async (req, res) => {
         totalMembers,
         limit: parseInt(limit)
       },
-      userAccessLevel: req.user.membership_level
+      userAccessLevel: req.user.membership_level,
+      isProduction: process.env.NODE_ENV === 'production',
+      showTestData: shouldShowTestData()
     });
 
   } catch (error) {
@@ -1680,13 +1702,36 @@ router.post('/onboarding-tasks/bulk', requireCoach, async (req, res) => {
 // @access  Private
 router.get('/core-members', async (req, res) => {
   try {
+    let whereConditions = ['u.membership_level = 1', 'u.status = $1'];
+    let queryParams = ['active'];
+    
+    // 在正式環境中添加測試資料過濾條件
+    if (!shouldShowTestData()) {
+      const productionFilter = getProductionWhereClause('u');
+      if (productionFilter) {
+        whereConditions.push(productionFilter.replace('AND ', ''));
+      }
+    }
+    
+    const whereClause = whereConditions.join(' AND ');
+    
     const result = await pool.query(
       `SELECT u.id, u.name, u.company, u.title, c.name as chapter_name
        FROM users u
        LEFT JOIN chapters c ON u.chapter_id = c.id
-       WHERE u.membership_level = 1 AND u.status = 'active'
-       ORDER BY u.name ASC`
+       WHERE ${whereClause}
+       ORDER BY u.name ASC`,
+      queryParams
     );
+
+    // 記錄過濾日誌
+    if (!shouldShowTestData()) {
+      const unfiltered = await pool.query(
+        'SELECT COUNT(*) as total FROM users WHERE membership_level = 1 AND status = $1',
+        ['active']
+      );
+      logDataFilter('核心會員', parseInt(unfiltered.rows[0].total), result.rows.length);
+    }
 
     res.json({
       coreMembers: result.rows.map(member => ({
@@ -1708,12 +1753,26 @@ router.get('/core-members', async (req, res) => {
 // @access  Private
 router.get('/staff-members', async (req, res) => {
   try {
+    let whereConditions = ['u.membership_level = 2', 'u.status = $1'];
+    let queryParams = ['active'];
+    
+    // 在正式環境中添加測試資料過濾條件
+    if (!shouldShowTestData()) {
+      const productionFilter = getProductionWhereClause('u');
+      if (productionFilter) {
+        whereConditions.push(productionFilter.replace('AND ', ''));
+      }
+    }
+    
+    const whereClause = whereConditions.join(' AND ');
+    
     const result = await pool.query(
       `SELECT u.id, u.name, u.company, u.title, c.name as chapter_name
        FROM users u
        LEFT JOIN chapters c ON u.chapter_id = c.id
-       WHERE u.membership_level = 2 AND u.status = 'active'
-       ORDER BY u.name ASC`
+       WHERE ${whereClause}
+       ORDER BY u.name ASC`,
+      queryParams
     );
 
     res.json({

@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { getProductionWhereClause, shouldShowTestData, logDataFilter } = require('../utils/dataFilter');
 
 const router = express.Router();
 
@@ -39,10 +40,18 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: '分會不存在' });
     }
 
-    const memberCountResult = await pool.query(
-      'SELECT COUNT(*) as member_count FROM users WHERE chapter_id = $1 AND status = $2',
-      [id, 'active']
-    );
+    let memberCountQuery = 'SELECT COUNT(*) as member_count FROM users WHERE chapter_id = $1 AND status = $2';
+    let memberCountParams = [id, 'active'];
+    
+    // 在正式環境中過濾測試資料
+    if (!shouldShowTestData()) {
+      const productionFilter = getProductionWhereClause('');
+      if (productionFilter) {
+        memberCountQuery += ` ${productionFilter}`;
+      }
+    }
+    
+    const memberCountResult = await pool.query(memberCountQuery, memberCountParams);
 
     const chapter = chapterResult.rows[0];
     const memberCount = parseInt(memberCountResult.rows[0].member_count);
@@ -153,10 +162,18 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     const { id } = req.params;
 
     // Check if chapter has members
-    const memberCount = await pool.query(
-      'SELECT COUNT(*) as count FROM users WHERE chapter_id = $1',
-      [id]
-    );
+    let memberCheckQuery = 'SELECT COUNT(*) as count FROM users WHERE chapter_id = $1';
+    let memberCheckParams = [id];
+    
+    // 在正式環境中過濾測試資料
+    if (!shouldShowTestData()) {
+      const productionFilter = getProductionWhereClause('');
+      if (productionFilter) {
+        memberCheckQuery += ` ${productionFilter}`;
+      }
+    }
+    
+    const memberCount = await pool.query(memberCheckQuery, memberCheckParams);
 
     if (parseInt(memberCount.rows[0].count) > 0) {
       return res.status(400).json({ 
