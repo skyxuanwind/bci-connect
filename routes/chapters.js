@@ -1,7 +1,7 @@
 const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { getProductionWhereClause, shouldShowTestData, logDataFilter } = require('../utils/dataFilter');
+const { getProductionWhereClause, getProductionChapterWhereClause, shouldShowTestData, logDataFilter } = require('../utils/dataFilter');
 
 const router = express.Router();
 
@@ -10,12 +10,25 @@ const router = express.Router();
 // @access  Public (needed for registration)
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, name FROM chapters ORDER BY name ASC'
-    );
+    let query = 'SELECT id, name FROM chapters WHERE 1=1';
+    
+    // 在正式環境中過濾測試分會
+    if (!shouldShowTestData()) {
+      const chapterFilter = getProductionChapterWhereClause('');
+      if (chapterFilter) {
+        query += ` ${chapterFilter}`;
+        logDataFilter('chapters', 'all', 'filtered');
+      }
+    }
+    
+    query += ' ORDER BY name ASC';
+    
+    const result = await pool.query(query);
 
     res.json({
-      chapters: result.rows
+      chapters: result.rows,
+      isProduction: process.env.NODE_ENV === 'production',
+      showTestData: shouldShowTestData()
     });
 
   } catch (error) {

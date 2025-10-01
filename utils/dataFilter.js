@@ -70,6 +70,21 @@ function isTestUser(user) {
 function isTestChapter(chapter) {
   if (!chapter) return false;
   
+  // 指定的測試分會名稱列表
+  const testChapterNames = [
+    '台中分會',
+    '台北分會', 
+    '台南分會',
+    '新竹分會',
+    '高雄分會'
+  ];
+  
+  // 檢查是否為指定的測試分會
+  if (chapter.name && testChapterNames.includes(chapter.name)) {
+    return true;
+  }
+  
+  // 檢查其他測試模式
   const testPatterns = [
     /測試/,
     /test/i,
@@ -149,6 +164,38 @@ function getProductionWhereClause(tableAlias = '') {
 }
 
 /**
+ * 獲取分會查詢的WHERE條件，用於排除測試分會
+ * @param {string} tableAlias - 表格別名（可選）
+ * @returns {string} - WHERE條件字串
+ */
+function getProductionChapterWhereClause(tableAlias = '') {
+  const prefix = tableAlias ? `${tableAlias}.` : '';
+  
+  if (process.env.NODE_ENV !== 'production') {
+    return ''; // 開發環境不過濾
+  }
+  
+  // 排除指定的測試分會
+  const testChapterNames = [
+    '台中分會',
+    '台北分會', 
+    '台南分會',
+    '新竹分會',
+    '高雄分會'
+  ];
+  
+  const conditions = testChapterNames.map(name => `${prefix}name != '${name}'`).join(' AND ');
+  
+  return `
+    AND ${conditions}
+    AND ${prefix}name NOT LIKE '%測試%'
+    AND ${prefix}name NOT LIKE '%test%'
+    AND ${prefix}name NOT LIKE '%demo%'
+    AND ${prefix}name NOT LIKE '%sample%'
+  `;
+}
+
+/**
  * 檢查當前環境是否應該顯示測試資料
  * @returns {boolean} - 是否應該顯示測試資料
  */
@@ -180,6 +227,7 @@ module.exports = {
   filterUsers,
   filterChapters,
   getProductionWhereClause,
+  getProductionChapterWhereClause,
   shouldShowTestData,
   logDataFilter
 };
