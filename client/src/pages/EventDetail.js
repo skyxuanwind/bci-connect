@@ -109,7 +109,10 @@ const EventDetail = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      'upcoming': { text: '即將舉行', class: 'bg-green-100 text-green-800' },
+      'upcoming': { 
+        text: '即將舉行', 
+        class: 'bg-gradient-to-r from-black to-gray-800 text-yellow-400 border border-yellow-400 shadow-lg' 
+      },
       'finished': { text: '已結束', class: 'bg-gray-100 text-gray-800' },
       'cancelled': { text: '已取消', class: 'bg-red-100 text-red-800' }
     };
@@ -117,7 +120,7 @@ const EventDetail = () => {
     const statusInfo = statusMap[status] || { text: status, class: 'bg-gray-100 text-gray-800' };
     
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.class}`}>
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap ${statusInfo.class}`}>
         {statusInfo.text}
       </span>
     );
@@ -203,11 +206,11 @@ const EventDetail = () => {
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Event Poster */}
           {event.poster_image_url && (
-            <div className="w-full overflow-hidden bg-gray-50 flex items-center justify-center">
+            <div className="w-full h-64 md:h-80 overflow-hidden">
               <img
                 src={event.poster_image_url}
                 alt={event.title}
-                className="w-full max-w-4xl mx-auto"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   console.error('Image failed to load:', e.target.src);
                   e.target.style.display = 'none';

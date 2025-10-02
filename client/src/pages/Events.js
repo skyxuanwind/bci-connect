@@ -46,7 +46,10 @@ const Events = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      'upcoming': { text: '即將舉行', class: 'bg-green-100 text-green-800' },
+      'upcoming': { 
+        text: '即將舉行', 
+        class: 'bg-gradient-to-r from-black to-gray-800 text-yellow-400 border border-yellow-400 shadow-lg' 
+      },
       'finished': { text: '已結束', class: 'bg-gray-100 text-gray-800' },
       'cancelled': { text: '已取消', class: 'bg-red-100 text-red-800' }
     };
@@ -54,7 +57,7 @@ const Events = () => {
     const statusInfo = statusMap[status] || { text: status, class: 'bg-gray-100 text-gray-800' };
     
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}`}>
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${statusInfo.class}`}>
         {statusInfo.text}
       </span>
     );
@@ -124,7 +127,7 @@ const Events = () => {
                     <img
                       src={event.poster_image_url}
                       alt={event.title}
-                      className="w-full h-full object-contain bg-gray-50"
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         console.error('Image failed to load:', e.target.src);
                         e.target.style.display = 'none';

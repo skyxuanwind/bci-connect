@@ -45,6 +45,122 @@ const upload = multer({
   }
 });
 
+// === ICS Calendar endpoints (must be before /:id routes) ===
+// Helper: escape text for ICS
+function escapeICSText(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;');
+}
+
+// Helper: format date to ICS UTC format YYYYMMDDTHHmmSSZ
+function toICSDateTimeUTC(date) {
+  const d = new Date(date);
+  const iso = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString();
+  return iso.replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+}
+
+// Build single event ICS VEVENT block
+function buildVEvent(evt, frontendBaseUrl) {
+  const startISO = toICSDateTimeUTC(evt.event_date);
+  const endDate = new Date(evt.event_date);
+  endDate.setHours(endDate.getHours() + 2); // default 2-hour duration
+  const endISO = toICSDateTimeUTC(endDate);
+  const uid = `event-${evt.id}@gbc-connect`;
+  const summary = escapeICSText(evt.title);
+  const description = escapeICSText(evt.description || '');
+  const location = escapeICSText(evt.location || '');
+  const dtstamp = toICSDateTimeUTC(new Date());
+  const url = `${frontendBaseUrl || ''}/events/${evt.id}`;
+  return [
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART:${startISO}`,
+    `DTEND:${endISO}`,
+    `SUMMARY:${summary}`,
+    description ? `DESCRIPTION:${description}` : null,
+    location ? `LOCATION:${location}` : null,
+    frontendBaseUrl ? `URL:${url}` : null,
+    'END:VEVENT'
+  ].filter(Boolean).join('\n');
+}
+
+// 全部活動 ICS feed (公開端點，不需要身份驗證)
+router.get('/calendar.ics', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, title, description, event_date, location
+      FROM events
+      WHERE status = 'upcoming'
+      ORDER BY event_date ASC
+    `);
+
+    const frontendBaseUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || '';
+    const vevents = result.rows.map(evt => buildVEvent(evt, frontendBaseUrl)).join('\n');
+
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//GBC Connect//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:GBC Events',
+      'X-WR-TIMEZONE:Asia/Taipei',
+      vevents,
+      'END:VCALENDAR'
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="gbc-events.ics"');
+    return res.status(200).send(ics);
+  } catch (error) {
+    console.error('Error generating ICS feed:', error);
+    return res.status(500).json({ success: false, message: '生成行事曆失敗' });
+  }
+});
+
+// 單一活動 .ics 下載 (公開端點，不需要身份驗證)
+router.get('/:id.ics', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT id, title, description, event_date, location, status
+      FROM events WHERE id = $1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: '活動不存在' });
+    }
+
+    const evt = result.rows[0];
+    const frontendBaseUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || '';
+    const vevent = buildVEvent(evt, frontendBaseUrl);
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//GBC Connect//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:GBC Event',
+      'X-WR-TIMEZONE:Asia/Taipei',
+      vevent,
+      'END:VCALENDAR'
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="event-${evt.id}.ics"`);
+    return res.status(200).send(ics);
+  } catch (error) {
+    console.error('Error generating single event ICS:', error);
+    return res.status(500).json({ success: false, message: '生成活動行事曆失敗' });
+  }
+});
+
 // 診斷端點 - 檢查環境變數配置（必須在 /:id 路由之前）
 router.get('/debug/env', (req, res) => {
   res.json({
@@ -648,122 +764,6 @@ router.get('/:id/guest-registrations', authenticateToken, requireAdmin, async (r
       success: false,
       message: '獲取來賓報名列表失敗'
     });
-  }
-});
-
-// === ICS Calendar endpoints ===
-// Helper: escape text for ICS
-function escapeICSText(text) {
-  if (!text) return '';
-  return String(text)
-    .replace(/\\/g, '\\\\')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '')
-    .replace(/,/g, '\\,')
-    .replace(/;/g, '\\;');
-}
-
-// Helper: format date to ICS UTC format YYYYMMDDTHHmmSSZ
-function toICSDateTimeUTC(date) {
-  const d = new Date(date);
-  const iso = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString();
-  return iso.replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-}
-
-// Build single event ICS VEVENT block
-function buildVEvent(evt, frontendBaseUrl) {
-  const startISO = toICSDateTimeUTC(evt.event_date);
-  const endDate = new Date(evt.event_date);
-  endDate.setHours(endDate.getHours() + 2); // default 2-hour duration
-  const endISO = toICSDateTimeUTC(endDate);
-  const uid = `event-${evt.id}@gbc-connect`;
-  const summary = escapeICSText(evt.title);
-  const description = escapeICSText(evt.description || '');
-  const location = escapeICSText(evt.location || '');
-  const dtstamp = toICSDateTimeUTC(new Date());
-  const url = `${frontendBaseUrl || ''}/events/${evt.id}`;
-  return [
-    'BEGIN:VEVENT',
-    `UID:${uid}`,
-    `DTSTAMP:${dtstamp}`,
-    `DTSTART:${startISO}`,
-    `DTEND:${endISO}`,
-    `SUMMARY:${summary}`,
-    description ? `DESCRIPTION:${description}` : null,
-    location ? `LOCATION:${location}` : null,
-    frontendBaseUrl ? `URL:${url}` : null,
-    'END:VEVENT'
-  ].filter(Boolean).join('\n');
-}
-
-// 全部活動 ICS feed
-router.get('/calendar.ics', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, title, description, event_date, location
-      FROM events
-      WHERE status = 'upcoming'
-      ORDER BY event_date ASC
-    `);
-
-    const frontendBaseUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || '';
-    const vevents = result.rows.map(evt => buildVEvent(evt, frontendBaseUrl)).join('\n');
-
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//GBC Connect//EN',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'X-WR-CALNAME:GBC Events',
-      'X-WR-TIMEZONE:Asia/Taipei',
-      vevents,
-      'END:VCALENDAR'
-    ].join('\n');
-
-    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="gbc-events.ics"');
-    return res.status(200).send(ics);
-  } catch (error) {
-    console.error('Error generating ICS feed:', error);
-    return res.status(500).json({ success: false, message: '生成行事曆失敗' });
-  }
-});
-
-// 單一活動 .ics 下載
-router.get('/:id.ics', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query(`
-      SELECT id, title, description, event_date, location, status
-      FROM events WHERE id = $1
-    `, [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: '活動不存在' });
-    }
-
-    const evt = result.rows[0];
-    const frontendBaseUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || '';
-    const vevent = buildVEvent(evt, frontendBaseUrl);
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//GBC Connect//EN',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'X-WR-CALNAME:GBC Event',
-      'X-WR-TIMEZONE:Asia/Taipei',
-      vevent,
-      'END:VCALENDAR'
-    ].join('\n');
-
-    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="event-${evt.id}.ics"`);
-    return res.status(200).send(ics);
-  } catch (error) {
-    console.error('Error generating single event ICS:', error);
-    return res.status(500).json({ success: false, message: '生成活動行事曆失敗' });
   }
 });
 

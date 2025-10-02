@@ -397,7 +397,7 @@ const ProjectPlan = () => {
         <div className="px-6 py-4 border-b border-gold-600">
           <h2 className="text-xl font-semibold text-gold-100 flex items-center">
             <ChartBarIcon className="h-6 w-6 mr-2 text-gold-400" />
-            專案計劃（12 項自動判定）
+            專案計劃
           </h2>
         </div>
         <div className="p-6">
@@ -412,24 +412,7 @@ const ProjectPlan = () => {
               {/* 進度總覽 */}
               <div className="mb-8">
                 {(() => {
-                  const percentShow = Math.round(Number(projectPlan?.summary?.percent ?? 0));
-                  return (
-                    <>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gold-300">進度</span>
-                        <span className="text-sm text-gold-100 font-semibold">{percentShow}%</span>
-                      </div>
-                      <div className="w-full h-3 sm:h-2 bg-primary-700 rounded">
-                        <div
-                          className={`h-3 sm:h-2 rounded ${percentShow >= 80 ? 'bg-green-500' : percentShow >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                          style={{ width: `${percentShow}%` }}
-                        />
-                      </div>
-                    </>
-                  );
-                })()}
-                {/* 勾選完成度統計（移除「手動」字樣） */}
-                {(() => {
+                  // 計算實際勾選完成率
                   const spec = [
                     { cardId: 'core_member_approval', items: ['create_group','member_data','send_email'] },
                     { cardId: 'pre_oath_preparation', items: ['self_intro_template','explain_goals_foundation'] },
@@ -446,14 +429,24 @@ const ProjectPlan = () => {
                   ];
                   const manualTotal = spec.reduce((sum, s) => sum + s.items.length, 0);
                   const manualChecked = spec.reduce((sum, s) => sum + s.items.filter(itemId => getCheckboxState(id, s.cardId, itemId, false)).length, 0);
+                  const percentShow = manualTotal ? Math.round((manualChecked / manualTotal) * 100) : 0;
+                  
                   return (
-                    <div className="flex justify-between text-sm text-gold-300 mt-2">
-                      <span>勾選已完成 {manualChecked} 項</span>
-                      <span>共 {manualTotal} 項</span>
-                    </div>
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gold-300">進度</span>
+                        <span className="text-sm text-gold-100 font-semibold">{percentShow}%</span>
+                      </div>
+                      <div className="w-full h-3 sm:h-2 bg-primary-700 rounded">
+                        <div
+                          className={`h-3 sm:h-2 rounded ${percentShow >= 80 ? 'bg-green-500' : percentShow >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${percentShow}%` }}
+                        />
+                      </div>
+                    </>
                   );
                 })()}
-                {/* 勾選完成度統計（移除「手動」字樣） */}
+                {/* 勾選完成度統計 */}
                 {(() => {
                   const spec = [
                     { cardId: 'core_member_approval', items: ['create_group','member_data','send_email'] },

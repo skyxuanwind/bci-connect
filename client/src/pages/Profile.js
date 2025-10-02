@@ -797,7 +797,7 @@ const Profile = () => {
                     placeholder="請填入觸發引薦的關鍵句子"
                     {...registerInterview('referralTrigger')}
                   />
-                  <span className="text-gray-600">」，就是我能提供服務的絕佳時機。</span>
+                  <span className="text-gold-300">」，就是我能提供服務的絕佳時機。</span>
                 </div>
                 {interviewErrors.referralTrigger && (
                   <p className="error-message">{interviewErrors.referralTrigger.message}</p>
@@ -846,7 +846,7 @@ const Profile = () => {
                       placeholder="您能解決的問題類型，如：系統整合、財務規劃"
                       {...registerInterview('referralProblem')}
                     />
-                    <span className="text-gray-700">的問題。」</span>
+                    <span className="text-gold-200">的問題。」</span>
                   </div>
                 </div>
                 {interviewErrors.referralOpening && (
@@ -1012,15 +1012,15 @@ const Profile = () => {
       {activeTab === 'password' && (
         <div className="card">
           <div className="card-header">
-            <h2 className="text-lg font-semibold text-gray-900">修改密碼</h2>
-            <p className="text-sm text-gray-600 mt-1">為了帳號安全，請定期更新您的密碼</p>
+            <h2 className="text-lg font-semibold text-gold-100">修改密碼</h2>
+            <p className="text-sm text-gold-300 mt-1">為了帳號安全，請定期更新您的密碼</p>
           </div>
           
           <form onSubmit={handleSubmitPassword(onSubmitPassword)} className="space-y-6">
             {/* Current Password */}
             <div>
-              <label className="label">
-                <KeyIcon className="h-4 w-4 mr-2" />
+              <label className="label text-gold-300">
+                <KeyIcon className="h-4 w-4 mr-2 text-gold-400" />
                 目前密碼
               </label>
               <div className="relative">
@@ -1037,9 +1037,9 @@ const Profile = () => {
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 >
                   {showCurrentPassword ? (
-                    <EyeSlashIcon className="h-4 w-4 text-gray-400" />
+                    <EyeSlashIcon className="h-4 w-4 text-gold-400" />
                   ) : (
-                    <EyeIcon className="h-4 w-4 text-gray-400" />
+                    <EyeIcon className="h-4 w-4 text-gold-400" />
                   )}
                 </button>
               </div>
@@ -1050,8 +1050,8 @@ const Profile = () => {
 
             {/* New Password */}
             <div>
-              <label className="label">
-                <KeyIcon className="h-4 w-4 mr-2" />
+              <label className="label text-gold-300">
+                <KeyIcon className="h-4 w-4 mr-2 text-gold-400" />
                 新密碼
               </label>
               <div className="relative">
@@ -1069,9 +1069,9 @@ const Profile = () => {
                   onClick={() => setShowNewPassword(!showNewPassword)}
                 >
                   {showNewPassword ? (
-                    <EyeSlashIcon className="h-4 w-4 text-gray-400" />
+                    <EyeSlashIcon className="h-4 w-4 text-gold-400" />
                   ) : (
-                    <EyeIcon className="h-4 w-4 text-gray-400" />
+                    <EyeIcon className="h-4 w-4 text-gold-400" />
                   )}
                 </button>
               </div>
@@ -1082,8 +1082,8 @@ const Profile = () => {
 
             {/* Confirm Password */}
             <div>
-              <label className="label">
-                <KeyIcon className="h-4 w-4 mr-2" />
+              <label className="label text-gold-300">
+                <KeyIcon className="h-4 w-4 mr-2 text-gold-400" />
                 確認新密碼
               </label>
               <div className="relative">
@@ -1101,9 +1101,9 @@ const Profile = () => {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
-                    <EyeSlashIcon className="h-4 w-4 text-gray-400" />
+                    <EyeSlashIcon className="h-4 w-4 text-gold-400" />
                   ) : (
-                    <EyeIcon className="h-4 w-4 text-gray-400" />
+                    <EyeIcon className="h-4 w-4 text-gold-400" />
                   )}
                 </button>
               </div>
@@ -1112,11 +1112,11 @@ const Profile = () => {
               )}
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+            <div className="bg-primary-800 border border-gold-600 rounded-md p-4">
               <div className="flex">
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">密碼安全提醒</h3>
-                  <div className="mt-2 text-sm text-yellow-700">
+                  <h3 className="text-sm font-medium text-gold-100">密碼安全提醒</h3>
+                  <div className="mt-2 text-sm text-gold-300">
                     <ul className="list-disc list-inside space-y-1">
                       <li>密碼長度至少6個字符</li>
                       <li>建議包含大小寫字母、數字和特殊符號</li>

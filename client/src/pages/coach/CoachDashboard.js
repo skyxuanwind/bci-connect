@@ -1404,17 +1404,7 @@ const CoachDashboard = () => {
                         </button>
                       </div>
                       
-                      {/* 底部統計 */}
-                      <div className="p-3 border-t border-gold-700/50 bg-primary-800/50">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="text-gold-300">
-                            已完成: {attachmentItems.filter(item => item.completed).length} / {attachmentItems.length}
-                          </div>
-                          <div className="text-gold-400">
-                            完成率: {Math.round((attachmentItems.filter(item => item.completed).length / attachmentItems.length) * 100)}%
-                          </div>
-                        </div>
-                      </div>
+
                     </div>
                   );
                 })()}
