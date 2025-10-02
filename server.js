@@ -22,7 +22,7 @@ const contentRoutes = require('./routes/content');
 const attendanceRoutes = require('./routes/attendance');
 const companyLookupRoutes = require('./routes/company-lookup');
 const aiAnalysisRoutes = require('./routes/ai-analysis');
-
+const adminTemplatesRoutes = require('./routes/admin-templates');
 
 const nfcCardsRoutes = require('./routes/nfc-cards');
 const nfcAnalyticsRoutes = require('./routes/nfc-analytics');
@@ -145,7 +145,7 @@ app.use('/api/content', contentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/company-lookup', companyLookupRoutes);
 app.use('/api/ai-analysis', aiAnalysisRoutes);
-
+app.use('/api/admin-templates', adminTemplatesRoutes);
 
 app.use('/api/nfc-cards', nfcCardsRoutes);
 app.use('/api/nfc-analytics', nfcAnalyticsRoutes);
