@@ -244,7 +244,15 @@ router.get('/templates', async (req, res) => {
     res.json({ templates: result.rows });
   } catch (error) {
     console.error('獲取模板錯誤:', error);
-    res.status(500).json({ message: '服務器錯誤' });
+    // 安全回退：若資料庫查詢失敗，仍提供五個新模板以維持前端體驗
+    const fallbackTemplates = [
+      { name: '極簡高級風格', category: 'minimal-luxury', is_active: true, css_config: { layoutStyle: 'minimal-luxury' } },
+      { name: '未來科技感風格', category: 'futuristic-tech', is_active: true, css_config: { layoutStyle: 'dashboard' } },
+      { name: '創意品牌風格', category: 'creative-brand', is_active: true, css_config: { layoutStyle: 'split-creative' } },
+      { name: '專業商務風格', category: 'professional-business', is_active: true, css_config: { layoutStyle: 'corporate' } },
+      { name: '動態互動風格', category: 'dynamic-interactive', is_active: true, css_config: { layoutStyle: 'dynamic-center' } }
+    ];
+    res.status(200).json({ templates: fallbackTemplates, fallback: true });
   }
 });
 
