@@ -16,7 +16,8 @@ import {
   ChatBubbleLeftRightIcon,
   PencilIcon,
   CheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 import {
   FaLinkedin,
@@ -1248,6 +1249,8 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 
 // 模板預覽組件
 const TemplatePreview = ({ template, cardConfig }) => {
+  const { user } = useAuth();
+  
   const hexToRgb = (hex) => {
     try {
       const clean = hex?.replace('#', '') || 'ffffff';
@@ -1283,18 +1286,23 @@ const TemplatePreview = ({ template, cardConfig }) => {
   };
 
   const getTemplateClassName = () => {
-    if (!template) return 'template-default';
+    if (!template) return 'template-minimal-luxury';
     
-    // 根據模板名稱映射到對應的 CSS 類名
-    const templateClassMap = {
-      '質感商務感': 'template-premium-business',
-      'Cyberpunk風格': 'template-cyberpunk',
-      '簡約日系風': 'template-japanese-minimal',
-      '創意行銷風格': 'template-creative-marketing',
-      '塗鴉可愛風': 'template-cute-graffiti'
-    };
-    
-    return templateClassMap[template.name] || 'template-default';
+    // 根據模板名稱映射到對應的 CSS 類名，與 MemberCard 保持一致
+    switch (template.name) {
+      case '極簡高級風格':
+        return 'template-minimal-luxury';
+      case '未來科技感風格':
+        return 'template-futuristic';
+      case '創意品牌風格':
+        return 'template-creative-brand';
+      case '專業商務風格':
+        return 'template-professional-business';
+      case '動態互動風格':
+        return 'template-dynamic-interactive';
+      default:
+        return 'template-minimal-luxury';
+    }
   };
 
   const templateClass = getTemplateClassName();
@@ -1306,6 +1314,44 @@ const TemplatePreview = ({ template, cardConfig }) => {
   return (
     <div className={`nfc-card-container ${templateClass}`} style={{ minHeight: 'auto', padding: '1rem' }}>
       <div className="card-content" style={{ maxWidth: 'none', padding: '0' }}>
+        {/* 名片標題 */}
+        <div className="card-header" style={{ marginBottom: '1rem', textAlign: 'center' }}>
+          <h1 className="card-title" style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            {cardConfig?.card_title || user?.name || '預覽名片'}
+          </h1>
+          {cardConfig?.card_subtitle && (
+            <p className="card-subtitle" style={{ fontSize: '0.875rem', opacity: 0.8 }}>
+              {cardConfig.card_subtitle}
+            </p>
+          )}
+        </div>
+
+        {/* 個人資訊區塊 */}
+        <div className="personal-info-section">
+          <div className="avatar-container">
+            {user?.profilePictureUrl ? (
+              <img 
+                src={user.profilePictureUrl} 
+                alt={user.name}
+                className="user-avatar"
+              />
+            ) : (
+              <div className="avatar-placeholder">
+                <UserIcon className="h-8 w-8 text-white" />
+              </div>
+            )}
+          </div>
+          <div className="user-info">
+            <h2 className="user-name">{user?.name || '用戶姓名'}</h2>
+            {user?.title && (
+              <p className="user-position">{user.title}</p>
+            )}
+            {user?.company && (
+              <p className="user-company">{user.company}</p>
+            )}
+          </div>
+        </div>
+
         {/* 內容區塊 */}
         <div className="content-blocks" style={{ padding: '0' }}>
           {cardConfig?.content_blocks?.length > 0 ? (

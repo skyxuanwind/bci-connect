@@ -35,6 +35,7 @@ const MemberCard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [cardData, setCardData] = useState(null);
+  const [memberData, setMemberData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
@@ -328,6 +329,7 @@ const MemberCard = () => {
         };
 
         setCardData(transformed);
+        setMemberData(member);
         updateLastViewed();
         trackAnalytics('view');
         return;
@@ -361,6 +363,7 @@ const MemberCard = () => {
       };
 
       setCardData(transformed);
+      setMemberData(member);
       // 更新最後查看時間（如果已在名片夾中）
       updateLastViewed();
       // 記錄瀏覽
@@ -691,7 +694,7 @@ const MemberCard = () => {
       case '極簡高級風格':
         return 'template-minimal-luxury';
       case '未來科技感風格':
-        return `template-futuristic-tech ${darkMode ? 'dark-mode' : ''}`;
+        return `template-futuristic ${darkMode ? 'dark-mode' : ''}`;
       case '創意品牌風格':
         return 'template-creative-brand';
       case '專業商務風格':
@@ -1086,6 +1089,34 @@ const MemberCard = () => {
             </button>
           </div>
         </div>
+
+        {/* 個人資訊區塊 */}
+        {memberData && (
+          <div className="personal-info-section">
+            <div className="avatar-container">
+              {memberData.profile_picture_url ? (
+                <img 
+                  src={memberData.profile_picture_url} 
+                  alt={memberData.name || cardData.card_title}
+                  className="user-avatar"
+                />
+              ) : (
+                <div className="avatar-placeholder">
+                  <UserIcon className="h-8 w-8 text-gray-400" />
+                </div>
+              )}
+            </div>
+            <div className="user-info">
+              <h2 className="user-name">{memberData.name || cardData.card_title}</h2>
+              {memberData.title && (
+                <p className="user-position">{memberData.title}</p>
+              )}
+              {memberData.company && (
+                <p className="user-company">{memberData.company}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 掃描圖片預覽 */}
         {isScannedId(memberId) && cardData?.scanned_image_url && (
