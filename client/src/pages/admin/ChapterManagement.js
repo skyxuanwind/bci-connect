@@ -63,12 +63,12 @@ const ChapterManagement = () => {
         try {
           // Load chapters with member counts
           const response = await axios.get('/api/admin/dashboard');
-          if (response.data.chapterStats) {
+          if (response.data.chapterStatistics) {
             const chaptersWithStats = chapters.map(chapter => {
-              const stat = response.data.chapterStats.find(s => s.id === chapter.id);
+              const stat = response.data.chapterStatistics.find(s => s.name === chapter.name);
               return {
                 ...chapter,
-                memberCount: stat ? stat.memberCount : 0
+                memberCount: stat ? parseInt(stat.member_count) : 0
               };
             });
             setChapters(chaptersWithStats);
@@ -78,7 +78,7 @@ const ChapterManagement = () => {
         }
       })();
     }
-  }, [chapters]);
+  }, [chapters.length]);
 
   const handleCreateChapter = async (data) => {
     setProcessingChapter('create');
@@ -262,7 +262,7 @@ const ChapterManagement = () => {
                   <div className="flex items-center text-sm text-gray-600">
                     <UserGroupIcon className="h-4 w-4 mr-2" />
                     <span>
-                      {chapter.memberCount !== undefined ? `${chapter.memberCount} 位會員` : '載入中...'}
+                      {chapter.memberCount !== undefined ? `${chapter.memberCount} 位會員` : '0 位會員'}
                     </span>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ const ChapterManagement = () => {
                     className="w-full btn-primary flex items-center justify-center text-sm"
                   >
                     <EyeIcon className="h-4 w-4 mr-1" />
-                    查看成員 ({chapter.memberCount || 0})
+                    查看成員 ({chapter.memberCount !== undefined ? chapter.memberCount : 0})
                   </button>
                   
                   {/* Edit and Delete Buttons */}
