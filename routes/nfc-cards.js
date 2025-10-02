@@ -112,11 +112,10 @@ router.get('/my-card', authenticateToken, async (req, res) => {
     if (cardResult.rows.length === 0) {
       // 如果沒有名片，創建默認名片
       const defaultTemplateResult = await pool.query(
-        'SELECT id FROM nfc_card_templates WHERE name = $1',
-        ['極簡高級風格']
+        'SELECT id FROM nfc_card_templates ORDER BY id LIMIT 1'
       );
       
-      const templateId = defaultTemplateResult.rows[0]?.id || 1;
+      const templateId = defaultTemplateResult.rows[0]?.id;
       
       const newCardResult = await pool.query(
         `INSERT INTO nfc_cards (user_id, template_id, card_title, card_subtitle, is_active)
