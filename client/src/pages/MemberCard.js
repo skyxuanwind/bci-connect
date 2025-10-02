@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import Cookies from 'js-cookie';
 import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/templates.css';
+import { buildTemplateClass } from '../utils/templateClass';
 import {
   HeartIcon,
   ArrowDownTrayIcon,
@@ -687,24 +688,7 @@ const MemberCard = () => {
     setDarkMode(!darkMode);
   };
 
-  const getTemplateClass = () => {
-    if (!cardData?.template_name) return 'template-minimal-luxury';
-    
-    switch (cardData.template_name) {
-      case '極簡高級風格':
-        return 'template-minimal-luxury';
-      case '未來科技感風格':
-        return `template-futuristic ${darkMode ? 'dark-mode' : ''}`;
-      case '創意品牌風格':
-        return 'template-creative-brand';
-      case '專業商務風格':
-        return 'template-professional-business';
-      case '動態互動風格':
-        return 'template-dynamic-interactive';
-      default:
-        return 'template-minimal-luxury';
-    }
-  };
+  const getTemplateClass = () => buildTemplateClass(cardData?.template_name, darkMode);
 
   const renderContentBlock = (block) => {
     if (!block.is_visible) return null;

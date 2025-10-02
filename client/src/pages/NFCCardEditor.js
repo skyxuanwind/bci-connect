@@ -29,6 +29,7 @@ import {
 } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../styles/templates.css';
+import { mapTemplateNameToClass } from '../utils/templateClass';
 
 // 解析 YouTube 影片網址取得 videoId（支援 watch?v=、youtu.be、embed、shorts 等格式）
 const getYouTubeVideoId = (url) => {
@@ -1285,25 +1286,7 @@ const TemplatePreview = ({ template, cardConfig }) => {
     }
   };
 
-  const getTemplateClassName = () => {
-    if (!template) return 'template-minimal-luxury';
-    
-    // 根據模板名稱映射到對應的 CSS 類名，與 MemberCard 保持一致
-    switch (template.name) {
-      case '極簡高級風格':
-        return 'template-minimal-luxury';
-      case '未來科技感風格':
-        return 'template-futuristic';
-      case '創意品牌風格':
-        return 'template-creative-brand';
-      case '專業商務風格':
-        return 'template-professional-business';
-      case '動態互動風格':
-        return 'template-dynamic-interactive';
-      default:
-        return 'template-minimal-luxury';
-    }
-  };
+  const getTemplateClassName = () => mapTemplateNameToClass(template?.name);
 
   const templateClass = getTemplateClassName();
   const accentColor = template?.css_config?.accentColor || template?.css_config?.secondaryColor || '#cccccc';
