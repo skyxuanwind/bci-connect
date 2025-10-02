@@ -1153,6 +1153,25 @@ module.exports = {
           ]
         );
       }
+
+      // 停用舊版模板名稱，避免混雜在前端下拉選單
+      const deprecatedNames = [
+        '科技專業版',
+        '活力創意版',
+        '簡約質感版',
+        '商務專業版',
+        '現代簡約版',
+        '環保綠意版',
+        '質感黑金版',
+        '插畫塗鴉版'
+      ];
+
+      await pool.query(
+        `UPDATE nfc_card_templates
+         SET is_active = false, updated_at = NOW()
+         WHERE name = ANY($1::text[])`,
+        [deprecatedNames]
+      );
       
       console.log('✅ Ensured latest NFC templates exist');
     } catch (e) {

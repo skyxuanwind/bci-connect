@@ -215,7 +215,7 @@ router.put('/my-card', authenticateToken, async (req, res) => {
 // 獲取所有可用模板
 router.get('/templates', async (req, res) => {
   try {
-    // 確保最新模板存在（在雲端部署啟動未執行時補救）
+    // 確保最新模板存在（在雲端部署啟動未執行時補救），並停用舊模板
     try {
       await ensureLatestTemplatesExist();
     } catch (e) {
@@ -223,8 +223,17 @@ router.get('/templates', async (req, res) => {
       console.warn('ensureLatestTemplatesExist in route failed:', e.message);
     }
 
+    // 只返回啟用中的模板，優先使用 display_order（若存在）
     const result = await pool.query(
-      'SELECT * FROM nfc_card_templates ORDER BY id ASC'
+      `SELECT *
+       FROM nfc_card_templates 
+       WHERE is_active = true
+       ORDER BY 
+         CASE WHEN EXISTS (
+           SELECT 1 
+           FROM information_schema.columns 
+           WHERE table_name = 'nfc_card_templates' AND column_name = 'display_order'
+         ) THEN display_order ELSE id END, id ASC`
     );
     
     res.json({ templates: result.rows });
