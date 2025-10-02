@@ -215,6 +215,13 @@ router.put('/my-card', authenticateToken, async (req, res) => {
 // 獲取所有可用模板
 router.get('/templates', async (req, res) => {
   try {
+    // 啟動時保證最新模板存在（冪等），避免前端拿到舊模板
+    try {
+      await ensureLatestTemplatesExist();
+    } catch (e) {
+      console.warn('確保最新模板存在時發生非致命錯誤：', e?.message || String(e));
+    }
+
     // 檢查 is_active 與 display_order 欄位是否存在，以避免舊資料庫報錯
     const colCheck = await pool.query(`
       SELECT 
