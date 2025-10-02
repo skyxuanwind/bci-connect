@@ -1154,6 +1154,13 @@ module.exports = {
         );
       }
 
+      // 確保 is_active 欄位存在（向舊版資料庫相容）
+      try {
+        await pool.query(`ALTER TABLE nfc_card_templates ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
+      } catch (e) {
+        console.warn('Adding is_active column failed or already exists:', e.message);
+      }
+
       // 停用舊版模板名稱，避免混雜在前端下拉選單
       const deprecatedNames = [
         '科技專業版',
@@ -1166,12 +1173,16 @@ module.exports = {
         '插畫塗鴉版'
       ];
 
-      await pool.query(
-        `UPDATE nfc_card_templates
-         SET is_active = false, updated_at = NOW()
-         WHERE name = ANY($1::text[])`,
-        [deprecatedNames]
-      );
+      try {
+        await pool.query(
+          `UPDATE nfc_card_templates
+           SET is_active = false, updated_at = NOW()
+           WHERE name = ANY($1::text[])`,
+          [deprecatedNames]
+        );
+      } catch (e) {
+        console.warn('Deactivating legacy templates failed (non-critical):', e.message);
+      }
       
       console.log('✅ Ensured latest NFC templates exist');
     } catch (e) {

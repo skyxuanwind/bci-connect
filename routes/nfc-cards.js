@@ -223,18 +223,31 @@ router.get('/templates', async (req, res) => {
       console.warn('ensureLatestTemplatesExist in route failed:', e.message);
     }
 
-    // 只返回啟用中的模板，優先使用 display_order（若存在）
-    const result = await pool.query(
-      `SELECT *
-       FROM nfc_card_templates 
-       WHERE is_active = true
-       ORDER BY 
-         CASE WHEN EXISTS (
-           SELECT 1 
-           FROM information_schema.columns 
-           WHERE table_name = 'nfc_card_templates' AND column_name = 'display_order'
-         ) THEN display_order ELSE id END, id ASC`
-    );
+    // 檢查 is_active 與 display_order 欄位是否存在，以避免舊資料庫報錯
+    const colCheck = await pool.query(`
+      SELECT 
+        EXISTS(
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'nfc_card_templates' AND column_name = 'is_active'
+        ) AS has_is_active,
+        EXISTS(
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'nfc_card_templates' AND column_name = 'display_order'
+        ) AS has_display_order
+    `);
+    const { has_is_active, has_display_order } = colCheck.rows[0] || { has_is_active: false, has_display_order: false };
+
+    let sql = 'SELECT * FROM nfc_card_templates';
+    if (has_is_active) {
+      sql += ' WHERE is_active = true';
+    }
+    if (has_display_order) {
+      sql += ' ORDER BY display_order, id ASC';
+    } else {
+      sql += ' ORDER BY id ASC';
+    }
+
+    const result = await pool.query(sql);
     
     res.json({ templates: result.rows });
   } catch (error) {
