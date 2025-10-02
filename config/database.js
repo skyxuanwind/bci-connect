@@ -1099,35 +1099,9 @@ const initializeDatabase = async () => {
 module.exports = {
   pool,
   initializeDatabase,
-  // Ensure latest templates exist (force reset for production)
+  // Ensure latest templates exist (idempotent)
   ensureLatestTemplatesExist: async () => {
     try {
-      console.log('🔄 Starting template reset...');
-      
-      // 清空現有模板
-      await pool.query('DELETE FROM nfc_card_templates');
-      console.log('✅ Cleared existing templates');
-
-      // 更新 category 約束以支援新的類別
-      try {
-        await pool.query(`
-          ALTER TABLE nfc_card_templates 
-          DROP CONSTRAINT IF EXISTS nfc_card_templates_category_check
-        `);
-        
-        await pool.query(`
-          ALTER TABLE nfc_card_templates 
-          ADD CONSTRAINT nfc_card_templates_category_check 
-          CHECK (category IN (
-            'business', 'creative', 'minimal', 'tech', 'elegant', 'modern', 'eco', 'luxury', 'artistic',
-            'premium-business', 'cyberpunk', 'japanese-minimal', 'creative-marketing', 'cute-graffiti'
-          ))
-        `);
-        console.log('✅ Updated category constraints');
-      } catch (e) {
-        console.warn('Category constraint update failed (non-critical):', e.message);
-      }
-
       const templates = [
         {
           name: '質感商務感',
@@ -1161,12 +1135,34 @@ module.exports = {
         }
       ];
 
+      // 更新 category 約束以支援新的類別
+      try {
+        await pool.query(`
+          ALTER TABLE nfc_card_templates 
+          DROP CONSTRAINT IF EXISTS nfc_card_templates_category_check
+        `);
+        
+        await pool.query(`
+          ALTER TABLE nfc_card_templates 
+          ADD CONSTRAINT nfc_card_templates_category_check 
+          CHECK (category IN (
+            'business', 'creative', 'minimal', 'tech', 'elegant', 'modern', 'eco', 'luxury', 'artistic',
+            'premium-business', 'cyberpunk', 'japanese-minimal', 'creative-marketing', 'cute-graffiti'
+          ))
+        `);
+      } catch (e) {
+        console.warn('Category constraint update failed (non-critical):', e.message);
+      }
+
       for (const template of templates) {
         await pool.query(
           `INSERT INTO nfc_card_templates (
              name, description, category, css_config, preview_image_url, is_active, created_at, updated_at
            )
-           VALUES ($1::text, $2::text, $3::text, $4::jsonb, $5::text, true, NOW(), NOW())`,
+           SELECT $1::text, $2::text, $3::text, $4::jsonb, $5::text, true, NOW(), NOW()
+           WHERE NOT EXISTS (
+             SELECT 1 FROM nfc_card_templates WHERE name = $1::text
+           )`,
           [
             template.name,
             template.description,
@@ -1176,8 +1172,6 @@ module.exports = {
           ]
         );
       }
-      
-      console.log(`✅ Inserted ${templates.length} new templates`);
 
       // 確保 is_active 欄位存在（向舊版資料庫相容）
       try {
