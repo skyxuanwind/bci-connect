@@ -58,13 +58,84 @@ const NFCCardEditor = () => {
   }, [cardData]);
 
   const fetchTemplates = async () => {
+    // 新的模板列表（五個新風格）
+    const newTemplates = [
+      {
+        id: 1,
+        name: '極簡高級風格',
+        description: '簡約設計，突出專業形象',
+        preview_image_url: '/nfc-templates/minimal-luxury-preview.jpg',
+        is_active: true,
+        display_order: 1
+      },
+      {
+        id: 2,
+        name: '未來科技感風格',
+        description: '科技感設計，展現創新精神',
+        preview_image_url: '/nfc-templates/futuristic-tech-preview.jpg',
+        is_active: true,
+        display_order: 2
+      },
+      {
+        id: 3,
+        name: '創意品牌風格',
+        description: '活潑創意，展現個人品牌',
+        preview_image_url: '/nfc-templates/creative-brand-preview.jpg',
+        is_active: true,
+        display_order: 3
+      },
+      {
+        id: 4,
+        name: '專業商務風格',
+        description: '正式商務，建立信任感',
+        preview_image_url: '/nfc-templates/professional-business-preview.jpg',
+        is_active: true,
+        display_order: 4
+      },
+      {
+        id: 5,
+        name: '動態互動風格',
+        description: '動態效果，增強互動體驗',
+        preview_image_url: '/nfc-templates/dynamic-interactive-preview.jpg',
+        is_active: true,
+        display_order: 5
+      }
+    ];
+
     try {
       const response = await axios.get('/api/nfc-cards/templates');
       if (response.data.success) {
-        setTemplates(response.data.data);
+        const list = response.data.data || [];
+        
+        // 檢查是否包含舊模板名稱
+        const hasOldTemplates = list.some(t => 
+          t.name && (
+            t.name.includes('科技專業版') || 
+            t.name.includes('活力創意版') || 
+            t.name.includes('簡約質感版') ||
+            t.name.includes('商務專業版') ||
+            t.name.includes('現代簡約版') ||
+            t.name.includes('環保綠意版') ||
+            t.name.includes('質感黑金版') ||
+            t.name.includes('插畫塗鴉版')
+          )
+        );
+
+        // 如果API返回舊模板或空數據，使用新模板
+        if (list.length === 0 || hasOldTemplates) {
+          console.log('使用新模板列表（API返回舊模板或空數據）');
+          setTemplates(newTemplates);
+          return;
+        }
+
+        setTemplates(list);
+      } else {
+        console.log('API調用失敗，使用新模板列表');
+        setTemplates(newTemplates);
       }
     } catch (error) {
-      console.error('獲取模板失敗:', error);
+      console.error('獲取模板失敗，使用新模板列表:', error);
+      setTemplates(newTemplates);
     }
   };
 
