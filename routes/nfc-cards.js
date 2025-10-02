@@ -326,21 +326,20 @@ router.post('/reset-templates', async (req, res) => {
     ];
 
     for (const template of templates) {
-      await pool.query(
-        `INSERT INTO nfc_card_templates (
-           name, description, category, css_config, preview_image_url, is_active, created_at, updated_at, display_order
-         )
-         VALUES ($1::text, $2::text, $3::text, $4::jsonb, $5::text, true, NOW(), NOW(), $6)`,
-        [
-          template.name,
-          template.description,
-          template.category,
-          JSON.stringify({ className: template.className }),
-          `/nfc-templates/${template.className.replace('template-', '')}.svg`,
-          templates.indexOf(template) + 1
-        ]
-      );
-    }
+       await pool.query(
+         `INSERT INTO nfc_card_templates (
+            name, description, category, css_config, preview_image_url, is_active, created_at, updated_at
+          )
+          VALUES ($1::text, $2::text, $3::text, $4::jsonb, $5::text, true, NOW(), NOW())`,
+         [
+           template.name,
+           template.description,
+           template.category,
+           JSON.stringify({ className: template.className }),
+           `/nfc-templates/${template.className.replace('template-', '')}.svg`
+         ]
+       );
+     }
     
     console.log(`✅ Inserted ${templates.length} new templates`);
 
