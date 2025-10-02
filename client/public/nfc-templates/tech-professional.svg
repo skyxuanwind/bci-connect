@@ -35,5 +35,5 @@
   <circle cx="160" cy="32" r="8" fill="none" stroke="#3b82f6" stroke-width="1" opacity="0.6"/>
   <circle cx="160" cy="32" r="4" fill="#3b82f6" opacity="0.4"/>
   
-  <text x="100" y="135" font-family="Inter, sans-serif" font-size="8" fill="#64748b" text-anchor="middle">科技專業版</text>
+  <text x="100" y="135" font-family="Inter, sans-serif" font-size="8" fill="#64748b" text-anchor="middle">未來科技感風格</text>
 </svg>

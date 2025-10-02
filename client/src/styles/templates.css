@@ -1,104 +1,133 @@
 /* ==============================================
-   NFC 電子名片模板樣式
+   電子名片模板樣式 - 全新設計
+   更新日期: 2024-12-19
+   包含五種全新風格模板
    ============================================== */
 
-/* 共用基礎樣式 */
-.nfc-card-container {
-  min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  line-height: 1.6;
+/* 通用基礎樣式 */
+.nfc-card-preview {
+  width: 100%;
+  max-width: 400px;
+  min-height: 600px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nfc-card-preview:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
 .card-content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.card-header {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.card-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-
-.card-subtitle {
-  font-size: 1.25rem;
-  opacity: 0.8;
-  margin-bottom: 2rem;
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .content-block {
-  margin-bottom: 2rem;
   padding: 1.5rem;
   border-radius: 12px;
   transition: all 0.3s ease;
 }
 
-.content-block:hover {
+.block-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.contact-list li {
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.contact-list li:last-child {
+  border-bottom: none;
+}
+
+.contact-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  min-width: 60px;
+}
+
+.contact-value {
+  font-weight: 500;
+}
+
+.social-links {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-size: 1.2rem;
+}
+
+.social-link:hover {
+  transform: translateY(-3px) scale(1.1);
+}
+
+.save-contact-btn, .add-to-wallet-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.save-contact-btn:hover, .add-to-wallet-btn:hover {
   transform: translateY(-2px);
 }
 
-.block-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-.save-contact-btn {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  padding: 1rem 2rem;
-  border-radius: 50px;
-  border: none;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.save-contact-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
-}
-
-.add-to-wallet-btn {
-  position: fixed;
-  bottom: 2rem;
-  left: 2rem;
-  padding: 1rem;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.add-to-wallet-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
-}
-
 /* ==============================================
-   模板一：科技專業版
-   風格：柔和漸變色、半透明材質、卡片式區塊
+   模板1：極簡高級風格
+   設計：一頁式極簡設計，黑金配色
+   元素：圓形個人大頭照、姓名、職稱
+   聯絡區塊：電話、Email、Line QR Code
+   特點：大量留白、科技感UI、高級質感
    ============================================== */
 
-.template-tech {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.template-minimal-luxury {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #000000 100%);
   color: #ffffff;
   position: relative;
+  overflow: hidden;
 }
 
-.template-tech::before {
+.template-minimal-luxury::before {
   content: '';
   position: absolute;
   top: 0;
@@ -106,105 +135,301 @@
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+    radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
   pointer-events: none;
 }
 
-.template-tech .card-content {
+.template-minimal-luxury .card-content {
   position: relative;
   z-index: 1;
+  text-align: center;
+  padding: 3rem 2rem;
 }
 
-.template-tech .content-block {
-  background: rgba(255, 255, 255, 0.1);
+.template-minimal-luxury .user-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto 2rem;
+  border: 3px solid #ffd700;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  object-fit: cover;
+}
+
+.template-minimal-luxury .user-name {
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+}
+
+.template-minimal-luxury .user-position {
+  font-size: 1.1rem;
+  color: #ffd700;
+  margin-bottom: 3rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+
+.template-minimal-luxury .content-block {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 }
 
-.template-tech .content-block:hover {
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-.template-tech .card-title {
-  background: linear-gradient(45deg, #ffffff, #e0e7ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.template-tech .save-contact-btn {
-  background: linear-gradient(45deg, #4f46e5, #7c3aed);
-  color: white;
-}
-
-.template-tech .save-contact-btn:hover {
-  background: linear-gradient(45deg, #4338ca, #6d28d9);
-}
-
-.template-tech .add-to-wallet-btn {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.template-tech .add-to-wallet-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* 深色模式支持 */
-.template-tech.dark-mode {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-}
-
-.template-tech.dark-mode .content-block {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* 社群連結樣式 */
-.template-tech .social-links {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.template-tech .social-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: white;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.template-tech .social-link:hover {
-  background: rgba(255, 255, 255, 0.2);
+.template-minimal-luxury .content-block:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.4);
   transform: translateY(-2px);
 }
 
+.template-minimal-luxury .block-title {
+  color: #ffd700;
+  font-size: 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.template-minimal-luxury .contact-list li {
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  padding: 1rem 0;
+}
+
+.template-minimal-luxury .contact-label {
+  color: #cccccc;
+  font-size: 0.9rem;
+}
+
+.template-minimal-luxury .contact-value {
+  color: #ffffff;
+  font-weight: 400;
+}
+
+.template-minimal-luxury .social-link {
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  color: #000000;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.template-minimal-luxury .social-link:hover {
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+}
+
+.template-minimal-luxury .save-contact-btn {
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  color: #000000;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.template-minimal-luxury .save-contact-btn:hover {
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+}
+
 /* ==============================================
-   模板二：活力創意版
-   風格：高飽和度對比色、大膽圓角、有機曲線
+   模板2：未來科技感風格
+   設計：深藍與霓虹藍紫配色，流線科技元素
+   元素：半透明光圈環繞的大頭照
+   區塊：姓名職稱、聯絡方式、技能標籤、社群連結
+   特點：未來科技Dashboard風格
    ============================================== */
 
-.template-creative {
-  background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+.template-futuristic {
+  background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #0d1117 100%);
+  color: #e6fffa;
+  position: relative;
+  overflow: hidden;
+}
+
+.template-futuristic::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 30% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 30%, rgba(0, 255, 255, 0.02) 50%, transparent 70%);
+  animation: techGlow 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes techGlow {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.template-futuristic .card-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 2.5rem 2rem;
+}
+
+.template-futuristic .user-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin: 0 auto 2rem;
+  border: 2px solid #00ffff;
+  box-shadow: 
+    0 0 20px rgba(0, 255, 255, 0.5),
+    inset 0 0 20px rgba(0, 255, 255, 0.1);
+  object-fit: cover;
+  position: relative;
+}
+
+.template-futuristic .user-avatar::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: rotate 10s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.template-futuristic .user-name {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  letter-spacing: 0.05em;
+}
+
+.template-futuristic .user-position {
+  font-size: 1rem;
+  color: #8a2be2;
+  margin-bottom: 2.5rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.template-futuristic .content-block {
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.template-futuristic .content-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00ffff, transparent);
+  animation: scanLine 3s ease-in-out infinite;
+}
+
+@keyframes scanLine {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.template-futuristic .content-block:hover {
+  background: rgba(0, 255, 255, 0.08);
+  border-color: rgba(0, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(0, 255, 255, 0.2);
+}
+
+.template-futuristic .block-title {
+  color: #00ffff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.template-futuristic .contact-list li {
+  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+  padding: 0.8rem 0;
+}
+
+.template-futuristic .contact-label {
+  color: #8a2be2;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.template-futuristic .contact-value {
+  color: #e6fffa;
+  font-weight: 400;
+}
+
+.template-futuristic .skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.template-futuristic .skill-tag {
+  background: rgba(138, 43, 226, 0.2);
+  border: 1px solid #8a2be2;
+  color: #e6fffa;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.template-futuristic .social-link {
+  background: linear-gradient(45deg, #00ffff, #8a2be2);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+}
+
+.template-futuristic .social-link:hover {
+  box-shadow: 0 8px 25px rgba(0, 255, 255, 0.5);
+  transform: translateY(-3px) scale(1.1);
+}
+
+.template-futuristic .save-contact-btn {
+  background: linear-gradient(45deg, #00ffff, #8a2be2);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.template-futuristic .save-contact-btn:hover {
+  box-shadow: 0 8px 25px rgba(0, 255, 255, 0.5);
+}
+
+/* ==============================================
+   模板3：創意品牌風格
+   設計：橘＋藍＋白亮色系，大膽排版
+   佈局：左側大頭照，右側姓名職稱與標語
+   功能區：聯絡方式、作品集連結、社群QR code
+   特點：活潑有活力的創意設計
+   ============================================== */
+
+.template-creative-brand {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #4ecdc4 75%, #44a08d 100%);
   background-size: 400% 400%;
   animation: gradientShift 8s ease infinite;
-  color: #2d3436;
+  color: #2c3e50;
   position: relative;
 }
 
@@ -214,7 +439,7 @@
   100% { background-position: 0% 50%; }
 }
 
-.template-creative::before {
+.template-creative-brand::before {
   content: '';
   position: absolute;
   top: 0;
@@ -223,1621 +448,677 @@
   bottom: 0;
   background: 
     radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.2) 0%, transparent 30%),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 40%);
+    radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.2) 0%, transparent 30%);
   pointer-events: none;
 }
 
-.template-creative .card-content {
+.template-creative-brand .card-content {
   position: relative;
   z-index: 1;
+  padding: 2rem;
 }
 
-.template-creative .content-block {
+.template-creative-brand .card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
   background: rgba(255, 255, 255, 0.9);
-  border-radius: 25px;
+  padding: 1.5rem;
+  border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 3px solid transparent;
+}
+
+.template-creative-brand .user-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.template-creative-brand .user-info {
+  flex: 1;
+}
+
+.template-creative-brand .user-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  color: #2c3e50;
+  line-height: 1.2;
+}
+
+.template-creative-brand .user-position {
+  font-size: 1rem;
+  color: #ff6b35;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.template-creative-brand .user-tagline {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.template-creative-brand .content-block {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  border: 2px solid transparent;
   background-clip: padding-box;
   position: relative;
 }
 
-.template-creative .content-block::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
-  border-radius: 28px;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.template-creative .content-block:hover::before {
-  opacity: 1;
-}
-
-.template-creative .content-block:hover {
-  transform: translateY(-5px) rotate(1deg);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-}
-
-.template-creative .card-title {
-  background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transform: rotate(-2deg);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.template-creative .card-subtitle {
-  transform: rotate(1deg);
-  color: #636e72;
-}
-
-.template-creative .save-contact-btn {
-  background: linear-gradient(45deg, #ff6b6b, #feca57);
-  color: white;
-  border-radius: 50px;
-  transform: rotate(-2deg);
-}
-
-.template-creative .save-contact-btn:hover {
-  background: linear-gradient(45deg, #e55656, #feb145);
-  transform: rotate(-2deg) scale(1.05);
-}
-
-.template-creative .add-to-wallet-btn {
-  background: linear-gradient(45deg, #48dbfb, #ff9ff3);
-  color: white;
-  border-radius: 50%;
-  transform: rotate(5deg);
-}
-
-.template-creative .add-to-wallet-btn:hover {
-  transform: rotate(5deg) scale(1.1);
-}
-
-.template-creative .social-links {
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-}
-
-.template-creative .social-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(45deg, #ff6b6b, #feca57);
-  border-radius: 50%;
-  color: white;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.template-creative .social-link:hover {
-  transform: translateY(-3px) rotate(10deg) scale(1.1);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-.template-creative .social-link:nth-child(even) {
-  background: linear-gradient(45deg, #48dbfb, #ff9ff3);
-  transform: rotate(-5deg);
-}
-
-.template-creative .social-link:nth-child(even):hover {
-  transform: translateY(-3px) rotate(-15deg) scale(1.1);
-}
-
-/* ==============================================
-   模板三：簡約質感版
-   風格：極簡、線條俐落、大量留白、圓潤造型
-   ============================================== */
-
-.template-minimal {
-  background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
-  color: #334155;
-  min-height: 100vh;
-}
-
-.template-minimal .card-content {
-  padding: 4rem 2rem;
-}
-
-.template-minimal .content-block {
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
-  margin-bottom: 3rem;
-  padding: 2.5rem;
-  transition: all 0.4s ease;
-}
-
-.template-minimal .content-block:hover {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  transform: translateY(-4px);
-  border-color: #cbd5e1;
-}
-
-.template-minimal .card-title {
-  color: #1e293b;
-  font-weight: 300;
-  letter-spacing: -0.02em;
-  margin-bottom: 1rem;
-}
-
-.template-minimal .card-subtitle {
-  color: #64748b;
-  font-weight: 400;
-  margin-bottom: 3rem;
-}
-
-.template-minimal .block-title {
-  color: #475569;
-  font-weight: 500;
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.template-minimal .save-contact-btn {
-  background: #1e293b;
-  color: white;
-  border-radius: 50px;
-  padding: 1.2rem 2.5rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.template-minimal .save-contact-btn:hover {
-  background: #334155;
-  box-shadow: 0 12px 40px rgba(30, 41, 59, 0.3);
-}
-
-.template-minimal .add-to-wallet-btn {
-  background: #ffffff;
-  color: #64748b;
-  border: 2px solid #e2e8f0;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-}
-
-.template-minimal .add-to-wallet-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #475569;
-}
-
-.template-minimal .social-links {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-top: 2rem;
-}
-
-.template-minimal .social-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 50px;
-  height: 50px;
-  background: #ffffff;
-  border: 2px solid #e2e8f0;
-  border-radius: 50%;
-  color: #64748b;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.template-minimal .social-link:hover {
-  background: #f8fafc;
-  border-color: #1e293b;
-  color: #1e293b;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-/* 文字內容樣式 */
-.template-minimal .text-content {
-  line-height: 1.8;
-  color: #475569;
-}
-
-.template-minimal .text-content h3 {
-  color: #1e293b;
-  margin-bottom: 1rem;
-}
-
-/* 連結樣式 */
-.template-minimal .link-item {
-  display: block;
-  padding: 1rem 1.5rem;
-  background: #f8fafc;
-  border-radius: 12px;
-  color: #1e293b;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  border: 1px solid #e2e8f0;
-}
-
-.template-minimal .link-item:hover {
-  background: #e2e8f0;
-  transform: translateX(4px);
-}
-
-/* 地圖樣式 */
-.template-minimal .map-container {
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .card-content {
-    padding: 1rem;
-  }
-  
-  .card-title {
-    font-size: 2rem;
-  }
-  
-  .content-block {
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .save-contact-btn {
-    bottom: 1rem;
-    right: 1rem;
-    padding: 0.8rem 1.5rem;
-  }
-  
-  .add-to-wallet-btn {
-    bottom: 1rem;
-    left: 1rem;
-  }
-  
-  .social-links {
-    gap: 1rem;
-  }
-  
-  .template-creative .social-link,
-  .template-minimal .social-link {
-    width: 44px;
-    height: 44px;
-  }
-  
-  .template-tech .social-link {
-    width: 40px;
-    height: 40px;
-  }
-}
-
-/* 深色模式切換按鈕 */
-.dark-mode-toggle {
-  position: fixed;
-  top: 2rem;
-  right: 2rem;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  z-index: 1001;
-}
-
-.dark-mode-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
-}
-
-/* 載入動畫 */
-.loading-spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* 成功提示動畫 */
-.success-message {
-  position: fixed;
-  top: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #10b981;
-  color: white;
-  padding: 1rem 2rem;
-  border-radius: 50px;
-  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-  z-index: 1002;
-  animation: slideInDown 0.5s ease;
-}
-
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-/* 內容區塊特定樣式 */
-.video-container {
-  position: relative;
-  width: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.video-container iframe {
-  width: 100%;
-  height: auto;
-  min-height: 315px;
-}
-
-.image-container {
-  text-align: center;
-}
-
-.image-container img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.contact-info {
-  display: grid;
-  gap: 1rem;
-}
-
-.contact-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.contact-item:hover {
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.contact-icon {
-  width: 20px;
-  height: 20px;
-  opacity: 0.7;
-}
-
-/* 無障礙設計 */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* 高對比模式 */
-@media (prefers-contrast: high) {
-  .template-tech .content-block {
-    border: 2px solid rgba(255, 255, 255, 0.8);
-  }
-  
-  .template-minimal .content-block {
-    border: 2px solid #334155;
-  }
-}
-
-/* 打印樣式 */
-@media print {
-  .save-contact-btn,
-  .add-to-wallet-btn,
-  .dark-mode-toggle {
-    display: none;
-  }
-  
-  .nfc-card-container {
-    background: white !important;
-    color: black !important;
-  }
-  
-  .content-block {
-    box-shadow: none !important;
-    border: 1px solid #ccc !important;
-  }
-}
-
-/* ==============================================
-   模板四：商務專業版 (參考 SpiderCard 風格)
-   風格：簡潔卡片、專業配色、清晰層次
-   ============================================== */
-
-.template-business {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  color: #1e293b;
-  min-height: 100vh;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-.template-business .card-content {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.template-business .card-header {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 3rem 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.template-business .card-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #1d4ed8, #1e40af);
-}
-
-.template-business .card-title {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
-  letter-spacing: -0.02em;
-}
-
-.template-business .card-subtitle {
-  font-size: 1.1rem;
-  color: #64748b;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-}
-
-.template-business .company-info {
-  font-size: 0.95rem;
-  color: #475569;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  background: #f1f5f9;
-  border-radius: 12px;
-  display: inline-block;
-}
-
-.template-business .content-block {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
-}
-
-.template-business .content-block:hover {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-  border-color: #cbd5e1;
-}
-
-.template-business .block-title {
-  color: #1e293b;
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.template-business .contact-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.template-business .contact-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  border: 1px solid #e2e8f0;
-}
-
-.template-business .contact-item:hover {
-  background: #e2e8f0;
-  transform: translateX(4px);
-}
-
-.template-business .contact-icon {
-  width: 24px;
-  height: 24px;
-  color: #3b82f6;
-  flex-shrink: 0;
-}
-
-.template-business .save-contact-btn {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
-  border-radius: 12px;
-  padding: 1rem 2rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.template-business .save-contact-btn:hover {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
-}
-
-.template-business .add-to-wallet-btn {
-  background: #ffffff;
-  color: #64748b;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  width: 56px;
-  height: 56px;
-}
-
-.template-business .add-to-wallet-btn:hover {
-  background: #f8fafc;
-  border-color: #3b82f6;
-  color: #3b82f6;
-}
-
-/* ==============================================
-   模板五：現代簡約版 (參考 SpiderCard 風格)
-   風格：大膽留白、現代排版、優雅過渡
-   ============================================== */
-
-.template-modern {
-  background: #ffffff;
-  color: #1f2937;
-  min-height: 100vh;
-  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-.template-modern .card-content {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 3rem 1.5rem;
-}
-
-.template-modern .card-header {
-  text-align: left;
-  margin-bottom: 3rem;
-  padding: 2rem 0;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.template-modern .card-title {
-  font-size: 2.5rem;
-  font-weight: 300;
-  color: #111827;
-  margin-bottom: 0.5rem;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-}
-
-.template-modern .card-subtitle {
-  font-size: 1.1rem;
-  color: #6b7280;
-  font-weight: 400;
-  margin-bottom: 1rem;
-}
-
-.template-modern .company-name {
-  font-size: 0.9rem;
-  color: #374151;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.template-modern .content-block {
-  margin-bottom: 2.5rem;
-  padding: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.template-modern .block-title {
-  color: #111827;
-  font-weight: 500;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.8;
-}
-
-.template-modern .service-description {
-  line-height: 1.7;
-  color: #374151;
-  font-size: 1rem;
-  margin-bottom: 2rem;
-}
-
-.template-modern .contact-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.template-modern .contact-list li {
-  padding: 1rem 0;
-  border-bottom: 1px solid #f3f4f6;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-}
-
-.template-modern .contact-list li:hover {
-  padding-left: 1rem;
-  background: #f9fafb;
-  margin: 0 -1rem;
-  border-radius: 8px;
-  border-bottom: 1px solid transparent;
-}
-
-.template-modern .contact-list li:last-child {
-  border-bottom: none;
-}
-
-.template-modern .contact-label {
-  font-size: 0.85rem;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  min-width: 80px;
-}
-
-.template-modern .contact-value {
-  color: #111827;
-  font-weight: 500;
-}
-
-.template-modern .social-links {
-  display: flex;
-  gap: 1.5rem;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.template-modern .social-link {
-  color: #6b7280;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  padding: 0.5rem 0;
-  border-bottom: 2px solid transparent;
-}
-
-.template-modern .social-link:hover {
-  color: #111827;
-  border-bottom-color: #111827;
-}
-
-.template-modern .save-contact-btn {
-  background: #111827;
-  color: white;
-  border-radius: 6px;
-  padding: 1rem 2rem;
-  font-weight: 500;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.template-modern .save-contact-btn:hover {
-  background: #1f2937;
-  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.3);
-}
-
-.template-modern .add-to-wallet-btn {
-  background: transparent;
-  color: #6b7280;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  width: 48px;
-  height: 48px;
-}
-
-.template-modern .add-to-wallet-btn:hover {
-  background: #f9fafb;
-  border-color: #111827;
-  color: #111827;
-}
-
-/* ==============================================
-   模板六：環保綠意版 (參考 SpiderCard 風格)
-   風格：自然綠色、環保理念、溫暖質感
-   ============================================== */
-
-.template-eco {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
-  color: #064e3b;
-  min-height: 100vh;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  position: relative;
-}
-
-.template-eco::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-.template-eco .card-content {
-  position: relative;
-  z-index: 1;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.template-eco .card-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
-  padding: 2.5rem 2rem;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.template-eco .card-title {
-  font-size: 2.3rem;
-  font-weight: 700;
-  color: #065f46;
-  margin-bottom: 0.5rem;
-  letter-spacing: -0.02em;
-}
-
-.template-eco .card-subtitle {
-  font-size: 1.1rem;
-  color: #047857;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-}
-
-.template-eco .eco-tagline {
-  font-size: 0.95rem;
-  color: #059669;
-  font-style: italic;
-  padding: 1rem 1.5rem;
-  background: rgba(16, 185, 129, 0.1);
-  border-radius: 16px;
-  border-left: 4px solid #10b981;
-  margin-top: 1rem;
-}
-
-.template-eco .content-block {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 2rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  transition: all 0.3s ease;
-}
-
-.template-eco .content-block:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  transform: translateY(-3px);
-}
-
-.template-eco .block-title {
-  color: #065f46;
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.template-eco .block-title::before {
-  content: '🌱';
-  font-size: 1.2rem;
-}
-
-.template-eco .service-highlights {
-  display: grid;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.template-eco .highlight-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: rgba(16, 185, 129, 0.1);
-  border-radius: 12px;
-  color: #047857;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.template-eco .highlight-item::before {
-  content: '✅';
-  font-size: 1rem;
-}
-
-.template-eco .contact-info {
-  display: grid;
-  gap: 1rem;
-}
-
-.template-eco .contact-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: rgba(16, 185, 129, 0.05);
-  border-radius: 16px;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.template-eco .contact-item:hover {
-  background: rgba(16, 185, 129, 0.1);
-  transform: translateX(4px);
-  border-color: rgba(16, 185, 129, 0.3);
-}
-
-.template-eco .contact-icon {
-  width: 24px;
-  height: 24px;
-  color: #10b981;
-  flex-shrink: 0;
-}
-
-.template-eco .save-contact-btn {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-  border-radius: 16px;
-  padding: 1rem 2rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.template-eco .save-contact-btn:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-}
-
-.template-eco .add-to-wallet-btn {
-  background: rgba(255, 255, 255, 0.9);
-  color: #059669;
-  border: 2px solid rgba(16, 185, 129, 0.3);
-  border-radius: 16px;
-  width: 56px;
-  height: 56px;
-  backdrop-filter: blur(10px);
-}
-
-.template-eco .add-to-wallet-btn:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: #10b981;
-  color: #047857;
-}
-
-.template-eco .social-links {
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-.template-eco .social-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 2px solid rgba(16, 185, 129, 0.3);
-  border-radius: 50%;
-  color: #059669;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.template-eco .social-link:hover {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: #10b981;
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
-}
-
-/* ==============================================
-   模板七：質感黑金風格 (高級商務質感)
-   風格：黑金配色、粒子動效、光束效果、奢華質感
-   ============================================== */
-
-.template-luxury {
-  background: radial-gradient(ellipse at center, #1a1a1a 0%, #000000 70%);
-  color: #f5f5f5;
-  min-height: 100vh;
-  font-family: 'Playfair Display', 'Times New Roman', serif;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 粒子背景動效 */
-.template-luxury::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    radial-gradient(2px 2px at 20px 30px, #ffd700, transparent),
-    radial-gradient(2px 2px at 40px 70px, rgba(255, 215, 0, 0.6), transparent),
-    radial-gradient(1px 1px at 90px 40px, #ffd700, transparent),
-    radial-gradient(1px 1px at 130px 80px, rgba(255, 215, 0, 0.4), transparent),
-    radial-gradient(2px 2px at 160px 30px, #ffd700, transparent);
-  background-repeat: repeat;
-  background-size: 200px 100px;
-  animation: particles 20s linear infinite;
-  opacity: 0.3;
-  z-index: 1;
-}
-
-/* 光束效果 */
-.template-luxury::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent 30%,
-    rgba(255, 215, 0, 0.1) 50%,
-    transparent 70%
-  );
-  animation: lightBeam 15s ease-in-out infinite;
-  z-index: 2;
-}
-
-@keyframes particles {
-  0% { transform: translateY(0px) rotate(0deg); }
-  100% { transform: translateY(-100px) rotate(360deg); }
-}
-
-@keyframes lightBeam {
-  0%, 100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-  50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-}
-
-.template-luxury .card-content {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 3rem 2rem;
-  position: relative;
-  z-index: 10;
-}
-
-.template-luxury .card-header {
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(26, 26, 26, 0.9) 100%);
-  border: 2px solid #ffd700;
-  border-radius: 20px;
-  padding: 3rem 2.5rem;
-  margin-bottom: 3rem;
-  text-align: center;
-  position: relative;
-  backdrop-filter: blur(10px);
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 215, 0, 0.2);
-}
-
-.template-luxury .card-header::before {
+.template-creative-brand .content-block::before {
   content: '';
   position: absolute;
   top: -2px;
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700, #ffed4e);
-  border-radius: 22px;
+  background: linear-gradient(45deg, #ff6b35, #4ecdc4, #f7931e);
+  border-radius: 17px;
   z-index: -1;
-  animation: borderGlow 3s ease-in-out infinite alternate;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-@keyframes borderGlow {
-  0% { opacity: 0.5; }
-  100% { opacity: 1; }
+.template-creative-brand .content-block:hover::before {
+  opacity: 1;
 }
 
-.template-luxury .card-title {
-  font-size: 2.8rem;
+.template-creative-brand .content-block:hover {
+  transform: translateY(-3px) rotate(1deg);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.template-creative-brand .block-title {
+  color: #2c3e50;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #ffd700;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.template-creative-brand .contact-list li {
+  border-bottom: 1px solid #ecf0f1;
+  padding: 1rem 0;
+  transition: all 0.3s ease;
+}
+
+.template-creative-brand .contact-list li:hover {
+  background: rgba(255, 107, 53, 0.1);
+  margin: 0 -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border-radius: 10px;
+}
+
+.template-creative-brand .contact-label {
+  color: #ff6b35;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.template-creative-brand .contact-value {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.template-creative-brand .portfolio-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.template-creative-brand .portfolio-link {
+  background: linear-gradient(45deg, #ff6b35, #f7931e);
+  color: #ffffff;
+  padding: 0.8rem 1.2rem;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.template-creative-brand .portfolio-link:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+}
+
+.template-creative-brand .social-link {
+  background: linear-gradient(45deg, #4ecdc4, #44a08d);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+}
+
+.template-creative-brand .social-link:hover {
+  box-shadow: 0 8px 25px rgba(78, 205, 196, 0.5);
+  transform: translateY(-3px) scale(1.1) rotate(5deg);
+}
+
+.template-creative-brand .save-contact-btn {
+  background: linear-gradient(45deg, #ff6b35, #4ecdc4);
+  color: #ffffff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+}
+
+.template-creative-brand .save-contact-btn:hover {
+  box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+  transform: translateY(-3px) scale(1.05);
+}
+
+/* ==============================================
+   模板4：專業商務風格
+   設計：白底＋藏青色＋灰色
+   結構：頂部姓名職稱，中間大頭照
+   聯絡區：電話、Email、LinkedIn
+   企業元素：公司Logo與QR Code
+   特點：乾淨大方的專業風格
+   ============================================== */
+
+.template-professional-business {
+  background: #ffffff;
+  color: #2c3e50;
+  position: relative;
+  border: 1px solid #ecf0f1;
+}
+
+.template-professional-business .card-content {
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.template-professional-business .card-header {
+  background: #34495e;
+  color: #ffffff;
+  padding: 2rem;
+  margin: -2.5rem -2rem 2rem -2rem;
+  text-align: center;
+}
+
+.template-professional-business .user-name {
+  font-size: 1.8rem;
+  font-weight: 600;
   margin-bottom: 0.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
   letter-spacing: 0.02em;
 }
 
-.template-luxury .card-subtitle {
-  font-size: 1.3rem;
-  color: #e5e5e5;
-  font-weight: 300;
-  margin-bottom: 1rem;
-  font-style: italic;
+.template-professional-business .user-position {
+  font-size: 1.1rem;
+  color: #bdc3c7;
+  margin-bottom: 0.5rem;
+  font-weight: 400;
 }
 
-.template-luxury .company-name {
+.template-professional-business .user-company {
   font-size: 1rem;
-  color: #ffd700;
-  font-weight: 500;
+  color: #ecf0f1;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+}
+
+.template-professional-business .user-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto 2rem;
+  border: 4px solid #ffffff;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  object-fit: cover;
+}
+
+.template-professional-business .content-block {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.template-professional-business .content-block:hover {
+  background: #ffffff;
+  border-color: #34495e;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(52, 73, 94, 0.1);
+}
+
+.template-professional-business .block-title {
+  color: #34495e;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+  border-bottom: 2px solid #34495e;
+  padding-bottom: 0.5rem;
 }
 
-.template-luxury .content-block {
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(26, 26, 26, 0.8) 100%);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 15px;
+.template-professional-business .contact-list li {
+  border-bottom: 1px solid #e9ecef;
+  padding: 1rem 0;
+  text-align: left;
+}
+
+.template-professional-business .contact-list li:last-child {
+  border-bottom: none;
+}
+
+.template-professional-business .contact-label {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.template-professional-business .contact-value {
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.template-professional-business .company-section {
+  background: #ffffff;
+  border: 2px solid #34495e;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.template-professional-business .company-logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #34495e;
+  border: 1px solid #e9ecef;
+}
+
+.template-professional-business .qr-code {
+  width: 100px;
+  height: 100px;
+  margin: 1rem auto;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+.template-professional-business .social-link {
+  background: #34495e;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(52, 73, 94, 0.3);
+}
+
+.template-professional-business .social-link:hover {
+  background: #2c3e50;
+  box-shadow: 0 6px 20px rgba(52, 73, 94, 0.4);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.template-professional-business .save-contact-btn {
+  background: #34495e;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(52, 73, 94, 0.3);
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.template-professional-business .save-contact-btn:hover {
+  background: #2c3e50;
+  box-shadow: 0 8px 25px rgba(52, 73, 94, 0.4);
+}
+
+/* ==============================================
+   模板5：動態互動風格
+   設計：紫＋粉＋藍漸層背景，流動動畫
+   核心：中央大頭照，下方姓名職稱
+   展示區：技能標籤、聯絡方式、社群連結
+   便利性：底部大型QR code便於手機掃描
+   特點：互動性強的動態設計
+   ============================================== */
+
+.template-dynamic-interactive {
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+  background-size: 400% 400%;
+  animation: dynamicGradient 12s ease infinite;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes dynamicGradient {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+.template-dynamic-interactive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  animation: floatingBubbles 15s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes floatingBubbles {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-20px) scale(1.05); }
+}
+
+.template-dynamic-interactive .card-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
   padding: 2rem;
+}
+
+.template-dynamic-interactive .user-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    0 0 30px rgba(255, 255, 255, 0.3),
+    0 10px 25px rgba(0, 0, 0, 0.2);
+  object-fit: cover;
+  transition: all 0.3s ease;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.template-dynamic-interactive .user-avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 0 40px rgba(255, 255, 255, 0.5),
+    0 15px 35px rgba(0, 0, 0, 0.3);
+}
+
+.template-dynamic-interactive .user-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.02em;
+}
+
+.template-dynamic-interactive .user-position {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 2rem;
-  backdrop-filter: blur(5px);
+  font-weight: 500;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+}
+
+.template-dynamic-interactive .content-block {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(15px);
+  margin-bottom: 1.5rem;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
-.template-luxury .content-block::before {
+.template-dynamic-interactive .content-block::before {
   content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   transition: left 0.5s ease;
 }
 
-.template-luxury .content-block:hover::before {
+.template-dynamic-interactive .content-block:hover::before {
   left: 100%;
 }
 
-.template-luxury .content-block:hover {
-  transform: translateY(-5px);
-  border-color: rgba(255, 215, 0, 0.6);
-  box-shadow: 0 15px 30px rgba(255, 215, 0, 0.2);
+.template-dynamic-interactive .content-block:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.template-luxury .block-title {
-  color: #ffd700;
-  font-weight: 600;
-  font-size: 1.3rem;
-  margin-bottom: 1.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.template-luxury .service-description {
-  line-height: 1.8;
-  color: #e5e5e5;
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
-}
-
-.template-luxury .contact-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.template-luxury .contact-list li {
-  padding: 1.2rem 0;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  transition: all 0.3s ease;
-}
-
-.template-luxury .contact-list li:hover {
-  padding-left: 1rem;
-  background: rgba(255, 215, 0, 0.05);
-  margin: 0 -1rem;
-  border-radius: 10px;
-  border-bottom: 1px solid transparent;
-}
-
-.template-luxury .contact-list li:last-child {
-  border-bottom: none;
-}
-
-.template-luxury .contact-label {
-  font-size: 0.9rem;
-  color: #ffd700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  min-width: 100px;
-  font-weight: 500;
-}
-
-.template-luxury .contact-value {
-  color: #f5f5f5;
-  font-weight: 400;
-  font-size: 1.1rem;
-}
-
-.template-luxury .social-links {
-  display: flex;
-  gap: 2rem;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.3);
-  justify-content: center;
-}
-
-.template-luxury .social-link {
-  color: #e5e5e5;
-  text-decoration: none;
+.template-dynamic-interactive .block-title {
+  color: #ffffff;
   font-size: 1rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  padding: 0.8rem 1.5rem;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 25px;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(5px);
-}
-
-.template-luxury .social-link:hover {
-  color: #000;
-  background: #ffd700;
-  border-color: #ffd700;
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
-}
-
-.template-luxury .save-contact-btn {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #000;
-  border-radius: 25px;
-  padding: 1.2rem 2.5rem;
   font-weight: 600;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
-}
-
-.template-luxury .save-contact-btn:hover {
-  background: linear-gradient(135deg, #ffed4e, #ffd700);
-  transform: translateY(-3px);
-  box-shadow: 0 15px 35px rgba(255, 215, 0, 0.4);
-}
-
-.template-luxury .add-to-wallet-btn {
-  background: rgba(0, 0, 0, 0.6);
-  color: #ffd700;
-  border: 2px solid #ffd700;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  backdrop-filter: blur(5px);
-}
-
-.template-luxury .add-to-wallet-btn:hover {
-  background: #ffd700;
-  color: #000;
-  transform: scale(1.1);
-  box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
-}
-
-/* ==============================================
-   模板八：插畫風格 (美式塗鴉設計)
-   風格：活潑色彩、塗鴉元素、手繪質感、創意排版
-   ============================================== */
-
-.template-graffiti {
-  background: linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 25%, #45b7d1 50%, #96ceb4 75%, #ffeaa7 100%);
-  background-size: 400% 400%;
-  animation: gradientShift 8s ease infinite;
-  color: #2d3436;
-  min-height: 100vh;
-  font-family: 'Comic Sans MS', 'Marker Felt', cursive;
-  position: relative;
-  overflow: hidden;
-}
-
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* 塗鴉裝飾元素 */
-.template-graffiti::before {
-  content: '★ ♪ ♦ ◆ ● ▲ ■ ♠ ♥ ♣ ♦ ☆ ✦ ✧ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  font-size: 2rem;
-  color: rgba(255, 255, 255, 0.1);
-  word-spacing: 3rem;
-  line-height: 4rem;
-  animation: float 20s linear infinite;
-  z-index: 1;
-  pointer-events: none;
-}
-
-@keyframes float {
-  0% { transform: translateY(100vh) rotate(0deg); }
-  100% { transform: translateY(-100px) rotate(360deg); }
-}
-
-.template-graffiti .card-content {
-  max-width: 650px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
-  position: relative;
-  z-index: 10;
-}
-
-.template-graffiti .card-header {
-  background: rgba(255, 255, 255, 0.95);
-  border: 4px solid #2d3436;
-  border-radius: 25px;
-  padding: 2.5rem 2rem;
-  margin-bottom: 2rem;
-  text-align: center;
-  position: relative;
-  transform: rotate(-1deg);
-  box-shadow: 
-    8px 8px 0px #2d3436,
-    0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.template-graffiti .card-header::before {
-  content: '✨';
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  font-size: 2rem;
-  animation: sparkle 2s ease-in-out infinite;
-}
-
-.template-graffiti .card-header::after {
-  content: '🎨';
-  position: absolute;
-  bottom: -10px;
-  left: -10px;
-  font-size: 2rem;
-  animation: bounce 2s ease-in-out infinite;
-}
-
-@keyframes sparkle {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.2) rotate(180deg); }
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-.template-graffiti .card-title {
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: #2d3436;
-  margin-bottom: 0.5rem;
-  text-shadow: 3px 3px 0px #fff, 6px 6px 0px #ff6b6b;
-  transform: rotate(1deg);
-  letter-spacing: 0.02em;
-}
-
-.template-graffiti .card-subtitle {
-  font-size: 1.2rem;
-  color: #636e72;
-  font-weight: 700;
   margin-bottom: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  transform: rotate(-0.5deg);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.template-graffiti .company-name {
-  font-size: 1rem;
-  color: #e17055;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  background: #fff;
-  padding: 0.3rem 1rem;
-  border-radius: 15px;
-  display: inline-block;
-  border: 2px solid #e17055;
+.template-dynamic-interactive .contact-list li {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.8rem 0;
 }
 
-.template-graffiti .content-block {
-  background: rgba(255, 255, 255, 0.9);
-  border: 3px solid #2d3436;
-  border-radius: 20px;
-  padding: 1.8rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-  transform: rotate(0.5deg);
-  box-shadow: 5px 5px 0px #2d3436;
+.template-dynamic-interactive .contact-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.template-dynamic-interactive .contact-value {
+  color: #ffffff;
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.template-dynamic-interactive .skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.template-dynamic-interactive .skill-tag {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 0.4rem 1rem;
+  border-radius: 25px;
+  font-size: 0.8rem;
+  font-weight: 500;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
-.template-graffiti .content-block:nth-child(even) {
-  transform: rotate(-0.5deg);
-  box-shadow: -5px 5px 0px #2d3436;
+.template-dynamic-interactive .skill-tag:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px) scale(1.05);
 }
 
-.template-graffiti .content-block:hover {
-  transform: rotate(0deg) scale(1.02);
-  box-shadow: 8px 8px 0px #2d3436;
+.template-dynamic-interactive .social-link {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.template-graffiti .content-block::before {
-  content: '💫';
-  position: absolute;
-  top: -15px;
-  right: 20px;
-  font-size: 1.5rem;
-  animation: wiggle 3s ease-in-out infinite;
+.template-dynamic-interactive .social-link:hover {
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  transform: translateY(-3px) scale(1.1) rotate(5deg);
 }
 
-@keyframes wiggle {
-  0%, 100% { transform: rotate(-10deg); }
-  50% { transform: rotate(10deg); }
+.template-dynamic-interactive .qr-section {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  text-align: center;
 }
 
-.template-graffiti .block-title {
-  color: #2d3436;
-  font-weight: 900;
-  font-size: 1.4rem;
-  margin-bottom: 1.2rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  text-shadow: 2px 2px 0px #fff;
-}
-
-.template-graffiti .service-description {
-  line-height: 1.7;
-  color: #2d3436;
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  font-weight: 600;
-}
-
-.template-graffiti .contact-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.template-graffiti .contact-list li {
-  padding: 1rem 0;
-  border-bottom: 2px dashed #ddd;
+.template-dynamic-interactive .qr-code {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 1rem;
+  background: #ffffff;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-}
-
-.template-graffiti .contact-list li:hover {
-  background: rgba(255, 107, 107, 0.1);
-  padding-left: 1rem;
-  margin: 0 -1rem;
-  border-radius: 15px;
-  border-bottom: 2px dashed transparent;
-}
-
-.template-graffiti .contact-list li:last-child {
-  border-bottom: none;
-}
-
-.template-graffiti .contact-label {
-  font-size: 0.9rem;
-  color: #e17055;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  min-width: 80px;
-  font-weight: 800;
-  background: #fff;
-  padding: 0.2rem 0.8rem;
-  border-radius: 10px;
-  border: 2px solid #e17055;
-}
-
-.template-graffiti .contact-value {
-  color: #2d3436;
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.template-graffiti .social-links {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 3px dashed #ddd;
   justify-content: center;
-  flex-wrap: wrap;
-}
-
-.template-graffiti .social-link {
-  color: #fff;
-  text-decoration: none;
   font-size: 0.9rem;
-  font-weight: 800;
-  transition: all 0.3s ease;
-  padding: 0.8rem 1.5rem;
-  border-radius: 20px;
-  background: #ff6b6b;
-  border: 3px solid #2d3436;
+  color: #666;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.template-dynamic-interactive .qr-title {
+  color: #333;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.template-dynamic-interactive .qr-description {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.template-dynamic-interactive .save-contact-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  box-shadow: 3px 3px 0px #2d3436;
 }
 
-.template-graffiti .social-link:nth-child(2n) {
-  background: #4ecdc4;
+.template-dynamic-interactive .save-contact-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transform: translateY(-3px) scale(1.05);
 }
 
-.template-graffiti .social-link:nth-child(3n) {
-  background: #45b7d1;
-}
+/* ==============================================
+   響應式設計
+   ============================================== */
 
-.template-graffiti .social-link:hover {
-  transform: translateY(-3px) rotate(5deg);
-  box-shadow: 5px 8px 0px #2d3436;
-}
-
-.template-graffiti .save-contact-btn {
-  background: #ff6b6b;
-  color: #fff;
-  border: 4px solid #2d3436;
-  border-radius: 25px;
-  padding: 1.2rem 2.5rem;
-  font-weight: 900;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 6px 6px 0px #2d3436;
-  transform: rotate(-1deg);
-}
-
-.template-graffiti .save-contact-btn:hover {
-  background: #fd79a8;
-  transform: rotate(0deg) translateY(-3px);
-  box-shadow: 8px 10px 0px #2d3436;
-}
-
-.template-graffiti .add-to-wallet-btn {
-  background: #ffeaa7;
-  color: #2d3436;
-  border: 4px solid #2d3436;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  font-weight: 900;
-  box-shadow: 4px 4px 0px #2d3436;
-}
-
-.template-graffiti .add-to-wallet-btn:hover {
-  background: #fdcb6e;
-  transform: rotate(15deg) scale(1.1);
-  box-shadow: 6px 6px 0px #2d3436;
-}
-
-/* 響應式設計增強 */
 @media (max-width: 768px) {
-  .template-business .card-header,
-  .template-modern .card-content,
-  .template-eco .card-header,
-  .template-luxury .card-header,
-  .template-graffiti .card-header {
-    padding: 2rem 1.5rem;
+  .nfc-card-preview {
+    max-width: 100%;
+    min-height: 500px;
   }
   
-  .template-business .card-title,
-  .template-modern .card-title,
-  .template-eco .card-title,
-  .template-luxury .card-title,
-  .template-graffiti .card-title {
-    font-size: 1.8rem;
-  }
-  
-  .template-business .content-block,
-  .template-eco .content-block,
-  .template-luxury .content-block,
-  .template-graffiti .content-block {
+  .card-content {
     padding: 1.5rem;
   }
   
-  .template-modern .contact-list li:hover,
-  .template-luxury .contact-list li:hover,
-  .template-graffiti .contact-list li:hover {
-    margin: 0;
-    padding-left: 0;
+  .template-minimal-luxury .card-content,
+  .template-futuristic .card-content,
+  .template-creative-brand .card-content,
+  .template-professional-business .card-content,
+  .template-dynamic-interactive .card-content {
+    padding: 1.5rem;
   }
   
-  .template-luxury::before,
-  .template-luxury::after {
-    display: none;
-  }
-  
-  .template-graffiti::before {
+  .template-minimal-luxury .user-name,
+  .template-futuristic .user-name,
+  .template-creative-brand .user-name,
+  .template-professional-business .user-name,
+  .template-dynamic-interactive .user-name {
     font-size: 1.5rem;
-    line-height: 3rem;
   }
   
-  .template-graffiti .social-links {
+  .template-creative-brand .card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .template-creative-brand .user-avatar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .template-professional-business .card-header {
+    margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .social-links {
     gap: 0.5rem;
+  }
+  
+  .social-link {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .template-minimal-luxury .user-avatar,
+  .template-futuristic .user-avatar,
+  .template-professional-business .user-avatar,
+  .template-dynamic-interactive .user-avatar {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .template-creative-brand .user-avatar {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .content-block {
+    padding: 1rem;
+  }
+  
+  .template-dynamic-interactive .qr-code {
+    width: 100px;
+    height: 100px;
   }
 }

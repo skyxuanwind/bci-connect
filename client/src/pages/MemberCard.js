@@ -256,7 +256,7 @@ const MemberCard = () => {
         id: String(found.id),
         card_title: found.card_title || scanned.name || '掃描名片',
         card_subtitle: found.card_subtitle || scanned.title || '',
-        template_name: found.template_name || '簡約質感版',
+        template_name: found.template_name || '極簡高級風格',
         contact_info: {
           phone: found.contact_info?.phone || scanned.phone || scanned.mobile || '',
           email: found.contact_info?.email || scanned.email || '',
@@ -685,27 +685,21 @@ const MemberCard = () => {
   };
 
   const getTemplateClass = () => {
-    if (!cardData?.template_name) return 'template-minimal';
+    if (!cardData?.template_name) return 'template-minimal-luxury';
     
     switch (cardData.template_name) {
-      case '科技專業版':
-        return `template-tech ${darkMode ? 'dark-mode' : ''}`;
-      case '活力創意版':
-        return 'template-creative';
-      case '簡約質感版':
-        return 'template-minimal';
-      case '商務專業版':
-        return 'template-business';
-      case '現代簡約版':
-        return 'template-modern';
-      case '環保綠意版':
-        return 'template-eco';
-      case '質感黑金版':
-        return 'template-luxury';
-      case '插畫塗鴉版':
-        return 'template-graffiti';
+      case '極簡高級風格':
+        return 'template-minimal-luxury';
+      case '未來科技感風格':
+        return `template-futuristic-tech ${darkMode ? 'dark-mode' : ''}`;
+      case '創意品牌風格':
+        return 'template-creative-brand';
+      case '專業商務風格':
+        return 'template-professional-business';
+      case '動態互動風格':
+        return 'template-dynamic-interactive';
       default:
-        return 'template-minimal';
+        return 'template-minimal-luxury';
     }
   };
 
@@ -1062,8 +1056,8 @@ const MemberCard = () => {
         </div>
       )}
 
-      {/* 深色模式切換按鈕（僅科技專業版顯示） */}
-      {cardData?.template_name === '科技專業版' && (
+      {/* 深色模式切換按鈕（僅未來科技感風格顯示） */}
+      {cardData?.template_name === '未來科技感風格' && (
         <button 
           onClick={toggleDarkMode}
           className="dark-mode-toggle"

@@ -254,13 +254,8 @@ const NFCCardEditor = () => {
     if (anyChanged) {
       const recomputed = blocks.map((b, i) => ({ ...b, display_order: i }));
 
-      const suggestedTitle = cardConfig.card_title || user.name || '';
-      const suggestedSubtitle = cardConfig.card_subtitle || [user.company, user.title].filter(Boolean).join('｜') || user.industry || '';
-
       setCardConfig(prev => ({
         ...prev,
-        card_title: suggestedTitle,
-        card_subtitle: suggestedSubtitle,
         content_blocks: recomputed
       }));
     }
@@ -340,11 +335,9 @@ const NFCCardEditor = () => {
       const card = data.cardConfig || data.card || data;
       const content = (card && (card.content_blocks || card.content)) || [];
 
-      if (card && (card.template_id !== undefined || card.card_title !== undefined)) {
+      if (card && card.template_id !== undefined) {
         const mappedBlocks = Array.isArray(content) ? content.map(mapRowToBlock) : [];
         setCardConfig({
-          card_title: card.card_title || '',
-          card_subtitle: card.card_subtitle || '',
           template_id: card.template_id || null,
           template_name: card.template_name || '',
           custom_css: card.custom_css || '',
@@ -352,8 +345,6 @@ const NFCCardEditor = () => {
         });
       } else {
         setCardConfig({
-          card_title: '',
-          card_subtitle: '',
           template_id: null,
           template_name: '',
           custom_css: '',
@@ -401,12 +392,10 @@ const NFCCardEditor = () => {
     try {
       setSaving(true);
       await axios.put('/api/nfc-cards/my-card', {
-        card_title: cardConfig.card_title,
-        card_subtitle: cardConfig.card_subtitle,
         template_id: cardConfig.template_id,
         custom_css: cardConfig.custom_css
       });
-      alert('基本信息保存成功！');
+      alert('基本設定保存成功！');
     } catch (error) {
       console.error('保存失敗:', error);
       alert('保存失敗，請稍後再試');
@@ -642,38 +631,6 @@ const NFCCardEditor = () => {
                 <h2 className="text-lg font-semibold text-gold-100 mb-4">基本設定</h2>
                 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gold-300 mb-2">
-                      名片標題
-                    </label>
-                    <input
-                      type="text"
-                      value={cardConfig?.card_title || ''}
-                      onChange={(e) => setCardConfig({
-                        ...cardConfig,
-                        card_title: e.target.value
-                      })}
-                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 placeholder-gold-400 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
-                      placeholder="輸入名片標題"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gold-300 mb-2">
-                      副標題
-                    </label>
-                    <input
-                      type="text"
-                      value={cardConfig?.card_subtitle || ''}
-                      onChange={(e) => setCardConfig({
-                        ...cardConfig,
-                        card_subtitle: e.target.value
-                      })}
-                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 placeholder-gold-400 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
-                      placeholder="輸入副標題"
-                    />
-                  </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gold-300 mb-2">
                       選擇模板
@@ -1099,14 +1056,11 @@ const TemplatePreview = ({ template, cardConfig }) => {
     
     // 根據模板名稱映射到對應的 CSS 類名
     const templateClassMap = {
-      '科技專業版': 'template-tech',
-      '活力創意版': 'template-creative', 
-      '簡約質感版': 'template-minimal',
-      '商務專業版': 'template-business',
-      '現代簡約版': 'template-modern',
-      '環保綠意版': 'template-eco',
-      '質感黑金版': 'template-luxury',
-      '插畫塗鴉版': 'template-graffiti'
+      '極簡高級風格': 'template-minimal-luxury',
+      '未來科技感風格': 'template-futuristic-tech',
+      '創意品牌風格': 'template-creative-brand',
+      '專業商務風格': 'template-professional-business',
+      '動態互動風格': 'template-dynamic-interactive'
     };
     
     return templateClassMap[template.name] || 'template-default';
@@ -1117,16 +1071,6 @@ const TemplatePreview = ({ template, cardConfig }) => {
   return (
     <div className={`nfc-card-container ${templateClass}`} style={{ minHeight: 'auto', padding: '1rem' }}>
       <div className="card-content" style={{ maxWidth: 'none', padding: '0' }}>
-        {/* 名片標題區域 */}
-        <div className="card-header" style={{ marginBottom: '1.5rem' }}>
-          <h1 className="card-title" style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>
-            {cardConfig?.card_title || '未設定標題'}
-          </h1>
-          <p className="card-subtitle" style={{ fontSize: '0.875rem' }}>
-            {cardConfig?.card_subtitle || '未設定副標題'}
-          </p>
-        </div>
-        
         {/* 內容區塊 */}
         <div className="content-blocks" style={{ padding: '0' }}>
           {cardConfig?.content_blocks?.length > 0 ? (

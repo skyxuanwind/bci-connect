@@ -739,22 +739,23 @@ const initializeDatabase = async () => {
       )
     `);
 
-    // Insert default card templates
+    // Insert new card templates (5 new styles)
     await pool.query(`
       INSERT INTO nfc_card_templates (name, description, category, css_config) VALUES 
-        ('科技專業版', '具備深色與淺色模式切換，資訊區塊採卡片式設計，背景帶有科技或抽象的幾何漸變，圖標現代且線條感強', 'tech-professional', 
-         '{"primaryColor": "#1e293b", "secondaryColor": "#64748b", "backgroundColor": "#0f172a", "accentColor": "#3b82f6", "gradientFrom": "#1e293b", "gradientTo": "#334155", "fontFamily": "Inter, sans-serif", "cardShadow": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "borderRadius": "16px", "hasLightMode": true, "hasDarkMode": true, "iconStyle": "modern-line"}'),
-        ('活力創意版', '色彩鮮明活潑，使用柔和的波浪形狀或有機曲線作為背景，按鈕設計具備漸變或特殊陰影，排版靈活', 'creative-vibrant', 
-         '{"primaryColor": "#f59e0b", "secondaryColor": "#ec4899", "backgroundColor": "#fef3c7", "accentColor": "#8b5cf6", "gradientFrom": "#f59e0b", "gradientTo": "#ec4899", "fontFamily": "Poppins, sans-serif", "cardShadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", "borderRadius": "24px", "hasWaveBackground": true, "buttonGradient": true, "layoutStyle": "flexible"}'),
-        ('簡約質感版', '設計簡潔線條俐落，注重留白，選用自然色調，圖標和字體極簡且具質感，排版整齊對稱', 'minimal-elegant', 
-         '{"primaryColor": "#374151", "secondaryColor": "#9ca3af", "backgroundColor": "#ffffff", "accentColor": "#059669", "naturalColor1": "#f3f4f6", "naturalColor2": "#e5e7eb", "fontFamily": "Inter, sans-serif", "cardShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)", "borderRadius": "8px", "minimalist": true, "spacing": "large", "layoutStyle": "symmetric"}'),
-        ('商務專業版', '參考SpiderCard風格，簡潔卡片設計，專業配色方案，清晰的資訊層次結構', 'tech-professional', 
-         '{"primaryColor": "#1f2937", "secondaryColor": "#6b7280", "backgroundColor": "#f9fafb", "accentColor": "#3b82f6", "cardBackground": "#ffffff", "fontFamily": "Inter, sans-serif", "cardShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)", "borderRadius": "12px", "layoutStyle": "card-based", "spacing": "comfortable"}'),
-        ('現代簡約版', '參考SpiderCard風格，大膽留白設計，現代化排版，優雅的過渡效果', 'minimal-elegant', 
-         '{"primaryColor": "#111827", "secondaryColor": "#9ca3af", "backgroundColor": "#ffffff", "accentColor": "#10b981", "lightGray": "#f3f4f6", "fontFamily": "Inter, sans-serif", "cardShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1)", "borderRadius": "8px", "layoutStyle": "modern-minimal", "spacing": "generous", "transitions": "elegant"}'),
-        ('環保綠意版', '參考SpiderCard風格，自然綠色主題，環保理念設計，溫暖質感體驗', 'creative-vibrant', 
-         '{"primaryColor": "#065f46", "secondaryColor": "#6b7280", "backgroundColor": "#f0fdf4", "accentColor": "#10b981", "greenLight": "#d1fae5", "greenDark": "#047857", "fontFamily": "Inter, sans-serif", "cardShadow": "0 4px 6px -1px rgba(16, 185, 129, 0.1)", "borderRadius": "16px", "layoutStyle": "nature-inspired", "theme": "eco-friendly"}')
-      ON CONFLICT DO NOTHING
+        ('極簡高級風格', '一頁式極簡設計，黑金配色，圓形個人大頭照，大量留白，科技感UI，高級質感', 'minimal-luxury', 
+         '{"primaryColor": "#000000", "secondaryColor": "#FFD700", "backgroundColor": "#FFFFFF", "accentColor": "#C9B037", "textColor": "#333333", "fontFamily": "Inter, sans-serif", "cardShadow": "0 8px 32px rgba(0, 0, 0, 0.12)", "borderRadius": "24px", "spacing": "generous", "layoutStyle": "minimal-luxury", "avatarStyle": "circle", "goldAccent": true}'),
+        ('未來科技感風格', '深藍與霓虹藍紫配色，流線科技元素，半透明光圈環繞的大頭照，未來科技Dashboard風格', 'futuristic-tech', 
+         '{"primaryColor": "#0A1628", "secondaryColor": "#1E3A8A", "backgroundColor": "#0F172A", "accentColor": "#3B82F6", "neonColor": "#8B5CF6", "glowColor": "#06B6D4", "fontFamily": "Orbitron, sans-serif", "cardShadow": "0 0 40px rgba(59, 130, 246, 0.3)", "borderRadius": "16px", "layoutStyle": "dashboard", "avatarGlow": true, "neonEffects": true}'),
+        ('創意品牌風格', '橘＋藍＋白亮色系，大膽排版，左側大頭照，右側姓名職稱與標語，活潑有活力的創意設計', 'creative-brand', 
+         '{"primaryColor": "#FF6B35", "secondaryColor": "#004E89", "backgroundColor": "#FFFFFF", "accentColor": "#1A8FE3", "brightOrange": "#FF8C42", "brightBlue": "#0077BE", "fontFamily": "Poppins, sans-serif", "cardShadow": "0 12px 24px rgba(255, 107, 53, 0.15)", "borderRadius": "20px", "layoutStyle": "split-creative", "boldTypography": true, "vibrantColors": true}'),
+        ('專業商務風格', '白底＋藏青色＋灰色，頂部姓名職稱，中間大頭照，企業Logo與QR Code，乾淨大方的專業風格', 'professional-business', 
+         '{"primaryColor": "#1E3A8A", "secondaryColor": "#6B7280", "backgroundColor": "#FFFFFF", "accentColor": "#3B82F6", "navyBlue": "#1E40AF", "lightGray": "#F3F4F6", "fontFamily": "Inter, sans-serif", "cardShadow": "0 4px 16px rgba(0, 0, 0, 0.08)", "borderRadius": "12px", "layoutStyle": "corporate", "professionalSpacing": true, "logoSupport": true}'),
+        ('動態互動風格', '紫＋粉＋藍漸層背景，流動動畫，中央大頭照，下方姓名職稱，底部大型QR code，互動性強的動態設計', 'dynamic-interactive', 
+         '{"primaryColor": "#8B5CF6", "secondaryColor": "#EC4899", "backgroundColor": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "accentColor": "#06B6D4", "gradientPurple": "#8B5CF6", "gradientPink": "#EC4899", "gradientBlue": "#3B82F6", "fontFamily": "Inter, sans-serif", "cardShadow": "0 20px 40px rgba(139, 92, 246, 0.3)", "borderRadius": "28px", "layoutStyle": "dynamic-center", "animations": true, "largeQR": true}')
+      ON CONFLICT (name) DO UPDATE SET
+        description = EXCLUDED.description,
+        category = EXCLUDED.category,
+        css_config = EXCLUDED.css_config
     `);
 
     // Create member_wishes table (會員許願版)
@@ -1098,44 +1099,61 @@ const initializeDatabase = async () => {
 module.exports = {
   pool,
   initializeDatabase,
-  // Ensure two latest templates exist (idempotent)
+  // Ensure latest templates exist (idempotent)
   ensureLatestTemplatesExist: async () => {
     try {
-      // 質感黑金版
-      await pool.query(
-        `INSERT INTO nfc_card_templates (
-           name, description, category, css_config, preview_image_url, is_active, created_at, updated_at
-         )
-         SELECT $1::text, $2::text, $3::text, $4::jsonb, $5::text, true, NOW(), NOW()
-         WHERE NOT EXISTS (
-           SELECT 1 FROM nfc_card_templates WHERE name = $1::text
-         )`,
-        [
-          '質感黑金版',
-          '高級商務質感，黑金配色搭配粒子動效和光束效果，展現專業與奢華',
-          'tech-professional',
-          JSON.stringify({ className: 'template-luxury' }),
-          '/nfc-templates/luxury-gold.svg'
-        ]
-      );
+      const templates = [
+        {
+          name: '極簡高級風格',
+          description: '簡潔優雅的設計，注重留白與層次，展現專業品味',
+          category: 'minimalist',
+          className: 'template-minimalist-premium'
+        },
+        {
+          name: '未來科技感風格',
+          description: '前衛科技設計，動態效果與漸變色彩，展現創新精神',
+          category: 'tech-futuristic',
+          className: 'template-tech-futuristic'
+        },
+        {
+          name: '創意品牌風格',
+          description: '活潑創意設計，豐富色彩與動畫效果，展現品牌個性',
+          category: 'creative-brand',
+          className: 'template-creative-brand'
+        },
+        {
+          name: '專業商務風格',
+          description: '正式商務設計，穩重配色與清晰佈局，展現專業形象',
+          category: 'business-professional',
+          className: 'template-business-professional'
+        },
+        {
+          name: '動態互動風格',
+          description: '豐富互動效果，動態元素與視覺反饋，提升用戶體驗',
+          category: 'interactive-dynamic',
+          className: 'template-interactive-dynamic'
+        }
+      ];
 
-      // 插畫塗鴉版
-      await pool.query(
-        `INSERT INTO nfc_card_templates (
-           name, description, category, css_config, preview_image_url, is_active, created_at, updated_at
-         )
-         SELECT $1::text, $2::text, $3::text, $4::jsonb, $5::text, true, NOW(), NOW()
-         WHERE NOT EXISTS (
-           SELECT 1 FROM nfc_card_templates WHERE name = $1::text
-         )`,
-        [
-          '插畫塗鴉版',
-          '美式塗鴉風格，活潑創意設計，豐富色彩和動態效果，展現個性與創意',
-          'creative-vibrant',
-          JSON.stringify({ className: 'template-graffiti' }),
-          '/nfc-templates/graffiti-style.svg'
-        ]
-      );
+      for (const template of templates) {
+        await pool.query(
+          `INSERT INTO nfc_card_templates (
+             name, description, category, css_config, preview_image_url, is_active, created_at, updated_at
+           )
+           SELECT $1::text, $2::text, $3::text, $4::jsonb, $5::text, true, NOW(), NOW()
+           WHERE NOT EXISTS (
+             SELECT 1 FROM nfc_card_templates WHERE name = $1::text
+           )`,
+          [
+            template.name,
+            template.description,
+            template.category,
+            JSON.stringify({ className: template.className }),
+            `/nfc-templates/${template.className.replace('template-', '')}.svg`
+          ]
+        );
+      }
+      
       console.log('✅ Ensured latest NFC templates exist');
     } catch (e) {
       console.warn('⚠️ Ensure latest templates failed (non-critical):', e.message);

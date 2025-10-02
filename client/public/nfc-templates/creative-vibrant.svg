@@ -44,5 +44,5 @@
   <circle cx="180" cy="45" r="4" fill="#ec4899" opacity="0.8"/>
   <circle cx="160" cy="50" r="3" fill="#8b5cf6" opacity="0.8"/>
   
-  <text x="100" y="135" font-family="Poppins, sans-serif" font-size="8" fill="#ec4899" text-anchor="middle" font-weight="600">活力創意版</text>
+  <text x="100" y="135" font-family="Poppins, sans-serif" font-size="8" fill="#ec4899" text-anchor="middle" font-weight="600">創意品牌風格</text>
 </svg>

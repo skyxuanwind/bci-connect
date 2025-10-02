@@ -6,37 +6,59 @@
   overflow-x: hidden;
 }
 
-/* 模板樣式 - 科技專業版 */
-.template-tech {
+/* 新模板樣式 - 極簡高級風格 */
+.template-minimalist-premium {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #1e293b;
+}
+
+.template-minimalist-premium.dark-mode {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f1f5f9;
+}
+
+/* 新模板樣式 - 未來科技感風格 */
+.template-tech-futuristic {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #333;
 }
 
-.template-tech.dark-mode {
+.template-tech-futuristic.dark-mode {
   background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
   color: #ecf0f1;
 }
 
-/* 模板樣式 - 活力創意版 */
-.template-creative {
+/* 新模板樣式 - 創意品牌風格 */
+.template-creative-brand {
   background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
   color: #2c2c2c;
 }
 
-.template-creative.dark-mode {
+.template-creative-brand.dark-mode {
   background: linear-gradient(135deg, #c0392b 0%, #f39c12 50%, #3498db 100%);
   color: #ecf0f1;
 }
 
-/* 模板樣式 - 簡約質感版 */
-.template-minimal {
+/* 新模板樣式 - 專業商務風格 */
+.template-business-professional {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   color: #495057;
 }
 
-.template-minimal.dark-mode {
+.template-business-professional.dark-mode {
   background: linear-gradient(135deg, #343a40 0%, #495057 100%);
   color: #f8f9fa;
+}
+
+/* 新模板樣式 - 動態互動風格 */
+.template-interactive-dynamic {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+}
+
+.template-interactive-dynamic.dark-mode {
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  color: #ecf0f1;
 }
 
 /* 載入狀態 */

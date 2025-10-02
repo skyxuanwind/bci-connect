@@ -113,7 +113,7 @@ router.get('/my-card', authenticateToken, async (req, res) => {
       // 如果沒有名片，創建默認名片
       const defaultTemplateResult = await pool.query(
         'SELECT id FROM nfc_card_templates WHERE name = $1',
-        ['科技專業版']
+        ['極簡高級風格']
       );
       
       const templateId = defaultTemplateResult.rows[0]?.id || 1;
@@ -393,21 +393,20 @@ router.get('/public/test-card', async (req, res) => {
       },
       cardConfig: {
         id: 'test',
-        template_name: '科技專業版',
-        card_title: '測試用戶',
-        card_subtitle: '測試職位 @ 測試公司',
+        template_name: '極簡高級風格',
         css_config: {
-          primaryColor: '#1e293b',
-          secondaryColor: '#64748b',
-          backgroundColor: '#0f172a',
-          accentColor: '#3b82f6',
-          gradientFrom: '#1e293b',
-          gradientTo: '#334155',
+          primaryColor: '#000000',
+          secondaryColor: '#FFD700',
+          backgroundColor: '#FFFFFF',
+          accentColor: '#C9B037',
+          textColor: '#333333',
           fontFamily: 'Inter, sans-serif',
-          cardShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          borderRadius: '16px',
-          hasLightMode: true,
-          hasDarkMode: true,
+          cardShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+          borderRadius: '24px',
+          spacing: 'generous',
+          layoutStyle: 'minimal-luxury',
+          avatarStyle: 'circle',
+          goldAccent: true,
           iconStyle: 'modern-line'
         },
         content_blocks: [
