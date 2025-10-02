@@ -529,7 +529,7 @@ const initializeDatabase = async () => {
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT,
-        category VARCHAR(50) NOT NULL CHECK (category IN ('tech-professional', 'creative-vibrant', 'minimal-elegant')),
+        category VARCHAR(50) NOT NULL CHECK (category IN ('tech-professional', 'creative-vibrant', 'minimal-elegant', 'minimalist', 'tech-futuristic', 'creative-brand', 'business-professional', 'interactive-dynamic')),
         css_config JSONB NOT NULL,
         preview_image_url VARCHAR(500),
         is_active BOOLEAN DEFAULT true,
@@ -1104,34 +1104,34 @@ module.exports = {
     try {
       const templates = [
         {
-          name: '極簡高級風格',
-          description: '簡潔優雅的設計，注重留白與層次，展現專業品味',
-          category: 'minimalist',
-          className: 'template-minimalist-premium'
+          name: '質感商務感',
+          description: '高質感商務設計，展現專業與品味的完美結合',
+          category: 'premium-business',
+          className: 'template-premium-business'
         },
         {
-          name: '未來科技感風格',
-          description: '前衛科技設計，動態效果與漸變色彩，展現創新精神',
-          category: 'tech-futuristic',
-          className: 'template-tech-futuristic'
+          name: 'Cyberpunk風格',
+          description: '未來科技感設計，霓虹色彩與數位美學的視覺衝擊',
+          category: 'cyberpunk',
+          className: 'template-cyberpunk'
         },
         {
-          name: '創意品牌風格',
-          description: '活潑創意設計，豐富色彩與動畫效果，展現品牌個性',
-          category: 'creative-brand',
-          className: 'template-creative-brand'
+          name: '簡約日系風',
+          description: '日式極簡美學，清新自然的設計語言',
+          category: 'japanese-minimal',
+          className: 'template-japanese-minimal'
         },
         {
-          name: '專業商務風格',
-          description: '正式商務設計，穩重配色與清晰佈局，展現專業形象',
-          category: 'business-professional',
-          className: 'template-business-professional'
+          name: '創意行銷風格',
+          description: '活潑創意設計，吸引眼球的行銷視覺效果',
+          category: 'creative-marketing',
+          className: 'template-creative-marketing'
         },
         {
-          name: '動態互動風格',
-          description: '豐富互動效果，動態元素與視覺反饋，提升用戶體驗',
-          category: 'interactive-dynamic',
-          className: 'template-interactive-dynamic'
+          name: '塗鴉可愛風',
+          description: '手繪塗鴉風格，充滿童趣與創意的可愛設計',
+          category: 'cute-graffiti',
+          className: 'template-cute-graffiti'
         }
       ];
 

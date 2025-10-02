@@ -379,41 +379,41 @@ const NFCCardEditor = () => {
     const newTemplates = [
       {
         id: 1,
-        name: '極簡高級風格',
-        description: '簡約設計，突出專業形象',
-        preview_image_url: '/nfc-templates/minimal-luxury-preview.jpg',
+        name: '質感商務感',
+        description: '高質感商務設計，展現專業與品味的完美結合',
+        preview_image_url: '/nfc-templates/premium-business.svg',
         is_active: true,
         display_order: 1
       },
       {
         id: 2,
-        name: '未來科技感風格',
-        description: '科技感設計，展現創新精神',
-        preview_image_url: '/nfc-templates/futuristic-tech-preview.jpg',
+        name: 'Cyberpunk風格',
+        description: '未來科技感設計，霓虹色彩與數位美學的視覺衝擊',
+        preview_image_url: '/nfc-templates/cyberpunk.svg',
         is_active: true,
         display_order: 2
       },
       {
         id: 3,
-        name: '創意品牌風格',
-        description: '活潑創意，展現個人品牌',
-        preview_image_url: '/nfc-templates/creative-brand-preview.jpg',
+        name: '簡約日系風',
+        description: '日式極簡美學，清新自然的設計語言',
+        preview_image_url: '/nfc-templates/japanese-minimal.svg',
         is_active: true,
         display_order: 3
       },
       {
         id: 4,
-        name: '專業商務風格',
-        description: '正式商務，建立信任感',
-        preview_image_url: '/nfc-templates/professional-business-preview.jpg',
+        name: '創意行銷風格',
+        description: '活潑創意設計，吸引眼球的行銷視覺效果',
+        preview_image_url: '/nfc-templates/creative-marketing.svg',
         is_active: true,
         display_order: 4
       },
       {
         id: 5,
-        name: '動態互動風格',
-        description: '動態效果，增強互動體驗',
-        preview_image_url: '/nfc-templates/dynamic-interactive-preview.jpg',
+        name: '塗鴉可愛風',
+        description: '手繪塗鴉風格，充滿童趣與創意的可愛設計',
+        preview_image_url: '/nfc-templates/cute-graffiti.svg',
         is_active: true,
         display_order: 5
       }
@@ -1287,11 +1287,11 @@ const TemplatePreview = ({ template, cardConfig }) => {
     
     // 根據模板名稱映射到對應的 CSS 類名
     const templateClassMap = {
-      '極簡高級風格': 'template-minimal-luxury',
-      '未來科技感風格': 'template-futuristic-tech',
-      '創意品牌風格': 'template-creative-brand',
-      '專業商務風格': 'template-professional-business',
-      '動態互動風格': 'template-dynamic-interactive'
+      '質感商務感': 'template-premium-business',
+      'Cyberpunk風格': 'template-cyberpunk',
+      '簡約日系風': 'template-japanese-minimal',
+      '創意行銷風格': 'template-creative-marketing',
+      '塗鴉可愛風': 'template-cute-graffiti'
     };
     
     return templateClassMap[template.name] || 'template-default';
