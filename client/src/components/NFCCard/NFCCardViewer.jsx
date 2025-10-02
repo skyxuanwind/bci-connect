@@ -28,6 +28,7 @@ const NFCCardViewer = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [cssVars, setCssVars] = useState({ dividerStyle: 'solid-thin', dividerOpacity: 0.6, accent: '#cccccc', iconPack: '' });
 
   useEffect(() => {
     fetchCardData();
@@ -40,6 +41,11 @@ const NFCCardViewer = () => {
       const response = await axios.get(`/api/nfc-cards/member/${userId}`);
       if (response.data.success) {
         setCardData(response.data.data);
+        // 解析 custom_css 以取得 UI 變數
+        const templateCfg = response.data.data.template_css_config || {};
+        const accentFallback = templateCfg.accentColor || templateCfg.secondaryColor || '#cccccc';
+        const vars = parseCssVars(response.data.data.custom_css, accentFallback);
+        setCssVars(vars);
         // 檢查是否支援深色模式
         if (response.data.data.template_css_config?.supports_dark_mode) {
           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -54,6 +60,89 @@ const NFCCardViewer = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 將 custom_css 解析為變數
+  const parseCssVars = (cssText, accentFallback) => {
+    try {
+      const text = cssText || '';
+      const getVar = (name, def) => {
+        const m = text.match(new RegExp(`--${name}:\s*([^;]+);`));
+        return m ? m[1].trim() : def;
+      };
+      const accent = getVar('nfc-accent', accentFallback || '#cccccc');
+      const dividerStyle = getVar('nfc-divider-style', 'solid-thin');
+      const dividerOpacityStr = getVar('nfc-divider-opacity', '0.6');
+      const dividerOpacity = parseFloat(dividerOpacityStr);
+      const iconPack = getVar('nfc-icon-pack', '');
+      return { accent, dividerStyle, dividerOpacity: isNaN(dividerOpacity) ? 0.6 : dividerOpacity, iconPack };
+    } catch {
+      return { accent: accentFallback || '#cccccc', dividerStyle: 'solid-thin', dividerOpacity: 0.6, iconPack: '' };
+    }
+  };
+
+  const hexToRgb = (hex) => {
+    try {
+      const clean = (hex || '#cccccc').replace('#', '');
+      const bigint = parseInt(clean, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return `${r}, ${g}, ${b}`;
+    } catch { return '204, 204, 204'; }
+  };
+
+  const getDividerBorder = (style, colorHex, opacity) => {
+    const rgb = hexToRgb(colorHex || '#cccccc');
+    const alpha = typeof opacity === 'number' ? opacity : 0.6;
+    const adjAlpha = darkMode ? Math.min(1, alpha + 0.15) : alpha;
+    const rgba = `rgba(${rgb}, ${adjAlpha})`;
+    switch (style) {
+      case 'solid-thin': return `1px solid ${rgba}`;
+      case 'solid-medium': return `2px solid ${rgba}`;
+      case 'dashed': return `1px dashed ${rgba}`;
+      case 'dotted': return `1px dotted ${rgba}`;
+      case 'double': return `3px double ${rgba}`;
+      case 'neon-blue':
+      case 'neon-purple':
+      case 'neon-pink':
+        return `2px solid ${rgba}`;
+      case 'gradient':
+      case 'wave-soft':
+      case 'curve-strong':
+      case 'ornament':
+        return `2px solid ${rgba}`;
+      default:
+        return `1px solid ${rgba}`;
+    }
+  };
+
+  const getIconPackClass = (pack) => {
+    const p = (pack || '').toLowerCase();
+    if (p.includes('outline-thick')) return 'icon-pack-outline-thick';
+    if (p.includes('duotone')) return 'icon-pack-duotone';
+    if (p.includes('stroke') || p.includes('outline')) return 'icon-pack-stroke';
+    if (p.includes('filled') || p.includes('solid')) return 'icon-pack-filled';
+    if (p.includes('neon-blue')) return 'icon-pack-neon-blue';
+    if (p.includes('neon-purple')) return 'icon-pack-neon-purple';
+    if (p.includes('neon-pink')) return 'icon-pack-neon-pink';
+    return '';
+  };
+
+  // 為特殊分隔線樣式注入背景圖層
+  const renderDividerLayer = () => {
+    const styleName = (cssVars.dividerStyle || '').toLowerCase();
+    const rgb = hexToRgb(cssVars.accent);
+    const alpha = typeof cssVars.dividerOpacity === 'number' ? cssVars.dividerOpacity : 0.6;
+    const adjAlpha = darkMode ? Math.min(1, alpha + 0.15) : alpha;
+    const bg = `rgba(${rgb}, ${adjAlpha})`;
+    if (styleName === 'wave-soft') {
+      return <div className="nfc-divider divider-wave-soft" style={{ backgroundColor: bg }} />;
+    }
+    if (styleName === 'curve-strong') {
+      return <div className="nfc-divider divider-curve-strong" style={{ backgroundColor: bg }} />;
+    }
+    return null;
   };
 
   const checkBookmarkStatus = () => {
@@ -137,11 +226,15 @@ const NFCCardViewer = () => {
 
   const renderContentBlock = (content) => {
     const { content_type, content_data } = content;
+    const usesLayer = ['wave-soft', 'curve-strong'].includes((cssVars.dividerStyle || '').toLowerCase());
+    const borderTopCss = usesLayer ? 'none' : getDividerBorder(cssVars.dividerStyle, cssVars.accent, cssVars.dividerOpacity);
+    const iconClass = getIconPackClass(cssVars.iconPack);
 
     switch (content_type) {
       case 'text':
         return (
-          <div className="content-block text-block">
+          <div className="content-block text-block" style={{ borderTop: borderTopCss }}>
+            {usesLayer && renderDividerLayer()}
             <h3>{content_data.title}</h3>
             <p>{content_data.description}</p>
           </div>
@@ -149,14 +242,15 @@ const NFCCardViewer = () => {
 
       case 'link':
         return (
-          <div className="content-block link-block">
+          <div className="content-block link-block" style={{ borderTop: borderTopCss }}>
+            {usesLayer && renderDividerLayer()}
             <a 
               href={content_data.url} 
               target="_blank" 
               rel="noopener noreferrer"
               className="link-button"
             >
-              <FaExternalLinkAlt className="link-icon" />
+              <FaExternalLinkAlt className={`link-icon ${iconClass}`} style={{ color: cssVars.accent }} />
               {content_data.title}
             </a>
             {content_data.description && (
@@ -167,7 +261,8 @@ const NFCCardViewer = () => {
 
       case 'video':
         return (
-          <div className="content-block video-block">
+          <div className="content-block video-block" style={{ borderTop: borderTopCss }}>
+            {usesLayer && renderDividerLayer()}
             {content_data.title && <h3>{content_data.title}</h3>}
             <div className="video-container">
               {content_data.type === 'youtube' ? (
@@ -192,7 +287,8 @@ const NFCCardViewer = () => {
 
       case 'image':
         return (
-          <div className="content-block image-block">
+          <div className="content-block image-block" style={{ borderTop: borderTopCss }}>
+            {usesLayer && renderDividerLayer()}
             {content_data.title && <h3>{content_data.title}</h3>}
             <img 
               src={content_data.url} 
@@ -207,7 +303,8 @@ const NFCCardViewer = () => {
 
       case 'social':
         return (
-          <div className="content-block social-block">
+          <div className="content-block social-block" style={{ borderTop: borderTopCss }}>
+            {usesLayer && renderDividerLayer()}
             <h3>社群媒體</h3>
             <div className="social-links">
               {content_data.links?.map((link, index) => {
@@ -231,7 +328,7 @@ const NFCCardViewer = () => {
                     className={`social-link ${link.platform.toLowerCase()}`}
                     title={link.platform}
                   >
-                    {getSocialIcon(link.platform)}
+                    <span className={iconClass} style={{ color: cssVars.accent }}>{getSocialIcon(link.platform)}</span>
                     <span>{link.platform}</span>
                   </a>
                 );
@@ -242,7 +339,8 @@ const NFCCardViewer = () => {
 
       case 'map':
         return (
-          <div className="content-block map-block">
+          <div className="content-block map-block" style={{ borderTop: borderTopCss }}>
+            {usesLayer && renderDividerLayer()}
             {content_data.title && <h3>{content_data.title}</h3>}
             <div className="map-container">
               <iframe
@@ -253,7 +351,7 @@ const NFCCardViewer = () => {
               ></iframe>
             </div>
             <div className="map-info">
-              <FaMapMarkerAlt className="map-icon" />
+              <FaMapMarkerAlt className={`map-icon ${iconClass}`} style={{ color: cssVars.accent }} />
               <span>{content_data.address}</span>
             </div>
           </div>
@@ -288,9 +386,15 @@ const NFCCardViewer = () => {
 
   const templateClass = cardData.template_name?.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'default';
   const themeClass = darkMode ? 'dark' : 'light';
+  const contactIconStyle = { color: cssVars.accent };
+  const iconClass = getIconPackClass(cssVars.iconPack);
 
   return (
     <div className={`nfc-card-viewer ${templateClass} ${themeClass}`}>
+      {/* 注入 custom_css 以提供 CSS 變數 */}
+      {cardData?.custom_css && (
+        <style dangerouslySetInnerHTML={{ __html: cardData.custom_css }} />
+      )}
       {/* 頂部操作欄 */}
       <div className="card-actions">
         <div className="action-buttons">
@@ -393,14 +497,14 @@ const NFCCardViewer = () => {
         >
           {cardData.user_phone && (
             <a href={`tel:${cardData.user_phone}`} className="contact-item phone">
-              <FaPhone className="contact-icon" />
+              <FaPhone className={`contact-icon ${iconClass}`} style={contactIconStyle} />
               <span>{cardData.user_phone}</span>
             </a>
           )}
           
           {cardData.user_email && (
             <a href={`mailto:${cardData.user_email}`} className="contact-item email">
-              <FaEnvelope className="contact-icon" />
+              <FaEnvelope className={`contact-icon ${iconClass}`} style={contactIconStyle} />
               <span>{cardData.user_email}</span>
             </a>
           )}
@@ -412,14 +516,14 @@ const NFCCardViewer = () => {
               rel="noopener noreferrer"
               className="contact-item website"
             >
-              <FaGlobe className="contact-icon" />
+              <FaGlobe className={`contact-icon ${iconClass}`} style={contactIconStyle} />
               <span>{cardData.user_website}</span>
             </a>
           )}
           
           {cardData.user_address && (
             <div className="contact-item address">
-              <FaMapMarkerAlt className="contact-icon" />
+              <FaMapMarkerAlt className={`contact-icon ${iconClass}`} style={contactIconStyle} />
               <span>{cardData.user_address}</span>
             </div>
           )}

@@ -21,7 +21,11 @@ async function ensureTemplates() {
         spacing: 'generous',
         layoutStyle: 'minimal-luxury',
         avatarStyle: 'circle',
-        goldAccent: true
+        goldAccent: true,
+        // 支援更多圖標風格關鍵字（outline-thick、duotone等）
+        iconPack: ['briefcase', 'contract', 'mail', 'phone', 'map', 'linkedin', 'outline-thick', 'duotone'],
+        dividerOptions: ['solid-thin', 'grid-gold'],
+        dividerOpacity: 0.6
       },
       preview_image_url: '/nfc-templates/minimal-luxury.svg'
     },
@@ -41,7 +45,11 @@ async function ensureTemplates() {
         borderRadius: '16px',
         layoutStyle: 'dashboard',
         avatarGlow: true,
-        neonEffects: true
+        neonEffects: true,
+        // 增加霓虹與線條風格關鍵字，供 Viewer/Editor 套用
+        iconPack: ['cpu', 'circuit', 'cloud', 'terminal', 'github', 'twitter', 'stroke', 'neon-blue', 'neon-purple', 'neon-pink'],
+        dividerOptions: ['neon-blue', 'neon-purple', 'neon-pink'],
+        dividerOpacity: 0.9
       },
       preview_image_url: '/nfc-templates/futuristic-tech.svg'
     },
@@ -61,7 +69,11 @@ async function ensureTemplates() {
         borderRadius: '20px',
         layoutStyle: 'split-creative',
         boldTypography: true,
-        vibrantColors: true
+        vibrantColors: true,
+        // 增加填滿、粗描邊與雙色風格
+        iconPack: ['megaphone', 'target', 'chart', 'ab-test', 'tiktok', 'youtube', 'filled', 'outline-thick', 'duotone'],
+        dividerOptions: ['wave-soft', 'curve-strong'],
+        dividerOpacity: 0.7
       },
       preview_image_url: '/nfc-templates/creative-brand.svg'
     },
@@ -81,7 +93,11 @@ async function ensureTemplates() {
         borderRadius: '12px',
         layoutStyle: 'corporate',
         professionalSpacing: true,
-        logoSupport: true
+        logoSupport: true,
+        // 專業商務風格下加入線條與粗描邊
+        iconPack: ['briefcase', 'mail', 'phone', 'map', 'linkedin', 'building', 'stroke', 'outline-thick'],
+        dividerOptions: ['solid-thin', 'solid-medium'],
+        dividerOpacity: 0.6
       },
       preview_image_url: '/nfc-templates/professional-business.svg'
     },
@@ -102,7 +118,11 @@ async function ensureTemplates() {
         borderRadius: '28px',
         layoutStyle: 'dynamic-center',
         animations: true,
-        largeQR: true
+        largeQR: true,
+        // 動態互動風格下加入填滿與霓虹色系
+        iconPack: ['star', 'sparkle', 'camera', 'play', 'chat', 'filled', 'neon-blue', 'neon-purple', 'neon-pink'],
+        dividerOptions: ['neon-blue', 'neon-purple'],
+        dividerOpacity: 0.85
       },
       preview_image_url: '/nfc-templates/dynamic-interactive.svg'
     }

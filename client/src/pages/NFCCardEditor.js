@@ -67,6 +67,18 @@ const NFCCardEditor = () => {
   // 提示視窗狀態
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
+  // 基本設定 -> 依模板提供的選項生成 custom_css
+  const buildCustomCss = (template, opts = {}) => {
+    try {
+      const accent = template?.css_config?.accentColor || template?.css_config?.secondaryColor || '#FFD700';
+      const { ui_icon_pack, ui_divider_style, ui_divider_opacity } = opts;
+      const opacity = typeof ui_divider_opacity === 'number' ? ui_divider_opacity : 0.6;
+      return `:root{--nfc-accent:${accent};--nfc-icon-pack:${ui_icon_pack || ''};--nfc-divider-style:${ui_divider_style || 'solid-thin'};--nfc-divider-opacity:${opacity};}`;
+    } catch {
+      return '';
+    }
+  };
+
   useEffect(() => {
     fetchCardData();
     fetchTemplates();
@@ -341,6 +353,8 @@ const NFCCardEditor = () => {
           template_id: card.template_id || null,
           template_name: card.template_name || '',
           custom_css: card.custom_css || '',
+          card_title: card.card_title || '',
+          card_subtitle: card.card_subtitle || '',
           content_blocks: mappedBlocks
         });
       } else {
@@ -348,6 +362,8 @@ const NFCCardEditor = () => {
           template_id: null,
           template_name: '',
           custom_css: '',
+          card_title: '',
+          card_subtitle: '',
           content_blocks: []
         });
       }
@@ -460,7 +476,9 @@ const NFCCardEditor = () => {
       setSaving(true);
       await axios.put('/api/nfc-cards/my-card', {
         template_id: cardConfig.template_id,
-        custom_css: cardConfig.custom_css
+        custom_css: cardConfig.custom_css,
+        card_title: cardConfig.card_title || '',
+        card_subtitle: cardConfig.card_subtitle || ''
       });
       alert('基本設定保存成功！');
     } catch (error) {
@@ -491,13 +509,20 @@ const NFCCardEditor = () => {
 
   const handleTemplateChange = (templateId) => {
     const template = templates.find(t => t.id === templateId);
-    setCardConfig({
+    const defaultIcon = Array.isArray(template?.css_config?.iconPack) ? template.css_config.iconPack[0] : '';
+    const defaultDivider = Array.isArray(template?.css_config?.dividerOptions) ? template.css_config.dividerOptions[0] : 'solid-thin';
+    const defaultOpacity = typeof template?.css_config?.dividerOpacity === 'number' ? template.css_config.dividerOpacity : 0.6;
+    const next = {
       ...cardConfig,
       template_id: templateId,
       template_name: template?.name,
       css_config: template?.css_config || '',
-      custom_css: cardConfig?.custom_css || ''
-    });
+      ui_icon_pack: cardConfig?.ui_icon_pack ?? defaultIcon,
+      ui_divider_style: cardConfig?.ui_divider_style ?? defaultDivider,
+      ui_divider_opacity: cardConfig?.ui_divider_opacity ?? defaultOpacity,
+    };
+    next.custom_css = buildCustomCss(template, next);
+    setCardConfig(next);
   };
 
   const handleAddContentBlock = (blockType) => {
@@ -700,6 +725,32 @@ const NFCCardEditor = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gold-300 mb-2">
+                      名片標題
+                    </label>
+                    <input
+                      type="text"
+                      value={cardConfig?.card_title || ''}
+                      onChange={(e) => setCardConfig(prev => ({ ...prev, card_title: e.target.value }))}
+                      placeholder="輸入名片標題"
+                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gold-300 mb-2">
+                      名片副標題
+                    </label>
+                    <input
+                      type="text"
+                      value={cardConfig?.card_subtitle || ''}
+                      onChange={(e) => setCardConfig(prev => ({ ...prev, card_subtitle: e.target.value }))}
+                      placeholder="輸入名片副標題"
+                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gold-300 mb-2">
                       選擇模板
                     </label>
                     <select
@@ -726,6 +777,85 @@ const NFCCardEditor = () => {
                     </div>
                   </div>
                   
+                  {/* 圖標庫與分隔線選擇 */}
+                  {selectedTemplate?.css_config && (
+                    <div className="space-y-4 mt-4">
+                      {Array.isArray(selectedTemplate.css_config.iconPack) && (
+                        <div>
+                          <label className="block text-sm font-medium text-gold-300 mb-2">
+                            圖標庫
+                          </label>
+                          <select
+                            value={cardConfig?.ui_icon_pack || (selectedTemplate.css_config.iconPack[0] || '')}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setCardConfig(prev => {
+                                const next = { ...prev, ui_icon_pack: value };
+                                next.custom_css = buildCustomCss(selectedTemplate, next);
+                                return next;
+                              });
+                            }}
+                            className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
+                          >
+                            {selectedTemplate.css_config.iconPack.map((opt, idx) => (
+                              <option key={`${opt}-${idx}`} value={opt} className="bg-black text-gold-100">
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {Array.isArray(selectedTemplate.css_config.dividerOptions) && (
+                        <div>
+                          <label className="block text-sm font-medium text-gold-300 mb-2">
+                            分隔線樣式
+                          </label>
+                          <select
+                            value={cardConfig?.ui_divider_style || (selectedTemplate.css_config.dividerOptions[0] || 'solid-thin')}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setCardConfig(prev => {
+                                const next = { ...prev, ui_divider_style: value };
+                                next.custom_css = buildCustomCss(selectedTemplate, next);
+                                return next;
+                              });
+                            }}
+                            className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
+                          >
+                            {selectedTemplate.css_config.dividerOptions.map((opt, idx) => (
+                              <option key={`${opt}-${idx}`} value={opt} className="bg-black text-gold-100">
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-sm font-medium text-gold-300 mb-2">
+                          分隔線透明度 ({(cardConfig?.ui_divider_opacity ?? (selectedTemplate?.css_config?.dividerOpacity ?? 0.6)).toFixed(2)})
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={cardConfig?.ui_divider_opacity ?? (selectedTemplate?.css_config?.dividerOpacity ?? 0.6)}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setCardConfig(prev => {
+                              const next = { ...prev, ui_divider_opacity: value };
+                              next.custom_css = buildCustomCss(selectedTemplate, next);
+                              return next;
+                            });
+                          }}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleSaveBasicInfo}
                     disabled={saving}
@@ -1118,6 +1248,40 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 
 // 模板預覽組件
 const TemplatePreview = ({ template, cardConfig }) => {
+  const hexToRgb = (hex) => {
+    try {
+      const clean = hex?.replace('#', '') || 'ffffff';
+      const bigint = parseInt(clean, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return `${r}, ${g}, ${b}`;
+    } catch { return '255, 255, 255'; }
+  };
+
+  const getDividerBorder = (style, colorHex, opacity) => {
+    const rgb = hexToRgb(colorHex || '#cccccc');
+    const rgba = `rgba(${rgb}, ${typeof opacity === 'number' ? opacity : 0.6})`;
+    switch (style) {
+      case 'solid-thin': return `1px solid ${rgba}`;
+      case 'solid-medium': return `2px solid ${rgba}`;
+      case 'dashed': return `1px dashed ${rgba}`;
+      case 'dotted': return `1px dotted ${rgba}`;
+      case 'double': return `3px double ${rgba}`;
+      case 'neon-blue':
+      case 'neon-purple':
+      case 'neon-pink':
+        return `2px solid ${rgba}`;
+      case 'gradient':
+      case 'wave-soft':
+      case 'curve-strong':
+      case 'ornament':
+        return `2px solid ${rgba}`;
+      default:
+        return `1px solid ${rgba}`;
+    }
+  };
+
   const getTemplateClassName = () => {
     if (!template) return 'template-default';
     
@@ -1134,6 +1298,10 @@ const TemplatePreview = ({ template, cardConfig }) => {
   };
 
   const templateClass = getTemplateClassName();
+  const accentColor = template?.css_config?.accentColor || template?.css_config?.secondaryColor || '#cccccc';
+  const dividerStyle = cardConfig?.ui_divider_style || template?.css_config?.dividerOptions?.[0] || 'solid-thin';
+  const dividerOpacity = typeof cardConfig?.ui_divider_opacity === 'number' ? cardConfig.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
+  const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
 
   return (
     <div className={`nfc-card-container ${templateClass}`} style={{ minHeight: 'auto', padding: '1rem' }}>
@@ -1145,7 +1313,8 @@ const TemplatePreview = ({ template, cardConfig }) => {
               <div key={index} className="content-block" style={{ 
                 marginBottom: '1rem', 
                 padding: '0.75rem',
-                fontSize: '0.75rem'
+                fontSize: '0.75rem',
+                borderTop: borderTopCss
               }}>
                 <BlockPreview block={block} />
               </div>
