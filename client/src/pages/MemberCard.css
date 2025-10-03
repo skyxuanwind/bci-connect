@@ -490,7 +490,9 @@
 }
 
 .contact-icon {
-  font-size: 1.3rem;
+  /* 統一 SVG 圖示尺寸，避免過大造成版面擠壓 */
+  width: 20px;
+  height: 20px;
   color: #667eea;
   flex-shrink: 0;
 }

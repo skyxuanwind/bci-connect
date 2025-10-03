@@ -185,7 +185,9 @@
 
 .contact-icon {
   margin-right: 15px;
-  font-size: 18px;
+  /* 與完整版一致，固定 SVG 尺寸避免放大 */
+  width: 20px;
+  height: 20px;
   color: #667eea;
   min-width: 20px;
 }
