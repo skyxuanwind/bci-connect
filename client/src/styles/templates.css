@@ -59,6 +59,7 @@
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative; /* 讓就地編輯 overlay 可定位於此容器 */
 }
 
 .avatar-container {
@@ -1161,6 +1162,69 @@
     height: 40px;
     font-size: 1rem;
   }
+}
+
+/* 就地編輯 Overlay（Inline Editor） */
+.nfc-card-base .content-block {
+  position: relative;
+}
+
+.inline-editor-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.75);
+  border-top: 1px solid rgba(255, 215, 0, 0.35);
+  z-index: 5;
+}
+
+.inline-editor-overlay label {
+  display: block;
+  color: #ffe28a;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.inline-editor-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: #0b0b0b;
+  color: #fffbdd;
+  border-radius: 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.inline-editor-hint {
+  margin-top: 6px;
+  color: #ffe28a;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* 就地編輯工具列（刪除/隱藏/上移/下移） */
+.inline-editor-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.inline-toolbar-button {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,215,0,0.35);
+  background: rgba(0,0,0,0.6);
+  color: #fffbdd;
+  cursor: pointer;
+}
+
+.inline-toolbar-button:hover {
+  background: rgba(255,215,0,0.15);
 }
 
 @media (max-width: 480px) {

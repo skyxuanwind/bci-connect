@@ -63,13 +63,15 @@ const NFCCardEditor = () => {
   const [saving, setSaving] = useState(false);
   // 移除預覽模式狀態
   const [editingBlock, setEditingBlock] = useState(null);
+  const [editingBlockIndex, setEditingBlockIndex] = useState(null);
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
   // 自動帶入個人資料控制，避免重複插入
   const [autoProfileApplied, setAutoProfileApplied] = useState(false);
   // 提示視窗狀態
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successToastMessage, setSuccessToastMessage] = useState('已完成');
   // 使用者層級偏好與操作狀態
-  const [userPreferences, setUserPreferences] = useState({ auto_populate_on_create: false });
+  const [userPreferences, setUserPreferences] = useState({ auto_populate_on_create: false, single_screen_edit: false });
   const [savingUserPref, setSavingUserPref] = useState(false);
   const [applyingPersonalInfo, setApplyingPersonalInfo] = useState(false);
 
@@ -98,7 +100,8 @@ const NFCCardEditor = () => {
         const { data } = await axios.get('/api/users/preferences');
         if (data && data.preferences) {
           setUserPreferences({
-            auto_populate_on_create: !!data.preferences.auto_populate_on_create
+            auto_populate_on_create: !!data.preferences.auto_populate_on_create,
+            single_screen_edit: !!data.preferences.single_screen_edit
           });
         }
       } catch (err) {
@@ -312,6 +315,21 @@ const NFCCardEditor = () => {
       console.error('更新使用者偏好失敗:', error);
       alert('更新使用者偏好失敗，請稍後再試');
       setUserPreferences(prev => ({ ...prev, auto_populate_on_create: !checked }));
+    } finally {
+      setSavingUserPref(false);
+    }
+  };
+
+  // 切換單畫面編輯（隱藏右側預覽容器）
+  const handleToggleSingleScreenEdit = async (checked) => {
+    try {
+      setSavingUserPref(true);
+      setUserPreferences(prev => ({ ...prev, single_screen_edit: checked }));
+      await axios.put('/api/users/preferences', { single_screen_edit: checked });
+    } catch (error) {
+      console.error('更新使用者偏好失敗:', error);
+      alert('更新使用者偏好失敗，請稍後再試');
+      setUserPreferences(prev => ({ ...prev, single_screen_edit: !checked }));
     } finally {
       setSavingUserPref(false);
     }
@@ -554,6 +572,9 @@ const NFCCardEditor = () => {
           card_title: card.card_title || '',
           card_subtitle: card.card_subtitle || '',
           auto_populate_on_create: !!card.auto_populate_on_create,
+          user_name: card.user_name || (user?.name || ''),
+          user_title: card.user_title || (user?.title || ''),
+          user_company: card.user_company || (user?.company || ''),
           content_blocks: mappedBlocks
         });
       } else {
@@ -564,6 +585,9 @@ const NFCCardEditor = () => {
           card_title: '',
           card_subtitle: '',
           auto_populate_on_create: false,
+          user_name: user?.name || '',
+          user_title: user?.title || '',
+          user_company: user?.company || '',
           content_blocks: []
         });
       }
@@ -681,7 +705,11 @@ const NFCCardEditor = () => {
         card_subtitle: cardConfig.card_subtitle || '',
         auto_populate_on_create: !!cardConfig.auto_populate_on_create
       });
-      alert('基本設定保存成功！');
+      setSuccessToastMessage('基本設定已保存');
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 1200);
     } catch (error) {
       console.error('保存失敗:', error);
       alert('保存失敗，請稍後再試');
@@ -693,13 +721,21 @@ const NFCCardEditor = () => {
   const handleSaveContent = async () => {
     try {
       setSaving(true);
+      const { sanitized, warnings } = sanitizeBlocksForSave(cardConfig.content_blocks || []);
       await axios.post('/api/nfc-cards/my-card/content', {
-        content_blocks: (cardConfig.content_blocks || []).map((b, i) => ({
+        content_blocks: sanitized.map((b, i) => ({
           ...b,
           display_order: i
         }))
       });
-      alert('內容保存成功！');
+      if (warnings.length > 0) {
+        alert('部分網址看起來不正確，系統已嘗試自動修正。');
+      }
+      setSuccessToastMessage('內容已保存');
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 1200);
     } catch (error) {
       console.error('保存內容失敗:', error);
       alert('保存失敗，請稍後再試');
@@ -744,6 +780,7 @@ const NFCCardEditor = () => {
     setShowAddBlockModal(false);
     
     // 顯示成功提示
+    setSuccessToastMessage('已添加內容區塊');
     setShowSuccessToast(true);
     setTimeout(() => {
       setShowSuccessToast(false);
@@ -756,6 +793,12 @@ const NFCCardEditor = () => {
         return { title: '標題', content: '內容描述' };
       case 'link':
         return { title: '連結標題', url: 'https://example.com' };
+      case 'website':
+        return { title: '網站標題', url: 'https://example.com' };
+      case 'news':
+        return { title: '新聞標題', url: 'https://example.com' };
+      case 'file':
+        return { title: '檔案標題', url: '' };
       case 'video':
         return { title: '影片標題', type: 'youtube', url: '', file: '', videoId: '' };
       case 'image':
@@ -769,6 +812,54 @@ const NFCCardEditor = () => {
       default:
         return {};
     }
+  };
+
+  // URL/地址 輕量校驗與標準化
+  const normalizeUrl = (url) => {
+    if (!url) return '';
+    let v = String(url).trim();
+    // 移除空白與中文全形空格
+    v = v.replace(/\s+/g, '');
+    // 若是以 www. 開頭，補 https://
+    if (/^www\./i.test(v)) {
+      return `https://${v}`;
+    }
+    // 若缺協議但像是網域
+    if (!/^https?:\/\//i.test(v) && /\.[a-z]{2,}(\/|$)/i.test(v)) {
+      return `https://${v}`;
+    }
+    return v;
+  };
+
+  const isLikelyUrl = (str) => {
+    if (!str) return false;
+    const v = String(str).trim();
+    // 簡易判斷：有協議或像是網域
+    return /^https?:\/\//i.test(v) || /\.[a-z]{2,}(\/|$)/i.test(v);
+  };
+
+  const sanitizeBlocksForSave = (blocks) => {
+    const warnings = [];
+    const sanitized = (blocks || []).map((b) => {
+      if (!b || !b.type) return b;
+      const type = b.type;
+      const copy = { ...b };
+      // 處理常見需要 URL 的型別
+      if (['link', 'website', 'news', 'file'].includes(type)) {
+        const url = normalizeUrl(copy.data?.url || copy.url || '');
+        if (!isLikelyUrl(url) && url) {
+          warnings.push({ type, id: b.id, field: 'url', value: url });
+        }
+        if (copy.data) copy.data.url = url; else copy.url = url;
+      }
+      // map_url 輕量處理
+      if (type === 'map') {
+        const mapUrl = normalizeUrl(copy.data?.map_url || copy.map_url || '');
+        if (copy.data) copy.data.map_url = mapUrl; else copy.map_url = mapUrl;
+      }
+      return copy;
+    });
+    return { sanitized, warnings };
   };
 
   const handleDeleteBlock = (blockIndex) => {
@@ -816,6 +907,55 @@ const NFCCardEditor = () => {
     const cardUrl = `${window.location.origin}/member-card/${user.id}`;
     navigator.clipboard.writeText(cardUrl);
     alert('名片網址已複製到剪貼板！');
+  };
+
+  // 就地編輯：更新區塊單一欄位（供卡面 overlay 使用）
+  const updateBlockField = (index, key, value) => {
+    if (!cardConfig?.content_blocks || !cardConfig.content_blocks[index]) return;
+    const prev = cardConfig.content_blocks[index].content_data || {};
+    const next = { ...prev, [key]: value };
+    handleEditBlock(index, next);
+  };
+
+  // 就地編輯：基本資訊（姓名 / 職稱 / 公司）
+  const updateBasicField = (key, value) => {
+    setCardConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  // 區塊工具列：隱藏顯示
+  const toggleBlockVisibility = (blockIndex) => {
+    setCardConfig(prev => {
+      if (!prev?.content_blocks || !prev.content_blocks[blockIndex]) return prev;
+      const blocks = [...prev.content_blocks];
+      blocks[blockIndex] = { ...blocks[blockIndex], is_visible: !blocks[blockIndex].is_visible };
+      return { ...prev, content_blocks: blocks };
+    });
+  };
+
+  // 區塊工具列：上移
+  const moveBlockUp = (blockIndex) => {
+    setCardConfig(prev => {
+      if (!prev?.content_blocks || blockIndex <= 0) return prev;
+      const blocks = [...prev.content_blocks];
+      const tmp = blocks[blockIndex - 1];
+      blocks[blockIndex - 1] = blocks[blockIndex];
+      blocks[blockIndex] = tmp;
+      const updated = blocks.map((b, i) => ({ ...b, display_order: i }));
+      return { ...prev, content_blocks: updated };
+    });
+  };
+
+  // 區塊工具列：下移
+  const moveBlockDown = (blockIndex) => {
+    setCardConfig(prev => {
+      if (!prev?.content_blocks || blockIndex >= prev.content_blocks.length - 1) return prev;
+      const blocks = [...prev.content_blocks];
+      const tmp = blocks[blockIndex + 1];
+      blocks[blockIndex + 1] = blocks[blockIndex];
+      blocks[blockIndex] = tmp;
+      const updated = blocks.map((b, i) => ({ ...b, display_order: i }));
+      return { ...prev, content_blocks: updated };
+    });
   };
 
   const renderBlockEditor = (block, index) => {
@@ -1155,7 +1295,8 @@ const NFCCardEditor = () => {
               </div>
             </div>
             
-            {/* 右側：即時預覽 */}
+            {/* 右側：即時預覽（可依偏好隱藏） */}
+            {!userPreferences?.single_screen_edit && (
             <div className="xl:col-span-4">
               <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg p-6 sticky top-8">
                 <h2 className="text-lg font-semibold text-gold-100 mb-4 flex items-center">
@@ -1169,6 +1310,14 @@ const NFCCardEditor = () => {
                     <TemplatePreview 
                       template={selectedTemplate}
                       cardConfig={cardConfig}
+                      editingBlockIndex={editingBlockIndex}
+                      updateBlockField={updateBlockField}
+                      updateBasicField={updateBasicField}
+                      onDeleteBlock={handleDeleteBlock}
+                      onToggleVisibility={toggleBlockVisibility}
+                      onMoveUp={moveBlockUp}
+                      onMoveDown={moveBlockDown}
+                      setEditingBlockIndex={setEditingBlockIndex}
                     />
                   </div>
                   
@@ -1190,6 +1339,7 @@ const NFCCardEditor = () => {
                 </div>
               </div>
             </div>
+            )}
           </div>
       </div>
 
@@ -1204,7 +1354,7 @@ const NFCCardEditor = () => {
             transition={{ duration: 0.3 }}
           >
             <span className="text-lg">✓</span>
-            <span>已添加</span>
+            <span>{successToastMessage || '已完成'}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1555,7 +1705,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 };
 
 // 模板預覽組件
-const TemplatePreview = ({ template, cardConfig }) => {
+const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockField, updateBasicField, onDeleteBlock, onToggleVisibility, onMoveUp, onMoveDown, setEditingBlockIndex }) => {
   const { user } = useAuth();
   
   const hexToRgb = (hex) => {
@@ -1621,14 +1771,44 @@ const TemplatePreview = ({ template, cardConfig }) => {
             )}
           </div>
           <div className="user-info">
-            <h2 className="user-name">{user?.name || '用戶姓名'}</h2>
-            {user?.title && (
-              <p className="user-position">{user.title}</p>
+            <h2 className="user-name">{cardConfig?.user_name || user?.name || '用戶姓名'}</h2>
+            {(cardConfig?.user_title || user?.title) && (
+              <p className="user-position">{cardConfig?.user_title || user?.title}</p>
             )}
-            {user?.company && (
-              <p className="user-company">{user.company}</p>
+            {(cardConfig?.user_company || user?.company) && (
+              <p className="user-company">{cardConfig?.user_company || user?.company}</p>
             )}
           </div>
+          {/* 基本資訊就地編輯 Overlay */}
+          {editingBlockIndex === 'basic' && (
+            <div className="inline-editor-overlay">
+              <label>姓名</label>
+              <input
+                type="text"
+                value={cardConfig?.user_name || ''}
+                onChange={(e) => updateBasicField('user_name', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>職稱</label>
+              <input
+                type="text"
+                value={cardConfig?.user_title || ''}
+                onChange={(e) => updateBasicField('user_title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>公司</label>
+              <input
+                type="text"
+                value={cardConfig?.user_company || ''}
+                onChange={(e) => updateBasicField('user_company', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="inline-editor-toolbar">
+                <button className="inline-toolbar-button" onClick={() => setEditingBlockIndex(null)}>完成</button>
+              </div>
+              <div className="inline-editor-hint">基本資訊就地編輯（保存於基本設定）</div>
+            </div>
+          )}
         </div>
 
         {/* 內容區塊 */}
@@ -1636,7 +1816,15 @@ const TemplatePreview = ({ template, cardConfig }) => {
           {cardConfig?.content_blocks?.length > 0 ? (
             cardConfig.content_blocks.map((block, index) => (
               <div key={index} className="content-block" style={{ borderTop: borderTopCss }}>
-                <BlockPreview block={block} />
+                {/* 工具列 */}
+                <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 6 }} className="flex gap-2">
+                  <button className="inline-toolbar-button" onClick={() => setEditingBlockIndex(index)}>編輯</button>
+                  <button className="inline-toolbar-button" onClick={() => onToggleVisibility(index)}>{block?.is_visible === false ? '顯示' : '隱藏'}</button>
+                  <button className="inline-toolbar-button" onClick={() => onMoveUp(index)}>上移</button>
+                  <button className="inline-toolbar-button" onClick={() => onMoveDown(index)}>下移</button>
+                  <button className="inline-toolbar-button" onClick={() => onDeleteBlock(index)}>刪除</button>
+                </div>
+                <BlockPreview block={block} index={index} editingBlockIndex={editingBlockIndex} updateBlockField={updateBlockField} />
               </div>
             ))
           ) : (
@@ -1652,8 +1840,8 @@ const TemplatePreview = ({ template, cardConfig }) => {
   );
 };
 
-// 區塊預覽組件
-const BlockPreview = ({ block }) => {
+// 區塊預覽組件（支援就地編輯 overlay）
+const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => {
   if (!block) return null;
   const { content_data } = block;
   
@@ -1667,6 +1855,25 @@ const BlockPreview = ({ block }) => {
           <div className="text-amber-100 text-xs">
             {content_data?.content || '內容文字'}
           </div>
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>內容</label>
+              <textarea
+                rows={3}
+                value={content_data?.content || ''}
+                onChange={(e) => updateBlockField(index, 'content', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
         </div>
       );
     
@@ -1679,6 +1886,116 @@ const BlockPreview = ({ block }) => {
           <div className="text-amber-300 text-xs">
             {content_data?.url || 'https://example.com'}
           </div>
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>網址</label>
+              <input
+                type="url"
+                value={content_data?.url || ''}
+                onChange={(e) => updateBlockField(index, 'url', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
+        </div>
+      );
+    case 'website':
+      return (
+        <div>
+          <div className="block-title text-amber-200">
+            {content_data?.title || '網站標題'}
+          </div>
+          <div className="text-amber-300 text-xs">
+            {content_data?.url || 'https://example.com'}
+          </div>
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>網址</label>
+              <input
+                type="url"
+                value={content_data?.url || ''}
+                onChange={(e) => updateBlockField(index, 'url', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
+        </div>
+      );
+    case 'news':
+      return (
+        <div>
+          <div className="block-title text-amber-200">
+            {content_data?.title || '新聞標題'}
+          </div>
+          <div className="text-amber-300 text-xs">
+            {content_data?.url || 'https://example.com/news'}
+          </div>
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>網址</label>
+              <input
+                type="url"
+                value={content_data?.url || ''}
+                onChange={(e) => updateBlockField(index, 'url', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
+        </div>
+      );
+    case 'file':
+      return (
+        <div>
+          <div className="block-title text-amber-200">
+            {content_data?.title || '檔案標題'}
+          </div>
+          <div className="text-amber-300 text-xs">
+            {content_data?.url || 'https://example.com/file.pdf'}
+          </div>
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>檔案標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>檔案網址</label>
+              <input
+                type="url"
+                value={content_data?.url || ''}
+                onChange={(e) => updateBlockField(index, 'url', e.target.value)}
+                className="inline-editor-input"
+                placeholder="https://example.com/file.pdf"
+              />
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
         </div>
       );
     
@@ -1709,6 +2026,48 @@ const BlockPreview = ({ block }) => {
               )
             )}
           </div>
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>來源</label>
+              <select
+                value={content_data?.type || 'youtube'}
+                onChange={(e) => updateBlockField(index, 'type', e.target.value)}
+                className="inline-editor-input"
+              >
+                <option value="youtube">YouTube</option>
+                <option value="upload">上傳影片</option>
+              </select>
+              {content_data?.type === 'youtube' ? (
+                <>
+                  <label>YouTube 網址</label>
+                  <input
+                    type="text"
+                    value={content_data?.url || ''}
+                    onChange={(e) => updateBlockField(index, 'url', e.target.value)}
+                    className="inline-editor-input"
+                  />
+                </>
+              ) : (
+                <>
+                  <label>影片檔名</label>
+                  <input
+                    type="text"
+                    value={content_data?.file || ''}
+                    onChange={(e) => updateBlockField(index, 'file', e.target.value)}
+                    className="inline-editor-input"
+                  />
+                </>
+              )}
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
         </div>
       );
     
@@ -1735,6 +2094,32 @@ const BlockPreview = ({ block }) => {
           {content_data?.alt && (
             <div className="text-amber-300 text-xs italic">
               {content_data.alt}
+            </div>
+          )}
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>圖片網址</label>
+              <input
+                type="text"
+                value={content_data?.url || ''}
+                onChange={(e) => updateBlockField(index, 'url', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>描述</label>
+              <input
+                type="text"
+                value={content_data?.alt || ''}
+                onChange={(e) => updateBlockField(index, 'alt', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
             </div>
           )}
         </div>
@@ -1764,6 +2149,22 @@ const BlockPreview = ({ block }) => {
               <span className="text-amber-100 text-xs">請添加社群媒體連結</span>
             )}
           </div>
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              {['linkedin','facebook','instagram','twitter','youtube','tiktok'].map(key => (
+                <div key={key} style={{ marginTop: '6px' }}>
+                  <label style={{ display: 'block' }}>{key} 網址</label>
+                  <input
+                    type="url"
+                    value={content_data?.[key] || ''}
+                    onChange={(e) => updateBlockField(index, key, e.target.value)}
+                    className="inline-editor-input"
+                  />
+                </div>
+              ))}
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
         </div>
       );
     
@@ -1779,6 +2180,25 @@ const BlockPreview = ({ block }) => {
           {content_data?.address && (
             <div className="bg-gray-800 rounded text-xs p-2 text-amber-200">
               🗺️ Google Maps 地圖
+            </div>
+          )}
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>地點名稱</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>地址</label>
+              <textarea
+                rows={2}
+                value={content_data?.address || ''}
+                onChange={(e) => updateBlockField(index, 'address', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
             </div>
           )}
         </div>
@@ -1807,6 +2227,55 @@ const BlockPreview = ({ block }) => {
             </span>
             <span>{content_data?.description || '裝飾圖標'}</span>
           </div>
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>圖標</label>
+              <select
+                value={content_data?.icon_type || 'star'}
+                onChange={(e) => updateBlockField(index, 'icon_type', e.target.value)}
+                className="inline-editor-input"
+              >
+                <option value="star">⭐</option>
+                <option value="heart">❤️</option>
+                <option value="diamond">💎</option>
+                <option value="crown">👑</option>
+                <option value="trophy">🏆</option>
+                <option value="fire">🔥</option>
+                <option value="lightning">⚡</option>
+                <option value="rocket">🚀</option>
+                <option value="target">🎯</option>
+                <option value="medal">🏅</option>
+                <option value="gem">💍</option>
+                <option value="sparkles">✨</option>
+              </select>
+              <label>大小</label>
+              <select
+                value={content_data?.size || 'medium'}
+                onChange={(e) => updateBlockField(index, 'size', e.target.value)}
+                className="inline-editor-input"
+              >
+                <option value="small">小</option>
+                <option value="medium">中</option>
+                <option value="large">大</option>
+                <option value="xlarge">特大</option>
+              </select>
+              <label>描述</label>
+              <input
+                type="text"
+                value={content_data?.description || ''}
+                onChange={(e) => updateBlockField(index, 'description', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
         </div>
       );
     
@@ -1823,10 +2292,14 @@ const getBlockTypeLabel = (type) => {
   const labels = {
     text: '文字',
     link: '連結',
+    website: '網站',
+    news: '新聞',
+    file: '檔案',
     video: '影片',
     image: '圖片',
     social: '社群',
-    map: '地圖'
+    map: '地圖',
+    icon: '圖標'
   };
   return labels[type] || type;
 };
