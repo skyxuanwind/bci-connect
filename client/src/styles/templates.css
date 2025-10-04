@@ -1184,3 +1184,16 @@
     height: 100px;
   }
 }
+/* 覆蓋：即時預覽 - 防止個人資訊文字溢出並優化排版 */
+.nfc-card-preview .user-info { flex: 1 1 auto; min-width: 0; }
+.nfc-card-preview .user-name,
+.nfc-card-preview .user-position,
+.nfc-card-preview .user-company {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.nfc-card-preview .avatar-container { display: flex; align-items: center; justify-content: center; }
+.nfc-card-preview .user-avatar,
+.nfc-card-preview .avatar-placeholder { flex-shrink: 0; }

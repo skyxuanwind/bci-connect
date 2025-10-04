@@ -7,6 +7,18 @@ const path = require('path');
 const fs = require('fs');
 const { storage } = require('../config/cloudinary');
 
+// 動態確保 nfc_cards 具備自動帶入偏好欄位（Postgres）
+async function ensureAutoPopulateColumn() {
+  try {
+    await pool.query(`
+      ALTER TABLE nfc_cards
+      ADD COLUMN IF NOT EXISTS auto_populate_on_create BOOLEAN DEFAULT false
+    `);
+  } catch (e) {
+    console.warn('確保 auto_populate_on_create 欄位存在時發生非致命錯誤：', e?.message || String(e));
+  }
+}
+
 // 使用 Cloudinary 作為上傳儲存，僅允許圖片
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
@@ -174,7 +186,10 @@ router.get('/my-card', authenticateToken, async (req, res) => {
 router.put('/my-card', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { card_title, card_subtitle, template_id, custom_css } = req.body;
+    const { card_title, card_subtitle, template_id, custom_css, auto_populate_on_create } = req.body;
+
+    // 確保欄位存在
+    await ensureAutoPopulateColumn();
     
     // 檢查是否已有名片
     const existingCard = await pool.query(
@@ -187,10 +202,10 @@ router.put('/my-card', authenticateToken, async (req, res) => {
     if (existingCard.rows.length === 0) {
       // 創建新名片
       const newCardResult = await pool.query(
-        `INSERT INTO nfc_cards (user_id, template_id, card_title, card_subtitle, custom_css, is_active)
-         VALUES ($1, $2, $3, $4, $5, true)
+        `INSERT INTO nfc_cards (user_id, template_id, card_title, card_subtitle, custom_css, is_active, auto_populate_on_create)
+         VALUES ($1, $2, $3, $4, $5, true, COALESCE($6, false))
          RETURNING id`,
-        [userId, template_id, card_title, card_subtitle, custom_css]
+        [userId, template_id, card_title, card_subtitle, custom_css, auto_populate_on_create]
       );
       cardId = newCardResult.rows[0].id;
     } else {
@@ -198,9 +213,9 @@ router.put('/my-card', authenticateToken, async (req, res) => {
       cardId = existingCard.rows[0].id;
       await pool.query(
         `UPDATE nfc_cards 
-         SET template_id = $1, card_title = $2, card_subtitle = $3, custom_css = $4, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $5`,
-        [template_id, card_title, card_subtitle, custom_css, cardId]
+         SET template_id = $1, card_title = $2, card_subtitle = $3, custom_css = $4, auto_populate_on_create = COALESCE($5, auto_populate_on_create), updated_at = CURRENT_TIMESTAMP
+         WHERE id = $6`,
+        [template_id, card_title, card_subtitle, custom_css, auto_populate_on_create, cardId]
       );
     }
     

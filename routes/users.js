@@ -2185,3 +2185,53 @@ router.post('/member/:id/project-plan/checklist', async (req, res) => {
 });
 
 module.exports = router;
+// 使用者偏好：auto_populate_on_create（對所有新卡片生效）
+// GET /api/users/preferences
+router.get('/preferences', async (req, res) => {
+  try {
+    // 確保欄位存在（若資料庫未建立則動態添加）
+    try {
+      await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_populate_on_create BOOLEAN DEFAULT FALSE");
+    } catch (_) {}
+
+    const result = await pool.query(
+      'SELECT auto_populate_on_create FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    const row = result.rows[0] || {};
+    res.json({
+      preferences: {
+        auto_populate_on_create: !!row.auto_populate_on_create
+      }
+    });
+  } catch (error) {
+    console.error('Get user preferences error:', error);
+    res.status(500).json({ message: '獲取使用者偏好時發生錯誤' });
+  }
+});
+
+// PUT /api/users/preferences
+router.put('/preferences', async (req, res) => {
+  try {
+    const { auto_populate_on_create } = req.body || {};
+
+    // 確保欄位存在
+    try {
+      await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_populate_on_create BOOLEAN DEFAULT FALSE");
+    } catch (_) {}
+
+    await pool.query(
+      'UPDATE users SET auto_populate_on_create = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [!!auto_populate_on_create, req.user.id]
+    );
+
+    res.json({
+      message: '偏好已更新',
+      preferences: { auto_populate_on_create: !!auto_populate_on_create }
+    });
+  } catch (error) {
+    console.error('Update user preferences error:', error);
+    res.status(500).json({ message: '更新使用者偏好時發生錯誤' });
+  }
+});

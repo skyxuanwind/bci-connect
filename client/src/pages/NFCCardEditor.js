@@ -68,6 +68,10 @@ const NFCCardEditor = () => {
   const [autoProfileApplied, setAutoProfileApplied] = useState(false);
   // 提示視窗狀態
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  // 使用者層級偏好與操作狀態
+  const [userPreferences, setUserPreferences] = useState({ auto_populate_on_create: false });
+  const [savingUserPref, setSavingUserPref] = useState(false);
+  const [applyingPersonalInfo, setApplyingPersonalInfo] = useState(false);
 
   // 基本設定 -> 依模板提供的選項生成 custom_css
   const buildCustomCss = (template, opts = {}) => {
@@ -85,6 +89,23 @@ const NFCCardEditor = () => {
     fetchCardData();
     fetchTemplates();
   }, []);
+
+  // 讀取使用者層級偏好
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const { data } = await axios.get('/api/users/preferences');
+        if (data && data.preferences) {
+          setUserPreferences({
+            auto_populate_on_create: !!data.preferences.auto_populate_on_create
+          });
+        }
+      } catch (err) {
+        console.error('讀取使用者偏好失敗:', err);
+      }
+    })();
+  }, [user]);
 
   // 用於插入或更新自動生成的個資區塊（以 custom_styles.autoKey 標記）
   const upsertAutoBlock = (blocks, autoKey, makeBlockData, matchFn) => {
@@ -126,7 +147,11 @@ const NFCCardEditor = () => {
   };
 
   // 當用戶與卡片資料可用時，自動帶入姓名、公司、產業別、電話、信箱與大頭貼
+  // 已停用：避免使用者刪除內容區塊後重新整理又被自動恢復
   useEffect(() => {
+    // 依偏好：僅在新卡片且尚無內容時自動帶入
+    const AUTO_POPULATE_PROFILE = !!(cardConfig?.auto_populate_on_create ?? userPreferences?.auto_populate_on_create);
+    if (!AUTO_POPULATE_PROFILE) return;
     if (!user || !cardConfig || loading) return;
 
     if (autoProfileApplied) return;
@@ -275,7 +300,170 @@ const NFCCardEditor = () => {
     }
 
     setAutoProfileApplied(true);
-  }, [user, cardConfig, loading, autoProfileApplied]);
+  }, [user, cardConfig, loading, autoProfileApplied, userPreferences]);
+
+  // 更新使用者層級偏好
+  const handleToggleUserAutoPopulate = async (checked) => {
+    try {
+      setSavingUserPref(true);
+      setUserPreferences(prev => ({ ...prev, auto_populate_on_create: checked }));
+      await axios.put('/api/users/preferences', { auto_populate_on_create: checked });
+    } catch (error) {
+      console.error('更新使用者偏好失敗:', error);
+      alert('更新使用者偏好失敗，請稍後再試');
+      setUserPreferences(prev => ({ ...prev, auto_populate_on_create: !checked }));
+    } finally {
+      setSavingUserPref(false);
+    }
+  };
+
+  // 立即套用個人資訊（手動）
+  const applyPersonalInfoNow = async () => {
+    try {
+      setApplyingPersonalInfo(true);
+      if (!user || !cardConfig) return;
+      let blocks = Array.isArray(cardConfig.content_blocks) ? [...cardConfig.content_blocks] : [];
+
+      const createdOrUpdated = [];
+
+      // 大頭貼（image）
+      createdOrUpdated.push(
+        upsertAutoBlock(
+          blocks,
+          'auto:avatar',
+          () => {
+            const url = user.profilePictureUrl || '';
+            if (!url) return null;
+            return {
+              content_type: 'image',
+              content_data: {
+                title: '大頭貼',
+                url,
+                alt: user.name || '大頭貼'
+              }
+            };
+          },
+          (b) => b?.content_type === 'image' && b?.content_data?.url === (user.profilePictureUrl || '')
+        )
+      );
+
+      // 姓名（text）
+      createdOrUpdated.push(
+        upsertAutoBlock(
+          blocks,
+          'auto:name',
+          () => {
+            const name = user.name || '';
+            if (!name) return null;
+            return {
+              content_type: 'text',
+              content_data: {
+                title: '姓名',
+                content: name
+              }
+            };
+          },
+          (b) => b?.content_type === 'text' && (b?.content_data?.content || '') === (user.name || '')
+        )
+      );
+
+      // 公司 / 職稱（text）
+      createdOrUpdated.push(
+        upsertAutoBlock(
+          blocks,
+          'auto:companyTitle',
+          () => {
+            const company = user.company || '';
+            const title = user.title || '';
+            const content = [company, title].filter(Boolean).join('｜');
+            if (!content) return null;
+            return {
+              content_type: 'text',
+              content_data: {
+                title: '公司 / 職稱',
+                content
+              }
+            };
+          },
+          (b) => b?.content_type === 'text' && (b?.content_data?.title === '公司 / 職稱')
+        )
+      );
+
+      // 產業別（text）
+      createdOrUpdated.push(
+        upsertAutoBlock(
+          blocks,
+          'auto:industry',
+          () => {
+            const industry = user.industry || '';
+            if (!industry) return null;
+            return {
+              content_type: 'text',
+              content_data: {
+                title: '產業別',
+                content: industry
+              }
+            };
+          },
+          (b) => b?.content_type === 'text' && (b?.content_data?.title === '產業別')
+        )
+      );
+
+      // 電話（link, tel:）
+      createdOrUpdated.push(
+        upsertAutoBlock(
+          blocks,
+          'auto:phone',
+          () => {
+            const phone = user.contactNumber || '';
+            if (!phone) return null;
+            return {
+              content_type: 'link',
+              content_data: {
+                title: '電話',
+                url: `tel:${phone}`
+              }
+            };
+          },
+          (b) => b?.content_type === 'link' && (b?.content_data?.url || '').startsWith('tel:')
+        )
+      );
+
+      // 信箱（link, mailto:）
+      createdOrUpdated.push(
+        upsertAutoBlock(
+          blocks,
+          'auto:email',
+          () => {
+            const email = user.email || '';
+            if (!email) return null;
+            return {
+              content_type: 'link',
+              content_data: {
+                title: '信箱',
+                url: `mailto:${email}`
+              }
+            };
+          },
+          (b) => b?.content_type === 'link' && (b?.content_data?.url || '').startsWith('mailto:')
+        )
+      );
+
+      const anyChanged = createdOrUpdated.some(r => r && r.updated);
+      if (anyChanged) {
+        const recomputed = blocks.map((b, i) => ({ ...b, display_order: i }));
+        setCardConfig(prev => ({ ...prev, content_blocks: recomputed }));
+        alert('已套用個人資訊至卡片內容');
+      } else {
+        alert('卡片內容未變更，可能已包含個人資訊');
+      }
+    } catch (err) {
+      console.error('套用個人資訊失敗:', err);
+      alert('套用失敗，請稍後再試');
+    } finally {
+      setApplyingPersonalInfo(false);
+    }
+  };
 
   // 將後端內容列轉換為前端需要的內容區塊結構
   const mapRowToBlock = (row) => {
@@ -365,6 +553,7 @@ const NFCCardEditor = () => {
           custom_css: card.custom_css || '',
           card_title: card.card_title || '',
           card_subtitle: card.card_subtitle || '',
+          auto_populate_on_create: !!card.auto_populate_on_create,
           content_blocks: mappedBlocks
         });
       } else {
@@ -374,6 +563,7 @@ const NFCCardEditor = () => {
           custom_css: '',
           card_title: '',
           card_subtitle: '',
+          auto_populate_on_create: false,
           content_blocks: []
         });
       }
@@ -488,7 +678,8 @@ const NFCCardEditor = () => {
         template_id: cardConfig.template_id,
         custom_css: cardConfig.custom_css,
         card_title: cardConfig.card_title || '',
-        card_subtitle: cardConfig.card_subtitle || ''
+        card_subtitle: cardConfig.card_subtitle || '',
+        auto_populate_on_create: !!cardConfig.auto_populate_on_create
       });
       alert('基本設定保存成功！');
     } catch (error) {
@@ -843,12 +1034,56 @@ const NFCCardEditor = () => {
                     </div>
                   )}
 
+                  {/* 使用者偏好：所有新卡片自動帶入個人資訊 */}
+                  <div className="flex items-center justify-between py-3 border-t border-yellow-500/20 mt-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gold-300">
+                        使用者偏好：所有新卡片自動帶入
+                      </label>
+                      <p className="text-xs text-gold-400/80">影響你之後建立的所有新卡片。</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={!!userPreferences?.auto_populate_on_create}
+                      onChange={(e) => handleToggleUserAutoPopulate(e.target.checked)}
+                      disabled={savingUserPref}
+                      className="h-4 w-4 accent-yellow-500"
+                    />
+                  </div>
+
+                  {/* 首次建立時自動帶入個人資訊（偏好設定） */}
+                  <div className="flex items-center justify-between py-3 border-t border-yellow-500/20 mt-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gold-300">
+                        首次建立時自動帶入個人資訊
+                      </label>
+                      <p className="text-xs text-gold-400/80">僅在新卡片且尚無內容時自動加入姓名、公司、聯絡方式等。</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={!!cardConfig?.auto_populate_on_create}
+                      onChange={(e) => setCardConfig(prev => ({
+                        ...prev,
+                        auto_populate_on_create: e.target.checked
+                      }))}
+                      className="h-4 w-4 accent-yellow-500"
+                    />
+                  </div>
+
                   <button
                     onClick={handleSaveBasicInfo}
                     disabled={saving}
                     className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
                     {saving ? '保存中...' : '保存基本設定'}
+                  </button>
+
+                  <button
+                    onClick={applyPersonalInfoNow}
+                    disabled={applyingPersonalInfo || !user}
+                    className="w-full bg-amber-600 text-white py-2 px-4 rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors mt-2"
+                  >
+                    {applyingPersonalInfo ? '套用中...' : '立即套用個人資訊'}
                   </button>
                 </div>
               </div>
@@ -1368,17 +1603,7 @@ const TemplatePreview = ({ template, cardConfig }) => {
   return (
     <div className={`nfc-card-container nfc-card-preview ${templateClass}`}>
       <div className="card-content">
-        {/* 名片標題 */}
-        <div className="card-header">
-          <h1 className="card-title">
-            {cardConfig?.card_title || user?.name || '預覽名片'}
-          </h1>
-          {cardConfig?.card_subtitle && (
-            <p className="card-subtitle">
-              {cardConfig.card_subtitle}
-            </p>
-          )}
-        </div>
+        {/* 移除名片標題與副標題（即時預覽不顯示） */}
 
         {/* 個人資訊區塊 */}
         <div className="personal-info-section">
@@ -1391,7 +1616,7 @@ const TemplatePreview = ({ template, cardConfig }) => {
               />
             ) : (
               <div className="avatar-placeholder">
-                <UserIcon className="h-8 w-8 text-white" />
+                <UserIcon className="h-12 w-12 text-white" />
               </div>
             )}
           </div>
