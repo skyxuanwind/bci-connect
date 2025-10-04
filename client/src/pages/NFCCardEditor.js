@@ -323,6 +323,14 @@ const NFCCardEditor = () => {
             coordinates: row.map_coordinates || row.content_data?.coordinates || null
           };
           break;
+        case 'icon':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            icon_type: row.content_data?.icon_type || 'star',
+            size: row.content_data?.size || 'medium',
+            description: row.content_data?.description || ''
+          };
+          break;
         default:
           data = row.content_data || {};
       }
@@ -565,6 +573,8 @@ const NFCCardEditor = () => {
         return { linkedin: '', facebook: '', instagram: '', twitter: '', youtube: '', tiktok: '' };
       case 'map':
         return { title: '地點名稱', address: '完整地址', map_url: '', coordinates: null };
+      case 'icon':
+        return { title: '圖標標題', icon_type: 'star', size: 'medium', description: '' };
       default:
         return {};
     }
@@ -679,7 +689,8 @@ const NFCCardEditor = () => {
       video: '影片',
       image: '圖片',
       social: '社群',
-      map: '地圖'
+      map: '地圖',
+      icon: '圖標'
     };
     return labels[type] || type;
   };
@@ -725,32 +736,6 @@ const NFCCardEditor = () => {
                 <h2 className="text-lg font-semibold text-gold-100 mb-4">基本設定</h2>
                 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gold-300 mb-2">
-                      名片標題
-                    </label>
-                    <input
-                      type="text"
-                      value={cardConfig?.card_title || ''}
-                      onChange={(e) => setCardConfig(prev => ({ ...prev, card_title: e.target.value }))}
-                      placeholder="輸入名片標題"
-                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gold-300 mb-2">
-                      名片副標題
-                    </label>
-                    <input
-                      type="text"
-                      value={cardConfig?.card_subtitle || ''}
-                      onChange={(e) => setCardConfig(prev => ({ ...prev, card_subtitle: e.target.value }))}
-                      placeholder="輸入名片副標題"
-                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
-                    />
-                  </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gold-300 mb-2">
                       選擇模板
@@ -879,7 +864,8 @@ const NFCCardEditor = () => {
                     { type: 'video', icon: PlayIcon, label: '影片' },
                     { type: 'image', icon: PhotoIcon, label: '圖片' },
                     { type: 'social', icon: ChatBubbleLeftRightIcon, label: '社群' },
-                    { type: 'map', icon: MapPinIcon, label: '地圖' }
+                    { type: 'map', icon: MapPinIcon, label: '地圖' },
+                    { type: 'icon', icon: UserIcon, label: '圖標' }
                   ].map(({ type, icon: Icon, label }) => (
                     <button
                       key={type}
@@ -936,33 +922,35 @@ const NFCCardEditor = () => {
             
             {/* 右側：即時預覽 */}
             <div className="xl:col-span-4">
-              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-6 sticky top-8">
+              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg p-6 sticky top-8">
                 <h2 className="text-lg font-semibold text-gold-100 mb-4 flex items-center">
                   <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
                   即時預覽
                 </h2>
                 
-                <div className="border border-gold-600 rounded-lg overflow-hidden min-h-[32rem] max-h-[32rem] overflow-y-auto">
+                <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50">
                   {/* 套用模板樣式的預覽 */}
-                  <TemplatePreview 
-                    template={selectedTemplate}
-                    cardConfig={cardConfig}
-                  />
+                  <div className="min-h-[32rem] max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800">
+                    <TemplatePreview 
+                      template={selectedTemplate}
+                      cardConfig={cardConfig}
+                    />
+                  </div>
                   
-                  <div className="p-4 bg-black/20 border-t border-gold-600 text-center">
+                  <div className="p-4 bg-gradient-to-r from-black/40 to-gray-900/40 border-t border-gold-600/50 text-center backdrop-blur-sm">
                     <a 
                       href={`/member-card/${user?.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-medium text-sm rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-all duration-200 shadow-lg"
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white font-medium text-sm rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                     >
-                      <EyeIcon className="h-3 w-3 mr-1" />
+                      <EyeIcon className="h-4 w-4 mr-2" />
                       完整版本
                     </a>
                   </div>
                 </div>
                 
-                <div className="mt-4 text-xs text-gold-300 text-center">
+                <div className="mt-4 text-xs text-gold-300 text-center bg-gradient-to-r from-transparent via-gold-900/20 to-transparent py-2 rounded-lg">
                   💡 修改會即時反映在預覽中
                 </div>
               </div>
@@ -1215,6 +1203,89 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                 <p className="text-xs text-amber-300 mt-1">注意：需要設定 Google Maps API Key 才能正常顯示地圖</p>
               </div>
             )}
+          </div>
+        );
+      
+      case 'icon':
+        return (
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={data.title || ''}
+              onChange={(e) => setData({ ...data, title: e.target.value })}
+              placeholder="圖標標題"
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+            />
+            <div>
+              <label className="block text-sm font-medium text-amber-300 mb-2">
+                選擇圖標
+              </label>
+              <select
+                value={data.icon_type || 'star'}
+                onChange={(e) => setData({ ...data, icon_type: e.target.value })}
+                className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              >
+                <option value="star">⭐ 星星</option>
+                <option value="heart">❤️ 愛心</option>
+                <option value="diamond">💎 鑽石</option>
+                <option value="crown">👑 皇冠</option>
+                <option value="trophy">🏆 獎盃</option>
+                <option value="fire">🔥 火焰</option>
+                <option value="lightning">⚡ 閃電</option>
+                <option value="rocket">🚀 火箭</option>
+                <option value="target">🎯 目標</option>
+                <option value="medal">🏅 獎牌</option>
+                <option value="gem">💍 寶石</option>
+                <option value="sparkles">✨ 閃光</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-amber-300 mb-2">
+                圖標大小
+              </label>
+              <select
+                value={data.size || 'medium'}
+                onChange={(e) => setData({ ...data, size: e.target.value })}
+                className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              >
+                <option value="small">小 (16px)</option>
+                <option value="medium">中 (24px)</option>
+                <option value="large">大 (32px)</option>
+                <option value="xlarge">特大 (48px)</option>
+              </select>
+            </div>
+            <textarea
+              value={data.description || ''}
+              onChange={(e) => setData({ ...data, description: e.target.value })}
+              placeholder="圖標描述 (可選)"
+              rows={2}
+              className="w-full px-3 py-2 border border-amber-300 bg-gray-900 text-amber-100 placeholder-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+            />
+            <div className="bg-gray-800 p-3 rounded border border-amber-300">
+              <p className="text-sm text-amber-200 mb-2">預覽:</p>
+              <div className="flex items-center space-x-2">
+                <span style={{ fontSize: data.size === 'small' ? '16px' : data.size === 'medium' ? '24px' : data.size === 'large' ? '32px' : '48px' }}>
+                  {data.icon_type === 'star' ? '⭐' :
+                   data.icon_type === 'heart' ? '❤️' :
+                   data.icon_type === 'diamond' ? '💎' :
+                   data.icon_type === 'crown' ? '👑' :
+                   data.icon_type === 'trophy' ? '🏆' :
+                   data.icon_type === 'fire' ? '🔥' :
+                   data.icon_type === 'lightning' ? '⚡' :
+                   data.icon_type === 'rocket' ? '🚀' :
+                   data.icon_type === 'target' ? '🎯' :
+                   data.icon_type === 'medal' ? '🏅' :
+                   data.icon_type === 'gem' ? '💍' :
+                   data.icon_type === 'sparkles' ? '✨' : '⭐'}
+                </span>
+                <div>
+                  <div className="text-amber-100 font-medium">{data.title || '圖標標題'}</div>
+                  {data.description && (
+                    <div className="text-amber-300 text-sm">{data.description}</div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         );
       
@@ -1485,6 +1556,32 @@ const BlockPreview = ({ block }) => {
               🗺️ Google Maps 地圖
             </div>
           )}
+        </div>
+      );
+    
+    case 'icon':
+      return (
+        <div>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {content_data?.title || '圖標標題'}
+          </div>
+          <div className="flex items-center gap-2 text-amber-100 text-xs">
+            <span style={{ fontSize: content_data?.size === 'small' ? '12px' : content_data?.size === 'medium' ? '16px' : content_data?.size === 'large' ? '20px' : '24px' }}>
+              {content_data?.icon_type === 'star' ? '⭐' :
+               content_data?.icon_type === 'heart' ? '❤️' :
+               content_data?.icon_type === 'diamond' ? '💎' :
+               content_data?.icon_type === 'crown' ? '👑' :
+               content_data?.icon_type === 'trophy' ? '🏆' :
+               content_data?.icon_type === 'fire' ? '🔥' :
+               content_data?.icon_type === 'lightning' ? '⚡' :
+               content_data?.icon_type === 'rocket' ? '🚀' :
+               content_data?.icon_type === 'target' ? '🎯' :
+               content_data?.icon_type === 'medal' ? '🏅' :
+               content_data?.icon_type === 'gem' ? '💍' :
+               content_data?.icon_type === 'sparkles' ? '✨' : '⭐'}
+            </span>
+            <span>{content_data?.description || '裝飾圖標'}</span>
+          </div>
         </div>
       );
     

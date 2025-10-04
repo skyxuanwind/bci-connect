@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="168" viewBox="0 0 240 168">
+  <!-- 背景 -->
+  <rect width="240" height="168" fill="#0a0a0a"/>
+  
+  <!-- 霓虹邊框 -->
+  <rect x="8" y="8" width="224" height="152" rx="20" fill="none" stroke="#00ffff" stroke-width="2" opacity="0.8"/>
+  <rect x="10" y="10" width="220" height="148" rx="18" fill="#1a0a1a" stroke="#ff0080" stroke-width="1" opacity="0.6"/>
+  
+  <!-- 標題區域 -->
+  <rect x="18" y="18" width="204" height="28" fill="url(#cyberpunkGradient)" rx="14"/>
+  <text x="120" y="36" text-anchor="middle" fill="#ffffff" font-family="Orbitron, monospace" font-size="12" font-weight="700">CYBERPUNK風格</text>
+  
+  <!-- 頭像區域 -->
+  <circle cx="50" cy="85" r="20" fill="#0a0a0a" stroke="#00ffff" stroke-width="2"/>
+  <circle cx="50" cy="80" r="8" fill="#ff0080"/>
+  <rect x="42" y="90" width="16" height="8" fill="#00ffff" rx="2"/>
+  
+  <!-- 資訊區塊 -->
+  <rect x="80" y="68" width="140" height="10" fill="#00ffff" rx="5"/>
+  <rect x="80" y="84" width="100" height="8" fill="#ff0080" rx="4"/>
+  <rect x="80" y="98" width="120" height="8" fill="#00ff80" rx="4"/>
+  
+  <!-- 數據線條 -->
+  <path d="M20 120 L220 120" stroke="#00ffff" stroke-width="2" opacity="0.6"/>
+  <path d="M20 130 L180 130" stroke="#ff0080" stroke-width="1" opacity="0.8"/>
+  <path d="M20 140 L200 140" stroke="#00ff80" stroke-width="1" opacity="0.6"/>
+  
+  <!-- 科技圖標 -->
+  <rect x="25" y="125" width="8" height="8" fill="#00ffff" rx="2"/>
+  <rect x="25" y="135" width="8" height="8" fill="#ff0080" rx="2"/>
+  
+  <!-- 漸變定義 -->
+  <defs>
+    <linearGradient id="cyberpunkGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff0080;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00ffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00ff80;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

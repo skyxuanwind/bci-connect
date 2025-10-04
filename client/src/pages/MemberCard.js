@@ -206,6 +206,14 @@ const MemberCard = () => {
             coordinates: row.map_coordinates || row.content_data?.coordinates || null
           };
           break;
+        case 'icon':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            icon_type: row.content_data?.icon_type || 'star',
+            size: row.content_data?.size || 'medium',
+            description: row.content_data?.description || ''
+          };
+          break;
         default:
           data = row.content_data || {};
       }
@@ -840,6 +848,36 @@ const MemberCard = () => {
                   📍 {block.content_data.address}
                 </p>
               )}
+            </div>
+          </div>
+        );
+
+      case 'icon':
+        return (
+          <div key={block.id} className="content-block">
+            <div className="flex items-center space-x-3">
+              <span style={{ fontSize: block.content_data.size === 'small' ? '16px' : block.content_data.size === 'medium' ? '24px' : block.content_data.size === 'large' ? '32px' : '48px' }}>
+                {block.content_data.icon_type === 'star' ? '⭐' :
+                 block.content_data.icon_type === 'heart' ? '❤️' :
+                 block.content_data.icon_type === 'diamond' ? '💎' :
+                 block.content_data.icon_type === 'crown' ? '👑' :
+                 block.content_data.icon_type === 'trophy' ? '🏆' :
+                 block.content_data.icon_type === 'fire' ? '🔥' :
+                 block.content_data.icon_type === 'lightning' ? '⚡' :
+                 block.content_data.icon_type === 'rocket' ? '🚀' :
+                 block.content_data.icon_type === 'target' ? '🎯' :
+                 block.content_data.icon_type === 'medal' ? '🏅' :
+                 block.content_data.icon_type === 'gem' ? '💍' :
+                 block.content_data.icon_type === 'sparkles' ? '✨' : '⭐'}
+              </span>
+              <div>
+                <h3 className="block-title">{block.content_data.title || '圖標'}</h3>
+                {block.content_data.description && (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    {block.content_data.description}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         );
