@@ -771,12 +771,15 @@ const NFCCardEditor = () => {
       is_visible: true,
       custom_styles: {}
     };
-    
+    // 新增區塊並立即開啟就地編輯
+    const newIndex = (cardConfig.content_blocks || []).length;
     setCardConfig({
       ...cardConfig,
       content_blocks: [...(cardConfig.content_blocks || []), newBlock]
     });
-    
+    // 立即開啟預覽側的就地編輯（或中央編輯器，視偏好）
+    setEditingBlockIndex(newIndex);
+    setEditingBlock(newIndex);
     setShowAddBlockModal(false);
     
     // 顯示成功提示
@@ -1355,6 +1358,77 @@ const NFCCardEditor = () => {
           >
             <span className="text-lg">✓</span>
             <span>{successToastMessage || '已完成'}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 左下角：新增內容浮動按鈕 */}
+      <div className="fixed bottom-4 left-4 z-40">
+        <button
+          onClick={() => setShowAddBlockModal(true)}
+          className="px-4 py-2 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-500 active:scale-95 transition text-sm"
+        >
+          新增內容
+        </button>
+      </div>
+
+      {/* 左下角：內容類型選單（面板/底部抽屜） */}
+      <AnimatePresence>
+        {showAddBlockModal && (
+          <motion.div
+            className="fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowAddBlockModal(false)}
+          >
+            <motion.div
+              className="absolute bottom-16 left-4 right-4 sm:left-4 sm:right-auto sm:w-96 bg-white rounded-2xl shadow-2xl p-4"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-gray-800 font-semibold mb-2">選擇內容類型</div>
+              <div className="grid grid-cols-4 gap-3">
+                <button onClick={() => handleAddContentBlock('text')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <ChatBubbleLeftRightIcon className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs">文字</span>
+                </button>
+                <button onClick={() => handleAddContentBlock('link')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <LinkIcon className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs">連結</span>
+                </button>
+                <button onClick={() => handleAddContentBlock('video')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <PlayIcon className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs">影片</span>
+                </button>
+                <button onClick={() => handleAddContentBlock('image')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <PhotoIcon className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs">圖片</span>
+                </button>
+                <button onClick={() => handleAddContentBlock('social')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <FaInstagram className="h-5 w-5 text-pink-500" />
+                  <span className="text-xs">社群媒體</span>
+                </button>
+                <button onClick={() => handleAddContentBlock('map')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <MapPinIcon className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs">地圖</span>
+                </button>
+                <button onClick={() => handleAddContentBlock('icon')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <DocumentDuplicateIcon className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs">圖標</span>
+                </button>
+              </div>
+              <div className="mt-3 text-right">
+                <button
+                  onClick={() => setShowAddBlockModal(false)}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  取消
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
