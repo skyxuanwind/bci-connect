@@ -1072,7 +1072,7 @@ const MemberCard = () => {
   }
 
   return (
-    <div className={`nfc-card-container nfc-card-preview ${getTemplateClass()}`}>
+    <div className={`nfc-card-container nfc-card-preview nfc-card-base ${getTemplateClass()}`}>
       {/* 成功提示 */}
       {showSuccessMessage && (
         <div className="success-message">

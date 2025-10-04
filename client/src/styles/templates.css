@@ -101,13 +101,15 @@
 
 .user-position {
   font-size: 0.875rem;
-  opacity: 0.8;
+  opacity: 1; /* 提升可讀性：取消透明度降低 */
   margin-bottom: 0.25rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); /* 在深色背景上提升清晰度 */
 }
 
 .user-company {
   font-size: 0.875rem;
-  opacity: 0.7;
+  opacity: 1; /* 提升可讀性：取消透明度降低 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 .contact-list li {
@@ -1197,3 +1199,86 @@
 .nfc-card-preview .avatar-container { display: flex; align-items: center; justify-content: center; }
 .nfc-card-preview .user-avatar,
 .nfc-card-preview .avatar-placeholder { flex-shrink: 0; }
+/* ==============================================
+   共用：NFC Card Base（預覽 + 完整版）
+   統一文字對比、陰影、行高，避免背景漸層或模糊影響
+   ============================================== */
+
+.nfc-card-base {
+  --text-primary: rgba(255, 255, 255, 0.96);
+  --text-secondary: rgba(255, 255, 255, 0.90);
+}
+
+.nfc-card-base .user-name,
+.nfc-card-preview .user-name,
+.nfc-card-container .user-name {
+  color: var(--text-primary) !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  opacity: 1 !important;
+}
+
+.nfc-card-base .user-position,
+.nfc-card-preview .user-position,
+.nfc-card-container .user-position,
+.nfc-card-base .user-company,
+.nfc-card-preview .user-company,
+.nfc-card-container .user-company {
+  color: var(--text-secondary) !important;
+  line-height: 1.35 !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  opacity: 1 !important;
+}
+
+/* 在包含文字的容器移除不必要的模糊，提升可讀性 */
+.nfc-card-base .personal-info-section,
+.nfc-card-preview .personal-info-section,
+.nfc-card-container .personal-info-section,
+.nfc-card-base .content-block,
+.nfc-card-preview .content-block,
+.nfc-card-container .content-block {
+  backdrop-filter: none !important;
+}
+
+/* 使用者資訊容器的排版與長字斷行一致化 */
+.nfc-card-base .user-info,
+.nfc-card-preview .user-info,
+.nfc-card-container .user-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nfc-card-base .user-name,
+.nfc-card-base .user-position,
+.nfc-card-base .user-company,
+.nfc-card-preview .user-name,
+.nfc-card-preview .user-position,
+.nfc-card-preview .user-company,
+.nfc-card-container .user-name,
+.nfc-card-container .user-position,
+.nfc-card-container .user-company {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* 動畫與過度效果在使用者偏好減少動態時停用 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .spin,
+  [class*="rotate"],
+  [class*="spin"],
+  .rotate-anim {
+    transform: none !important;
+  }
+}

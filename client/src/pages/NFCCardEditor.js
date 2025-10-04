@@ -1601,7 +1601,7 @@ const TemplatePreview = ({ template, cardConfig }) => {
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
 
   return (
-    <div className={`nfc-card-container nfc-card-preview ${templateClass}`}>
+    <div className={`nfc-card-container nfc-card-preview nfc-card-base ${templateClass}`}>
       <div className="card-content">
         {/* 移除名片標題與副標題（即時預覽不顯示） */}
 

@@ -1765,3 +1765,84 @@ a:focus {
     max-width: 700px;
   }
 }
+/* ==============================================
+   共用：NFC Card Base（預覽 + 完整版）覆蓋
+   統一文字對比、陰影、行高與動態偏好
+   ============================================== */
+
+.nfc-card-base {
+  --text-primary: rgba(255, 255, 255, 0.96);
+  --text-secondary: rgba(255, 255, 255, 0.90);
+}
+
+.nfc-card-base .user-name,
+.nfc-card-preview .user-name,
+.nfc-card-container .user-name {
+  color: var(--text-primary) !important;
+  line-height: 1.25 !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  opacity: 1 !important;
+}
+
+.nfc-card-base .user-position,
+.nfc-card-preview .user-position,
+.nfc-card-container .user-position,
+.nfc-card-base .user-company,
+.nfc-card-preview .user-company,
+.nfc-card-container .user-company {
+  color: var(--text-secondary) !important;
+  line-height: 1.35 !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  opacity: 1 !important;
+}
+
+/* 移除文字容器的模糊效果 */
+.nfc-card-base .personal-info-section,
+.nfc-card-preview .personal-info-section,
+.nfc-card-container .personal-info-section,
+.nfc-card-base .content-block,
+.nfc-card-preview .content-block,
+.nfc-card-container .content-block {
+  backdrop-filter: none !important;
+}
+
+/* 長字與排版一致化 */
+.nfc-card-base .user-info,
+.nfc-card-preview .user-info,
+.nfc-card-container .user-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nfc-card-base .user-name,
+.nfc-card-base .user-position,
+.nfc-card-base .user-company,
+.nfc-card-preview .user-name,
+.nfc-card-preview .user-position,
+.nfc-card-preview .user-company,
+.nfc-card-container .user-name,
+.nfc-card-container .user-position,
+.nfc-card-container .user-company {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .spin,
+  [class*="rotate"],
+  [class*="spin"],
+  .rotate-anim {
+    transform: none !important;
+  }
+}
