@@ -1295,15 +1295,15 @@ const TemplatePreview = ({ template, cardConfig }) => {
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
 
   return (
-    <div className={`nfc-card-container ${templateClass}`} style={{ minHeight: 'auto', padding: '1rem' }}>
-      <div className="card-content" style={{ maxWidth: 'none', padding: '0' }}>
+    <div className={`nfc-card-container nfc-card-preview ${templateClass}`}>
+      <div className="card-content">
         {/* 名片標題 */}
-        <div className="card-header" style={{ marginBottom: '1rem', textAlign: 'center' }}>
-          <h1 className="card-title" style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+        <div className="card-header">
+          <h1 className="card-title">
             {cardConfig?.card_title || user?.name || '預覽名片'}
           </h1>
           {cardConfig?.card_subtitle && (
-            <p className="card-subtitle" style={{ fontSize: '0.875rem', opacity: 0.8 }}>
+            <p className="card-subtitle">
               {cardConfig.card_subtitle}
             </p>
           )}
@@ -1336,15 +1336,10 @@ const TemplatePreview = ({ template, cardConfig }) => {
         </div>
 
         {/* 內容區塊 */}
-        <div className="content-blocks" style={{ padding: '0' }}>
+        <div className="content-blocks">
           {cardConfig?.content_blocks?.length > 0 ? (
             cardConfig.content_blocks.map((block, index) => (
-              <div key={index} className="content-block" style={{ 
-                marginBottom: '1rem', 
-                padding: '0.75rem',
-                fontSize: '0.75rem',
-                borderTop: borderTopCss
-              }}>
+              <div key={index} className="content-block" style={{ borderTop: borderTopCss }}>
                 <BlockPreview block={block} />
               </div>
             ))
@@ -1370,7 +1365,7 @@ const BlockPreview = ({ block }) => {
     case 'text':
       return (
         <div>
-          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200">
             {content_data?.title || '文字區塊'}
           </div>
           <div className="text-amber-100 text-xs">
@@ -1382,7 +1377,7 @@ const BlockPreview = ({ block }) => {
     case 'link':
       return (
         <div>
-          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200">
             {content_data?.title || '連結標題'}
           </div>
           <div className="text-amber-300 text-xs">
@@ -1394,7 +1389,7 @@ const BlockPreview = ({ block }) => {
     case 'video':
       return (
         <div>
-          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title text-amber-200">
             {content_data?.title || '影片標題'}
           </div>
           <div className="text-amber-100 text-xs">

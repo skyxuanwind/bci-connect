@@ -483,6 +483,13 @@
   border: 1px solid rgba(102, 126, 234, 0.2);
 }
 
+/* 新增聯絡資訊容器：一致間距與垂直排列，提升易讀性 */
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .contact-item:hover {
   background: rgba(102, 126, 234, 0.2);
   transform: translateY(-2px);

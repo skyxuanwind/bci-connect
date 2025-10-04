@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import Cookies from 'js-cookie';
 import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/templates.css';
+import './MemberCard.css';
 import { buildTemplateClass } from '../utils/templateClass';
 import {
   HeartIcon,
