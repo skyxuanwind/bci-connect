@@ -1093,22 +1093,16 @@ const MemberCard = () => {
 
       {/* 主要內容 */}
       <div className="card-content">
-        {/* 名片標題 */}
-        <div className="card-header">
-          <h1 className="card-title">{cardData.card_title}</h1>
-          {cardData.card_subtitle && (
-            <p className="card-subtitle">{cardData.card_subtitle}</p>
-          )}
-          <div className="mt-3 flex items-center gap-2">
-            <button 
-              onClick={openAISuggestion}
-              className="inline-flex items-center px-3 py-1 text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-sm"
-              title="AI 跟進建議"
-            >
-              <SparklesIcon className="h-4 w-4 mr-1" />
-              AI 跟進
-            </button>
-          </div>
+        {/* AI 跟進按鈕 */}
+        <div className="ai-suggestion-container">
+          <button 
+            onClick={openAISuggestion}
+            className="inline-flex items-center px-3 py-1 text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-sm"
+            title="AI 跟進建議"
+          >
+            <SparklesIcon className="h-4 w-4 mr-1" />
+            AI 跟進
+          </button>
         </div>
 
         {/* 個人資訊區塊 */}
@@ -1123,7 +1117,7 @@ const MemberCard = () => {
                 />
               ) : (
                 <div className="avatar-placeholder">
-                  <UserIcon className="h-8 w-8 text-gray-400" />
+                  <UserIcon className="h-12 w-12 text-white" />
                 </div>
               )}
             </div>
