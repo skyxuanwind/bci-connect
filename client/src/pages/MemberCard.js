@@ -984,29 +984,27 @@ const MemberCard = () => {
     if (contactItems.length === 0) return null;
 
     return (
-      <div className="content-block">
-        <h3 className="block-title">聯絡資訊</h3>
-        <div className="contact-info">
+      <div className="contact-info-section">
+        <h2>聯絡資訊</h2>
+        <div className="contact-grid">
           {contactItems.map((item, index) => {
             const IconComponent = item.icon;
             const key = `${item.label}-${item.value || index}`;
-            const content = (
-              <div className="contact-item">
+            
+            const contactElement = (
+              <>
                 <IconComponent className="contact-icon" />
-                <div>
-                  <div className="text-sm text-gray-600">{item.label}</div>
-                  <div className="font-medium">{item.value}</div>
-                </div>
-              </div>
+                <span className="contact-text">{item.value}</span>
+              </>
             );
 
             return item.href ? (
-              <a key={key} href={item.href} className="block">
-                {content}
+              <a key={key} href={item.href} className="contact-item">
+                {contactElement}
               </a>
             ) : (
-              <div key={key}>
-                {content}
+              <div key={key} className="contact-item">
+                {contactElement}
               </div>
             );
           })}

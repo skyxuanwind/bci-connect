@@ -380,6 +380,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* 優化姓名區域的文字清晰度 */
 .user-name {
   font-size: 2.5rem;
   font-weight: 700;
@@ -388,6 +389,13 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  /* 提升文字清晰度 */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  /* 確保在電腦端有更好的可讀性 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .template-creative .user-name {
@@ -464,23 +472,56 @@
   font-weight: 600;
 }
 
+/* 統一聯絡資訊的對齊方式 */
 .contact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 15px 20px;
+  gap: 16px;
+  padding: 18px 24px;
   background: rgba(102, 126, 234, 0.1);
   border-radius: 16px;
   text-decoration: none;
   color: inherit;
   transition: all 0.3s ease;
   border: 1px solid rgba(102, 126, 234, 0.2);
+  /* 確保所有聯絡項目有一致的高度和對齊 */
+  min-height: 60px;
+  justify-content: flex-start;
+}
+
+.contact-item:hover {
+  background: rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+}
+
+.contact-icon {
+  /* 統一圖示尺寸和對齊 */
+  width: 24px;
+  height: 24px;
+  color: #667eea;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-item .contact-text {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+  /* 確保文字垂直居中對齊 */
+  display: flex;
+  align-items: center;
 }
 
 /* 新增聯絡資訊容器：一致間距與垂直排列，提升易讀性 */
@@ -944,5 +985,96 @@ a:focus {
     background: white !important;
     box-shadow: none !important;
     border: 1px solid #ccc !important;
+  }
+}
+
+/* 電腦端響應式設計優化 */
+@media (min-width: 1024px) {
+  .nfc-card-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  .personal-info-section {
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+
+  .user-name {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    /* 在大螢幕上提升文字清晰度 */
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    letter-spacing: -0.03em;
+  }
+
+  .user-position {
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+  }
+
+  .user-company {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+
+  .contact-info-section {
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+
+  .contact-info-section h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+  }
+
+  .contact-grid {
+    max-width: 600px;
+    gap: 20px;
+  }
+
+  .contact-item {
+    padding: 24px 32px;
+    min-height: 70px;
+    border-radius: 20px;
+  }
+
+  .contact-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .contact-item .contact-text {
+    font-size: 1.1rem;
+  }
+
+  .content-block {
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+
+  .block-title {
+    font-size: 2rem;
+    margin-bottom: 30px;
+  }
+}
+
+/* 超大螢幕優化 */
+@media (min-width: 1440px) {
+  .nfc-card-container {
+    max-width: 900px;
+  }
+
+  .user-name {
+    font-size: 3.5rem;
+  }
+
+  .contact-info-section {
+    padding: 50px;
+  }
+
+  .contact-grid {
+    max-width: 700px;
   }
 }
