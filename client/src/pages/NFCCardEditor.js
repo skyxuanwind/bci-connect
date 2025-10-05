@@ -2332,10 +2332,10 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
     case 'text':
       return (
         <div>
-          <div className="block-title text-amber-200">
+          <div className="block-title">
             {content_data?.title || '文字區塊'}
           </div>
-          <div className="text-amber-100 text-xs">
+          <div className="description-text text-xs">
             {content_data?.content || '內容文字'}
           </div>
           {editingBlockIndex === index && (
@@ -2363,10 +2363,10 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
     case 'link':
       return (
         <div>
-          <div className="block-title text-amber-200">
+          <div className="block-title">
             {content_data?.title || '連結標題'}
           </div>
-          <div className="text-amber-300 text-xs">
+          <div className="description-text text-xs">
             {content_data?.url || 'https://example.com'}
           </div>
           {editingBlockIndex === index && (
@@ -2393,10 +2393,10 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
     case 'website':
       return (
         <div>
-          <div className="block-title text-amber-200">
+          <div className="block-title">
             {content_data?.title || '網站標題'}
           </div>
-          <div className="text-amber-300 text-xs">
+          <div className="description-text text-xs">
             {content_data?.url || 'https://example.com'}
           </div>
           {editingBlockIndex === index && (
@@ -2423,10 +2423,10 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
     case 'news':
       return (
         <div>
-          <div className="block-title text-amber-200">
+          <div className="block-title">
             {content_data?.title || '新聞標題'}
           </div>
-          <div className="text-amber-300 text-xs">
+          <div className="description-text text-xs">
             {content_data?.url || 'https://example.com/news'}
           </div>
           {editingBlockIndex === index && (
@@ -2453,10 +2453,10 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
     case 'file':
       return (
         <div>
-          <div className="block-title text-amber-200">
+          <div className="block-title">
             {content_data?.title || '檔案標題'}
           </div>
-          <div className="text-amber-300 text-xs">
+          <div className="description-text text-xs">
             {content_data?.url || 'https://example.com/file.pdf'}
           </div>
           {editingBlockIndex === index && (
@@ -2485,10 +2485,10 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
     case 'video':
       return (
         <div>
-          <div className="block-title text-amber-200">
+          <div className="block-title">
             {content_data?.title || '影片標題'}
           </div>
-          <div className="text-amber-100 text-xs">
+          <div className="description-text text-xs">
             {content_data?.type === 'youtube' ? (
               (content_data?.url || content_data?.videoId) ? (
                 <div className="flex items-center gap-1">
@@ -2618,7 +2618,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
     case 'social':
       return (
         <div>
-          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <div className="block-title" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             社群媒體
           </div>
           <div className="flex flex-wrap gap-1">
@@ -2636,7 +2636,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
               </span>
             ))}
             {!Object.values(content_data || {}).some(url => url) && (
-              <span className="text-amber-100 text-xs">請添加社群媒體連結</span>
+              <span className="description-text text-xs">請添加社群媒體連結</span>
             )}
           </div>
           {editingBlockIndex === index && (
