@@ -1172,6 +1172,15 @@ const getYouTubeVideoId = (url) => {
                 <CheckIcon className="h-4 w-4 mr-2" />
                 {saving ? '保存中…' : '保存'}
               </button>
+              {/* 行動版保存按鈕 */}
+              <button
+                onClick={handleSaveAll}
+                disabled={saving}
+                className="md:hidden inline-flex items-center px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50"
+              >
+                <CheckIcon className="h-4 w-4 mr-1" />
+                {saving ? '保存中…' : '保存'}
+              </button>
               <button
                 onClick={copyCardUrl}
                 className="flex items-center px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -1462,6 +1471,8 @@ const getYouTubeVideoId = (url) => {
                       onMoveUp={moveBlockUp}
                       onMoveDown={moveBlockDown}
                       setEditingBlockIndex={setEditingBlockIndex}
+                      onInlineImageUpload={handleInlineImageUpload}
+                      onInlineIconUpload={handleInlineIconUpload}
                     />
                   </div>
                   {/* 底部拖曳把手（手機版） */}
@@ -2064,7 +2075,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 };
 
 // 模板預覽組件
-const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockField, updateBasicField, onDeleteBlock, onToggleVisibility, onMoveUp, onMoveDown, setEditingBlockIndex }) => {
+const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockField, updateBasicField, onDeleteBlock, onToggleVisibility, onMoveUp, onMoveDown, setEditingBlockIndex, onInlineImageUpload, onInlineIconUpload }) => {
   const { user } = useAuth();
   
   const hexToRgb = (hex) => {
@@ -2468,7 +2479,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleInlineImageUpload(index, e.target.files?.[0])}
+                onChange={(e) => onInlineImageUpload(index, e.target.files?.[0])}
                 className="inline-editor-input"
               />
               <label>圖片網址</label>
@@ -2647,7 +2658,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleInlineIconUpload(index, e.target.files?.[0])}
+                onChange={(e) => onInlineIconUpload(index, e.target.files?.[0])}
                 className="inline-editor-input"
               />
               <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
