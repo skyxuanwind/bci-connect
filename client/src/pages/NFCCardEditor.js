@@ -66,14 +66,25 @@ const getYouTubeVideoId = (url) => {
     const [editingBlockIndex, setEditingBlockIndex] = useState(null);
     const [showAddBlockModal, setShowAddBlockModal] = useState(false);
     const [showTemplatePicker, setShowTemplatePicker] = useState(false);
-    const [showDesktopTemplate, setShowDesktopTemplate] = useState(false);
-    // 單畫面模式：永遠顯示預覽並隱藏左側列表與中欄
-    // 調整預設為「關閉」，以便顯示左側基本設定面板（七個常駐欄位）
-    const [singleScreenMode, setSingleScreenMode] = useState(false);
+  const [showDesktopTemplate, setShowDesktopTemplate] = useState(false);
+  // 單畫面模式：永遠顯示預覽並隱藏左側列表與中欄
+  // 調整預設為「關閉」，以便顯示左側基本設定面板（七個常駐欄位）
+  const [singleScreenMode, setSingleScreenMode] = useState(false);
+  // 單一操作界面的覆蓋層：基本資訊與內容清單
+  const [showBasicInfoOverlay, setShowBasicInfoOverlay] = useState(false);
+  const [showContentListOverlay, setShowContentListOverlay] = useState(false);
   // 已移除自動帶入：改為完全手動維護欄位與內容
   // 提示視窗狀態
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successToastMessage, setSuccessToastMessage] = useState('已完成');
+  // 行動端預設單面板模式（xl 以下），減少頁面滑動
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1280px)');
+    const updateMode = () => setSingleScreenMode(!mq.matches);
+    updateMode();
+    mq.addEventListener('change', updateMode);
+    return () => mq.removeEventListener('change', updateMode);
+  }, []);
   // 使用者層級偏好與操作狀態
   const [userPreferences, setUserPreferences] = useState({ auto_populate_on_create: false, single_screen_edit: false });
   const [savingUserPref, setSavingUserPref] = useState(false);
@@ -1301,19 +1312,35 @@ const getYouTubeVideoId = (url) => {
             
             {/* 右側：即時預覽（單畫面模式：全寬） */}
             <div className={singleScreenMode ? "xl:col-span-12" : "xl:col-span-4"}>
-              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg py-8 px-6 md:sticky md:top-8">
+              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg py-8 px-6 md:sticky md:top-8 relative">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gold-100 flex items-center">
                     <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
                     即時預覽
                   </h2>
-                  <button
-                    onClick={() => setShowAddBlockModal(true)}
-                    className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors text-sm"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-1" />
-                    新增內容
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowBasicInfoOverlay(true)}
+                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-amber-700 to-amber-600 text-amber-100 rounded-lg hover:from-amber-600 hover:to-amber-500 transition-colors text-sm"
+                      title="基本資訊"
+                    >
+                      基本資訊
+                    </button>
+                    <button
+                      onClick={() => setShowContentListOverlay(true)}
+                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-indigo-700 to-indigo-600 text-indigo-100 rounded-lg hover:from-indigo-600 hover:to-indigo-500 transition-colors text-sm"
+                      title="內容清單"
+                    >
+                      內容清單
+                    </button>
+                    <button
+                      onClick={() => setShowAddBlockModal(true)}
+                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors text-sm"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-1" />
+                      新增內容
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50 relative">
@@ -1345,6 +1372,104 @@ const getYouTubeVideoId = (url) => {
                       onInlineIconUpload={handleInlineIconUpload}
                     />
                   </div>
+                  {/* 單一操作界面：覆蓋層（基本資訊） */}
+                  {showBasicInfoOverlay && (
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-20 flex items-center justify-center p-4">
+                      <div className="bg-gradient-to-br from-gray-900 to-black border border-amber-500/40 rounded-xl shadow-xl w-full max-w-xl max-h-[80vh] overflow-y-auto">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-amber-500/20">
+                          <h3 className="text-amber-100 font-semibold">基本資訊</h3>
+                          <button
+                            onClick={() => setShowBasicInfoOverlay(false)}
+                            className="text-amber-200 hover:text-amber-100"
+                          >
+                            關閉
+                          </button>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          <label className="block text-sm text-amber-200">姓名</label>
+                          <input
+                            type="text"
+                            value={cardConfig?.user_name || ''}
+                            onChange={(e) => updateBasicField('user_name', e.target.value)}
+                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
+                          />
+                          <label className="block text-sm text-amber-200">職稱</label>
+                          <input
+                            type="text"
+                            value={cardConfig?.user_title || ''}
+                            onChange={(e) => updateBasicField('user_title', e.target.value)}
+                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
+                          />
+                          <label className="block text-sm text-amber-200">公司</label>
+                          <input
+                            type="text"
+                            value={cardConfig?.user_company || ''}
+                            onChange={(e) => updateBasicField('user_company', e.target.value)}
+                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
+                          />
+                          <label className="block text-sm text-amber-200">LINE ID</label>
+                          <input
+                            type="text"
+                            value={cardConfig?.line_id || ''}
+                            onChange={(e) => updateBasicField('line_id', e.target.value)}
+                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
+                          />
+                          <label className="block text-sm text-amber-200">自我介紹</label>
+                          <textarea
+                            rows={3}
+                            value={cardConfig?.self_intro || ''}
+                            onChange={(e) => updateBasicField('self_intro', e.target.value)}
+                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 單一操作界面：覆蓋層（內容清單） */}
+                  {showContentListOverlay && (
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-20 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                          <h3 className="text-gray-900 font-semibold">內容清單</h3>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setShowAddBlockModal(true)}
+                              className="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-500 text-sm"
+                            >
+                              <PlusIcon className="h-4 w-4 mr-1" /> 新增內容
+                            </button>
+                            <button
+                              onClick={() => setShowContentListOverlay(false)}
+                              className="text-gray-600 hover:text-gray-900"
+                            >
+                              關閉
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          {cardConfig?.content_blocks && cardConfig.content_blocks.length > 0 ? (
+                            <DragDropContext onDragEnd={handleDragEnd}>
+                              <Droppable droppableId="content-blocks-overlay">
+                                {(provided) => (
+                                  <div {...provided.droppableProps} ref={provided.innerRef}>
+                                    {cardConfig.content_blocks.map((block, index) => renderBlockEditor(block, index))}
+                                    {provided.placeholder}
+                                  </div>
+                                )}
+                              </Droppable>
+                            </DragDropContext>
+                          ) : (
+                            <div className="text-center py-12 text-gray-500">
+                              <PhotoIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                              <p>尚未添加任何內容區塊</p>
+                              <p className="text-sm">按下上方按鈕開始添加內容</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {/* 底部拖曳把手（手機版） */}
                   <div className="absolute bottom-0 left-0 right-0 md:hidden flex justify-center items-center z-10 pb-2">
                     <div
