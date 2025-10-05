@@ -80,8 +80,8 @@ const getYouTubeVideoId = (url) => {
   const [applyingPersonalInfo, setApplyingPersonalInfo] = useState(false);
 
   // 行動版預覽高度（可上下拖曳調整）以提供更多內容空間
-  const [previewHeight, setPreviewHeight] = useState(560); // px，預設值約等於35rem
-  const MIN_PREVIEW_HEIGHT = 420; // 420px ≈ 26rem
+  const [previewHeight, setPreviewHeight] = useState(640); // px，預設值約等於40rem
+  const MIN_PREVIEW_HEIGHT = 480; // 480px ≈ 30rem，擴增以容納更多內容
   const MAX_PREVIEW_HEIGHT = 1200; // 上限避免過度拉伸
 
   const beginResize = (clientY, from) => {
@@ -2072,8 +2072,8 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
           {cardConfig?.content_blocks?.length > 0 ? (
             cardConfig.content_blocks.map((block, index) => (
               <div key={index} className="content-block" style={{ borderTop: borderTopCss }}>
-                {/* 工具列 */}
-                <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 6 }} className="flex gap-2">
+                {/* 工具列（置於卡片標題上方） */}
+                <div className="block-toolbar">
                   <button className="inline-toolbar-button" onClick={() => setEditingBlockIndex(index)}>編輯</button>
                   <button className="inline-toolbar-button" onClick={() => onToggleVisibility(index)}>{block?.is_visible === false ? '顯示' : '隱藏'}</button>
                   <button className="inline-toolbar-button" onClick={() => onMoveUp(index)}>上移</button>

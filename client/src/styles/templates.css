@@ -1346,3 +1346,28 @@
     transform: none !important;
   }
 }
+/* 內容卡片頂部工具列（顯示在卡片標題上方） */
+.block-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+
+/* 強制個人資訊橫排，避免模板啟用直排 */
+.nfc-card-base .user-info,
+.nfc-card-preview .user-info,
+.nfc-card-container .user-info {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  flex-direction: initial !important;
+}
+
+/* 擴展卡片容器上下內距，確保內容完整顯示 */
+.nfc-card-container .card-content,
+.nfc-card-preview .card-content,
+.nfc-card-base .card-content {
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
