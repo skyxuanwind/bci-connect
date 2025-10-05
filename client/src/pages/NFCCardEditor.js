@@ -68,7 +68,8 @@ const getYouTubeVideoId = (url) => {
     const [showTemplatePicker, setShowTemplatePicker] = useState(false);
     const [showDesktopTemplate, setShowDesktopTemplate] = useState(false);
     // 單畫面模式：永遠顯示預覽並隱藏左側列表與中欄
-    const [singleScreenMode, setSingleScreenMode] = useState(true);
+    // 調整預設為「關閉」，以便顯示左側基本設定面板（七個常駐欄位）
+    const [singleScreenMode, setSingleScreenMode] = useState(false);
   // 已移除自動帶入：改為完全手動維護欄位與內容
   // 提示視窗狀態
   const [showSuccessToast, setShowSuccessToast] = useState(false);
