@@ -1232,30 +1232,21 @@ const getYouTubeVideoId = (url) => {
                 </div>
               </div>
               
-              {/* 添加內容區塊 */}
+              {/* 添加內容區塊（精簡版） */}
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">添加內容</h2>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { type: 'text', icon: ChatBubbleLeftRightIcon, label: '文字' },
-                    { type: 'link', icon: LinkIcon, label: '連結' },
-                    { type: 'video', icon: PlayIcon, label: '影片' },
-                    { type: 'image', icon: PhotoIcon, label: '圖片' },
-                    { type: 'social', icon: ChatBubbleLeftRightIcon, label: '社群' },
-                    { type: 'map', icon: MapPinIcon, label: '地圖' },
-                    { type: 'icon', icon: UserIcon, label: '圖標' }
-                  ].map(({ type, icon: Icon, label }) => (
-                    <button
-                      key={type}
-                      onClick={() => handleAddContentBlock(type)}
-                      className="flex flex-col items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <Icon className="h-6 w-6 text-gray-600 mb-1" />
-                      <span className="text-sm text-gray-700">{label}</span>
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">添加內容</h2>
+                  <button
+                    onClick={() => setShowAddBlockModal(true)}
+                    className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors text-sm"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-1" />
+                    開啟選單
+                  </button>
                 </div>
+                <p className="text-sm text-gray-600 mt-3">
+                  介面已精簡：請透過上方「開啟選單」或標題列「新增內容」按鈕選擇內容類型。
+                </p>
               </div>
             </div>
             
@@ -1264,6 +1255,14 @@ const getYouTubeVideoId = (url) => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">內容區塊</h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowAddBlockModal(true)}
+                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors text-sm"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-1" />
+                      新增內容
+                    </button>
                   <button
                     onClick={handleSaveContent}
                     disabled={saving}
@@ -1271,6 +1270,7 @@ const getYouTubeVideoId = (url) => {
                   >
                     {saving ? '保存中...' : '保存內容'}
                   </button>
+                  </div>
                 </div>
                 
                 {cardConfig?.content_blocks && cardConfig.content_blocks.length > 0 ? (
@@ -1302,10 +1302,19 @@ const getYouTubeVideoId = (url) => {
             {/* 右側：即時預覽（單畫面模式：全寬） */}
             <div className={singleScreenMode ? "xl:col-span-12" : "xl:col-span-4"}>
               <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg py-8 px-6 md:sticky md:top-8">
-                <h2 className="text-lg font-semibold text-gold-100 mb-4 flex items-center">
-                  <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
-                  即時預覽
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gold-100 flex items-center">
+                    <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
+                    即時預覽
+                  </h2>
+                  <button
+                    onClick={() => setShowAddBlockModal(true)}
+                    className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors text-sm"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-1" />
+                    新增內容
+                  </button>
+                </div>
                 
                 <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50 relative">
                   {/* 行動版上下拖曳把手：僅在手機顯示 */}
@@ -2065,7 +2074,14 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
                   <button className="inline-toolbar-button" onClick={() => onMoveDown(index)}>下移</button>
                   <button className="inline-toolbar-button" onClick={() => onDeleteBlock(index)}>刪除</button>
                 </div>
-                <BlockPreview block={block} index={index} editingBlockIndex={editingBlockIndex} updateBlockField={updateBlockField} />
+                <BlockPreview 
+                  block={block} 
+                  index={index} 
+                  editingBlockIndex={editingBlockIndex} 
+                  updateBlockField={updateBlockField}
+                  onInlineImageUpload={onInlineImageUpload}
+                  onInlineIconUpload={onInlineIconUpload}
+                />
               </div>
             ))
           ) : (
@@ -2082,7 +2098,7 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
 };
 
 // 區塊預覽組件（支援就地編輯 overlay）
-const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => {
+const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInlineImageUpload, onInlineIconUpload }) => {
   if (!block) return null;
   const { content_data } = block;
   
