@@ -116,7 +116,7 @@
     box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
     transform: translateY(-1px);
   }
-  
+
   .btn-danger {
     @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
   }
@@ -232,6 +232,32 @@
   
   .level-3 {
     @apply bg-gradient-to-r from-gold-600 to-gold-700 text-primary-900 border border-gold-500;
+  }
+
+  /* 個人資料頁：深金色文字強化（黑金質感） */
+  .profile-page {
+    color: var(--gold-true);
+  }
+  .profile-page .card-header h2,
+  .profile-page .card-header p,
+  .profile-page .label,
+  .profile-page .form-label,
+  .profile-page p,
+  .profile-page small {
+    color: var(--gold-true) !important;
+  }
+  .profile-page .input {
+    color: var(--gold-true);
+    background-color: var(--black-true);
+    border-color: rgba(212, 175, 55, 0.35);
+  }
+  .profile-page .input:focus {
+    border-color: rgba(212, 175, 55, 0.7);
+    box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.4);
+  }
+  .profile-page input::placeholder,
+  .profile-page textarea::placeholder {
+    color: rgba(212, 175, 55, 0.7);
   }
 }
 

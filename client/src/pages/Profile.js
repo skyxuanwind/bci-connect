@@ -253,7 +253,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="profile-page max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="bg-gradient-primary text-white rounded-lg p-6">
         <div className="flex items-center">
