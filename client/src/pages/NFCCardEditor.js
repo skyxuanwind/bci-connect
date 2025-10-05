@@ -66,6 +66,7 @@ const getYouTubeVideoId = (url) => {
     const [editingBlockIndex, setEditingBlockIndex] = useState(null);
     const [showAddBlockModal, setShowAddBlockModal] = useState(false);
     const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+    const [showDesktopTemplate, setShowDesktopTemplate] = useState(false);
     // 單畫面模式：永遠顯示預覽並隱藏左側列表與中欄
     const [singleScreenMode, setSingleScreenMode] = useState(true);
   // 自動帶入個人資料控制，避免重複插入
@@ -1044,7 +1045,7 @@ const getYouTubeVideoId = (url) => {
   const selectedPreview = selectedTemplate?.preview_image_url || '/nfc-templates/placeholder.svg';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black to-gray-900">
+    <div className="h-screen overflow-hidden bg-gradient-to-br from-black to-gray-900">
       {/* 頂部操作欄 */}
       <div className="bg-gradient-to-r from-black/90 to-gray-900/90 border-b border-yellow-500/30 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1060,6 +1061,13 @@ const getYouTubeVideoId = (url) => {
                 新增內容
               </button>
               <button
+                onClick={() => setShowDesktopTemplate(true)}
+                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-gray-800 to-gray-700 text-gold-100 rounded-lg hover:from-gray-700 hover:to-gray-600 transition-colors"
+              >
+                <Bars3Icon className="h-4 w-4 mr-2" />
+                模板選擇
+              </button>
+              <button
                 onClick={copyCardUrl}
                 className="flex items-center px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
               >
@@ -1071,9 +1079,9 @@ const getYouTubeVideoId = (url) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-4rem)] overflow-hidden">
         {/* 編輯模式 - 三欄布局：基本設定、內容編輯、即時預覽 */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-full">
             {/* 左側：基本設定 */}
             <div className={singleScreenMode ? 'hidden' : 'xl:col-span-3'}>
               <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-6 mb-6">
@@ -1381,6 +1389,56 @@ const getYouTubeVideoId = (url) => {
           >
             <span className="text-lg">✓</span>
             <span>{successToastMessage || '已完成'}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 模板選擇面板（右側抽屜，桌面） */}
+      <AnimatePresence>
+        {showDesktopTemplate && (
+          <motion.div
+            className="fixed inset-0 z-40 hidden md:block"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDesktopTemplate(false)}
+          >
+            <motion.div
+              className="absolute top-20 right-6 w-[380px] bg-white rounded-2xl shadow-2xl p-4 border"
+              initial={{ x: 40, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-gray-800 font-semibold">選擇模板</div>
+                <button
+                  onClick={() => setShowDesktopTemplate(false)}
+                  className="p-1 rounded hover:bg-gray-100"
+                >
+                  <XMarkIcon className="h-4 w-4 text-gray-600" />
+                </button>
+              </div>
+              <select
+                value={cardConfig?.template_id || ''}
+                onChange={(e) => handleTemplateChange(parseInt(e.target.value))}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              >
+                {templates.map(template => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => setShowDesktopTemplate(false)}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  完成
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
