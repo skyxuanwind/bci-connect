@@ -17,6 +17,7 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   position: relative;
+  color: var(--text-primary, #1F2937);
 }
 
 .nfc-card-preview:hover {
@@ -107,12 +108,14 @@
   opacity: 1; /* 提升可讀性：取消透明度降低 */
   margin-bottom: 0.25rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); /* 在深色背景上提升清晰度 */
+  color: var(--text-secondary, #4B5563);
 }
 
 .user-company {
   font-size: 0.875rem;
   opacity: 1; /* 提升可讀性：取消透明度降低 */
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  color: var(--text-secondary, #4B5563);
 }
 
 .contact-list li {
@@ -188,8 +191,11 @@
    ============================================== */
 
 .template-minimal-luxury {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #000000 100%);
-  color: #ffffff;
+  --text-primary: #1F2937; /* 深灰：標題主文字 */
+  --text-secondary: #6B7280; /* 次要文字 */
+  --accent: #8DA7C7; /* 藍灰重點色 */
+  background: linear-gradient(135deg, #FAFAF9 0%, #F3F4F6 100%);
+  color: var(--text-primary);
   position: relative;
   overflow: hidden;
 }
@@ -201,9 +207,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+  background:
+    radial-gradient(circle at 20% 30%, rgba(141, 167, 199, 0.10) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(141, 167, 199, 0.06) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -219,82 +225,96 @@
   height: 120px;
   border-radius: 50%;
   margin: 0 auto 2rem;
-  border: 3px solid #ffd700;
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  border: 3px solid rgba(141, 167, 199, 0.45);
+  box-shadow: 0 0 24px rgba(141, 167, 199, 0.20);
   object-fit: cover;
+  position: relative;
+}
+.template-minimal-luxury .user-avatar::before {
+  content: '';
+  position: absolute;
+  right: -10px;
+  top: 8px;
+  width: 10px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--accent);
+  opacity: 0.85;
 }
 
 .template-minimal-luxury .user-name {
   font-size: 2rem;
-  font-weight: 300;
+  font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #ffffff;
-  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
 }
 
 .template-minimal-luxury .user-position {
   font-size: 1.1rem;
-  color: #ffd700;
-  margin-bottom: 3rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-shadow: none;
 }
 
 .template-minimal-luxury .content-block {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(141, 167, 199, 0.25);
+  backdrop-filter: blur(8px);
   margin-bottom: 2rem;
+  border-radius: 16px;
 }
 
 .template-minimal-luxury .content-block:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 215, 0, 0.4);
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(141, 167, 199, 0.45);
   transform: translateY(-2px);
 }
 
 .template-minimal-luxury .block-title {
-  color: #ffd700;
+  color: var(--accent);
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
 }
 
 .template-minimal-luxury .contact-list li {
-  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid rgba(141, 167, 199, 0.15);
   padding: 1rem 0;
 }
 
 .template-minimal-luxury .contact-label {
-  color: #cccccc;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .template-minimal-luxury .contact-value {
-  color: #ffffff;
-  font-weight: 400;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .template-minimal-luxury .social-link {
-  background: linear-gradient(45deg, #ffd700, #ffed4e);
-  color: #000000;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(45deg, #8DA7C7, #A7C5EB);
+  color: #111827;
+  box-shadow: 0 4px 15px rgba(141, 167, 199, 0.25);
 }
 
 .template-minimal-luxury .social-link:hover {
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 8px 25px rgba(141, 167, 199, 0.4);
 }
 
 .template-minimal-luxury .save-contact-btn {
-  background: linear-gradient(45deg, #ffd700, #ffed4e);
-  color: #000000;
+  background: linear-gradient(45deg, #8DA7C7, #A7C5EB);
+  color: #111827;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(141, 167, 199, 0.25);
 }
 
 .template-minimal-luxury .save-contact-btn:hover {
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 8px 25px rgba(141, 167, 199, 0.4);
 }
 
 /* ==============================================
@@ -1274,7 +1294,7 @@
 }
 
 /* 依模板覆蓋文字顏色變數，確保對比與易讀性 */
-.template-minimal-luxury { --text-primary: rgba(255,255,255,0.98); --text-secondary: rgba(255,215,0,0.92); }
+.template-minimal-luxury { --text-primary: #1F2937; --text-secondary: #6B7280; --accent: #8DA7C7; }
 .template-futuristic { --text-primary: #E6FFFA; --text-secondary: #A5F3FC; }
 .template-creative-brand { --text-primary: #1F2937; --text-secondary: #374151; }
 .template-professional-business { --text-primary: #1F2937; --text-secondary: #4B5563; }
@@ -1432,6 +1452,9 @@
    ============================================== */
 .template-black-gold-prestige {
   background: linear-gradient(135deg, #0b0b0b 0%, #121212 50%, #000000 100%);
+  --text-primary: #F5F5F5;
+  --text-secondary: #C5C5C5;
+  --accent: #D4AF37;
   color: var(--text-primary);
   position: relative;
   overflow: hidden;
@@ -1446,9 +1469,10 @@
   pointer-events: none;
 }
 .template-black-gold-prestige .card-content { position: relative; z-index: 1; padding: 2rem; }
-.template-black-gold-prestige .user-avatar { width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 1.25rem; border: 3px solid #D4AF37; box-shadow: 0 0 24px rgba(212,175,55,0.3); object-fit: cover; }
+.template-black-gold-prestige .user-avatar { width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 1.25rem; border: 3px solid #D4AF37; box-shadow: 0 0 24px rgba(212,175,55,0.3); object-fit: cover; position: relative; }
+.template-black-gold-prestige .user-avatar::before { content: ''; position: absolute; right: -10px; top: 8px; width: 10px; height: 24px; border-radius: 8px; background: var(--accent); opacity: 0.95; }
 .template-black-gold-prestige .user-name { font-size: 1.9rem; font-weight: 500; letter-spacing: 0.02em; }
-.template-black-gold-prestige .user-position, .template-black-gold-prestige .user-company { color: var(--text-secondary) !important; }
+.template-black-gold-prestige .user-position, .template-black-gold-prestige .user-company { color: var(--text-secondary) !important; text-shadow: none; }
 .template-black-gold-prestige .content-block { background: rgba(255,255,255,0.04); border: 1px solid rgba(212,175,55,0.35); }
 .template-black-gold-prestige .content-block:hover { background: rgba(255,255,255,0.06); border-color: rgba(212,175,55,0.55); transform: translateY(-2px); }
 .template-black-gold-prestige .block-title { color: #D4AF37; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -1462,11 +1486,16 @@
    ============================================== */
 .template-handdrawn-cute {
   background: linear-gradient(135deg, #FFF5F7 0%, #E3FDFD 100%);
+  --text-primary: #2D3748;
+  --text-secondary: #6B7280;
+  --accent: #FF8FAB;
   color: var(--text-primary);
 }
 .template-handdrawn-cute .card-content { padding: 2rem; }
-.template-handdrawn-cute .user-avatar { width: 110px; height: 110px; border-radius: 50%; margin: 0 auto 1rem; border: 3px dashed #FF8FAB; box-shadow: 0 6px 18px rgba(255, 143, 171, 0.25); object-fit: cover; }
+.template-handdrawn-cute .user-avatar { width: 110px; height: 110px; border-radius: 50%; margin: 0 auto 1rem; border: 3px dashed #FF8FAB; box-shadow: 0 6px 18px rgba(255, 143, 171, 0.25); object-fit: cover; position: relative; }
+.template-handdrawn-cute .user-avatar::before { content: ''; position: absolute; right: -10px; top: 8px; width: 10px; height: 24px; border-radius: 8px; background: var(--accent); opacity: 0.9; }
 .template-handdrawn-cute .user-name { font-size: 1.8rem; font-weight: 600; letter-spacing: 0.01em; }
+.template-handdrawn-cute .user-position, .template-handdrawn-cute .user-company { color: var(--text-secondary) !important; text-shadow: none; }
 .template-handdrawn-cute .content-block { background: rgba(255,255,255,0.9); border: 2px dashed rgba(255,143,171,0.6); border-radius: 16px; }
 .template-handdrawn-cute .content-block:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(107, 203, 119, 0.18); }
 .template-handdrawn-cute .block-title { color: #FF8FAB; font-weight: 700; letter-spacing: 0.04em; }
@@ -1479,6 +1508,9 @@
    ============================================== */
 .template-glassmorphism {
   background: linear-gradient(135deg, #f8fbff 0%, #e0f2fe 100%);
+  --text-primary: #1F2937;
+  --text-secondary: #64748B;
+  --accent: #6366F1;
   color: var(--text-primary);
   position: relative;
   overflow: hidden;
@@ -1493,7 +1525,9 @@
 .template-glassmorphism .card-content { position: relative; z-index: 1; padding: 2rem; }
 .template-glassmorphism .personal-info-section, .template-glassmorphism .content-block { background: rgba(255,255,255,0.7); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; }
 .template-glassmorphism .content-block:hover { background: rgba(255,255,255,0.8); box-shadow: 0 10px 26px rgba(59,130,246,0.18); transform: translateY(-2px); }
-.template-glassmorphism .user-avatar { width: 110px; height: 110px; border-radius: 50%; margin: 0 auto 1rem; border: 3px solid rgba(99,102,241,0.35); box-shadow: 0 8px 20px rgba(99,102,241,0.25); object-fit: cover; }
+.template-glassmorphism .user-avatar { width: 110px; height: 110px; border-radius: 50%; margin: 0 auto 1rem; border: 3px solid rgba(99,102,241,0.35); box-shadow: 0 8px 20px rgba(99,102,241,0.25); object-fit: cover; position: relative; }
+.template-glassmorphism .user-avatar::before { content: ''; position: absolute; right: -10px; top: 8px; width: 10px; height: 24px; border-radius: 8px; background: var(--accent); opacity: 0.85; }
+.template-glassmorphism .user-position, .template-glassmorphism .user-company { color: var(--text-secondary) !important; text-shadow: none; }
 .template-glassmorphism .block-title { color: #3B82F6; font-weight: 600; letter-spacing: 0.06em; }
 .template-glassmorphism .social-link { background: linear-gradient(45deg, #3B82F6, #6366F1); color: #ffffff; box-shadow: 0 6px 18px rgba(59,130,246,0.25); }
 .template-glassmorphism .social-link:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 10px 28px rgba(59,130,246,0.35); }

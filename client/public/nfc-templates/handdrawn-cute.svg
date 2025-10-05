@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFF5F7"/>
+      <stop offset="100%" stop-color="#E3FDFD"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#bg)"/>
+  <circle cx="80" cy="120" r="44" fill="none" stroke="#FF8FAB" stroke-width="3" stroke-dasharray="6 6"/>
+  <rect x="150" y="80" width="200" height="18" rx="8" fill="#FF8FAB"/>
+  <rect x="150" y="110" width="180" height="12" rx="8" fill="#6BCB77"/>
+  <rect x="150" y="130" width="160" height="12" rx="8" fill="#2D3748" opacity="0.85"/>
+  <text x="20" y="220" fill="#FF8FAB" font-size="12" font-family="Arial">Hand-drawn Cute</text>
+</svg>

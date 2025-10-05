@@ -845,8 +845,12 @@ const getYouTubeVideoId = (url) => {
         setShowSuccessToast(false);
       }, 1200);
     } catch (error) {
-      console.error('保存失敗:', error);
-      alert('保存失敗，請稍後再試');
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      const serverErrors = error?.response?.data?.errors;
+      console.error('保存失敗:', { status, serverMessage, serverErrors, error });
+      const detail = serverErrors ? `\n詳細: ${JSON.stringify(serverErrors)}` : '';
+      alert(`保存失敗${status ? `（${status}）` : ''}：${serverMessage || '請稍後再試'}${detail}`);
     } finally {
       setSaving(false);
     }
@@ -871,8 +875,12 @@ const getYouTubeVideoId = (url) => {
         setShowSuccessToast(false);
       }, 1200);
     } catch (error) {
-      console.error('保存內容失敗:', error);
-      alert('保存失敗，請稍後再試');
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      const serverErrors = error?.response?.data?.errors;
+      console.error('保存內容失敗:', { status, serverMessage, serverErrors, error });
+      const detail = serverErrors ? `\n詳細: ${JSON.stringify(serverErrors)}` : '';
+      alert(`保存失敗${status ? `（${status}）` : ''}：${serverMessage || '請稍後再試'}${detail}`);
     } finally {
       setSaving(false);
     }
@@ -897,8 +905,12 @@ const getYouTubeVideoId = (url) => {
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 1200);
     } catch (error) {
-      console.error('保存失敗:', error);
-      alert('保存失敗，請稍後再試');
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      const serverErrors = error?.response?.data?.errors;
+      console.error('保存失敗:', { status, serverMessage, serverErrors, error });
+      const detail = serverErrors ? `\n詳細: ${JSON.stringify(serverErrors)}` : '';
+      alert(`保存失敗${status ? `（${status}）` : ''}：${serverMessage || '請稍後再試'}${detail}`);
     } finally {
       setSaving(false);
     }

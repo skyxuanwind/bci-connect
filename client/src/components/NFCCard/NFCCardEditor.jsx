@@ -166,14 +166,18 @@ const NFCCardEditor = () => {
   const saveCard = async () => {
     try {
       setSaving(true);
-      const response = await axios.post('/api/nfc-cards/my-card', cardData);
+      const response = await axios.put('/api/nfc-cards/my-card', cardData);
       if (response.data.success) {
         setCardUrl(response.data.data.cardUrl);
         alert('名片保存成功！');
       }
     } catch (error) {
-      console.error('保存名片失敗:', error);
-      alert('保存失敗，請稍後再試');
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      const serverErrors = error?.response?.data?.errors;
+      console.error('保存名片失敗:', { status, serverMessage, serverErrors, error });
+      const detail = serverErrors ? `\n詳細: ${JSON.stringify(serverErrors)}` : '';
+      alert(`保存失敗${status ? `（${status}）` : ''}：${serverMessage || '請稍後再試'}${detail}`);
     } finally {
       setSaving(false);
     }
@@ -654,10 +658,25 @@ const NFCCardEditor = () => {
                   onClick={() => setCardData({ ...cardData, template_id: template.id })}
                 >
                   <div className="template-preview">
-                    {/* 這裡可以放模板預覽圖 */}
-                    <div className="template-placeholder">
-                      {template.name}
-                    </div>
+                    {template.preview_image_url ? (
+                      <img
+                        src={template.preview_image_url}
+                        alt={template.name}
+                        className="template-thumbnail"
+                        loading="lazy"
+                        style={{
+                          width: '100%',
+                          height: '120px',
+                          objectFit: 'cover',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(0,0,0,0.08)'
+                        }}
+                      />
+                    ) : (
+                      <div className="template-placeholder">
+                        {template.name}
+                      </div>
+                    )}
                   </div>
                   <h4>{template.name}</h4>
                   <p>{template.description}</p>
