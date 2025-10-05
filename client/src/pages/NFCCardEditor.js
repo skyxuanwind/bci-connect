@@ -79,6 +79,35 @@ const getYouTubeVideoId = (url) => {
   const [savingUserPref, setSavingUserPref] = useState(false);
   const [applyingPersonalInfo, setApplyingPersonalInfo] = useState(false);
 
+  // 行動版預覽高度（可上下拖曳調整）以提供更多內容空間
+  const [previewHeight, setPreviewHeight] = useState(560); // px，預設值約等於35rem
+  const MIN_PREVIEW_HEIGHT = 420; // 420px ≈ 26rem
+  const MAX_PREVIEW_HEIGHT = 1200; // 上限避免過度拉伸
+
+  const beginResize = (clientY, from) => {
+    const startY = clientY || 0;
+    const startHeight = previewHeight;
+    const onMoveCalc = (currentY) => {
+      const delta = from === 'bottom' ? (currentY - startY) : (startY - currentY);
+      const next = Math.max(MIN_PREVIEW_HEIGHT, Math.min(MAX_PREVIEW_HEIGHT, startHeight + delta));
+      setPreviewHeight(next);
+    };
+
+    const onMouseMove = (e) => { e.preventDefault(); onMoveCalc(e.clientY); };
+    const onTouchMove = (e) => { if (e.touches && e.touches[0]) onMoveCalc(e.touches[0].clientY); };
+    const onEnd = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onEnd);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+  };
+
   // 基本設定 -> 依模板提供的選項生成 custom_css
   const buildCustomCss = (template, opts = {}) => {
     try {
@@ -1045,7 +1074,7 @@ const getYouTubeVideoId = (url) => {
   const selectedPreview = selectedTemplate?.preview_image_url || '/nfc-templates/placeholder.svg';
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-black to-gray-900">
+    <div className="min-h-screen overflow-y-auto bg-gradient-to-br from-black to-gray-900">
       {/* 頂部操作欄 */}
       <div className="bg-gradient-to-r from-black/90 to-gray-900/90 border-b border-yellow-500/30 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1079,7 +1108,7 @@ const getYouTubeVideoId = (url) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-4rem)] overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-4rem)]">
         {/* 編輯模式 - 三欄布局：基本設定、內容編輯、即時預覽 */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-full">
             {/* 左側：基本設定 */}
@@ -1318,15 +1347,26 @@ const getYouTubeVideoId = (url) => {
             
             {/* 右側：即時預覽（單畫面模式：全寬） */}
             <div className={singleScreenMode ? "xl:col-span-12" : "xl:col-span-4"}>
-              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg py-8 px-6 sticky top-8">
+              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg py-8 px-6 md:sticky md:top-8">
                 <h2 className="text-lg font-semibold text-gold-100 mb-4 flex items-center">
                   <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
                   即時預覽
                 </h2>
                 
                 <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50 relative">
+                  {/* 行動版上下拖曳把手：僅在手機顯示 */}
+                  <div className="absolute top-0 left-0 right-0 md:hidden flex justify-center items-center z-10 pt-2">
+                    <div
+                      className="w-12 h-1.5 bg-yellow-500/70 rounded-full"
+                      onMouseDown={(e) => beginResize(e.clientY, 'top')}
+                      onTouchStart={(e) => beginResize(e.touches && e.touches[0] ? e.touches[0].clientY : 0, 'top')}
+                    />
+                  </div>
                   {/* 套用模板樣式的預覽（加大底部內距以避免固定按鈕遮擋） */}
-                  <div className="min-h-[28rem] sm:min-h-[32rem] max-h-[70vh] md:max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800 max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[720px] mx-auto px-3 sm:px-4 pb-24">
+                  <div
+                    className="mx-auto px-3 sm:px-4 pb-24 overflow-visible max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[720px]"
+                    style={{ minHeight: '28rem', height: previewHeight }}
+                  >
                     <TemplatePreview 
                       template={selectedTemplate}
                       cardConfig={cardConfig}
@@ -1338,6 +1378,14 @@ const getYouTubeVideoId = (url) => {
                       onMoveUp={moveBlockUp}
                       onMoveDown={moveBlockDown}
                       setEditingBlockIndex={setEditingBlockIndex}
+                    />
+                  </div>
+                  {/* 底部拖曳把手（手機版） */}
+                  <div className="absolute bottom-0 left-0 right-0 md:hidden flex justify-center items-center z-10 pb-2">
+                    <div
+                      className="w-12 h-1.5 bg-yellow-500/70 rounded-full"
+                      onMouseDown={(e) => beginResize(e.clientY, 'bottom')}
+                      onTouchStart={(e) => beginResize(e.touches && e.touches[0] ? e.touches[0].clientY : 0, 'bottom')}
                     />
                   </div>
                   {/* 編輯器容器內的新增內容按鈕 */}
