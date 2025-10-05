@@ -13,6 +13,10 @@ export const mapTemplateNameToClass = (name) => {
     '簡約日系風': 'template-minimal-luxury',
     '創意行銷風格': 'template-creative-brand',
     '塗鴉可愛風': 'template-dynamic-interactive',
+    // 新增需求模板
+    '黑金質感・商務尊榮風': 'template-black-gold-prestige',
+    '可愛手繪風': 'template-handdrawn-cute',
+    '毛玻璃清透風': 'template-glassmorphism',
 
     // 舊命名（與 MemberCard/NFCCardEditor 原有映射一致）
     '極簡高級風格': 'template-minimal-luxury',

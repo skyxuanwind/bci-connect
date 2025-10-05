@@ -640,7 +640,15 @@ const getYouTubeVideoId = (url) => {
         description: '高質感商務設計，展現專業與品味的完美結合',
         preview_image_url: '/nfc-templates/premium-business.svg',
         is_active: true,
-        display_order: 1
+        display_order: 1,
+        css_config: {
+          accentColor: '#B8860B',
+          primaryColor: '#ffffff',
+          secondaryColor: '#34495e',
+          iconPack: ['minimal', 'line', 'solid'],
+          dividerOptions: ['solid-thin', 'solid-medium', 'dashed'],
+          dividerOpacity: 0.6
+        }
       },
       {
         id: 2,
@@ -648,7 +656,15 @@ const getYouTubeVideoId = (url) => {
         description: '未來科技感設計，霓虹色彩與數位美學的視覺衝擊',
         preview_image_url: '/nfc-templates/cyberpunk.svg',
         is_active: true,
-        display_order: 2
+        display_order: 2,
+        css_config: {
+          accentColor: '#00ffff',
+          primaryColor: '#e6fffa',
+          secondaryColor: '#8a2be2',
+          iconPack: ['neon', 'outline', 'solid'],
+          dividerOptions: ['solid-thin', 'neon-blue', 'neon-purple', 'neon-pink'],
+          dividerOpacity: 0.7
+        }
       },
       {
         id: 3,
@@ -656,7 +672,15 @@ const getYouTubeVideoId = (url) => {
         description: '日式極簡美學，清新自然的設計語言',
         preview_image_url: '/nfc-templates/japanese-minimal.svg',
         is_active: true,
-        display_order: 3
+        display_order: 3,
+        css_config: {
+          accentColor: '#ffd700',
+          primaryColor: '#ffffff',
+          secondaryColor: '#f5f5f5',
+          iconPack: ['minimal', 'line'],
+          dividerOptions: ['solid-thin', 'dotted', 'double'],
+          dividerOpacity: 0.5
+        }
       },
       {
         id: 4,
@@ -664,7 +688,15 @@ const getYouTubeVideoId = (url) => {
         description: '活潑創意設計，吸引眼球的行銷視覺效果',
         preview_image_url: '/nfc-templates/creative-marketing.svg',
         is_active: true,
-        display_order: 4
+        display_order: 4,
+        css_config: {
+          accentColor: '#ff6b35',
+          primaryColor: '#1f2937',
+          secondaryColor: '#4b5563',
+          iconPack: ['creative', 'rounded', 'filled'],
+          dividerOptions: ['solid-thin', 'gradient', 'curve-strong'],
+          dividerOpacity: 0.6
+        }
       },
       {
         id: 5,
@@ -672,7 +704,67 @@ const getYouTubeVideoId = (url) => {
         description: '手繪塗鴉風格，充滿童趣與創意的可愛設計',
         preview_image_url: '/nfc-templates/cute-graffiti.svg',
         is_active: true,
-        display_order: 5
+        display_order: 5,
+        css_config: {
+          accentColor: '#ff8fab',
+          primaryColor: '#2d3748',
+          secondaryColor: '#6bcb77',
+          iconPack: ['handdrawn', 'rounded', 'filled'],
+          dividerOptions: ['dashed', 'dotted', 'solid-thin'],
+          dividerOpacity: 0.5
+        }
+      }
+    ];
+
+    // 追加：三款新模板
+    const extraTemplates = [
+      {
+        id: 6,
+        name: '黑金質感・商務尊榮風',
+        description: '黑金配色，高級質感與專業尊榮的商務風格',
+        preview_image_url: '/nfc-templates/black-gold-prestige.svg',
+        is_active: true,
+        display_order: 6,
+        css_config: {
+          accentColor: '#D4AF37',
+          primaryColor: '#121212',
+          secondaryColor: '#191919',
+          iconPack: ['elegant', 'minimal', 'line'],
+          dividerOptions: ['solid-thin', 'dashed', 'double'],
+          dividerOpacity: 0.6
+        }
+      },
+      {
+        id: 7,
+        name: '可愛手繪風',
+        description: '柔和馬卡龍色系與手繪插畫，溫暖可愛風格',
+        preview_image_url: '/nfc-templates/handdrawn-cute.svg',
+        is_active: true,
+        display_order: 7,
+        css_config: {
+          accentColor: '#FF8FAB',
+          primaryColor: '#2D3748',
+          secondaryColor: '#6BCB77',
+          iconPack: ['handdrawn', 'rounded', 'filled'],
+          dividerOptions: ['dashed', 'dotted', 'solid-thin'],
+          dividerOpacity: 0.5
+        }
+      },
+      {
+        id: 8,
+        name: '毛玻璃清透風',
+        description: 'Glassmorphism 清透設計，白與淺藍漸層的優雅科技感',
+        preview_image_url: '/nfc-templates/glassmorphism.svg',
+        is_active: true,
+        display_order: 8,
+        css_config: {
+          accentColor: '#3B82F6',
+          primaryColor: '#F8FAFC',
+          secondaryColor: '#E0F2FE',
+          iconPack: ['outline', 'minimal', 'glass'],
+          dividerOptions: ['solid-thin', 'gradient', 'wave-soft'],
+          dividerOpacity: 0.4
+        }
       }
     ];
 
@@ -694,10 +786,10 @@ const getYouTubeVideoId = (url) => {
         )
       );
 
-      // 如果API返回舊模板或空數據，使用新模板
+      // 如果API返回舊模板或空數據，使用新模板（含追加三款）
       if (list.length === 0 || hasOldTemplates) {
         console.log('使用新模板列表（API返回舊模板或空數據）');
-        setTemplates(newTemplates);
+        setTemplates([...newTemplates, ...extraTemplates]);
         return;
       }
 
@@ -721,10 +813,19 @@ const getYouTubeVideoId = (url) => {
         }
       }
       
-      setTemplates(unique);
+      // 加入三款新模板，並以名稱去重（避免重複）
+      const merged = [...unique, ...extraTemplates];
+      const seenNames = new Set();
+      const deduped = merged.filter(t => {
+        const name = (t.name || '').trim();
+        if (seenNames.has(name)) return false;
+        seenNames.add(name);
+        return true;
+      });
+      setTemplates(deduped);
     } catch (error) {
       console.error('獲取模板失敗，使用新模板列表:', error);
-      setTemplates(newTemplates);
+      setTemplates([...newTemplates, ...extraTemplates]);
     }
   };
 
