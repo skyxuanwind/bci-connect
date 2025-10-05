@@ -426,14 +426,14 @@ const AIProfilePage = () => {
                         return (
                           <>
                             <a href="/events" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 whitespace-nowrap">參與活動</a>
-                            <a href="/wishes" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap">發布許願</a>
+                            <a href="/referrals" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap">啟動轉介</a>
                           </>
                         );
                       case 'engagement_improvement':
                         return (
                           <>
                             <a href="/events" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 whitespace-nowrap">參與活動</a>
-                            <a href="/wishes" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap">發布許願</a>
+                            <a href="/referrals" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap">啟動轉介</a>
                           </>
                         );
                       case 'collaboration_openness':
@@ -445,7 +445,7 @@ const AIProfilePage = () => {
                         );
                       default:
                         return (
-                          <a href="/notifications" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 whitespace-nowrap">AI 智慧通知</a>
+                          <a href="/referrals" className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 whitespace-nowrap">探索合作機會</a>
                         );
                     }
                   })()}
@@ -535,8 +535,8 @@ const AIProfilePage = () => {
         <h3 className="text-lg font-medium text-gray-900 mt-6 mb-3">如何使用 AI 智慧合作網絡</h3>
         <ul className="list-disc pl-6 space-y-2 text-gray-700">
           <li>
-            透過「AI 智慧通知」接收個人化洞察與動態建議。
-            <a href="/notifications" className="ml-2 text-primary-600 hover:underline">查看通知</a>
+            透過「轉介系統」接收個人化合作建議與媒合提示。
+            <a href="/referrals" className="ml-2 text-primary-600 hover:underline">前往轉介</a>
           </li>
           <li>
             使用「轉介系統」與「會議排程」快速建立合作：
@@ -545,8 +545,8 @@ const AIProfilePage = () => {
             <a href="/meetings" className="text-primary-600 hover:underline">會議排程</a>
           </li>
           <li>
-            追蹤「通知中心」以不漏接媒合建議與重要提醒。
-            <a href="/notifications" className="ml-2 text-primary-600 hover:underline">通知中心</a>
+            追蹤「活動列表」以不漏接最新交流與合作機會。
+            <a href="/events" className="ml-2 text-primary-600 hover:underline">活動列表</a>
           </li>
         </ul>
       </div>

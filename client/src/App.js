@@ -46,11 +46,10 @@ import AttendanceManagement from './pages/AttendanceManagement';
 
 import FoundationInfo from './pages/FoundationInfo';
 import ContentManagement from './pages/admin/ContentManagement';
-import WishesPage from './pages/WishesPage';
-import NotificationsPage from './pages/NotificationsPage';
+// 已移除：會員許願版與 AI 智慧通知頁面
 
 import AIProfilePage from './pages/AIProfilePage';
-import AINotificationTestPage from './pages/AINotificationTestPage';
+// 已移除：AI 通知測試頁面
 import CoachDashboard from './pages/coach/CoachDashboard';
 
 // NFC 電子名片系統組件
@@ -215,21 +214,7 @@ function App() {
           
 
           
-          <Route path="/wishes" element={
-            <ProtectedRoute>
-              <Layout>
-                <WishesPage />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/notifications" element={
-            <ProtectedRoute>
-              <Layout>
-                <NotificationsPage />
-              </Layout>
-            </ProtectedRoute>
-          } />
+          {/* 已移除：會員許願版與 AI 智慧通知路由 */}
           
           <Route path="/ai-profile" element={
             <ProtectedRoute>
@@ -239,13 +224,7 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/ai-notification-test" element={
-            <ProtectedRoute>
-              <Layout>
-                <AINotificationTestPage />
-              </Layout>
-            </ProtectedRoute>
-          } />
+          {/* 已移除：AI 通知測試路由 */}
           
           {/* Coach Routes - now visible to all authenticated users */}
           <Route path="/coach" element={

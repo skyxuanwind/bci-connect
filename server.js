@@ -31,8 +31,7 @@ const digitalWalletRoutes = require('./routes/digital-wallet');
 const businessMediaRoutes = require('./routes/business-media');
 const feedbackRoutes = require('./routes/feedback');
 
-const wishesRoutes = require('./routes/wishes');
-const notificationsRoutes = require('./routes/notifications');
+// 已移除：會員許願版與 AI 智慧通知路由
 const aiProfilesRoutes = require('./routes/ai-profiles');
 const emailRoutes = require('./routes/emails');
 const ceremonyRoutes = require('./routes/ceremony');
@@ -154,8 +153,7 @@ app.use('/api/digital-wallet', digitalWalletRoutes);
 app.use('/api/business-media', businessMediaRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
-app.use('/api/wishes', wishesRoutes);
-app.use('/api/notifications', notificationsRoutes);
+// 已移除：會員許願版與 AI 智慧通知 API
 app.use('/api/ai-profiles', aiProfilesRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/ceremony', ceremonyRoutes);
