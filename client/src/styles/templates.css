@@ -1369,3 +1369,22 @@
   padding-top: 1rem;
   padding-bottom: 5rem;
 }
+
+/* 手機端滾動修正：避免內容在高度受限與 overflow 影響下被截斷 */
+@media (max-width: 768px) {
+  /* 允許卡片容器自身在垂直方向滾動，啟用 iOS 慣性滾動 */
+  .nfc-card-preview {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 移除最低高度限制以讓內容自然撐開（若需可保留） */
+    min-height: auto;
+  }
+
+  /* 內容區改為自動高度，避免被父容器高度（min-height/固定高度）限制 */
+  .nfc-card-preview .card-content {
+    height: auto;
+    /* 增加底部安全內距，避免底部固定按鈕遮擋內容與 iOS 安全區域 */
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+}
