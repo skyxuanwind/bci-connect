@@ -13,7 +13,8 @@ import {
   ShareIcon,
   ArrowDownTrayIcon,
   BuildingOfficeIcon,
-  UserIcon
+  UserIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import {
   HeartIcon as HeartSolidIcon
@@ -128,6 +129,20 @@ const PublicNFCCard = () => {
   const renderContentBlock = (block) => {
     switch (block.content_type) {
       case 'text':
+        // 專用樣式：LINE ID（以標題辨識）
+        if ((block.content_data?.title || '').trim() === 'LINE ID') {
+          const lineId = (block.content_data?.content || '').trim();
+          if (!lineId) return null;
+          return (
+            <div className="mb-4">
+              <div className="flex items-center p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <ChatBubbleLeftRightIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
+                <span className="text-gray-900 dark:text-white font-medium">LINE ID</span>
+                <span className="ml-2 text-gray-700 dark:text-gray-300">{lineId}</span>
+              </div>
+            </div>
+          );
+        }
         return (
           <div className="mb-4">
             <h3 className="font-semibold text-lg mb-2">{block.content_data.title}</h3>
@@ -426,13 +441,15 @@ const PublicNFCCard = () => {
               </a>
             )}
             
-            <a 
-              href={`mailto:${member.email}`}
-              className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
-            >
-              <EnvelopeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" />
-              <span className="text-gray-900 dark:text-white">{member.email}</span>
-            </a>
+            {member.email && (
+              <a 
+                href={`mailto:${member.email}`}
+                className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
+              >
+                <EnvelopeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" />
+                <span className="text-gray-900 dark:text-white">{member.email}</span>
+              </a>
+            )}
             
             {member.company && (
               <div className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
