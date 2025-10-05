@@ -1318,7 +1318,7 @@ const getYouTubeVideoId = (url) => {
                 
                 <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50 relative">
                   {/* 套用模板樣式的預覽 */}
-                  <div className="min-h-[32rem] max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800 max-w-[512px] mx-auto px-4">
+                  <div className="min-h-[28rem] sm:min-h-[32rem] max-h-[70vh] md:max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800 max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[640px] mx-auto px-3 sm:px-4">
                     <TemplatePreview 
                       template={selectedTemplate}
                       cardConfig={cardConfig}
@@ -1333,14 +1333,7 @@ const getYouTubeVideoId = (url) => {
                     />
                   </div>
                   {/* 編輯器容器內的新增內容按鈕 */}
-                  <div className="absolute top-4 right-4 z-40">
-                    <button
-                      onClick={() => setShowAddBlockModal(true)}
-                      className="px-4 py-2 rounded-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 font-medium shadow-lg hover:from-yellow-500 hover:to-yellow-400 active:scale-95 transition text-sm"
-                    >
-                      新增內容
-                    </button>
-                  </div>
+                  {/* 移除容器內絕對定位的新增內容按鈕，避免與內容重疊、並改用全局固定按鈕 */}
                   
                   <div className="p-4 bg-gradient-to-r from-black/40 to-gray-900/40 border-t border-gold-600/50 text-center backdrop-blur-sm">
                     <a 
@@ -1361,6 +1354,19 @@ const getYouTubeVideoId = (url) => {
               </div>
             </div>
           </div>
+      </div>
+      
+      {/* 全局固定：左下角新增內容按鈕（行動端優先），不隨頁面滑動 */}
+      <div
+        className="fixed bottom-4 left-4 md:bottom-6 md:left-6 z-50"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <button
+          onClick={() => setShowAddBlockModal(true)}
+          className="px-4 py-2 rounded-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 font-medium shadow-lg hover:from-yellow-500 hover:to-yellow-400 active:scale-95 transition text-sm"
+        >
+          新增內容
+        </button>
       </div>
 
       {/* 成功提示視窗 */}
