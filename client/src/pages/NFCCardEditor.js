@@ -1318,7 +1318,7 @@ const getYouTubeVideoId = (url) => {
                 
                 <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50 relative">
                   {/* 套用模板樣式的預覽 */}
-                  <div className="min-h-[28rem] sm:min-h-[32rem] max-h-[70vh] md:max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800 max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[640px] mx-auto px-3 sm:px-4">
+                  <div className="min-h-[28rem] sm:min-h-[32rem] max-h-[70vh] md:max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800 max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[720px] mx-auto px-3 sm:px-4">
                     <TemplatePreview 
                       template={selectedTemplate}
                       cardConfig={cardConfig}
@@ -1358,7 +1358,7 @@ const getYouTubeVideoId = (url) => {
       
       {/* 全局固定：左下角新增內容按鈕（行動端優先），不隨頁面滑動 */}
       <div
-        className="fixed bottom-4 left-4 md:bottom-6 md:left-6 z-50"
+        className="fixed bottom-4 left-4 md:bottom-6 md:left-6 z-50 md:hidden lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <button
