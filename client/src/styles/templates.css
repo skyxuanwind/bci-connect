@@ -11,7 +11,9 @@
   min-height: 600px;
   margin: 0 auto;
   border-radius: 20px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   position: relative;
@@ -1368,6 +1370,11 @@
 .nfc-card-base .card-content {
   padding-top: 1rem;
   padding-bottom: 5rem;
+}
+
+/* 桌機與手機通用：預覽卡片內容不受父容器高度限制 */
+.nfc-card-preview .card-content {
+  height: auto;
 }
 
 /* 手機端滾動修正：避免內容在高度受限與 overflow 影響下被截斷 */

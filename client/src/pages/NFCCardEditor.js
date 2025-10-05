@@ -1406,8 +1406,8 @@ const getYouTubeVideoId = (url) => {
                   </div>
                   {/* 套用模板樣式的預覽（加大底部內距以避免固定按鈕遮擋） */}
                   <div
-                    className="mx-auto px-3 sm:px-4 pb-24 overflow-visible max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[720px]"
-                    style={{ minHeight: '28rem', height: previewHeight }}
+                    className="mx-auto px-3 sm:px-4 pb-24 overflow-y-auto max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[720px]"
+                    style={{ minHeight: '28rem' }}
                   >
                     <TemplatePreview 
                       template={selectedTemplate}
