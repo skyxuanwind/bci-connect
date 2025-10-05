@@ -342,12 +342,17 @@
   border-radius: 24px;
   padding: 30px 40px;
   margin-bottom: 30px;
-  text-align: center;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 215, 0, 0.3);
   color: #fff;
   max-width: 100%;
   overflow: hidden;
+  /* 固定為水平排版，避免在小螢幕自動改為垂直 */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 24px;
+  align-items: center;
+  text-align: left;
 }
 
 .dark-mode .personal-info-section {
@@ -356,9 +361,9 @@
 }
 
 .avatar-container {
-  margin-bottom: 20px;
+  margin-bottom: 0;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
 }
 
@@ -426,14 +431,14 @@
 .user-company {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   margin-bottom: 8px;
   font-size: 1.1rem;
   color: #666;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  text-align: center;
+  text-align: left;
 }
 
 .dark-mode .user-position,

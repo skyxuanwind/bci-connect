@@ -777,6 +777,32 @@ const getYouTubeVideoId = (url) => {
     }
   };
 
+  // 一鍵保存：基本設定 + 內容
+  const handleSaveAll = async () => {
+    try {
+      setSaving(true);
+      await axios.put('/api/nfc-cards/my-card', {
+        template_id: cardConfig.template_id,
+        custom_css: cardConfig.custom_css,
+        card_title: cardConfig.card_title || '',
+        card_subtitle: cardConfig.card_subtitle || '',
+        auto_populate_on_create: !!cardConfig.auto_populate_on_create
+      });
+      const { sanitized } = sanitizeBlocksForSave(cardConfig.content_blocks || []);
+      await axios.post('/api/nfc-cards/my-card/content', {
+        content_blocks: sanitized.map((b, i) => ({ ...b, display_order: i }))
+      });
+      setSuccessToastMessage('名片已保存');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 1200);
+    } catch (error) {
+      console.error('保存失敗:', error);
+      alert('保存失敗，請稍後再試');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleTemplateChange = (templateId) => {
     const template = templates.find(t => t.id === templateId);
     const defaultIcon = Array.isArray(template?.css_config?.iconPack) ? template.css_config.iconPack[0] : '';
@@ -1139,6 +1165,14 @@ const getYouTubeVideoId = (url) => {
                 模板選擇
               </button>
               <button
+                onClick={handleSaveAll}
+                disabled={saving}
+                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-500 hover:to-green-400 transition-colors disabled:opacity-50"
+              >
+                <CheckIcon className="h-4 w-4 mr-2" />
+                {saving ? '保存中…' : '保存'}
+              </button>
+              <button
                 onClick={copyCardUrl}
                 className="flex items-center px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
               >
@@ -1163,17 +1197,25 @@ const getYouTubeVideoId = (url) => {
                     <label className="block text-sm font-medium text-gold-300 mb-2">
                       選擇模板
                     </label>
-                    <select
-                      value={cardConfig?.template_id || ''}
-                      onChange={(e) => handleTemplateChange(parseInt(e.target.value))}
-                      className="w-full px-3 py-2 bg-black/40 border border-gold-600 rounded-lg text-gold-100 focus:ring-2 focus:ring-gold-500 focus:border-gold-400"
-                    >
-                      {templates.map(template => (
-                        <option key={template.id} value={template.id} className="bg-black text-gold-100">
-                          {template.name}
-                        </option>
+                    <div className="grid grid-cols-2 gap-3">
+                      {templates.map((template) => (
+                        <button
+                          key={template.id}
+                          onClick={() => handleTemplateChange(template.id)}
+                          className={`group relative rounded-lg overflow-hidden border ${cardConfig?.template_id === template.id ? 'border-amber-500 ring-2 ring-amber-400' : 'border-gold-600'}`}
+                          title={template.name}
+                        >
+                          <img
+                            src={template.preview_image_url || '/nfc-templates/placeholder.svg'}
+                            alt={template.name}
+                            className="w-full h-24 object-cover"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-black/50 text-xs text-gold-100 px-2 py-1">
+                            {template.name}
+                          </div>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                     {/* 模板預覽 */}
                     <div className="mt-3">
                       <div className="text-sm text-gold-300 mb-2">模板預覽</div>
@@ -1510,16 +1552,27 @@ const getYouTubeVideoId = (url) => {
                 </button>
               </div>
               <select
-                value={cardConfig?.template_id || ''}
-                onChange={(e) => handleTemplateChange(parseInt(e.target.value))}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-              >
-                {templates.map(template => (
-                  <option key={template.id} value={template.id}>
-                    {template.name}
-                  </option>
+                className="hidden"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                {templates.map((template) => (
+                  <button
+                    key={`desktop-${template.id}`}
+                    onClick={() => handleTemplateChange(template.id)}
+                    className={`group relative rounded-lg overflow-hidden border ${cardConfig?.template_id === template.id ? 'border-amber-500 ring-2 ring-amber-400' : 'border-gray-300'}`}
+                    title={template.name}
+                  >
+                    <img
+                      src={template.preview_image_url || '/nfc-templates/placeholder.svg'}
+                      alt={template.name}
+                      className="w-full h-20 object-cover"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-black/40 text-xs text-white px-2 py-1">
+                      {template.name}
+                    </div>
+                  </button>
                 ))}
-              </select>
+              </div>
               <div className="mt-3 flex justify-end">
                 <button
                   onClick={() => setShowDesktopTemplate(false)}
@@ -1572,17 +1625,25 @@ const getYouTubeVideoId = (url) => {
                   <XMarkIcon className="h-4 w-4 text-gray-600" />
                 </button>
               </div>
-              <select
-                value={cardConfig?.template_id || ''}
-                onChange={(e) => handleTemplateChange(parseInt(e.target.value))}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-              >
-                {templates.map(template => (
-                  <option key={template.id} value={template.id}>
-                    {template.name}
-                  </option>
+              <div className="grid grid-cols-2 gap-3">
+                {templates.map((template) => (
+                  <button
+                    key={`mobile-${template.id}`}
+                    onClick={() => handleTemplateChange(template.id)}
+                    className={`group relative rounded-lg overflow-hidden border ${cardConfig?.template_id === template.id ? 'border-amber-500 ring-2 ring-amber-400' : 'border-gray-300'}`}
+                    title={template.name}
+                  >
+                    <img
+                      src={template.preview_image_url || '/nfc-templates/placeholder.svg'}
+                      alt={template.name}
+                      className="w-full h-20 object-cover"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-black/40 text-xs text-white px-2 py-1">
+                      {template.name}
+                    </div>
+                  </button>
                 ))}
-              </select>
+              </div>
               <div className="mt-3 flex justify-end">
                 <button
                   onClick={() => setShowTemplatePicker(false)}

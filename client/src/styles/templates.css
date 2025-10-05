@@ -1317,6 +1317,27 @@
   min-width: 0;
 }
 
+/* 固定：個人資訊水平版面（避免因自適應改為垂直排列） */
+.nfc-card-base .personal-info-section,
+.nfc-card-preview .personal-info-section,
+.nfc-card-container .personal-info-section {
+  display: grid !important;
+  grid-template-columns: auto 1fr !important;
+  align-items: center !important;
+  column-gap: 1rem !important;
+  row-gap: 0 !important;
+}
+.nfc-card-base .avatar-container,
+.nfc-card-preview .avatar-container,
+.nfc-card-container .avatar-container {
+  justify-self: start;
+}
+.nfc-card-base .user-info,
+.nfc-card-preview .user-info,
+.nfc-card-container .user-info {
+  min-width: 0;
+}
+
 .nfc-card-base .user-name,
 .nfc-card-base .user-position,
 .nfc-card-base .user-company,
