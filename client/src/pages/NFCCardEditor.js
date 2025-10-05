@@ -65,6 +65,7 @@ const getYouTubeVideoId = (url) => {
     const [editingBlock, setEditingBlock] = useState(null);
     const [editingBlockIndex, setEditingBlockIndex] = useState(null);
     const [showAddBlockModal, setShowAddBlockModal] = useState(false);
+    const [showTemplatePicker, setShowTemplatePicker] = useState(false);
     // 單畫面模式：永遠顯示預覽並隱藏左側列表與中欄
     const [singleScreenMode, setSingleScreenMode] = useState(true);
   // 自動帶入個人資料控制，避免重複插入
@@ -1052,6 +1053,13 @@ const getYouTubeVideoId = (url) => {
             
             <div className="flex items-center space-x-4">
               <button
+                onClick={() => setShowAddBlockModal(true)}
+                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                新增內容
+              </button>
+              <button
                 onClick={copyCardUrl}
                 className="flex items-center px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
               >
@@ -1306,19 +1314,11 @@ const getYouTubeVideoId = (url) => {
                 <h2 className="text-lg font-semibold text-gold-100 mb-4 flex items-center">
                   <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
                   即時預覽
-                  {singleScreenMode && (
-                    <button
-                      onClick={() => setSingleScreenMode(false)}
-                      className="ml-auto inline-flex items-center px-3 py-1 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded hover:from-yellow-500 hover:to-yellow-400 text-xs"
-                    >
-                      返回列表
-                    </button>
-                  )}
                 </h2>
                 
                 <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50 relative">
-                  {/* 套用模板樣式的預覽 */}
-                  <div className="min-h-[28rem] sm:min-h-[32rem] max-h-[70vh] md:max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800 max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[720px] mx-auto px-3 sm:px-4">
+                  {/* 套用模板樣式的預覽（加大底部內距以避免固定按鈕遮擋） */}
+                  <div className="min-h-[28rem] sm:min-h-[32rem] max-h-[70vh] md:max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800 max-w-[360px] sm:max-w-[420px] md:max-w-[480px] xl:max-w-[512px] 2xl:max-w-[720px] mx-auto px-3 sm:px-4 pb-24">
                     <TemplatePreview 
                       template={selectedTemplate}
                       cardConfig={cardConfig}
@@ -1381,6 +1381,69 @@ const getYouTubeVideoId = (url) => {
           >
             <span className="text-lg">✓</span>
             <span>{successToastMessage || '已完成'}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 全局固定：右下角模板選擇按鈕（僅行動端顯示） */}
+      <div
+        className="fixed bottom-4 right-4 md:hidden lg:hidden z-50"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <button
+          onClick={() => setShowTemplatePicker(true)}
+          className="px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-gray-900 font-medium shadow-lg hover:from-amber-400 hover:to-yellow-300 active:scale-95 transition text-sm"
+        >
+          模板選擇
+        </button>
+      </div>
+
+      {/* 模板選擇面板（底部抽屜，行動端） */}
+      <AnimatePresence>
+        {showTemplatePicker && (
+          <motion.div
+            className="fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowTemplatePicker(false)}
+          >
+            <motion.div
+              className="absolute bottom-16 right-4 left-4 sm:left-auto sm:w-96 bg-white rounded-2xl shadow-2xl p-4"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-gray-800 font-semibold">選擇模板</div>
+                <button
+                  onClick={() => setShowTemplatePicker(false)}
+                  className="p-1 rounded hover:bg-gray-100"
+                >
+                  <XMarkIcon className="h-4 w-4 text-gray-600" />
+                </button>
+              </div>
+              <select
+                value={cardConfig?.template_id || ''}
+                onChange={(e) => handleTemplateChange(parseInt(e.target.value))}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              >
+                {templates.map(template => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => setShowTemplatePicker(false)}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  完成
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1868,7 +1931,7 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
           </div>
           {/* 基本資訊就地編輯 Overlay */}
           {editingBlockIndex === 'basic' && (
-            <div className="inline-editor-overlay">
+            <div className="inline-editor-overlay hidden md:block">
               <label>姓名</label>
               <input
                 type="text"
@@ -1943,7 +2006,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.content || '內容文字'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay">
+            <div className="inline-editor-overlay hidden md:block">
               <label>標題</label>
               <input
                 type="text"
@@ -1974,7 +2037,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.url || 'https://example.com'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay">
+            <div className="inline-editor-overlay hidden md:block">
               <label>標題</label>
               <input
                 type="text"
@@ -2004,7 +2067,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.url || 'https://example.com'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay">
+            <div className="inline-editor-overlay hidden md:block">
               <label>標題</label>
               <input
                 type="text"
@@ -2034,7 +2097,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.url || 'https://example.com/news'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay">
+            <div className="inline-editor-overlay hidden md:block">
               <label>標題</label>
               <input
                 type="text"
@@ -2064,7 +2127,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.url || 'https://example.com/file.pdf'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay">
+            <div className="inline-editor-overlay hidden md:block">
               <label>檔案標題</label>
               <input
                 type="text"
@@ -2114,7 +2177,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             )}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay">
+            <div className="inline-editor-overlay hidden md:block">
               <label>標題</label>
               <input
                 type="text"
@@ -2237,7 +2300,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             )}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay">
+            <div className="inline-editor-overlay hidden md:block">
               {['linkedin','facebook','instagram','twitter','youtube','tiktok'].map(key => (
                 <div key={key} style={{ marginTop: '6px' }}>
                   <label style={{ display: 'block' }}>{key} 網址</label>
