@@ -3,12 +3,8 @@ const router = express.Router();
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const { AIMatchingService } = require('../services/aiMatchingService');
-const { AINotificationService } = require('../services/aiNotificationService');
-const { AIProfileService } = require('../services/aiProfileService');
 
 const aiMatchingService = new AIMatchingService();
-const aiNotificationService = new AINotificationService();
-const aiProfileService = new AIProfileService();
 
 /**
  * 創建新許願
@@ -60,37 +56,9 @@ router.post('/', authenticateToken, async (req, res) => {
       VALUES ($1, 'wish_created', $2)
     `, [userId, JSON.stringify({ wish_id: wish.id, title, category })]);
 
-    // 異步執行AI媒合和通知
-    setImmediate(async () => {
-      try {
-        console.log('🔍 開始尋找匹配會員...');
-        const matchingResults = await aiMatchingService.findMatchingMembers(
-          wish.id, 
-          extractedIntents, 
-          10
-        );
-
-        console.log(`✅ 找到 ${matchingResults.length} 個匹配會員`);
-
-        // 為高匹配度的會員發送通知
-        for (const match of matchingResults) {
-          if (match.score >= 80) {
-            await aiNotificationService.sendWishOpportunityNotification(
-              match.member.id,
-              wish.id,
-              wish,
-              match.score
-            );
-          }
-        }
-      } catch (error) {
-        console.error('❌ 異步AI媒合失敗:', error);
-      }
-    });
-
     res.json({
       success: true,
-      message: '許願創建成功，AI正在為您尋找最佳匹配！',
+      message: '許願創建成功！',
       data: {
         id: wish.id,
         title: wish.title,

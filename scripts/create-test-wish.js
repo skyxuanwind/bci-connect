@@ -1,9 +1,7 @@
 const { pool } = require('../config/database');
 const { AIMatchingService } = require('../services/aiMatchingService');
-const { AINotificationService } = require('../services/aiNotificationService');
 
 const aiMatchingService = new AIMatchingService();
-const aiNotificationService = new AINotificationService();
 
 // 測試許願數據
 const testWishes = [
@@ -100,36 +98,8 @@ async function createTestWish() {
           VALUES ($1, 'wish_created', $2)
         `, [user.id, JSON.stringify({ wish_id: wish.id, title: wishData.title, category: wishData.category })]);
         
-        // 執行AI媒合和通知
-        console.log('🔍 開始尋找匹配會員...');
-        const matchingResults = await aiMatchingService.findMatchingMembers(
-          wish.id,
-          extractedIntents,
-          10
-        );
-        
-        console.log(`✅ 找到 ${matchingResults.length} 個匹配會員`);
-        
-        // 為高匹配度的會員發送通知
-        let notificationCount = 0;
-        for (const match of matchingResults) {
-          if (match.score >= 70) { // 降低門檻以便測試
-            try {
-              await aiNotificationService.sendWishOpportunityNotification(
-                match.member.id,
-                wish.id,
-                wish,
-                match.score
-              );
-              notificationCount++;
-              console.log(`📧 已發送通知給 ${match.member.name} (匹配度: ${match.score}分)`);
-            } catch (error) {
-              console.error(`❌ 發送通知失敗 (${match.member.name}):`, error.message);
-            }
-          }
-        }
-        
-        console.log(`🎯 共發送 ${notificationCount} 個AI智慧通知`);
+        // 不再進行AI媒合或發送通知，僅建立許願與記錄活動
+        console.log('🔕 已停用願望相關AI通知與媒合流程');
         console.log('---');
         
       } catch (error) {
@@ -139,8 +109,8 @@ async function createTestWish() {
     
     console.log('🎉 測試許願創建完成！');
     console.log('\n📱 現在您可以：');
-    console.log('1. 登入任一測試帳號查看許願版');
-    console.log('2. 前往 AI 智慧通知頁面查看收到的通知');
+    console.log('1. 登入任一測試帳號查看願望板');
+    console.log('2. 檢視許願詳情與AI分析結果（不含推薦與通知）');
     console.log('3. 測試帳號資訊：');
     console.log('   • zhang.zhiming@example.com (密碼: test123456)');
     console.log('   • li.meihua@example.com (密碼: test123456)');

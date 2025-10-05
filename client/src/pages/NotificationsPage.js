@@ -49,7 +49,6 @@ import {
   Cancel as CancelIcon,
   Delete as DeleteIcon,
   Settings as SettingsIcon,
-  Refresh as RefreshIcon,
   MoreVert as MoreVertIcon,
   MarkEmailRead as MarkEmailReadIcon,
   Visibility as VisibilityIcon,
@@ -244,22 +243,7 @@ const NotificationsPage = () => {
   };
 
   // 手動掃描機會
-  const scanOpportunities = async () => {
-    try {
-      setRefreshing(true);
-      await api.post('/api/notifications/scan-opportunities');
-      
-      // 延遲一下再重新載入，讓AI有時間處理
-      setTimeout(() => {
-        loadNotifications(1);
-        loadStats();
-      }, 2000);
-    } catch (error) {
-      console.error('掃描機會失敗:', error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  // 已移除手動掃描機會功能
 
   // 更新偏好設定
   const updatePreferences = async () => {
@@ -327,15 +311,7 @@ const NotificationsPage = () => {
             🔔 AI 智慧通知
           </Typography>
           <Box>
-            <Button 
-              variant="outlined"
-              onClick={scanOpportunities}
-              disabled={refreshing}
-              startIcon={<RefreshIcon />}
-              sx={{ mr: 1 }}
-            >
-              {refreshing ? '掃描中...' : '掃描機會'}
-            </Button>
+            {/* 已移除掃描機會按鈕 */}
             <Button 
               variant="outlined"
               onClick={() => setOpenPreferences(true)}
@@ -380,19 +356,7 @@ const NotificationsPage = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <StarIcon color="secondary" sx={{ fontSize: 40 }} />
-              <Typography variant="h6" sx={{ mt: 1 }}>
-                {stats.wish}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                許願機會
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* 已移除許願機會統計卡片 */}
         <Grid item xs={12} sm={6} md={2}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
@@ -457,7 +421,7 @@ const NotificationsPage = () => {
                 >
                   <MenuItem value="">全部</MenuItem>
                   <MenuItem value="collaboration">合作機會</MenuItem>
-                  <MenuItem value="wish">許願機會</MenuItem>
+                  {/* 已移除許願機會類型選項 */}
                   <MenuItem value="meeting">會議洞察</MenuItem>
                   <MenuItem value="market">市場機會</MenuItem>
                 </Select>
@@ -507,17 +471,7 @@ const NotificationsPage = () => {
             <Typography variant="h6" color="text.secondary" gutterBottom>
               {tabValue === 0 ? '沒有未讀通知' : '沒有通知'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              AI 會持續為您掃描新的商業機會
-            </Typography>
-            <Button 
-              variant="contained" 
-              onClick={scanOpportunities}
-              disabled={refreshing}
-              startIcon={<RefreshIcon />}
-            >
-              {refreshing ? '掃描中...' : '立即掃描'}
-            </Button>
+            {/* 已移除掃描提示與按鈕 */}
           </CardContent>
         </Card>
       ) : (
@@ -784,18 +738,7 @@ const NotificationsPage = () => {
               }
               label="合作機會推薦"
             />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={preferences.wishOpportunities}
-                  onChange={(e) => setPreferences(prev => ({ 
-                    ...prev, 
-                    wishOpportunities: e.target.checked 
-                  }))}
-                />
-              }
-              label="許願機會匹配"
-            />
+            {/* 已移除許願機會匹配偏好設定 */}
             <FormControlLabel
               control={
                 <Switch

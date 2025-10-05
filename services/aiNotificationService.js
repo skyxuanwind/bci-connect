@@ -1,11 +1,9 @@
 const { pool } = require('../config/database');
 const geminiService = require('./geminiService');
-const { AIMatchingService } = require('./aiMatchingService');
 
 class AINotificationService {
   constructor() {
     this.geminiService = geminiService;
-    this.aiMatchingService = new AIMatchingService();
   }
 
   /**
@@ -88,50 +86,6 @@ class AINotificationService {
     }
   }
 
-  /**
-   * 許願版機會推送通知
-   * @param {number} userId - 接收通知的用戶ID
-   * @param {number} wishId - 許願ID
-   * @param {object} wishData - 許願數據
-   * @param {number} matchingScore - 匹配分數
-   */
-  async sendWishOpportunityNotification(userId, wishId, wishData, matchingScore) {
-    try {
-      // 獲取許願發布者資訊
-      const wisherResult = await pool.query(
-        'SELECT name, company FROM users WHERE id = $1',
-        [wishData.user_id]
-      );
-      
-      if (wisherResult.rows.length === 0) {
-        throw new Error(`許願發布者不存在: ${wishData.user_id}`);
-      }
-      
-      const wisher = wisherResult.rows[0];
-      
-      // 生成個性化通知內容
-      const notificationContent = await this.generateWishOpportunityNotification(
-        wisher,
-        wishData,
-        matchingScore
-      );
-      
-      const notificationData = {
-        title: '🎯 AI為您發現新商機！',
-        content: notificationContent.content,
-        relatedUserId: wishData.user_id,
-        relatedWishId: wishId,
-        matchingScore: matchingScore,
-        aiReasoning: notificationContent.reasoning,
-        priority: matchingScore >= 90 ? 3 : matchingScore >= 80 ? 2 : 1
-      };
-      
-      return await this.createNotification(userId, 'wish_opportunity', notificationData);
-    } catch (error) {
-      console.error('❌ 發送許願機會通知失敗:', error);
-      throw error;
-    }
-  }
 
   /**
    * 會議洞察通知
@@ -330,43 +284,6 @@ class AINotificationService {
     }
   }
 
-  /**
-   * 主動掃描並發送機會通知
-   * @param {number} userId - 用戶ID
-   */
-  async scanAndNotifyOpportunities(userId) {
-    try {
-      // 使用AI媒合服務掃描機會
-      const opportunities = await this.aiMatchingService.scanForOpportunities(userId);
-      
-      let notificationCount = 0;
-      
-      for (const opportunity of opportunities) {
-        // 檢查是否已經發送過類似通知（避免重複）
-        const existingNotification = await pool.query(`
-          SELECT id FROM ai_notifications 
-          WHERE user_id = $1 AND related_wish_id = $2 AND notification_type = 'wish_opportunity'
-          AND created_at > CURRENT_TIMESTAMP - INTERVAL '7 days'
-        `, [userId, opportunity.wish.id]);
-        
-        if (existingNotification.rows.length === 0) {
-          await this.sendWishOpportunityNotification(
-            userId,
-            opportunity.wish.id,
-            opportunity.wish,
-            opportunity.matchingScore
-          );
-          notificationCount++;
-        }
-      }
-      
-      console.log(`✅ 為用戶 ${userId} 發送了 ${notificationCount} 個機會通知`);
-      return notificationCount;
-    } catch (error) {
-      console.error('❌ 掃描並發送機會通知失敗:', error);
-      throw error;
-    }
-  }
 
   /**
    * 生成協同效應通知內容
@@ -409,46 +326,6 @@ class AINotificationService {
     }
   }
 
-  /**
-   * 生成許願機會通知內容
-   */
-  async generateWishOpportunityNotification(wisher, wishData, matchingScore) {
-    try {
-      const prompt = `
-請為以下商業機會生成一個吸引人的通知內容：
-
-機會發布者：
-- 姓名：${wisher.name}
-- 公司：${wisher.company}
-
-商業需求：
-- 標題：${wishData.title}
-- 描述：${wishData.description}
-- 分類：${wishData.category}
-
-匹配分數：${matchingScore}分
-
-請生成：
-1. 一個80字以內的通知內容，要有吸引力且具體
-2. 一個簡短的AI推薦理由
-
-格式：
-{
-  "content": "通知內容",
-  "reasoning": "推薦理由"
-}
-      `;
-      
-      const aiResponse = await this.geminiService.generateContent(prompt);
-      return this.parseNotificationContent(aiResponse);
-    } catch (error) {
-      console.error('❌ 生成許願機會通知內容失敗:', error);
-      return {
-        content: `AI合作網絡發現新機會！${wisher.name}（${wisher.company}）剛剛發布了「${wishData.title}」的商業需求。這與您的專業背景高度吻合，匹配度達${matchingScore}分。`,
-        reasoning: `基於您的AI深度畫像分析，該商業需求與您的專業能力和合作意向高度匹配，評分為${matchingScore}分。`
-      };
-    }
-  }
 
   /**
    * 生成會議洞察通知內容

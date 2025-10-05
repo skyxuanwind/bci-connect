@@ -538,6 +538,29 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Ensure unique index for template name to support ON CONFLICT (name)
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_nfc_card_templates_name ON nfc_card_templates(name)
+    `);
+
+    // Update category constraint to include newly seeded categories (compatibility)
+    try {
+      await pool.query(`
+        ALTER TABLE nfc_card_templates 
+        DROP CONSTRAINT IF EXISTS nfc_card_templates_category_check
+      `);
+      await pool.query(`
+        ALTER TABLE nfc_card_templates 
+        ADD CONSTRAINT nfc_card_templates_category_check 
+        CHECK (category IN (
+          'tech-professional', 'creative-vibrant', 'minimal-elegant', 'minimalist', 'tech-futuristic', 'creative-brand', 'business-professional', 'interactive-dynamic',
+          'minimal-luxury', 'futuristic-tech', 'professional-business', 'dynamic-interactive'
+        ))
+      `);
+    } catch (e) {
+      console.warn('Updating nfc_card_templates category constraint failed (non-critical):', e.message);
+    }
+
     // Create nfc_cards table (會員電子名片主表)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS nfc_cards (
@@ -864,6 +887,12 @@ const initializeDatabase = async () => {
         read_at TIMESTAMP
       )
     `);
+
+    // Helpful indexes for ai_notifications and cleanup deprecated types
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_ai_notifications_user ON ai_notifications(user_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_ai_notifications_status ON ai_notifications(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_ai_notifications_type ON ai_notifications(notification_type)`);
+    await pool.query(`DELETE FROM ai_notifications WHERE notification_type = 'wish_opportunity'`);
 
     // Create meeting_ai_analysis table (會議AI分析)
     await pool.query(`

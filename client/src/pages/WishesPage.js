@@ -66,7 +66,6 @@ const WishesPage = () => {
   const [editingWish, setEditingWish] = useState(null);
   const [selectedWish, setSelectedWish] = useState(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
-  const [matchingResults, setMatchingResults] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuWishId, setMenuWishId] = useState(null);
   
@@ -176,15 +175,6 @@ const WishesPage = () => {
   const handleViewWishDetail = async (wish) => {
     try {
       setSelectedWish(wish);
-      
-      // 載入匹配結果
-      if (wish.user.id === user.id) {
-        const response = await api.get(`/api/wishes/${wish.id}/matches`);
-        if (response.data.success) {
-          setMatchingResults(response.data.data.matches);
-        }
-      }
-      
       setOpenDetailDialog(true);
     } catch (error) {
       console.error('載入許願詳情失敗:', error);
@@ -241,7 +231,7 @@ const WishesPage = () => {
           💡 會員許願版
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
-          發布您的商業需求，讓AI為您找到最佳合作夥伴
+          發布您的商業需求，與會員建立合作連結
         </Typography>
       </Box>
 
@@ -565,7 +555,6 @@ const WishesPage = () => {
         onClose={() => {
           setOpenDetailDialog(false);
           setSelectedWish(null);
-          setMatchingResults([]);
         }}
         maxWidth="lg"
         fullWidth
@@ -675,46 +664,7 @@ const WishesPage = () => {
                     </CardContent>
                   </Card>
 
-                  {/* 匹配結果（僅許願發布者可見） */}
-                  {selectedWish && selectedWish.user && selectedWish.user.id === user.id && Array.isArray(matchingResults) && matchingResults.length > 0 && (
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          🎯 AI 推薦匹配
-                        </Typography>
-                        {matchingResults.slice(0, 3).map((match) => (
-                          <Box key={match.member.id} sx={{ mb: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                              <Avatar 
-                                src={match.member.profilePicture} 
-                                sx={{ width: 32, height: 32, mr: 1 }}
-                              >
-                                {match.member.name.charAt(0)}
-                              </Avatar>
-                              <Box sx={{ flex: 1 }}>
-                                <Typography variant="body2" fontWeight="medium">
-                                  {match.member.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {match.member.company}
-                                </Typography>
-                              </Box>
-                              <Chip 
-                                size="small" 
-                                label={`${match.score}%`}
-                                color="primary"
-                              />
-                            </Box>
-                            {match.reasoning && (
-                              <Typography variant="caption" color="text.secondary">
-                                🤖 {match.reasoning}
-                              </Typography>
-                            )}
-                          </Box>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  )}
+                  {/* 已移除AI匹配推薦區塊 */}
                 </Grid>
               </Grid>
             </DialogContent>
@@ -722,7 +672,6 @@ const WishesPage = () => {
               <Button onClick={() => {
                 setOpenDetailDialog(false);
                 setSelectedWish(null);
-                setMatchingResults([]);
               }}>
                 關閉
               </Button>

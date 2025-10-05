@@ -1,9 +1,7 @@
 const { pool } = require('../config/database');
 const { AIMatchingService } = require('../services/aiMatchingService');
-const { AINotificationService } = require('../services/aiNotificationService');
 
 const aiMatchingService = new AIMatchingService();
-const aiNotificationService = new AINotificationService();
 
 /**
  * 為吳岳軒創建一個實際的許願
@@ -88,58 +86,11 @@ async function createRealWish() {
       category: wishData.category 
     })]);
     
-    // 執行AI媒合和通知
-    console.log('\n🔍 開始尋找匹配會員...');
-    const matchingResults = await aiMatchingService.findMatchingMembers(
-      wish.id,
-      extractedIntents,
-      20 // 增加搜尋數量
-    );
-    
-    console.log(`✅ 找到 ${matchingResults.length} 個匹配會員`);
-    
-    // 為匹配度較高的會員發送通知
-    let notificationCount = 0;
-    for (const match of matchingResults) {
-      if (match.score >= 60) { // 降低門檻以便更多人收到通知
-        try {
-          console.log(`📤 發送通知給: ${match.member.name} (匹配度: ${match.score}%)`);
-          await aiNotificationService.sendWishOpportunityNotification(
-            match.member.id,
-            wish.id,
-            wish,
-            match.score
-          );
-          notificationCount++;
-        } catch (error) {
-          console.error(`❌ 發送通知失敗 (${match.member.name}):`, error.message);
-        }
-      }
-    }
-    
+    // 不再進行AI媒合或發送通知，僅建立許願與記錄活動
     console.log(`\n🎉 許願發布完成！`);
     console.log(`📊 統計資訊:`);
     console.log(`   - 許願ID: ${wish.id}`);
-    console.log(`   - 找到匹配會員: ${matchingResults.length} 個`);
-    console.log(`   - 發送通知數量: ${notificationCount} 個`);
-    console.log(`   - 匹配門檻: 60% 以上`);
-    
-    if (notificationCount > 0) {
-      console.log(`\n💡 提示: 收到通知的會員可以在「AI智能通知」頁面查看詳情`);
-      console.log(`🔗 通知頁面: http://localhost:8000/ai-notification-test`);
-    }
-    
-    // 顯示匹配結果詳情
-    if (matchingResults.length > 0) {
-      console.log(`\n📋 匹配結果詳情:`);
-      matchingResults.forEach((match, index) => {
-        console.log(`${index + 1}. ${match.member.name} (${match.member.company})`);
-        console.log(`   匹配度: ${match.score}% | 行業: ${match.member.industry}`);
-        console.log(`   原因: ${match.reasons.join(', ')}`);
-        console.log(`   ${match.score >= 60 ? '✅ 已發送通知' : '⏸️  匹配度不足，未發送通知'}`);
-        console.log('');
-      });
-    }
+    console.log(`   - 已停用願望相關AI通知與媒合流程`);
     
   } catch (error) {
     console.error('❌ 創建許願失敗:', error);

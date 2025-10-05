@@ -1,9 +1,7 @@
 const { pool } = require('../config/database');
 const { AIMatchingService } = require('../services/aiMatchingService');
-const { AINotificationService } = require('../services/aiNotificationService');
 
 const aiMatchingService = new AIMatchingService();
-const aiNotificationService = new AINotificationService();
 
 /**
  * 創建一個能讓吳岳軒收到通知的許願
@@ -88,94 +86,11 @@ async function createWishForXuanxuan() {
       category: wishData.category 
     })]);
     
-    // 執行AI媒合和通知
-    console.log('\n🔍 開始尋找匹配會員...');
-    const matchingResults = await aiMatchingService.findMatchingMembers(
-      wish.id,
-      extractedIntents,
-      20 // 增加搜尋數量
-    );
-    
-    console.log(`✅ 找到 ${matchingResults.length} 個匹配會員`);
-    
-    // 為匹配度較高的會員發送通知
-    let notificationCount = 0;
-    let xuanxuanNotified = false;
-    
-    for (const match of matchingResults) {
-      if (match.score >= 50) { // 進一步降低門檻
-        try {
-          console.log(`📤 發送通知給: ${match.member.name} (${match.member.company}) - 匹配度: ${match.score}%`);
-          await aiNotificationService.sendWishOpportunityNotification(
-            match.member.id,
-            wish.id,
-            wish,
-            match.score
-          );
-          notificationCount++;
-          
-          if (match.member.name === '吳岳軒') {
-            xuanxuanNotified = true;
-          }
-        } catch (error) {
-          console.error(`❌ 發送通知失敗 (${match.member.name}):`, error.message);
-        }
-      }
-    }
-    
+    // 不再進行AI媒合或發送通知，僅建立許願與記錄活動
     console.log(`\n🎉 許願發布完成！`);
     console.log(`📊 統計資訊:`);
     console.log(`   - 許願ID: ${wish.id}`);
-    console.log(`   - 找到匹配會員: ${matchingResults.length} 個`);
-    console.log(`   - 發送通知數量: ${notificationCount} 個`);
-    console.log(`   - 匹配門檻: 50% 以上`);
-    console.log(`   - 吳岳軒收到通知: ${xuanxuanNotified ? '✅ 是' : '❌ 否'}`);
-    
-    if (xuanxuanNotified) {
-      console.log(`\n🎯 成功！吳岳軒已收到AI智能通知`);
-      console.log(`💡 提示: 吳岳軒可以登入系統查看通知`);
-      console.log(`🔗 登入資訊: xuanowind@gmail.com`);
-      console.log(`🔗 通知頁面: http://localhost:8000/notifications`);
-      console.log(`🔗 AI通知測試頁: http://localhost:8000/ai-notification-test`);
-    }
-    
-    // 顯示匹配結果詳情
-    if (matchingResults.length > 0) {
-      console.log(`\n📋 匹配結果詳情:`);
-      matchingResults.forEach((match, index) => {
-        const isXuanxuan = match.member.name === '吳岳軒';
-        console.log(`${index + 1}. ${match.member.name} (${match.member.company}) ${isXuanxuan ? '🎯' : ''}`);
-        console.log(`   匹配度: ${match.score}% | 行業: ${match.member.industry}`);
-        console.log(`   原因: ${match.reasons.join(', ')}`);
-        console.log(`   ${match.score >= 50 ? '✅ 已發送通知' : '⏸️  匹配度不足，未發送通知'}`);
-        console.log('');
-      });
-    }
-    
-    // 如果吳岳軒沒有收到通知，手動創建一個
-    if (!xuanxuanNotified) {
-      console.log('\n🔧 吳岳軒未自動匹配，手動創建通知...');
-      
-      const xuanxuanResult = await pool.query(
-        'SELECT * FROM users WHERE name = $1 AND email LIKE $2',
-        ['吳岳軒', '%xuanowind%']
-      );
-      
-      if (xuanxuanResult.rows.length > 0) {
-        const xuanxuan = xuanxuanResult.rows[0];
-        try {
-          await aiNotificationService.sendWishOpportunityNotification(
-            xuanxuan.id,
-            wish.id,
-            wish,
-            85 // 手動設定高匹配度
-          );
-          console.log('✅ 已手動為吳岳軒創建AI智能通知');
-        } catch (error) {
-          console.error('❌ 手動創建通知失敗:', error.message);
-        }
-      }
-    }
+    console.log(`   - 已停用願望相關AI通知與媒合流程`);
     
   } catch (error) {
     console.error('❌ 創建許願失敗:', error);

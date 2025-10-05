@@ -60,7 +60,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     // 添加篩選條件
     if (type) {
-      query += ` AND an.type = $${paramIndex}`;
+      query += ` AND an.notification_type = $${paramIndex}`;
       params.push(type);
       paramIndex++;
     }
@@ -94,7 +94,7 @@ router.get('/', authenticateToken, async (req, res) => {
     let countParamIndex = 2;
 
     if (type) {
-      countQuery += ` AND an.type = $${countParamIndex}`;
+      countQuery += ` AND an.notification_type = $${countParamIndex}`;
       countParams.push(type);
       countParamIndex++;
     }
@@ -195,13 +195,12 @@ router.get('/stats', authenticateToken, async (req, res) => {
     // 對應到前端顯示的類型鍵值
     const typeMap = {
       collaboration_recommendation: 'collaboration',
-      wish_opportunity: 'wish',
       meeting_insights: 'meeting',
       market_opportunity: 'market'
     };
 
     // 彙總前端所需的統計資料
-    const aggregated = { total: 0, unread: 0, collaboration: 0, wish: 0, meeting: 0, market: 0 };
+    const aggregated = { total: 0, unread: 0, collaboration: 0, meeting: 0, market: 0 };
 
     // 可選：詳細分類統計（保留以備未來使用）
     const byTypeStatus = {};
@@ -433,10 +432,6 @@ router.get('/opportunities', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { limit = 5 } = req.query;
 
-    // 主動掃描新機會
-    console.log('🔍 為用戶掃描新機會...');
-    await aiNotificationService.scanAndNotifyOpportunities(userId);
-
     // 獲取最新的機會通知
     const result = await pool.query(`
       SELECT 
@@ -469,7 +464,7 @@ router.get('/opportunities', authenticateToken, async (req, res) => {
         END as related_wish
       FROM ai_notifications an
       WHERE an.user_id = $1 
-      AND an.notification_type IN ('collaboration_opportunity', 'wish_opportunity', 'market_opportunity')
+      AND an.notification_type IN ('collaboration_opportunity', 'market_opportunity')
       AND an.status != 'dismissed'
       ORDER BY an.priority DESC, an.created_at DESC
       LIMIT $2
@@ -509,42 +504,7 @@ router.get('/opportunities', authenticateToken, async (req, res) => {
   }
 });
 
-/**
- * 手動觸發AI機會掃描
- * POST /api/notifications/scan-opportunities
- */
-router.post('/scan-opportunities', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    console.log(`🤖 手動觸發用戶 ${userId} 的AI機會掃描...`);
-    
-    // 異步執行掃描
-    setImmediate(async () => {
-      try {
-        await aiNotificationService.scanForOpportunities(userId);
-        console.log(`✅ 用戶 ${userId} 的AI機會掃描完成`);
-      } catch (error) {
-        console.error(`❌ 用戶 ${userId} 的AI機會掃描失敗:`, error);
-      }
-    });
-
-    res.json({
-      success: true,
-      message: 'AI正在為您掃描新機會，請稍後查看通知',
-      data: {
-        scanTriggered: true,
-        timestamp: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    console.error('❌ 觸發AI掃描失敗:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: '觸發AI掃描失敗' 
-    });
-  }
-});
+// 已移除：願望板AI掃描端點（scan-opportunities）
 
 /**
  * 獲取通知偏好設定
@@ -556,16 +516,16 @@ router.get('/preferences', authenticateToken, async (req, res) => {
 
     // 從用戶的AI深度畫像中獲取通知偏好
     const profile = await aiProfileService.getCurrentProfile(userId);
-    const preferences = profile?.notificationPreferences || {
+    const rawPrefs = profile?.notificationPreferences || {
       collaborationOpportunity: true,
-      wishOpportunity: true,
       meetingInsights: true,
       marketOpportunity: true,
       emailNotifications: false,
       pushNotifications: true,
-      minMatchingScore: 70,
       maxDailyNotifications: 5
     };
+    // 移除願望相關偏好欄位以保持一致性
+    const { wishOpportunity, minMatchingScore, ...preferences } = rawPrefs;
 
     res.json({
       success: true,
@@ -598,12 +558,16 @@ router.put('/preferences', authenticateToken, async (req, res) => {
 
     // 更新用戶的AI深度畫像中的通知偏好
     const currentProfile = await aiProfileService.getCurrentProfile(userId);
+    // 合併並移除願望相關偏好欄位
+    const merged = {
+      ...currentProfile?.notificationPreferences,
+      ...preferences
+    };
+    delete merged.wishOpportunity;
+    delete merged.minMatchingScore;
     const updatedProfile = {
       ...currentProfile,
-      notificationPreferences: {
-        ...currentProfile?.notificationPreferences,
-        ...preferences
-      }
+      notificationPreferences: merged
     };
 
     await aiProfileService.updateProfile(userId, { notificationPreferences: updatedProfile.notificationPreferences });
