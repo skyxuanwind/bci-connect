@@ -885,8 +885,9 @@ const getYouTubeVideoId = (url) => {
   };
 
   const renderBlockEditor = (block, index) => {
-    const isEditing = editingBlock === index;
-    
+    // 改為直接觸發右側即時預覽的就地編輯 Overlay
+    const isPreviewEditing = editingBlockIndex === index;
+
     return (
       <Draggable key={block.id || index} draggableId={String(block.id || index)} index={index}>
         {(provided) => (
@@ -904,13 +905,14 @@ const getYouTubeVideoId = (url) => {
                   {getBlockTypeLabel(block.content_type)}
                 </span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setEditingBlock(isEditing ? null : index)}
+                  onClick={() => setEditingBlockIndex(isPreviewEditing ? null : index)}
                   className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                  title="在右側預覽中就地編輯"
                 >
-                  {isEditing ? <CheckIcon className="h-4 w-4" /> : <PencilIcon className="h-4 w-4" />}
+                  {isPreviewEditing ? <CheckIcon className="h-4 w-4" /> : <PencilIcon className="h-4 w-4" />}
                 </button>
                 <button
                   onClick={() => handleDeleteBlock(index)}
@@ -920,19 +922,24 @@ const getYouTubeVideoId = (url) => {
                 </button>
               </div>
             </div>
-            
-            {isEditing ? (
-              <BlockContentEditor 
-                block={block}
-                onSave={(newData) => {
-                  handleEditBlock(index, newData);
-                  setEditingBlock(null);
-                }}
-                onCancel={() => setEditingBlock(null)}
-              />
-            ) : (
-              <BlockPreview block={block} />
-            )}
+
+            {/* 僅顯示摘要，詳細編輯在右側預覽 overlay 進行 */}
+            <div>
+              <div className="text-sm font-medium text-gray-800 mb-1">
+                {getBlockTypeLabel(block.content_type)}
+              </div>
+              <div className="text-xs text-gray-500">
+                {(block?.content_data?.title || block?.content_data?.url || block?.content_data?.content) ? (
+                  <>
+                    {block?.content_data?.title && <div>標題：{block.content_data.title}</div>}
+                    {block?.content_data?.url && <div>網址：{block.content_data.url}</div>}
+                    {block?.content_data?.content && <div>內容：{block.content_data.content}</div>}
+                  </>
+                ) : (
+                  <div>尚未設定內容</div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </Draggable>
