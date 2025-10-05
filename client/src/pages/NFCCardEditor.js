@@ -953,6 +953,48 @@ const getYouTubeVideoId = (url) => {
     handleEditBlock(index, next);
   };
 
+  const inlineUpload = async (file) => {
+    if (!file) return null;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const resp = await axios.post('/api/nfc-cards/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return resp?.data?.data?.url || null;
+    } catch (e) {
+      console.error('上傳失敗', e);
+      return null;
+    }
+  };
+
+  const handleInlineImageUpload = async (index, file) => {
+    const url = await inlineUpload(file);
+    if (url) {
+      updateBlockField(index, 'url', url);
+      const name = file?.name || '';
+      if (!cardConfig?.content_blocks?.[index]?.content_data?.title) {
+        updateBlockField(index, 'title', name);
+      }
+      if (!cardConfig?.content_blocks?.[index]?.content_data?.alt) {
+        updateBlockField(index, 'alt', name);
+      }
+    } else {
+      alert('圖片上傳失敗，請重試');
+    }
+  };
+
+  const handleInlineIconUpload = async (index, file) => {
+    const url = await inlineUpload(file);
+    if (url) {
+      const prev = cardConfig?.content_blocks?.[index]?.content_data || {};
+      const next = { ...prev, icon_url: url, icon_type: 'custom' };
+      handleEditBlock(index, next);
+    } else {
+      alert('圖標上傳失敗，請重試');
+    }
+  };
+
   // 就地編輯：基本資訊（姓名 / 職稱 / 公司）
   const updateBasicField = (key, value) => {
     setCardConfig(prev => ({ ...prev, [key]: value }));
@@ -2036,8 +2078,8 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
             )}
           </div>
           {/* 基本資訊就地編輯 Overlay */}
-          {editingBlockIndex === 'basic' && (
-            <div className="inline-editor-overlay hidden md:block">
+              {editingBlockIndex === 'basic' && (
+            <div className="inline-editor-overlay">
               <label>姓名</label>
               <input
                 type="text"
@@ -2074,7 +2116,7 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
               <div key={index} className="content-block" style={{ borderTop: borderTopCss }}>
                 {/* 工具列（置於卡片標題上方） */}
                 <div className="block-toolbar">
-                  <button className="inline-toolbar-button" onClick={() => setEditingBlockIndex(index)}>編輯</button>
+                  <button className="inline-toolbar-button" onClick={() => setEditingBlockIndex(editingBlockIndex === index ? null : index)}>編輯</button>
                   <button className="inline-toolbar-button" onClick={() => onToggleVisibility(index)}>{block?.is_visible === false ? '顯示' : '隱藏'}</button>
                   <button className="inline-toolbar-button" onClick={() => onMoveUp(index)}>上移</button>
                   <button className="inline-toolbar-button" onClick={() => onMoveDown(index)}>下移</button>
@@ -2112,7 +2154,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.content || '內容文字'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay hidden md:block">
+            <div className="inline-editor-overlay">
               <label>標題</label>
               <input
                 type="text"
@@ -2143,7 +2185,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.url || 'https://example.com'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay hidden md:block">
+            <div className="inline-editor-overlay">
               <label>標題</label>
               <input
                 type="text"
@@ -2173,7 +2215,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.url || 'https://example.com'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay hidden md:block">
+            <div className="inline-editor-overlay">
               <label>標題</label>
               <input
                 type="text"
@@ -2203,7 +2245,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.url || 'https://example.com/news'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay hidden md:block">
+            <div className="inline-editor-overlay">
               <label>標題</label>
               <input
                 type="text"
@@ -2233,7 +2275,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.url || 'https://example.com/file.pdf'}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay hidden md:block">
+            <div className="inline-editor-overlay">
               <label>檔案標題</label>
               <input
                 type="text"
@@ -2283,7 +2325,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             )}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay hidden md:block">
+            <div className="inline-editor-overlay">
               <label>標題</label>
               <input
                 type="text"
@@ -2361,6 +2403,13 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
                 onChange={(e) => updateBlockField(index, 'title', e.target.value)}
                 className="inline-editor-input"
               />
+              <label>上傳圖片</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleInlineImageUpload(index, e.target.files?.[0])}
+                className="inline-editor-input"
+              />
               <label>圖片網址</label>
               <input
                 type="text"
@@ -2406,7 +2455,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             )}
           </div>
           {editingBlockIndex === index && (
-            <div className="inline-editor-overlay hidden md:block">
+            <div className="inline-editor-overlay">
               {['linkedin','facebook','instagram','twitter','youtube','tiktok'].map(key => (
                 <div key={key} style={{ marginTop: '6px' }}>
                   <label style={{ display: 'block' }}>{key} 網址</label>
@@ -2467,20 +2516,24 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
             {content_data?.title || '圖標標題'}
           </div>
           <div className="flex items-center gap-2 text-amber-100 text-xs">
-            <span style={{ fontSize: content_data?.size === 'small' ? '12px' : content_data?.size === 'medium' ? '16px' : content_data?.size === 'large' ? '20px' : '24px' }}>
-              {content_data?.icon_type === 'star' ? '⭐' :
-               content_data?.icon_type === 'heart' ? '❤️' :
-               content_data?.icon_type === 'diamond' ? '💎' :
-               content_data?.icon_type === 'crown' ? '👑' :
-               content_data?.icon_type === 'trophy' ? '🏆' :
-               content_data?.icon_type === 'fire' ? '🔥' :
-               content_data?.icon_type === 'lightning' ? '⚡' :
-               content_data?.icon_type === 'rocket' ? '🚀' :
-               content_data?.icon_type === 'target' ? '🎯' :
-               content_data?.icon_type === 'medal' ? '🏅' :
-               content_data?.icon_type === 'gem' ? '💍' :
-               content_data?.icon_type === 'sparkles' ? '✨' : '⭐'}
-            </span>
+            {content_data?.icon_url ? (
+              <img src={content_data.icon_url} alt={content_data?.description || 'icon'} style={{ height: content_data?.size === 'small' ? 16 : content_data?.size === 'medium' ? 20 : content_data?.size === 'large' ? 24 : 28 }} />
+            ) : (
+              <span style={{ fontSize: content_data?.size === 'small' ? '12px' : content_data?.size === 'medium' ? '16px' : content_data?.size === 'large' ? '20px' : '24px' }}>
+                {content_data?.icon_type === 'star' ? '⭐' :
+                 content_data?.icon_type === 'heart' ? '❤️' :
+                 content_data?.icon_type === 'diamond' ? '💎' :
+                 content_data?.icon_type === 'crown' ? '👑' :
+                 content_data?.icon_type === 'trophy' ? '🏆' :
+                 content_data?.icon_type === 'fire' ? '🔥' :
+                 content_data?.icon_type === 'lightning' ? '⚡' :
+                 content_data?.icon_type === 'rocket' ? '🚀' :
+                 content_data?.icon_type === 'target' ? '🎯' :
+                 content_data?.icon_type === 'medal' ? '🏅' :
+                 content_data?.icon_type === 'gem' ? '💍' :
+                 content_data?.icon_type === 'sparkles' ? '✨' : '⭐'}
+              </span>
+            )}
             <span>{content_data?.description || '裝飾圖標'}</span>
           </div>
           {editingBlockIndex === index && (
@@ -2527,6 +2580,13 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField }) => 
                 type="text"
                 value={content_data?.description || ''}
                 onChange={(e) => updateBlockField(index, 'description', e.target.value)}
+                className="inline-editor-input"
+              />
+              <label>自訂圖標上傳（可選）</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleInlineIconUpload(index, e.target.files?.[0])}
                 className="inline-editor-input"
               />
               <div className="inline-editor-hint">正在就地編輯（自動保存）</div>

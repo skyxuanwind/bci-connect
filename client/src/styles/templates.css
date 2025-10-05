@@ -1170,14 +1170,12 @@
 }
 
 .inline-editor-overlay {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: static;
   padding: 8px 10px;
+  margin-top: 8px;
   background: rgba(0, 0, 0, 0.75);
   border-top: 1px solid rgba(255, 215, 0, 0.35);
-  z-index: 5;
+  z-index: 1;
 }
 
 .inline-editor-overlay label {
@@ -1369,5 +1367,5 @@
 .nfc-card-preview .card-content,
 .nfc-card-base .card-content {
   padding-top: 1rem;
-  padding-bottom: 2rem;
+  padding-bottom: 5rem;
 }
