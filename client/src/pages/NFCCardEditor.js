@@ -68,8 +68,8 @@ const getYouTubeVideoId = (url) => {
     const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showDesktopTemplate, setShowDesktopTemplate] = useState(false);
   // 單畫面模式：永遠顯示預覽並隱藏左側列表與中欄
-  // 調整預設為「關閉」，以便顯示左側基本設定面板（七個常駐欄位）
-  const [singleScreenMode, setSingleScreenMode] = useState(false);
+  // 強制預設為開啟，將左側基本設定與中間內容區塊隱藏
+  const [singleScreenMode, setSingleScreenMode] = useState(true);
   // 單一操作界面的覆蓋層：基本資訊與內容清單
   const [showBasicInfoOverlay, setShowBasicInfoOverlay] = useState(false);
   const [showContentListOverlay, setShowContentListOverlay] = useState(false);
@@ -77,14 +77,7 @@ const getYouTubeVideoId = (url) => {
   // 提示視窗狀態
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successToastMessage, setSuccessToastMessage] = useState('已完成');
-  // 行動端預設單面板模式（xl 以下），減少頁面滑動
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1280px)');
-    const updateMode = () => setSingleScreenMode(!mq.matches);
-    updateMode();
-    mq.addEventListener('change', updateMode);
-    return () => mq.removeEventListener('change', updateMode);
-  }, []);
+  // 單面板模式固定開啟（桌面與行動一致），減少不必要滑動
   // 使用者層級偏好與操作狀態
   const [userPreferences, setUserPreferences] = useState({ auto_populate_on_create: false, single_screen_edit: false });
   const [savingUserPref, setSavingUserPref] = useState(false);
@@ -1342,6 +1335,12 @@ const getYouTubeVideoId = (url) => {
                     </button>
                   </div>
                 </div>
+                {singleScreenMode && (
+                  <div className="mb-3 text-xs text-amber-200 bg-amber-800/30 border border-amber-500/40 rounded px-3 py-2 flex items-center">
+                    <EyeIcon className="h-4 w-4 mr-2 text-amber-300" />
+                    已隱藏左側基本設定與中間內容區塊。請使用上方按鈕開啟覆蓋層進行操作。
+                  </div>
+                )}
                 
                 <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50 relative">
                   {/* 行動版上下拖曳把手：僅在手機顯示 */}
