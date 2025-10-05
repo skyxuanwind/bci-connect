@@ -55,16 +55,18 @@ const getYouTubeVideoId = (url) => {
   }
 };
 
-const NFCCardEditor = () => {
-  const { user } = useAuth();
-  const [cardConfig, setCardConfig] = useState(null);
-  const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  // 移除預覽模式狀態
-  const [editingBlock, setEditingBlock] = useState(null);
-  const [editingBlockIndex, setEditingBlockIndex] = useState(null);
-  const [showAddBlockModal, setShowAddBlockModal] = useState(false);
+  const NFCCardEditor = () => {
+    const { user } = useAuth();
+    const [cardConfig, setCardConfig] = useState(null);
+    const [templates, setTemplates] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    // 移除預覽模式狀態
+    const [editingBlock, setEditingBlock] = useState(null);
+    const [editingBlockIndex, setEditingBlockIndex] = useState(null);
+    const [showAddBlockModal, setShowAddBlockModal] = useState(false);
+    // 單畫面模式：永遠顯示預覽並隱藏左側列表與中欄
+    const [singleScreenMode, setSingleScreenMode] = useState(true);
   // 自動帶入個人資料控制，避免重複插入
   const [autoProfileApplied, setAutoProfileApplied] = useState(false);
   // 提示視窗狀態
@@ -1065,7 +1067,7 @@ const NFCCardEditor = () => {
         {/* 編輯模式 - 三欄布局：基本設定、內容編輯、即時預覽 */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* 左側：基本設定 */}
-            <div className="xl:col-span-3">
+            <div className={singleScreenMode ? 'hidden' : 'xl:col-span-3'}>
               <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-6 mb-6">
                 <h2 className="text-lg font-semibold text-gold-100 mb-4">基本設定</h2>
                 
@@ -1258,8 +1260,8 @@ const NFCCardEditor = () => {
               </div>
             </div>
             
-            {/* 中間：內容編輯 */}
-            <div className="xl:col-span-5">
+            {/* 中間：內容編輯（單畫面模式隱藏） */}
+            <div className={singleScreenMode ? 'hidden' : 'xl:col-span-5'}>
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">內容區塊</h2>
@@ -1298,18 +1300,25 @@ const NFCCardEditor = () => {
               </div>
             </div>
             
-            {/* 右側：即時預覽（可依偏好隱藏） */}
-            {!userPreferences?.single_screen_edit && (
-            <div className="xl:col-span-4">
-              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg p-6 sticky top-8">
+            {/* 右側：即時預覽（單畫面模式：全寬） */}
+            <div className={singleScreenMode ? "xl:col-span-12" : "xl:col-span-4"}>
+              <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-lg py-8 px-6 sticky top-8">
                 <h2 className="text-lg font-semibold text-gold-100 mb-4 flex items-center">
                   <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
                   即時預覽
+                  {singleScreenMode && (
+                    <button
+                      onClick={() => setSingleScreenMode(false)}
+                      className="ml-auto inline-flex items-center px-3 py-1 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded hover:from-yellow-500 hover:to-yellow-400 text-xs"
+                    >
+                      返回列表
+                    </button>
+                  )}
                 </h2>
                 
-                <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50">
+                <div className="border border-gold-600 rounded-lg overflow-hidden shadow-inner bg-gradient-to-b from-gray-900/50 to-black/50 relative">
                   {/* 套用模板樣式的預覽 */}
-                  <div className="min-h-[32rem] max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800">
+                  <div className="min-h-[32rem] max-h-[32rem] overflow-y-auto scrollbar-thin scrollbar-thumb-gold-600 scrollbar-track-gray-800 max-w-[512px] mx-auto px-4">
                     <TemplatePreview 
                       template={selectedTemplate}
                       cardConfig={cardConfig}
@@ -1322,6 +1331,15 @@ const NFCCardEditor = () => {
                       onMoveDown={moveBlockDown}
                       setEditingBlockIndex={setEditingBlockIndex}
                     />
+                  </div>
+                  {/* 編輯器容器內的新增內容按鈕 */}
+                  <div className="absolute top-4 right-4 z-40">
+                    <button
+                      onClick={() => setShowAddBlockModal(true)}
+                      className="px-4 py-2 rounded-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 font-medium shadow-lg hover:from-yellow-500 hover:to-yellow-400 active:scale-95 transition text-sm"
+                    >
+                      新增內容
+                    </button>
                   </div>
                   
                   <div className="p-4 bg-gradient-to-r from-black/40 to-gray-900/40 border-t border-gold-600/50 text-center backdrop-blur-sm">
@@ -1342,7 +1360,6 @@ const NFCCardEditor = () => {
                 </div>
               </div>
             </div>
-            )}
           </div>
       </div>
 
@@ -1362,17 +1379,7 @@ const NFCCardEditor = () => {
         )}
       </AnimatePresence>
 
-      {/* 左下角：新增內容浮動按鈕 */}
-      <div className="fixed bottom-4 left-4 z-40">
-        <button
-          onClick={() => setShowAddBlockModal(true)}
-          className="px-4 py-2 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-500 active:scale-95 transition text-sm"
-        >
-          新增內容
-        </button>
-      </div>
-
-      {/* 左下角：內容類型選單（面板/底部抽屜） */}
+      {/* 內容類型選單（面板/底部抽屜） */}
       <AnimatePresence>
         {showAddBlockModal && (
           <motion.div
@@ -1905,7 +1912,7 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
             <div className="text-center text-gray-500 py-8">
               <PhotoIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
               <p className="text-sm">尚未添加內容</p>
-              <p className="text-xs mt-1">在左側添加內容區塊</p>
+              <p className="text-xs mt-1">按下「新增內容」按鈕添加內容</p>
             </div>
           )}
         </div>
