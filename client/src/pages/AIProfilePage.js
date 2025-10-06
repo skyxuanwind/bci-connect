@@ -1009,6 +1009,7 @@ const AIProfilePage = ({ standaloneTab }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* 頁面標題 */}
+      {!isStandalone && (
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-3">
@@ -1038,8 +1039,10 @@ const AIProfilePage = ({ standaloneTab }) => {
           </button>
         </div>
       </div>
+      )}
 
       {/* 畫像概覽卡片 */}
+      {!isStandalone && (
       <div className="bg-white shadow rounded-lg p-6 mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">畫像概覽</h2>
@@ -1168,9 +1171,10 @@ const AIProfilePage = ({ standaloneTab }) => {
           )}
         </div>
       </div>
+      )}
 
       {/* AI 建議（顯著展示於概覽卡片下方） */}
-      {analysis?.suggestions?.length > 0 && (
+      {!isStandalone && analysis?.suggestions?.length > 0 && (
         <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-5 mb-8">
           <div className="flex items-center mb-3">
             <LightBulbIcon className="h-5 w-5 text-yellow-400 mr-2" />
