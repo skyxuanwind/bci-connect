@@ -10,6 +10,7 @@ import Level1Route from './components/Level1Route';
 import CoachRoute from './components/CoachRoute';
 import CoreAdminRoute from './components/CoreAdminRoute';
 import Layout from './components/Layout';
+import BusinessDashboardPage from './pages/BusinessDashboardPage';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -220,6 +221,15 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <AIProfilePage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* Business Dashboard - standalone page */}
+          <Route path="/business-dashboard" element={
+            <ProtectedRoute>
+              <Layout>
+                <BusinessDashboardPage />
               </Layout>
             </ProtectedRoute>
           } />

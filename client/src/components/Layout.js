@@ -95,7 +95,7 @@ const Layout = ({ children }) => {
   // AI 智慧合作網絡功能
   const aiFeatures = [
     { name: 'AI 深度畫像', href: '/ai-profile', icon: UserIcon },
-    { name: '我的商業儀表板', href: '/ai-profile?tab=myBusiness', icon: ChartBarIcon },
+    { name: '我的商業儀表板', href: '/business-dashboard', icon: ChartBarIcon },
   ];
 
   // 教練功能

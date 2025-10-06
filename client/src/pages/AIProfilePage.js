@@ -1328,6 +1328,7 @@ const AIProfilePage = () => {
       </div>
 
       {/* 標籤頁導航 */}
+      {!isStandalone && (
       <div className="border-b border-yellow-500/30 mb-6">
         <nav className="-mb-px flex overflow-x-auto space-x-4 sm:space-x-8 scrollbar-hide">
           {[
@@ -1355,6 +1356,7 @@ const AIProfilePage = () => {
           ))}
         </nav>
       </div>
+      )}
 
       {/* 標籤頁內容 */}
       <div className="space-y-6">
