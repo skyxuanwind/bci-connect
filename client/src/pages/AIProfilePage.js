@@ -42,7 +42,13 @@ const AIProfilePage = () => {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const initialTab = (() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    const allowedTabs = ['overview', 'personality', 'business', 'collaboration', 'opportunities', 'risks', 'myBusiness'];
+    return tabParam && allowedTabs.includes(tabParam) ? tabParam : 'overview';
+  })();
+  const [activeTab, setActiveTab] = useState(initialTab);
   // 我的商業儀表板狀態
   const [timeRange, setTimeRange] = useState('monthly'); // monthly | semiannual | annual
   const [dashboardSummary, setDashboardSummary] = useState(null);
@@ -1335,7 +1341,7 @@ const AIProfilePage = () => {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`${
                 activeTab === tab.id
                   ? 'border-yellow-500/60 text-yellow-300'
@@ -2318,3 +2324,12 @@ const AIProfilePage = () => {
 };
 
 export default AIProfilePage;
+  // 切換分頁時同步 URL 參數，便於直接分享進入
+  const handleTabChange = (tab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', tab);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, '', newUrl);
+  };
