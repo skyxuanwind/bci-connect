@@ -127,7 +127,7 @@ const MemberProgress = () => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-        <div className="card p-3"><div className="text-xs text-gold-400 mb-1 inline-flex items-center"><CalendarIcon className="h-4 w-4 mr-1"/>會議互動</div><div className="text-gold-100 text-lg font-semibold">{p.meetingsCount || 0}</div></div>
+        <div className="card p-3"><div className="text-xs text-gold-400 mb-1 inline-flex items-center"><CalendarIcon className="h-4 w-4 mr-1"/>交流互動</div><div className="text-gold-100 text-lg font-semibold">{p.meetingsCount || 0}</div></div>
         <div className="card p-3"><div className="text-xs text-gold-400 mb-1 inline-flex items-center"><ClipboardDocumentListIcon className="h-4 w-4 mr-1"/>任務完成</div><div className="text-gold-100 text-lg font-semibold">{p.tasks?.completed || 0}</div></div>
         <div className="card p-3"><div className="text-xs text-gold-400 mb-1 inline-flex items-center"><ChartBarIcon className="h-4 w-4 mr-1"/>BM 點擊</div><div className="text-gold-100 text-lg font-semibold">{p.bmCardClicks || 0}</div></div>
         <div className="card p-3"><div className="text-xs text-gold-400 mb-1">活動參與</div><div className="text-gold-100 text-lg font-semibold">{p.eventsCount || 0}</div></div>

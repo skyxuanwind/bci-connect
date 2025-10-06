@@ -397,7 +397,7 @@ const MemberDetail = () => {
               傳送訊息
             </button>
             <button onClick={() => navigate(`/meetings?schedule_with=${member.id}`)} className="btn-secondary w-full flex items-center justify-center">
-              安排會議
+              安排交流
             </button>
           </div>
         )}

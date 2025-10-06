@@ -124,8 +124,8 @@ const Dashboard = () => {
       color: 'bg-purple-500'
     },
     {
-      title: '會議安排',
-      description: '查看和安排會議',
+      title: '交流安排',
+      description: '查看和安排交流',
       href: '/meetings',
       icon: CalendarIcon,
       color: 'bg-indigo-500'

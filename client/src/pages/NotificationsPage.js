@@ -106,7 +106,7 @@ const NotificationsPage = () => {
       color: 'secondary'
     },
     meeting: {
-      label: '會議洞察',
+      label: '交流洞察',
       icon: <GroupIcon />,
       color: 'info'
     },
@@ -365,7 +365,7 @@ const NotificationsPage = () => {
                 {stats.meeting}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                會議洞察
+                交流洞察
               </Typography>
             </CardContent>
           </Card>
@@ -422,7 +422,7 @@ const NotificationsPage = () => {
                   <MenuItem value="">全部</MenuItem>
                   <MenuItem value="collaboration">合作機會</MenuItem>
                   {/* 已移除許願機會類型選項 */}
-                  <MenuItem value="meeting">會議洞察</MenuItem>
+                  <MenuItem value="meeting">交流洞察</MenuItem>
                   <MenuItem value="market">市場機會</MenuItem>
                 </Select>
               </FormControl>
@@ -749,7 +749,7 @@ const NotificationsPage = () => {
                   }))}
                 />
               }
-              label="會議洞察分析"
+              label="交流洞察分析"
             />
             <FormControlLabel
               control={

@@ -336,16 +336,16 @@ const sendMeetingNotification = async (type, meetingData) => {
     const frontendUrl = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://bci-connect.onrender.com' : 'http://localhost:3001');
     
     if (type === 'new_meeting') {
-      // 收到新會議邀請通知
-      subject = '您收到了一個新的會議邀請';
+      // 收到新交流邀請通知
+      subject = '您收到了一個新的交流邀請';
       to = meetingData.attendee_email;
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">您收到了一個新的會議邀請</h2>
+          <h2 style="color: #2563eb;">您收到了一個新的交流邀請</h2>
           <p>親愛的 ${meetingData.attendee_name}，</p>
-          <p>${meetingData.requester_name} (${meetingData.requester_company}) 邀請您參加會議：</p>
+          <p>${meetingData.requester_name} (${meetingData.requester_company}) 邀請您參加交流：</p>
           <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>會議時間：</strong>${new Date(meetingData.meeting_time_start).toLocaleString('zh-TW')} - ${new Date(meetingData.meeting_time_end).toLocaleString('zh-TW')}</p>
+            <p><strong>交流時間：</strong>${new Date(meetingData.meeting_time_start).toLocaleString('zh-TW')} - ${new Date(meetingData.meeting_time_end).toLocaleString('zh-TW')}</p>
             <p><strong>備註：</strong>${meetingData.notes || '無'}</p>
           </div>
           <p>請登入系統查看詳情並回應此邀請。</p>
@@ -353,33 +353,33 @@ const sendMeetingNotification = async (type, meetingData) => {
         </div>
       `;
     } else if (type === 'meeting_confirmed') {
-      // 會議被確認通知
-      subject = '您的會議邀請已被確認';
+      // 交流被確認通知
+      subject = '您的交流邀請已被確認';
       to = meetingData.requester_email;
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #059669;">您的會議邀請已被確認</h2>
+          <h2 style="color: #059669;">您的交流邀請已被確認</h2>
           <p>親愛的 ${meetingData.requester_name}，</p>
-          <p>${meetingData.attendee_name} 已確認了您的會議邀請：</p>
+          <p>${meetingData.attendee_name} 已確認了您的交流邀請：</p>
           <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>會議時間：</strong>${new Date(meetingData.meeting_time_start).toLocaleString('zh-TW')} - ${new Date(meetingData.meeting_time_end).toLocaleString('zh-TW')}</p>
+            <p><strong>交流時間：</strong>${new Date(meetingData.meeting_time_start).toLocaleString('zh-TW')} - ${new Date(meetingData.meeting_time_end).toLocaleString('zh-TW')}</p>
             <p><strong>確認時間：</strong>${new Date().toLocaleString('zh-TW')}</p>
           </div>
-          <p>請準時參加會議！</p>
+          <p>請準時參加交流！</p>
           <a href="${frontendUrl}/meetings" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
         </div>
       `;
     } else if (type === 'meeting_cancelled') {
-      // 會議被取消通知
-      subject = '您的會議邀請已被取消';
+      // 交流被取消通知
+      subject = '您的交流邀請已被取消';
       to = meetingData.requester_email;
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #dc2626;">您的會議邀請已被取消</h2>
+          <h2 style="color: #dc2626;">您的交流邀請已被取消</h2>
           <p>親愛的 ${meetingData.requester_name}，</p>
-          <p>${meetingData.attendee_name} 取消了您的會議邀請：</p>
+          <p>${meetingData.attendee_name} 取消了您的交流邀請：</p>
           <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>原定會議時間：</strong>${new Date(meetingData.meeting_time_start).toLocaleString('zh-TW')} - ${new Date(meetingData.meeting_time_end).toLocaleString('zh-TW')}</p>
+            <p><strong>原定交流時間：</strong>${new Date(meetingData.meeting_time_start).toLocaleString('zh-TW')} - ${new Date(meetingData.meeting_time_end).toLocaleString('zh-TW')}</p>
             <p><strong>取消時間：</strong>${new Date().toLocaleString('zh-TW')}</p>
           </div>
           <a href="${frontendUrl}/meetings" style="background-color: #6b7280; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
@@ -396,9 +396,9 @@ const sendMeetingNotification = async (type, meetingData) => {
     };
     
     await transporter.sendMail(mailOptions);
-    console.log(`會議通知Email已發送: ${type} to ${to}`);
+    console.log(`交流通知Email已發送: ${type} to ${to}`);
   } catch (error) {
-    console.error('發送會議通知Email失敗:', error);
+    console.error('發送交流通知Email失敗:', error);
     
     // 提供更詳細的錯誤信息
     if (error.code === 'EAUTH') {

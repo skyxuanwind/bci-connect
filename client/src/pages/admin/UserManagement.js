@@ -278,7 +278,7 @@ const UserManagement = () => {
       return;
     }
 
-    const confirmMessage = `確定要刪除用戶「${user.name}」嗎？\n\n⚠️ 警告：此操作將永久刪除該用戶及其所有相關數據，包括：\n• 引薦記錄\n• 會議預約\n• 活動報名\n• 商訪記錄\n• 財務記錄\n\n此操作無法復原！`;
+    const confirmMessage = `確定要刪除用戶「${user.name}」嗎？\n\n⚠️ 警告：此操作將永久刪除該用戶及其所有相關數據，包括：\n• 引薦記錄\n• 業務交流\n• 活動報名\n• 商訪記錄\n• 財務記錄\n\n此操作無法復原！`;
     
     if (!window.confirm(confirmMessage)) {
       return;

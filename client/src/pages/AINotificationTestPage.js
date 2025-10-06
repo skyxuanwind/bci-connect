@@ -96,11 +96,11 @@ const AINotificationTestPage = () => {
     {
       id: 3,
       type: 'meeting_insights',
-      title: '💡 會議智慧洞察',
-      content: '您的最近會議中發現了重要的商業洞察和合作機會，AI已為您整理了關鍵要點和後續建議。會議中提及的數位轉型需求與您的服務高度匹配。',
+      title: '💡 交流智慧洞察',
+      content: '您的最近交流中發現了重要的商業洞察和合作機會，AI已為您整理了關鍵要點和後續建議。交流中提及的數位轉型需求與您的服務高度匹配。',
       status: 'read',
       priority: 2,
-      aiReasoning: '基於會議內容的語意分析，識別出潛在的商業價值和合作機會。會議參與者對數位轉型的討論顯示出明確的合作意向。',
+      aiReasoning: '基於交流內容的語意分析，識別出潛在的商業價值和合作機會。交流參與者對數位轉型的討論顯示出明確的合作意向。',
       createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4小時前
       readAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
     },
@@ -149,7 +149,7 @@ const AINotificationTestPage = () => {
       bgColor: '#FFF3E0'
     },
     meeting_insights: {
-      label: '會議洞察',
+      label: '交流洞察',
       icon: <AnalyticsIcon />,
       color: '#2196F3',
       bgColor: '#E3F2FD'
@@ -234,7 +234,7 @@ const AINotificationTestPage = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h4" component="h1" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <AutoAwesomeIcon sx={{ fontSize: 40, color: '#4CAF50' }} />
-            AI 智慧合作網絡 - 通知測試
+            AI商業版圖 - 通知測試
           </Typography>
           <Button 
             variant="contained"
@@ -250,7 +250,7 @@ const AINotificationTestPage = () => {
           </Button>
         </Box>
         <Typography variant="subtitle1" color="text.secondary">
-          🤖 AI 智慧通知系統展示 - 體驗個性化的商業機會推薦
+          🤖 AI 商業版圖通知系統展示 - 體驗個性化的商業機會推薦
         </Typography>
       </Box>
 
@@ -342,7 +342,7 @@ const AINotificationTestPage = () => {
                   {stats.meeting}
                 </Typography>
                 <Typography variant="body2">
-                  會議洞察
+                  交流洞察
                 </Typography>
               </CardContent>
             </Card>
@@ -407,7 +407,7 @@ const AINotificationTestPage = () => {
           <Typography variant="body2">
             • <strong>個性化推薦</strong>：基於您的商業畫像和行為模式，AI 主動發現最適合的合作機會<br/>
             • <strong>智慧匹配</strong>：運用深度學習算法，計算合作潛力評分，提供精準的商業建議<br/>
-            • <strong>即時洞察</strong>：分析會議內容、市場趨勢，為您挖掘隱藏的商業價值<br/>
+            • <strong>即時洞察</strong>：分析交流內容、市場趨勢，為您挖掘隱藏的商業價值<br/>
             • <strong>優先級管理</strong>：根據機會重要性和時效性，智慧排序通知優先級
           </Typography>
         </Alert>

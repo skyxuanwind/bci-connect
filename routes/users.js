@@ -2235,3 +2235,100 @@ router.put('/preferences', async (req, res) => {
     res.status(500).json({ message: '更新使用者偏好時發生錯誤' });
   }
 });
+
+// 會議時段偏好：meeting_time_preferences（JSONB）
+// GET /api/users/meeting-time-preferences
+router.get('/meeting-time-preferences', async (req, res) => {
+  try {
+    // 確保欄位存在
+    try {
+      await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS meeting_time_preferences JSONB");
+    } catch (_) {}
+
+    const result = await pool.query(
+      'SELECT meeting_time_preferences FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const prefs = result.rows[0]?.meeting_time_preferences || null;
+    res.json({ preferences: prefs });
+  } catch (error) {
+    console.error('Get meeting time preferences error:', error);
+    res.status(500).json({ message: '獲取會議時段偏好時發生錯誤' });
+  }
+});
+
+// PUT /api/users/meeting-time-preferences
+router.put('/meeting-time-preferences', async (req, res) => {
+  try {
+    const { preferredDays = [1,2,3,4,5], startHour = 9, endHour = 12, durationMinutes = 30, avoidWeekends = true } = req.body || {};
+
+    // 確保欄位存在
+    try {
+      await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS meeting_time_preferences JSONB");
+    } catch (_) {}
+
+    const prefs = {
+      preferredDays: Array.isArray(preferredDays) ? preferredDays : [1,2,3,4,5],
+      startHour: Number(startHour) || 9,
+      endHour: Number(endHour) || 12,
+      durationMinutes: Number(durationMinutes) || 30,
+      avoidWeekends: !!avoidWeekends
+    };
+
+    await pool.query(
+      'UPDATE users SET meeting_time_preferences = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [JSON.stringify(prefs), req.user.id]
+    );
+
+    res.json({ message: '會議時段偏好已更新', preferences: prefs });
+  } catch (error) {
+    console.error('Update meeting time preferences error:', error);
+    res.status(500).json({ message: '更新會議時段偏好時發生錯誤' });
+  }
+});
+
+// 提醒臨界值：reminder_threshold（NUMERIC 0–1）
+// GET /api/users/reminder-threshold
+router.get('/reminder-threshold', async (req, res) => {
+  try {
+    // 確保欄位存在
+    try {
+      await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reminder_threshold NUMERIC DEFAULT 0.5");
+    } catch (_) {}
+
+    const result = await pool.query(
+      'SELECT reminder_threshold FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const t = result.rows[0]?.reminder_threshold;
+    const threshold = t == null ? 0.5 : Number(t);
+    res.json({ threshold });
+  } catch (error) {
+    console.error('Get reminder threshold error:', error);
+    res.status(500).json({ message: '獲取提醒臨界值時發生錯誤' });
+  }
+});
+
+// PUT /api/users/reminder-threshold
+router.put('/reminder-threshold', async (req, res) => {
+  try {
+    const { threshold } = req.body || {};
+    const t = Number(threshold);
+    const clamped = Number.isFinite(t) ? Math.min(1, Math.max(0, t)) : 0.5;
+
+    // 確保欄位存在
+    try {
+      await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reminder_threshold NUMERIC DEFAULT 0.5");
+    } catch (_) {}
+
+    await pool.query(
+      'UPDATE users SET reminder_threshold = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [clamped, req.user.id]
+    );
+
+    res.json({ message: '提醒臨界值已更新', threshold: clamped });
+  } catch (error) {
+    console.error('Update reminder threshold error:', error);
+    res.status(500).json({ message: '更新提醒臨界值時發生錯誤' });
+  }
+});

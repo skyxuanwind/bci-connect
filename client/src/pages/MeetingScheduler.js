@@ -397,7 +397,7 @@ const MeetingScheduler = () => {
       <div className="min-h-screen bg-primary-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gold-100 mb-4">請先登入</h2>
-          <p className="text-gold-300">登入後即可使用會議預約功能</p>
+          <p className="text-gold-300">登入後即可使用業務交流功能</p>
         </div>
       </div>
     );
@@ -410,7 +410,7 @@ const MeetingScheduler = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gold-100">商務面談預約</h1>
-          <p className="mt-2 text-gold-300">安排和管理您的商務會議</p>
+          <p className="mt-2 text-gold-300">安排和管理您的商務交流</p>
         </div>
 
         {error && (
@@ -437,7 +437,7 @@ const MeetingScheduler = () => {
                     : 'border-transparent text-gold-300 hover:text-gold-100 hover:border-gold-400 hover:bg-primary-700'
                 }`}
               >
-                預約會議
+                預約交流
               </button>
               <button
                 onClick={() => setActiveTab('meetings')}
@@ -447,18 +447,18 @@ const MeetingScheduler = () => {
                     : 'border-transparent text-gold-300 hover:text-gold-100 hover:border-gold-400'
                 }`}
               >
-                我的會議
+                我的交流
               </button>
             </nav>
           </div>
 
           <div className="p-6">
-            {/* 預約會議標籤 */}
+            {/* 預約交流標籤 */}
             {activeTab === 'schedule' && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* 預約表單 */}
                 <div>
-                  <h3 className="text-lg font-medium text-gold-100 mb-4">預約新會議</h3>
+                  <h3 className="text-lg font-medium text-gold-100 mb-4">預約新交流</h3>
                   <form onSubmit={handleCreateMeeting} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gold-300 mb-2">
@@ -484,7 +484,7 @@ const MeetingScheduler = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gold-300 mb-2">
-                        會議日期
+                        交流日期
                       </label>
                       <input
                         type="date"
@@ -541,14 +541,14 @@ const MeetingScheduler = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gold-300 mb-2">
-                        會議備註
+                        交流備註
                       </label>
                       <textarea
                         value={newMeeting.notes}
                         onChange={(e) => setNewMeeting({ ...newMeeting, notes: e.target.value })}
                         rows={3}
                         className="w-full px-3 py-2 bg-primary-700 border border-gold-600 rounded-md text-gold-100 focus:outline-none focus:ring-2 focus:ring-gold-500"
-                        placeholder="請描述會議目的或其他備註..."
+                        placeholder="請描述交流目的或其他備註..."
                       />
                     </div>
 
@@ -557,7 +557,7 @@ const MeetingScheduler = () => {
                       disabled={loading || hasErrors}
                       className="w-full bg-gradient-to-r from-gold-600 to-gold-700 text-primary-900 py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:from-gold-700 hover:to-gold-800 focus:outline-none focus:ring-4 focus:ring-gold-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200"
                     >
-                      {loading ? '發送中...' : '預約會議'}
+                      {loading ? '發送中...' : '預約交流'}
                     </button>
                   </form>
                 </div>
@@ -571,10 +571,10 @@ const MeetingScheduler = () => {
                       </h3>
                       <div className="bg-primary-700 border border-gold-600 rounded-lg p-4">
                         <p className="text-sm text-gold-300 mb-3">
-                          以下是 {selectedMember.name} 未來7天的已確認會議時間：
+                          以下是 {selectedMember.name} 未來7天的已確認交流時間：
                         </p>
                         {memberAvailability.busy_times.length === 0 ? (
-                          <p className="text-sm text-green-400">該會員未來7天暫無已確認的會議</p>
+                          <p className="text-sm text-green-400">該會員未來7天暫無已確認的交流</p>
                         ) : (
                           <div className="space-y-2">
                             {memberAvailability.busy_times.map((busyTime, index) => (
@@ -595,12 +595,12 @@ const MeetingScheduler = () => {
               </div>
             )}
 
-            {/* 我的會議標籤 */}
+            {/* 我的交流標籤 */}
             {activeTab === 'meetings' && (
               <div>
-                <h3 className="text-lg font-medium text-gold-100 mb-4">我的會議</h3>
+                <h3 className="text-lg font-medium text-gold-100 mb-4">我的交流</h3>
                 {meetings.length === 0 ? (
-                  <p className="text-gold-300 text-center py-8">暫無會議記錄</p>
+                  <p className="text-gold-300 text-center py-8">暫無交流紀錄</p>
                 ) : (
                   <div className="space-y-4">
                     {meetings.map((meeting) => (
@@ -616,7 +616,7 @@ const MeetingScheduler = () => {
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <h4 className="font-medium text-gold-100">
-                              與 {meeting.other_party_name} ({meeting.other_party_company}) 的會議
+                              與 {meeting.other_party_name} ({meeting.other_party_company}) 的交流
                             </h4>
                             <p className="text-sm text-gold-300">
                               時間：{formatDateTime(meeting.meeting_time_start)} - {formatDateTime(meeting.meeting_time_end)}
@@ -652,7 +652,7 @@ const MeetingScheduler = () => {
                                     onClick={() => handleCancelMeeting(meeting.id)}
                                     className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
                                   >
-                                    取消會議
+                                    取消交流
                                   </button>
                                 )}
                               </div>
@@ -677,19 +677,19 @@ const MeetingScheduler = () => {
               </div>
             )}
 
-            {/* 會議回饋 Modal */}
+            {/* 交流回饋 Modal */}
             {feedbackModalOpen && (
               <>
                 <div className="fixed inset-0 bg-black/50 z-40" onClick={closeFeedbackModal} />
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                   <div className="w-full max-w-lg bg-primary-700 border border-gold-600 rounded-lg shadow-xl p-5">
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-gold-100 text-lg font-semibold">會議回饋</h3>
+                      <h3 className="text-gold-100 text-lg font-semibold">交流回饋</h3>
                       <button onClick={closeFeedbackModal} className="text-gold-300 hover:text-gold-100">×</button>
                     </div>
                     {feedbackMeeting && (
                       <p className="text-sm text-gold-300 mb-3">
-                        與 {feedbackMeeting.other_party_name} 的會議：
+                        與 {feedbackMeeting.other_party_name} 的交流：
                         {formatDateTime(feedbackMeeting.meeting_time_start)} - {formatDateTime(feedbackMeeting.meeting_time_end)}
                       </p>
                     )}
@@ -705,7 +705,7 @@ const MeetingScheduler = () => {
                             {feedbackStatus.canSubmit ? (
                               <span className="text-green-400">可提交回饋</span>
                             ) : (
-                              <span className="text-yellow-400">目前不可提交回饋（僅能在會議結束後且已確認的會議提交）</span>
+                              <span className="text-yellow-400">目前不可提交回饋（僅能在交流結束後且已確認的交流提交）</span>
                             )}
                             {feedbackStatus.otherFeedback && (
                               <div className="mt-1">對方已提交：評分 {feedbackStatus.otherFeedback.rating} 分</div>
@@ -738,7 +738,7 @@ const MeetingScheduler = () => {
                             value={feedbackComments}
                             onChange={(e) => setFeedbackComments(e.target.value)}
                             className="w-full bg-primary-800 border border-gold-700 rounded-md p-2 text-gold-100 placeholder-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-500"
-                            placeholder="可描述本次會議的感受與建議..."
+                          placeholder="可描述本次交流的感受與建議..."
                           />
                         </div>
 

@@ -30,6 +30,7 @@ const ocrScannerRoutes = require('./routes/ocr-scanner');
 const digitalWalletRoutes = require('./routes/digital-wallet');
 const businessMediaRoutes = require('./routes/business-media');
 const feedbackRoutes = require('./routes/feedback');
+const businessDashboardRoutes = require('./routes/business-dashboard');
 
 // 已移除：會員許願版與 AI 智慧通知路由
 const aiProfilesRoutes = require('./routes/ai-profiles');
@@ -152,6 +153,9 @@ app.use('/api/ocr', ocrScannerRoutes);
 app.use('/api/digital-wallet', digitalWalletRoutes);
 app.use('/api/business-media', businessMediaRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/business-dashboard', businessDashboardRoutes);
+const aiStrategyRoutes = require('./routes/ai-strategy');
+app.use('/api/ai-strategy', aiStrategyRoutes);
 
 // 已移除：會員許願版與 AI 智慧通知 API
 app.use('/api/ai-profiles', aiProfilesRoutes);
@@ -261,6 +265,49 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   
   // Initialize databases asynchronously after server starts
   initializeDatabasesAsync();
+
+  // 啟動提醒排程（每日與每週，以近似方式）
+  try {
+    const { notifyAllActiveUsers } = require('./services/goalReminderService');
+    const THRESHOLD = Number(process.env.GOAL_REMINDER_THRESHOLD || 0.5);
+
+    // 每日 9:00（每分鐘檢查一次，避免錯過時點）
+    setInterval(async () => {
+      const now = new Date();
+      if (now.getMinutes() === 0 && now.getHours() === 9) {
+        console.log('⏰ Daily goal reminder triggered');
+        try {
+          const result = await notifyAllActiveUsers('monthly', THRESHOLD);
+          console.log('📣 Daily reminders result:', {
+            total: result.count,
+            sent: result.results.filter(r => r.sent).length
+          });
+        } catch (err) {
+          console.error('Daily goal reminder failed:', err);
+        }
+      }
+    }, 60 * 1000);
+
+    // 每週一 9:00（每分鐘檢查一次）
+    setInterval(async () => {
+      const now = new Date();
+      // getDay()：0=週日, 1=週一, ...
+      if (now.getDay() === 1 && now.getMinutes() === 0 && now.getHours() === 9) {
+        console.log('⏰ Weekly goal reminder triggered');
+        try {
+          const result = await notifyAllActiveUsers('monthly', THRESHOLD);
+          console.log('📣 Weekly reminders result:', {
+            total: result.count,
+            sent: result.results.filter(r => r.sent).length
+          });
+        } catch (err) {
+          console.error('Weekly goal reminder failed:', err);
+        }
+      }
+    }, 60 * 1000);
+  } catch (e) {
+    console.error('❌ Failed to start goal reminder scheduler:', e);
+  }
 });
 
 // Set server timeout for Render deployment

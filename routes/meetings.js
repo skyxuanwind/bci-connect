@@ -73,7 +73,7 @@ router.post('/create', authenticateToken, async (req, res) => {
     );
 
     if (requesterConflict.rows.length > 0) {
-      return res.status(400).json({ error: '您在此時間段已有其他會議' });
+      return res.status(400).json({ error: '您在此時間段已有其他交流' });
     }
 
     // 檢查受邀者時間衝突
@@ -90,7 +90,7 @@ router.post('/create', authenticateToken, async (req, res) => {
     );
 
     if (attendeeConflict.rows.length > 0) {
-      return res.status(400).json({ error: '受邀者在此時間段已有其他會議' });
+      return res.status(400).json({ error: '受邀者在此時間段已有其他交流' });
     }
 
     // 創建會議記錄
@@ -114,7 +114,7 @@ router.post('/create', authenticateToken, async (req, res) => {
     
     // 異步發送Email，不阻塞響應
     sendMeetingNotification('new_meeting', meetingData).catch(err => {
-      console.error('發送會議通知Email失敗:', err);
+      console.error('發送交流通知Email失敗:', err);
     });
 
     res.status(201).json({
@@ -232,7 +232,7 @@ router.put('/:id/respond', authenticateToken, async (req, res) => {
     );
 
     if (!meetingCheck.rows[0]) {
-      return res.status(404).json({ error: '會議不存在或已處理' });
+      return res.status(404).json({ error: '交流不存在或已處理' });
     }
 
     const meeting = meetingCheck.rows[0];
@@ -253,7 +253,7 @@ router.put('/:id/respond', authenticateToken, async (req, res) => {
       );
 
       if (conflictCheck.rows.length > 0) {
-        return res.status(400).json({ error: '時間衝突，無法確認會議' });
+        return res.status(400).json({ error: '時間衝突，無法確認交流' });
       }
     }
 
@@ -281,12 +281,12 @@ router.put('/:id/respond', authenticateToken, async (req, res) => {
       
       // 異步發送Email，不阻塞響應
       sendMeetingNotification(notificationType, meetingData).catch(err => {
-        console.error('發送會議回應通知Email失敗:', err);
+        console.error('發送交流回應通知Email失敗:', err);
       });
     }
 
     res.json({
-      message: status === 'confirmed' ? '會議已確認' : '會議已取消',
+      message: status === 'confirmed' ? '交流已確認' : '交流已取消',
       meeting: result.rows[0]
     });
   } catch (error) {
@@ -308,7 +308,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     );
 
     if (!meetingCheck.rows[0]) {
-      return res.status(404).json({ error: '會議不存在或您無權限取消' });
+      return res.status(404).json({ error: '交流不存在或您無權限取消' });
     }
 
     // 更新會議狀態為取消
@@ -319,9 +319,9 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       [id]
     );
 
-    res.json({ message: '會議已取消' });
+    res.json({ message: '交流已取消' });
   } catch (error) {
-    console.error('取消會議錯誤:', error);
+    console.error('取消交流錯誤:', error);
     res.status(500).json({ error: '服務器錯誤' });
   }
 });

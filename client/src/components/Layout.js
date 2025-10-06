@@ -94,7 +94,7 @@ const Layout = ({ children }) => {
 
   // AI 智慧合作網絡功能
   const aiFeatures = [
-    { name: 'AI 個人檔案', href: '/ai-profile', icon: UserIcon },
+    { name: 'AI 深度畫像', href: '/ai-profile', icon: UserIcon },
   ];
 
   // 教練功能
@@ -108,7 +108,7 @@ const Layout = ({ children }) => {
     { name: 'NFC 電子名片', href: '/nfc-card-editor', icon: IdentificationIcon, minLevel: 3 },
     { name: '數位名片夾', href: '/digital-wallet', icon: WalletIcon, minLevel: 3 },
     { name: '引薦系統', href: '/referrals', icon: HandRaisedIcon, minLevel: 3 },
-    { name: '會議預約', href: '/meetings', icon: CalendarDaysIcon, minLevel: 3 },
+    { name: '業務交流', href: '/meetings', icon: CalendarDaysIcon, minLevel: 3 },
   ];
 
   // 核心專屬功能
@@ -242,10 +242,10 @@ const Layout = ({ children }) => {
         {/* 商會簡報連結 */}
         <PresentationLink mobile={mobile} />
         
-        {/* AI 智慧合作網絡 */}
+        {/* AI 商業版圖 */}
         <div className="pt-4 pb-2">
           <h3 className="px-2 text-xs font-semibold text-gold-400 uppercase tracking-wider">
-            AI 智慧合作網絡
+            AI商業版圖
           </h3>
         </div>
         {aiFeatures.map((item) => {

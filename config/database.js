@@ -38,9 +38,14 @@ const pool = new Pool(poolConfig);
 // Log the connection method being used
 console.log('🔗 Database connection method:', process.env.DATABASE_URL ? 'DATABASE_URL' : 'Individual env vars');
 
-// Test database connection
-pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
+// Test database connection and enforce session time zone
+pool.on('connect', async (client) => {
+  try {
+    await client.query("SET TIME ZONE 'Asia/Taipei'");
+    console.log('✅ Connected to PostgreSQL database (TZ=Asia/Taipei)');
+  } catch (e) {
+    console.warn('⚠️ Failed to set session time zone, continuing:', e?.message || e);
+  }
 });
 
 pool.on('error', (err) => {
@@ -1095,6 +1100,54 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_video_play_logs_member_id ON video_play_logs(member_id);
       CREATE INDEX IF NOT EXISTS idx_video_play_logs_created_at ON video_play_logs(created_at DESC);
     `);
+
+    // Business goals: monthly/semiannual/annual personal goals
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS business_goals (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        period_type VARCHAR(20) NOT NULL CHECK (period_type IN ('monthly','semiannual','annual')),
+        period_start DATE NOT NULL,
+        period_end DATE NOT NULL,
+        targets JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, period_type, period_start)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_business_goals_user ON business_goals(user_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_business_goals_period ON business_goals(period_type, period_start)`);
+
+    // Products/Services management
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_products_services (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(200) NOT NULL,
+        description TEXT,
+        price DECIMAL(12,2),
+        tags JSONB DEFAULT '[]'::jsonb,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_products_services_user ON user_products_services(user_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_products_services_active ON user_products_services(is_active)`);
+
+    // Simple marketing funnel configuration per user
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS marketing_funnel_configs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        stages JSONB NOT NULL DEFAULT '[]'::jsonb, -- e.g., [{name, target}]
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_marketing_funnel_configs_user ON marketing_funnel_configs(user_id)`);
 
     // Insert default chapters
     await pool.query(`

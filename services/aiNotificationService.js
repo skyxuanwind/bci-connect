@@ -328,14 +328,14 @@ class AINotificationService {
 
 
   /**
-   * 生成會議洞察通知內容
+   * 生成交流洞察通知內容
    */
   async generateMeetingInsightsNotification(meetingInsights) {
     try {
       const prompt = `
-請為以下會議洞察生成一個有價值的通知內容：
+請為以下交流洞察生成一個有價值的通知內容：
 
-會議洞察：
+交流洞察：
 ${JSON.stringify(meetingInsights, null, 2)}
 
 請生成：
@@ -352,10 +352,10 @@ ${JSON.stringify(meetingInsights, null, 2)}
       const aiResponse = await this.geminiService.generateContent(prompt);
       return this.parseNotificationContent(aiResponse);
     } catch (error) {
-      console.error('❌ 生成會議洞察通知內容失敗:', error);
+      console.error('❌ 生成交流洞察通知內容失敗:', error);
       return {
-        content: '您的最近會議中發現了重要的商業洞察和合作機會，AI已為您整理了關鍵要點和後續建議。',
-        reasoning: '基於會議內容的語意分析，識別出潛在的商業價值和合作機會。'
+        content: '您的最近交流中發現了重要的商業洞察和合作機會，AI已為您整理了關鍵要點和後續建議。',
+        reasoning: '基於交流內容的語意分析，識別出潛在的商業價值和合作機會。'
       };
     }
   }
