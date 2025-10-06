@@ -36,18 +36,21 @@ import {
 // 固定顯示時區（與後端 date_trunc 對齊）
 const DISPLAY_TIME_ZONE = 'Asia/Taipei';
 
-const AIProfilePage = () => {
+const AIProfilePage = ({ standaloneTab }) => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const initialTab = (() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
-    const allowedTabs = ['overview', 'personality', 'business', 'collaboration', 'opportunities', 'risks', 'myBusiness'];
-    return tabParam && allowedTabs.includes(tabParam) ? tabParam : 'overview';
-  })();
+  const isStandalone = Boolean(standaloneTab);
+  const initialTab = isStandalone
+    ? standaloneTab
+    : (() => {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab');
+        const allowedTabs = ['overview', 'personality', 'business', 'collaboration', 'opportunities', 'risks', 'myBusiness'];
+        return tabParam && allowedTabs.includes(tabParam) ? tabParam : 'overview';
+      })();
   const [activeTab, setActiveTab] = useState(initialTab);
   // 我的商業儀表板狀態
   const [timeRange, setTimeRange] = useState('monthly'); // monthly | semiannual | annual
