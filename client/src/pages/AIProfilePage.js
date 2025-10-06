@@ -1294,6 +1294,7 @@ const AIProfilePage = ({ standaloneTab }) => {
       </div>
 
       {/* 使用說明：如何提升完整度與使用 AI 智慧合作網絡 */}
+      {!isStandalone && (
       <div className="bg-white shadow rounded-lg p-6 mb-8">
         <h3 className="text-lg font-medium text-gray-900 mb-3">如何提升畫像完整度</h3>
         <ul className="list-disc pl-6 space-y-2 text-gray-700">
@@ -1329,6 +1330,7 @@ const AIProfilePage = ({ standaloneTab }) => {
           </li>
         </ul>
       </div>
+      )}
 
       {/* 標籤頁導航 */}
       {!isStandalone && (
