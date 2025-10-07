@@ -243,6 +243,13 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } />
+
+          {/* 臨時公開版：行動端驗證用（不需登入） */}
+          <Route path="/m/responsive-dashboard" element={
+            <Layout>
+              <ResponsiveDashboard />
+            </Layout>
+          } />
           
           {/* 已移除：AI 通知測試路由 */}
           
