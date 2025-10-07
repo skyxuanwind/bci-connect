@@ -222,10 +222,26 @@ app.get('/api', (req, res) => {
 
 // Serve static files from React app in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
-  
-  // Handle React routing, return all requests to React app
+  // 靜態資產：長快取（由打包雜湊檔名保證唯一性）
+  app.use(express.static(path.join(__dirname, 'client/build'), {
+    setHeaders: (res, filePath) => {
+      if (path.basename(filePath) === 'index.html') {
+        // index.html：禁止快取，避免舊版入口檔影響路由與資源載入
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        // 其他資產：可快取一年並標示不可變（雜湊檔名）
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
+
+  // React 路由入口：index.html 也設置禁止快取標頭
   app.get('*', (req, res) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
   });
 } else {
