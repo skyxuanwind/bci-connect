@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import DesktopSidebar from '../components/DesktopSidebar';
 import MobileGrid from '../components/MobileGrid';
 import BottomRoleNav from '../components/BottomRoleNav';
@@ -12,6 +13,7 @@ import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog
 export default function ResponsiveDashboard() {
   const [openId, setOpenId] = useState(null); // 當前展開的卡片 id
   const [activeTab, setActiveTab] = useState('home'); // 底部導覽選中的分頁
+  const navigate = useNavigate();
 
   // 鍵盤 ESC 關閉展開卡片
   useEffect(() => {
@@ -26,44 +28,91 @@ export default function ResponsiveDashboard() {
       <div>
         <p>管理引薦流程、追蹤成效與回饋。</p>
         <p className="text-xs text-gold-400">可接入引薦紀錄與統計</p>
+        <div className="mt-2">
+          <Link to="/referrals" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往引薦系統</Link>
+        </div>
       </div>
     ) },
     { id: 'business-communication', title: '業務交流', icon: <UsersIcon className="w-7 h-7" />, content: (
       <div>
         <p>建立交流話題、媒合合作與跟進進度。</p>
+        <div className="mt-2">
+          <Link to="/meetings" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">安排交流</Link>
+        </div>
       </div>
     ) },
     { id: 'event-registration', title: '活動報名', icon: <CalendarDaysIcon className="w-7 h-7" />, content: (
       <div>
         <p>查看近期活動並快速報名。</p>
+        <div className="mt-2">
+          <Link to="/events" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往活動列表</Link>
+        </div>
       </div>
     ) },
     { id: 'digital-card', title: '電子名片', icon: <CreditCardIcon className="w-7 h-7" />, content: (
       <div>
         <p>管理個人 NFC 名片與分享設定。</p>
+        <div className="mt-2">
+          <Link to="/digital-wallet" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往電子名片</Link>
+        </div>
       </div>
     ) },
     { id: 'member-directory', title: '會員目錄', icon: <UsersIcon className="w-7 h-7" />, content: (
       <div>
         <p>瀏覽會員名錄與快速檢索。</p>
+        <div className="mt-2">
+          <Link to="/members" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往會員目錄</Link>
+        </div>
       </div>
     ) },
     { id: 'business-media', title: '商媒體', icon: <CpuChipIcon className="w-7 h-7" />, content: (
       <div>
         <p>商媒體素材管理與推廣入口。</p>
+        <div className="mt-2">
+          <Link to="/business-media" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往商媒體</Link>
+        </div>
       </div>
     ) },
     { id: 'ai-map', title: 'AI商業版圖', icon: <CpuChipIcon className="w-7 h-7" />, content: (
       <div>
         <p>AI 驅動的商業洞察與策略建議。</p>
+        <div className="mt-2">
+          <Link to="/ai-profile?tab=myBusiness" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往 AI 商業版圖</Link>
+        </div>
       </div>
     ) },
     { id: 'foundation', title: '商會地基', icon: <HomeIcon className="w-7 h-7" />, content: (
       <div>
         <p>商會核心理念、制度與運作基礎。</p>
+        <div className="mt-2">
+          <Link to="/foundation" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往商會地基</Link>
+        </div>
       </div>
     ) },
   ];
+
+  // 底部導覽鍵導向對應路由
+  const handleBottomNavigate = (key) => {
+    setActiveTab(key);
+    switch (key) {
+      case 'home':
+        navigate('/responsive-dashboard');
+        break;
+      case 'profile':
+        navigate('/profile');
+        break;
+      case 'settings':
+        // 目前使用個人檔案頁作為設定入口
+        navigate('/profile');
+        break;
+      case 'core':
+        // 核心／幹部／管理員導向控制面板
+        navigate('/admin-panel');
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-primary-900 text-gold-200">
@@ -102,7 +151,7 @@ export default function ResponsiveDashboard() {
         <MobileGrid items={gridItems} openId={openId} setOpenId={setOpenId} />
 
         {/* 底部導航：依權限動態顯示 3 或 4 個按鈕 */}
-        <BottomRoleNav active={activeTab} onNavigate={setActiveTab} />
+        <BottomRoleNav active={activeTab} onNavigate={handleBottomNavigate} />
       </div>
     </div>
   );
