@@ -201,6 +201,91 @@ BCI Connect/
 └── README.md
 ```
 
+## 📱 響應式 Dashboard（黑金主題 + 手機 APP 體驗）
+
+本次升級新增「ResponsiveDashboard」頁面，手機版提供 APP 式操作體驗、桌面版維持現有設計不變。
+
+- 路徑：`/responsive-dashboard`（登入後可訪問）
+- 技術：React（Hooks）、Tailwind CSS、Framer Motion
+- 主題：深色背景（`primary-900`）+ 金色強調（`gold-*`）
+
+### 主要元件
+
+- `MobileGrid.jsx`：手機 3×3 九宮格入口（圖示 + 中文標題）
+- `ExpandableCard.jsx`：卡片展開面板（放大展開、背景遮罩、鍵盤操作）
+- `BottomNav.jsx`：手機底部固定導覽列（5 個圖示）
+- `DesktopSidebar.jsx`：電腦版側邊欄（垂直排列圖示 + 標籤）
+- `ResponsiveDashboard.jsx`：響應式頁面整合（手機/桌面邏輯、狀態管理）
+
+### Tailwind 顏色（黑金示範）
+
+已在 `client/tailwind.config.js` 定義：
+
+- 黑色系：`primary.{50..900}`
+- 金色系：`gold.{50..900}`
+- 香檳系：`accent.{50..900}`
+
+### 動畫效果
+
+- 使用 Framer Motion 實現：
+  - 點擊九宮格卡片 → 卡片放大展開 → 內容淡入
+  - 關閉時反向播放動畫
+  - 背景暗化遮罩，點擊或 `ESC` 可收合
+
+### 無障礙（A11y）
+
+- 所有互動元素提供 `aria-label`
+- `role="navigation" | "dialog"`、`aria-modal` 等語義化標記
+- 鍵盤操作（`Enter`/`Space` 開啟、`ESC` 關閉）
+
+### 狀態管理
+
+- 使用 React `useState` + `useEffect`
+- 可替換為 Context（視需求擴展）
+
+### 範例資料與 API 替換
+
+- 範例資料位於：`client/src/utils/mockData.js`
+- 替換為真實 API 示範：
+
+```jsx
+// ResponsiveDashboard.jsx 中
+useEffect(() => {
+  async function load() {
+    // 以 axios 為例：
+    // const res = await axios.get('/api/referrals');
+    // setReferrals(res.data);
+  }
+  load();
+}, []);
+```
+
+### 啟動方式
+
+```bash
+# 啟動前端（已安裝依賴）
+cd client && npm start
+
+# 在瀏覽器訪問
+http://localhost:3000/responsive-dashboard
+```
+
+### 版本節點（快速復原）
+
+為確保系統維護不受影響，請在每次 UI 升級前後建立 Git tag：
+
+```bash
+# 建立版本節點
+git tag -a v-mobile-dashboard-rc1 -m "Responsive mobile app-like dashboard"
+git push origin v-mobile-dashboard-rc1
+
+# 發生問題時快速回退
+git checkout main
+git reset --hard v-mobile-dashboard-rc1
+git push --force origin main
+```
+
+
 ## 🔐 API 端點
 
 ### 認證相關

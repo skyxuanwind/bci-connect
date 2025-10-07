@@ -69,6 +69,7 @@ import AdminPanel from './pages/AdminPanel';
 import VideoManagementDashboard from './components/admin/AdminDashboard';
 import FoundationManagement from './pages/admin/FoundationManagement';
 import EventsCalendar from './pages/EventsCalendar';
+import ResponsiveDashboard from './pages/ResponsiveDashboard';
 
 
 
@@ -230,6 +231,15 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <BusinessDashboardPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* 新增：響應式 Dashboard（手機版 APP 體驗，桌面維持現有設計） */}
+          <Route path="/responsive-dashboard" element={
+            <ProtectedRoute>
+              <Layout>
+                <ResponsiveDashboard />
               </Layout>
             </ProtectedRoute>
           } />
