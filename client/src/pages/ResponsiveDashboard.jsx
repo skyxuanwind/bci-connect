@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import DesktopSidebar from '../components/DesktopSidebar';
 import MobileGrid from '../components/MobileGrid';
-import BottomNav from '../components/BottomNav';
-import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import BottomRoleNav from '../components/BottomRoleNav';
+import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog6ToothIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 
 /**
  * ResponsiveDashboard 響應式儀表板頁面
@@ -20,56 +20,47 @@ export default function ResponsiveDashboard() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // 範例資料：九宮格功能入口
+  // 八張卡片：依指定順序與標題
   const gridItems = [
-    { id: 'referrals', title: '引薦紀錄', icon: <CreditCardIcon className="w-7 h-7" />, content: (
+    { id: 'referral-system', title: '引薦系統', icon: <BriefcaseIcon className="w-7 h-7" />, content: (
       <div>
-        <p>近期引薦：王小明 → 林雅婷（商務合作）</p>
-        <p>上週引薦：李家豪 → 陳怡君（產品導入）</p>
+        <p>管理引薦流程、追蹤成效與回饋。</p>
+        <p className="text-xs text-gold-400">可接入引薦紀錄與統計</p>
       </div>
     ) },
-    { id: 'members', title: '會員', icon: <UsersIcon className="w-7 h-7" />, content: (
-      <ul className="list-disc pl-5">
-        <li>會員總數：256</li>
-        <li>近30日新增：18</li>
-      </ul>
-    ) },
-    { id: 'ai', title: 'AI 工具', icon: <CpuChipIcon className="w-7 h-7" />, content: (
+    { id: 'business-communication', title: '業務交流', icon: <UsersIcon className="w-7 h-7" />, content: (
       <div>
-        <p>快速入口：策略建議、文案生成、名片分析</p>
-        <p className="text-xs text-gold-400">此區可接入真實 API</p>
+        <p>建立交流話題、媒合合作與跟進進度。</p>
       </div>
     ) },
-    { id: 'events', title: '活動', icon: <CalendarDaysIcon className="w-7 h-7" />, content: (
+    { id: 'event-registration', title: '活動報名', icon: <CalendarDaysIcon className="w-7 h-7" />, content: (
       <div>
-        <p>近期活動：11/15 聯誼交流會、11/22 產品分享會</p>
+        <p>查看近期活動並快速報名。</p>
       </div>
     ) },
-    { id: 'cards', title: '名片', icon: <CreditCardIcon className="w-7 h-7" />, content: (
+    { id: 'digital-card', title: '電子名片', icon: <CreditCardIcon className="w-7 h-7" />, content: (
       <div>
-        <p>管理個人 NFC 名片、查看掃描統計</p>
+        <p>管理個人 NFC 名片與分享設定。</p>
       </div>
     ) },
-    { id: 'settings', title: '設定', icon: <Cog6ToothIcon className="w-7 h-7" />, content: (
+    { id: 'member-directory', title: '會員目錄', icon: <UsersIcon className="w-7 h-7" />, content: (
       <div>
-        <p>通知偏好、隱私設定與外觀主題</p>
+        <p>瀏覽會員名錄與快速檢索。</p>
       </div>
     ) },
-    { id: 'home', title: '首頁摘要', icon: <HomeIcon className="w-7 h-7" />, content: (
+    { id: 'business-media', title: '商媒體', icon: <CpuChipIcon className="w-7 h-7" />, content: (
       <div>
-        <p>本週達成率：72%</p>
-        <p>待辦：跟進 5 位潛在客戶</p>
+        <p>商媒體素材管理與推廣入口。</p>
       </div>
     ) },
-    { id: 'ranking', title: '章節排行', icon: <UsersIcon className="w-7 h-7" />, content: (
+    { id: 'ai-map', title: 'AI商業版圖', icon: <CpuChipIcon className="w-7 h-7" />, content: (
       <div>
-        <p>章節A：引薦 32 次、成交 12 單</p>
-        <p>章節B：引薦 28 次、成交 9 單</p>
+        <p>AI 驅動的商業洞察與策略建議。</p>
       </div>
     ) },
-    { id: 'analysis', title: '營運分析', icon: <CpuChipIcon className="w-7 h-7" />, content: (
+    { id: 'foundation', title: '商會地基', icon: <HomeIcon className="w-7 h-7" />, content: (
       <div>
-        <p>來源分解、目標 vs 實績、達成率摘要</p>
+        <p>商會核心理念、制度與運作基礎。</p>
       </div>
     ) },
   ];
@@ -110,8 +101,8 @@ export default function ResponsiveDashboard() {
 
         <MobileGrid items={gridItems} openId={openId} setOpenId={setOpenId} />
 
-        {/* 底部導航：五個圖示 */}
-        <BottomNav active={activeTab} onNavigate={setActiveTab} />
+        {/* 底部導航：依權限動態顯示 3 或 4 個按鈕 */}
+        <BottomRoleNav active={activeTab} onNavigate={setActiveTab} />
       </div>
     </div>
   );

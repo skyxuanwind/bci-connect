@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import ExpandableCard from './ExpandableCard';
 
@@ -13,10 +13,17 @@ export default function MobileGrid({ items, openId, setOpenId }) {
   const handleClose = () => setOpenId(null);
   const activeItem = items.find((i) => i.id === openId);
 
+  // 動畫與版面常數（確保一致角度與速度）
+  const HEADER_HEIGHT = 72; // 標題區固定高度，確保折疊時標題可見
+  const EXPANDED_BODY = 240; // 展開內容高度（可微調）
+  const FOLD_ANGLE = -18; // 一致的翻頁折疊角度（同一方向）
+  const DURATION = 0.35; // 一致的動畫速度
+  const EASING = [0.22, 1, 0.36, 1]; // 自然平滑的緩動函數（ease-out）
+
   return (
     <div className="relative">
-      {/* 垂直排列的橫式卡片列表 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px 12px 24px' }}>
+      {/* 垂直排列的橫式卡片列表（翻頁折疊：標題始終可見） */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px 12px 84px' }}>
         {items.map((item) => {
           const isActive = openId === item.id;
           const isCollapsed = openId && openId !== item.id;
@@ -24,16 +31,13 @@ export default function MobileGrid({ items, openId, setOpenId }) {
             <motion.div
               key={item.id}
               initial={false}
-              animate={
-                isCollapsed
-                  ? { rotateX: -90, opacity: 0, height: 0, marginBottom: 0 }
-                  : isActive
-                  ? { rotateX: 0, opacity: 1, height: 320, marginBottom: 12 }
-                  : { rotateX: 0, opacity: 1, height: 140, marginBottom: 12 }
-              }
-              transition={{ type: 'spring', stiffness: 230, damping: 26 }}
+              animate={{
+                height: isActive ? HEADER_HEIGHT + EXPANDED_BODY : HEADER_HEIGHT,
+                opacity: 1,
+                marginBottom: 12,
+              }}
+              transition={{ duration: DURATION, ease: EASING }}
               style={{
-                transformOrigin: 'top',
                 overflow: 'hidden',
                 borderRadius: 16,
                 background: 'linear-gradient(135deg, rgba(15,15,15,1), rgba(25,25,25,1))',
@@ -52,6 +56,7 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: 16,
+                  height: HEADER_HEIGHT,
                 }}
                 aria-label={`切換 ${item.title} 展開狀態`}
               >
@@ -78,28 +83,41 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                 <motion.span
                   initial={false}
                   animate={{ rotate: isActive ? 180 : 0 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                  transition={{ duration: DURATION, ease: EASING }}
                   style={{ color: '#FFD666' }}
                 >
                   ▾
                 </motion.span>
               </button>
 
-              {/* 展開內容（僅在選中卡片顯示） */}
-              {isActive && (
+              {/* 內容區：翻頁折疊效果（同一方向），非選中時仍保留標題可見 */}
+              <motion.div
+                initial={false}
+                animate={{
+                  height: isActive ? EXPANDED_BODY : 0,
+                  opacity: isActive ? 1 : 0,
+                }}
+                transition={{ duration: DURATION, ease: EASING }}
+                style={{
+                  transformOrigin: 'top',
+                  padding: isActive ? '0 16px 16px' : '0 16px 0',
+                  willChange: 'transform, height, opacity',
+                }}
+              >
                 <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.25 }}
-                  style={{ padding: '0 16px 16px' }}
+                  initial={false}
+                  animate={{ rotateX: isActive ? 0 : FOLD_ANGLE }}
+                  transition={{ duration: DURATION, ease: EASING }}
+                  style={{
+                    transformStyle: 'preserve-3d',
+                  }}
                 >
                   <div className="text-gold-200 text-sm space-y-3">
                     {item.description && <p style={{ opacity: 0.85 }}>{item.description}</p>}
                     {item.content}
                   </div>
                 </motion.div>
-              )}
+              </motion.div>
             </motion.div>
           );
         })}
