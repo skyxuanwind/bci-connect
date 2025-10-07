@@ -254,54 +254,11 @@ router.get('/me/analysis', authenticateToken, async (req, res) => {
  * GET /api/ai-profiles/me/similar-members
  */
 router.get('/me/similar-members', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { limit = 10, minScore = 60 } = req.query;
-
-    const profile = await aiProfileService.getCurrentProfile(userId);
-    
-    if (!profile) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'AI深度畫像不存在，請先更新畫像' 
-      });
-    }
-
-    // 使用AI匹配服務尋找相似會員
-    const similarMembers = await aiMatchingService.findSimilarMembers(
-      userId, 
-      profile, 
-      parseInt(limit),
-      parseInt(minScore)
-    );
-
-    // 記錄查詢活動
-    await pool.query(`
-      INSERT INTO member_activities (user_id, activity_type, activity_data)
-      VALUES ($1, 'similar_members_viewed', $2)
-    `, [userId, JSON.stringify({ 
-      resultsCount: similarMembers.length,
-      minScore: parseInt(minScore)
-    })]);
-
-    res.json({
-      success: true,
-      data: {
-        similarMembers,
-        searchCriteria: {
-          minScore: parseInt(minScore),
-          limit: parseInt(limit)
-        },
-        totalResults: similarMembers.length
-      }
-    });
-  } catch (error) {
-    console.error('❌ 獲取相似會員失敗:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: '獲取相似會員失敗' 
-    });
-  }
+  // 相似會員推薦功能已停用
+  return res.status(410).json({
+    success: false,
+    message: '相似會員推薦功能已停用'
+  });
 });
 
 /**

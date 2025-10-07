@@ -52,6 +52,8 @@ const AIProfilePage = ({ standaloneTab }) => {
         return tabParam && allowedTabs.includes(tabParam) ? tabParam : 'overview';
       })();
   const [activeTab, setActiveTab] = useState(initialTab);
+  // 精簡版：當作為獨立頁且分頁為 myBusiness 時啟用
+  const isMinimalDashboard = isStandalone && activeTab === 'myBusiness';
   // 我的商業儀表板狀態
   const [timeRange, setTimeRange] = useState('monthly'); // monthly | semiannual | annual
   const [dashboardSummary, setDashboardSummary] = useState(null);
@@ -120,7 +122,6 @@ const AIProfilePage = ({ standaloneTab }) => {
   useEffect(() => {
     fetchProfile();
     fetchAnalysis();
-    fetchSimilarMembers();
     fetchMeetingPrefs();
   }, []);
 
@@ -208,28 +209,7 @@ const AIProfilePage = ({ standaloneTab }) => {
     }
   };
 
-  // 取得相似會員
-  const fetchSimilarMembers = async () => {
-    setSimilarLoading(true);
-    setSimilarError('');
-    try {
-      const resp = await axios.get('/api/ai-profiles/me/similar-members', {
-        params: { minScore, limit }
-      });
-      if (resp.data?.success) {
-        const list = resp.data?.data?.similarMembers || [];
-        setSimilarMembers(Array.isArray(list) ? list : []);
-      } else {
-        setSimilarMembers([]);
-      }
-    } catch (e) {
-      console.error('獲取相似會員失敗:', e);
-      setSimilarError('無法取得相似會員');
-      setSimilarMembers([]);
-    } finally {
-      setSimilarLoading(false);
-    }
-  };
+  // 相似會員功能已移除
 
   const handleUpdateProfile = async () => {
     setUpdating(true);
@@ -241,7 +221,6 @@ const AIProfilePage = ({ standaloneTab }) => {
         setProfile(response.data.data);
         toast.success('AI畫像更新成功');
         await fetchAnalysis();
-        await fetchSimilarMembers();
       }
     } catch (error) {
       console.error('更新AI畫像失敗:', error);
@@ -695,13 +674,15 @@ const AIProfilePage = ({ standaloneTab }) => {
     if (activeTab === 'myBusiness') {
       fetchBusinessDashboardSummary(timeRange);
       fetchGoals(timeRange);
-      fetchProductsServices();
-      fetchFunnel();
-      fetchStrategyRecommendations(timeRange);
-      fetchSources(timeRange);
+      if (!isMinimalDashboard) {
+        fetchProductsServices();
+        fetchFunnel();
+        fetchStrategyRecommendations(timeRange);
+        fetchSources(timeRange);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, isMinimalDashboard]);
 
   // 時間範圍變更時更新統計
   const timeRangeDebounceRef = useRef();
@@ -713,10 +694,12 @@ const AIProfilePage = ({ standaloneTab }) => {
     timeRangeDebounceRef.current = setTimeout(() => {
       fetchBusinessDashboardSummary(timeRange);
       fetchGoals(timeRange);
-      fetchProductsServices();
-      fetchFunnel();
-      fetchStrategyRecommendations(timeRange);
-      fetchSources(timeRange);
+      if (!isMinimalDashboard) {
+        fetchProductsServices();
+        fetchFunnel();
+        fetchStrategyRecommendations(timeRange);
+        fetchSources(timeRange);
+      }
     }, 400);
     return () => {
       if (timeRangeDebounceRef.current) {
@@ -724,7 +707,7 @@ const AIProfilePage = ({ standaloneTab }) => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeRange]);
+  }, [timeRange, isMinimalDashboard]);
 
   const handleGoalInputChange = (key, val) => {
     const num = Number(val);
@@ -1238,65 +1221,8 @@ const AIProfilePage = ({ standaloneTab }) => {
         </div>
       )}
 
-      {/* 相似會員推薦 */}
-      <div className="bg-white shadow rounded-lg p-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">相似會員推薦</h3>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-sm text-gray-600">
-              <span>最低分數</span>
-              <input type="number" min={0} max={100} value={minScore} onChange={(e) => setMinScore(parseInt(e.target.value || '0'))} className="w-16 px-2 py-1 border rounded" />
-            </div>
-            <div className="flex items-center gap-1 text-sm text-gray-600">
-              <span>數量</span>
-              <input type="number" min={1} max={20} value={limit} onChange={(e) => setLimit(parseInt(e.target.value || '1'))} className="w-16 px-2 py-1 border rounded" />
-            </div>
-            <button onClick={fetchSimilarMembers} disabled={similarLoading} className="btn-gold px-3 py-1 disabled:opacity-50">
-              {similarLoading ? '載入中...' : '刷新結果'}
-            </button>
-          </div>
-        </div>
-        {similarError && (
-          <div className="text-red-600 text-sm mb-3">{similarError}</div>
-        )}
-        {similarLoading ? (
-          <div className="flex justify-center items-center h-24"><LoadingSpinner /></div>
-        ) : similarMembers.length === 0 ? (
-          <div className="text-gray-500 text-sm">尚無推薦結果，請嘗試降低分數門檻或更新畫像。</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {similarMembers.map((m, idx) => {
-              const mm = m?.member || m; // 後端可能返回 { member, score, reasons }
-              const score = m?.score ?? m?.matchingScore ?? 0;
-              const reasons = Array.isArray(m?.reasons) ? m.reasons : [];
-              return (
-                <div key={idx} className="border rounded-lg p-4 bg-black/40 border-yellow-500/30">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-yellow-300 font-semibold">{mm?.name || '未命名會員'}</div>
-                      <div className="text-sm text-gray-300">{[mm?.company, mm?.title].filter(Boolean).join(' / ')}</div>
-                    </div>
-                    <div className={`text-sm font-bold ${score >= 80 ? 'text-green-400' : score >= 60 ? 'text-yellow-300' : 'text-orange-300'}`}>{Math.round(score)} 分</div>
-                  </div>
-                  {reasons.length > 0 && (
-                    <ul className="mt-3 space-y-1 text-sm text-gray-200 list-disc pl-5">
-                      {reasons.slice(0, 3).map((r, i) => (
-                        <li key={i}>{r}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="mt-4 flex items-center gap-2">
-                    <a href={`/members/${mm?.id}`} className="px-3 py-1 rounded-md text-xs font-medium border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500/10">查看詳情</a>
-                    <button onClick={() => openReferralDialog(mm)} className="btn-gold px-3 py-1 text-xs">一鍵生成引薦稿</button>
-                    <button onClick={() => quickScheduleMeeting(mm)} className="px-3 py-1 text-xs rounded-md bg-gray-800 text-white hover:bg-gray-900">一鍵安排交流</button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
+      {/* 相似會員推薦：已移除 */}
+      
       {/* 使用說明：如何提升完整度與使用 AI 智慧合作網絡 */}
       {!isStandalone && (
       <div className="bg-white shadow rounded-lg p-6 mb-8">
@@ -1533,7 +1459,8 @@ const AIProfilePage = ({ standaloneTab }) => {
               </div>
             </div>
 
-            {/* AI 策略建議（精準對象／引薦策略／平台技巧／本週行動） */}
+            {/* AI 策略建議（精準對象／引薦策略／平台技巧／本週行動） — 精簡模式隱藏 */}
+            {!isMinimalDashboard && (
             <div className="bg-white shadow rounded-lg p-6">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-md font-medium text-gray-900">AI 策略建議</h4>
@@ -1631,11 +1558,12 @@ const AIProfilePage = ({ standaloneTab }) => {
                 <div className="text-sm text-gray-500">暫無建議，或生成中。</div>
               )}
             </div>
+            )}
 
-            {/* 目標中心 */}
-            <div className="bg-white shadow rounded-lg p-6">
+            {/* 目標中心（精簡模式：黑底金字） */}
+            <div className={`${isMinimalDashboard ? 'bg-gray-900 border border-yellow-600' : 'bg-white shadow'} rounded-lg p-6`}>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-md font-medium text-gray-900">目標中心（{timeRange === 'monthly' ? '月度' : timeRange === 'semiannual' ? '半年度' : '年度'}）</h4>
+                <h4 className={`text-md font-medium ${isMinimalDashboard ? 'text-yellow-200' : 'text-gray-900'}`}>目標中心（{timeRange === 'monthly' ? '月度' : timeRange === 'semiannual' ? '半年度' : '年度'}）</h4>
                 <button
                   onClick={saveGoals}
                   disabled={goalSaving}
@@ -1646,43 +1574,43 @@ const AIProfilePage = ({ standaloneTab }) => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">發出引薦目標</label>
+                  <label className={`block text-sm ${isMinimalDashboard ? 'text-yellow-300' : 'text-gray-600'} mb-1`}>發出引薦目標</label>
                   <input
                     type="number"
                     min="0"
                     value={goalForm.referrals_sent}
                     onChange={(e) => handleGoalInputChange('referrals_sent', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 ${isMinimalDashboard ? 'bg-gray-800 border border-yellow-600 text-yellow-100' : 'border'}`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">收到引薦目標</label>
+                  <label className={`block text-sm ${isMinimalDashboard ? 'text-yellow-300' : 'text-gray-600'} mb-1`}>收到引薦目標</label>
                   <input
                     type="number"
                     min="0"
                     value={goalForm.referrals_received}
                     onChange={(e) => handleGoalInputChange('referrals_received', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 ${isMinimalDashboard ? 'bg-gray-800 border border-yellow-600 text-yellow-100' : 'border'}`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">確認引薦目標</label>
+                  <label className={`block text-sm ${isMinimalDashboard ? 'text-yellow-300' : 'text-gray-600'} mb-1`}>確認引薦目標</label>
                   <input
                     type="number"
                     min="0"
                     value={goalForm.referrals_confirmed}
                     onChange={(e) => handleGoalInputChange('referrals_confirmed', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 ${isMinimalDashboard ? 'bg-gray-800 border border-yellow-600 text-yellow-100' : 'border'}`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">交流完成目標</label>
+                  <label className={`block text-sm ${isMinimalDashboard ? 'text-yellow-300' : 'text-gray-600'} mb-1`}>交流完成目標</label>
                   <input
                     type="number"
                     min="0"
                     value={goalForm.exchanges_confirmed}
                     onChange={(e) => handleGoalInputChange('exchanges_confirmed', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 ${isMinimalDashboard ? 'bg-gray-800 border border-yellow-600 text-yellow-100' : 'border'}`}
                   />
                 </div>
               </div>
@@ -1690,8 +1618,8 @@ const AIProfilePage = ({ standaloneTab }) => {
               <div className="mt-4 border-t pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-gray-600">提醒臨界值（達成率低於此值將發提醒）</div>
-                    <div className="text-xs text-gray-500 mt-1">範圍 0.0–1.0，建議 0.5</div>
+                    <div className={`text-sm ${isMinimalDashboard ? 'text-yellow-300' : 'text-gray-600'}`}>提醒臨界值（達成率低於此值將發提醒）</div>
+                    <div className={`text-xs mt-1 ${isMinimalDashboard ? 'text-yellow-400' : 'text-gray-500'}`}>範圍 0.0–1.0，建議 0.5</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -1701,7 +1629,7 @@ const AIProfilePage = ({ standaloneTab }) => {
                       step="0.05"
                       value={reminderThreshold}
                       onChange={(e) => setReminderThreshold(Math.min(1, Math.max(0, Number(e.target.value || 0))))}
-                      className="w-24 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                      className={`w-24 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 ${isMinimalDashboard ? 'bg-gray-800 border border-yellow-600 text-yellow-100' : 'border'}`}
                       disabled={thresholdLoading}
                     />
                     <button
@@ -1744,7 +1672,8 @@ const AIProfilePage = ({ standaloneTab }) => {
               </div>
             </div>
 
-            {/* 目標 vs 實績 對比圖 */}
+            {/* 目標 vs 實績 對比圖 — 精簡模式隱藏 */}
+            {!isMinimalDashboard && (
             <div className="bg-white shadow rounded-lg p-6">
               <h4 className="text-md font-medium text-gray-900 mb-4">目標 vs 實績</h4>
               {dashboardLoading ? (
@@ -1804,6 +1733,7 @@ const AIProfilePage = ({ standaloneTab }) => {
                 })()
               )}
             </div>
+            )}
 
             {/* 週／月趨勢圖（Recharts） */}
             <div className="bg-white shadow rounded-lg p-6">
@@ -1873,7 +1803,8 @@ const AIProfilePage = ({ standaloneTab }) => {
                 )}
               </div>
             </div>
-            {/* 來源分解 Top N */}
+            {/* 來源分解 Top N — 精簡模式隱藏 */}
+            {!isMinimalDashboard && (
             <div className="bg-white shadow rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-md font-medium text-gray-900">來源分解</h4>
@@ -1932,7 +1863,9 @@ const AIProfilePage = ({ standaloneTab }) => {
                 </div>
               )}
             </div>
-            {/* 達成率摘要與操作 */}
+            )}
+            {/* 達成率摘要與操作 — 精簡模式隱藏 */}
+            {!isMinimalDashboard && (
             <div className="bg-white shadow rounded-lg p-4">
               <h4 className="text-md font-medium text-gray-900 mb-3">達成率摘要</h4>
               {dashboardLoading ? (
@@ -1982,8 +1915,10 @@ const AIProfilePage = ({ standaloneTab }) => {
                 </div>
               )}
             </div>
+            )}
 
-            {/* 產品／服務管理 */}
+            {/* 產品／服務管理 — 精簡模式隱藏 */}
+            {!isMinimalDashboard && (
             <div className="bg-white shadow rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-md font-medium text-gray-900">產品／服務管理</h4>
@@ -2156,8 +2091,10 @@ const AIProfilePage = ({ standaloneTab }) => {
                 )}
               </div>
             </div>
+            )}
 
-            {/* 行銷漏斗管理 */}
+            {/* 行銷漏斗管理 — 精簡模式隱藏 */}
+            {!isMinimalDashboard && (
             <div className="bg-white shadow rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-md font-medium text-gray-900">行銷漏斗管理</h4>
@@ -2221,6 +2158,7 @@ const AIProfilePage = ({ standaloneTab }) => {
                 </div>
               )}
             </div>
+            )}
           </div>
         )}
       </div>
