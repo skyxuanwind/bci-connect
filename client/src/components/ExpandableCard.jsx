@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 /**
@@ -8,6 +8,20 @@ import { AnimatePresence, motion } from 'framer-motion';
  * - 無障礙：role、aria-*、tabIndex 與鍵盤操作支援
  */
 export default function ExpandableCard({ isOpen, title, onClose, children }) {
+  const [showStack, setShowStack] = useState(false);
+
+  // 點開時短暫顯示「堆疊展開」動畫
+  useEffect(() => {
+    let timer;
+    if (isOpen) {
+      setShowStack(true);
+      timer = setTimeout(() => setShowStack(false), 700);
+    } else {
+      setShowStack(false);
+    }
+    return () => timer && clearTimeout(timer);
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -46,6 +60,45 @@ export default function ExpandableCard({ isOpen, title, onClose, children }) {
                 關閉
               </button>
             </div>
+            {/* 堆疊展開動畫層（短暫顯示） */}
+            <AnimatePresence>
+              {showStack && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+                >
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={`stack-${i}`}
+                      initial={{
+                        x: -18 + i * 12,
+                        y: -14 + i * 10,
+                        rotate: -5 + i * 3,
+                        scale: 0.96 - i * 0.02,
+                        opacity: 0.8,
+                      }}
+                      animate={{ x: 0, y: 0, rotate: 0, scale: 1, opacity: 0 }}
+                      transition={{ type: 'spring', stiffness: 260, damping: 28, duration: 0.6 }}
+                      style={{
+                        position: 'absolute',
+                        left: 16,
+                        right: 16,
+                        top: 64,
+                        bottom: 16,
+                        borderRadius: 16,
+                        background:
+                          'linear-gradient(135deg, rgba(20,20,20,0.95), rgba(30,30,30,0.95))',
+                        border: '1px solid rgba(255,214,102,0.35)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.35)',
+                      }}
+                    />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
             {/* 內容淡入 */}
             <motion.div
               initial={{ opacity: 0 }}
