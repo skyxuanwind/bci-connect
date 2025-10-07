@@ -20,13 +20,33 @@ export default function MobileGrid({ items, openId, setOpenId }) {
   const DURATION = 0.35; // 一致的動畫速度
   const EASING = [0.22, 1, 0.36, 1]; // 自然平滑的緩動函數（ease-out）
 
+  // 疊堆配置：同向聚集，保持高級質感
+  const STACK_OVERLAP = 56; // 疊堆重疊距離（越大重疊越明顯）
+  const STACK_ROTATE = -2; // 疊堆輕微傾斜角度，營造層次
+  const STACK_SCALE_STEP = 0.01; // 疊堆每層縮放差異
+  const isStacking = Boolean(openId);
+
+  // 為非選中卡片建立疊堆層級索引（同向聚集）
+  const stackIndexMap = React.useMemo(() => {
+    if (!openId) return {};
+    let rank = 0;
+    const map = {};
+    for (const it of items) {
+      if (it.id !== openId) {
+        map[it.id] = rank++;
+      }
+    }
+    return map;
+  }, [items, openId]);
+
   return (
     <div className="relative">
-      {/* 垂直排列的橫式卡片列表（翻頁折疊：標題始終可見） */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px 12px 84px' }}>
+      {/* 垂直排列的橫式卡片列表（翻頁折疊 + 非選中卡片同向疊堆） */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px 12px 84px', position: 'relative' }}>
         {items.map((item) => {
           const isActive = openId === item.id;
           const isCollapsed = openId && openId !== item.id;
+          const sIndex = isCollapsed ? stackIndexMap[item.id] ?? 0 : 0;
           return (
             <motion.div
               key={item.id}
@@ -34,7 +54,11 @@ export default function MobileGrid({ items, openId, setOpenId }) {
               animate={{
                 height: isActive ? HEADER_HEIGHT + EXPANDED_BODY : HEADER_HEIGHT,
                 opacity: 1,
-                marginBottom: 12,
+                // 疊堆時，非選中卡片以同向方式聚集並重疊
+                y: isCollapsed ? -sIndex * (STACK_OVERLAP - 12) : 0,
+                scale: isCollapsed ? 1 - sIndex * STACK_SCALE_STEP : 1,
+                rotate: isCollapsed ? STACK_ROTATE : 0,
+                marginBottom: isCollapsed ? -STACK_OVERLAP : 12,
               }}
               transition={{ duration: DURATION, ease: EASING }}
               style={{
@@ -44,6 +68,10 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                 border: '1px solid rgba(255,214,102,0.25)',
                 boxShadow: '0 12px 24px rgba(0,0,0,0.35), inset 0 0 0.5px rgba(255,214,102,0.25)',
                 color: '#F7F7F7',
+                // 讓選中卡片置於最上層，其餘依疊堆層級遞減
+                zIndex: isActive ? 100 : 90 - sIndex,
+                // 使選中卡片優先排列，其餘卡片置於後面群組（同向疊堆更集中）
+                order: isActive ? 0 : 1,
               }}
             >
               {/* 卡片標頭（橫式） */}
