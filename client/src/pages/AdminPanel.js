@@ -952,70 +952,88 @@ const AdminPanel = () => {
             </Link>
           </div>
         </div>
-        {/* 標籤導航 */}
-        <div className="mb-8">
-          <nav className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('oath')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'oath'
-                  ? 'border-yellow-500 text-yellow-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              誓詞編輯
-            </button>
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'settings'
-                  ? 'border-yellow-500 text-yellow-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              儀式設置
-            </button>
-            <button
-              onClick={() => setActiveTab('statistics')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'statistics'
-                  ? 'border-yellow-500 text-yellow-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              統計信息
-            </button>
-            <button
-              onClick={() => setActiveTab('bridge')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'bridge'
-                  ? 'border-yellow-500 text-yellow-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              橋樑設計
-            </button>
-            <button
-              onClick={() => setActiveTab('videos')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'videos'
-                  ? 'border-yellow-500 text-yellow-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              影片管理
-            </button>
-          </nav>
-        </div>
+        {/* 標籤導航 - 僅管理員可見 */}
+        {userRole === 'admin' && (
+          <div className="mb-8">
+            <nav className="flex space-x-8">
+              <button
+                onClick={() => setActiveTab('oath')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'oath'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                誓詞編輯
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'settings'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                儀式設置
+              </button>
+              <button
+                onClick={() => setActiveTab('statistics')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'statistics'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                統計信息
+              </button>
+              <button
+                onClick={() => setActiveTab('bridge')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'bridge'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                橋樑設計
+              </button>
+              <button
+                onClick={() => setActiveTab('videos')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'videos'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                影片管理
+              </button>
+            </nav>
+          </div>
+        )}
 
-        {/* 標籤內容 */}
-        <div>
-          {activeTab === 'oath' && renderOathEditor()}
-          {activeTab === 'settings' && renderCeremonySettings()}
-          {activeTab === 'statistics' && renderStatistics()}
-          {activeTab === 'bridge' && renderBridgeDesign()}
-          {activeTab === 'videos' && <CeremonyVideoManagement userRole={userRole} />}
-        </div>
+        {/* 標籤內容 - 僅管理員可見 */}
+        {userRole === 'admin' && (
+          <div>
+            {activeTab === 'oath' && renderOathEditor()}
+            {activeTab === 'settings' && renderCeremonySettings()}
+            {activeTab === 'statistics' && renderStatistics()}
+            {activeTab === 'bridge' && renderBridgeDesign()}
+            {activeTab === 'videos' && <CeremonyVideoManagement userRole={userRole} />}
+          </div>
+        )}
+
+        {/* 核心會員提示 */}
+        {userRole === 'core' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+            <div className="text-blue-800 text-lg font-semibold mb-2">
+              核心會員權限
+            </div>
+            <p className="text-blue-600">
+              您目前擁有核心會員權限，可以訪問管理員面板的基本功能。
+              <br />
+              如需訪問完整的管理功能，請聯繫系統管理員。
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
