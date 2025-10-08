@@ -1,5 +1,6 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
@@ -70,14 +71,33 @@ import VideoManagementDashboard from './components/admin/AdminDashboard';
 import FoundationManagement from './pages/admin/FoundationManagement';
 import EventsCalendar from './pages/EventsCalendar';
 import ResponsiveDashboard from './pages/ResponsiveDashboard';
+import FloatingBackButton from './components/FloatingBackButton';
 
 
 
 function App() {
+  const location = useLocation();
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const flip = typeof window !== 'undefined' && new URLSearchParams(location.search).get('transition') === 'flip';
+
+  const glowVariants = {
+    initial: { opacity: 0.6, filter: 'brightness(1.05) blur(4px)', y: 8 },
+    animate: { opacity: 1, filter: 'brightness(1) blur(0)', y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+    exit: { opacity: 0, filter: 'brightness(0.95) blur(6px)', y: -6, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } },
+  };
+  const flipVariants = {
+    initial: { rotateY: -8, opacity: 0.6 },
+    animate: { rotateY: 0, opacity: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+    exit: { rotateY: 8, opacity: 0, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } },
+  };
+  const variants = prefersReducedMotion ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : (flip ? flipVariants : glowVariants);
+
   return (
     <AuthProvider>
       <div className="min-h-screen bg-primary-900">
-        <Routes>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={location.pathname} initial="initial" animate="animate" exit="exit" variants={variants} style={{ perspective: 1000 }}>
+            <Routes location={location}>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -438,6 +458,14 @@ function App() {
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+          </motion.div>
+        </AnimatePresence>
+        {/* 浮動返回按鈕：除首頁外顯示，形成進入/返回閉環效果 */}
+        <AnimatePresence initial={false}>
+          {location.pathname !== '/responsive-dashboard' && (
+            <FloatingBackButton show />
+          )}
+        </AnimatePresence>
         <ToastContainer />
       </div>
     </AuthProvider>

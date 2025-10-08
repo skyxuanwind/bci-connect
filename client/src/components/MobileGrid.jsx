@@ -1,5 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import SparkleLayer from './SparkleLayer';
+import '../styles/premium-card.css';
 import ExpandableCard from './ExpandableCard';
 
 /**
@@ -12,6 +14,7 @@ export default function MobileGrid({ items, openId, setOpenId }) {
   const handleOpen = (id) => setOpenId(id);
   const handleClose = () => setOpenId(null);
   const activeItem = items.find((i) => i.id === openId);
+  const [glow, setGlow] = React.useState(null);
 
   // 動畫與版面常數（確保一致角度與速度）
   const HEADER_HEIGHT = 72; // 標題區固定高度，確保折疊時標題可見
@@ -64,16 +67,23 @@ export default function MobileGrid({ items, openId, setOpenId }) {
               style={{
                 overflow: 'hidden',
                 borderRadius: 16,
-                background: 'linear-gradient(135deg, rgba(15,15,15,1), rgba(25,25,25,1))',
-                border: '1px solid rgba(255,214,102,0.25)',
-                boxShadow: '0 12px 24px rgba(0,0,0,0.35), inset 0 0 0.5px rgba(255,214,102,0.25)',
                 color: '#F7F7F7',
                 // 讓選中卡片置於最上層，其餘依疊堆層級遞減
                 zIndex: isActive ? 100 : 90 - sIndex,
                 // 使選中卡片優先排列，其餘卡片置於後面群組（同向疊堆更集中）
                 order: isActive ? 0 : 1,
               }}
+              className="premium-card"
+              whileTap={{ scale: 0.98 }}
             >
+              {/* Glow diffusion overlay */}
+              {glow && glow.id === item.id && (
+                <div
+                  className="premium-glow"
+                  style={{ ['--glow-x']: `${glow.x}%`, ['--glow-y']: `${glow.y}%` }}
+                  key={glow.t}
+                />
+              )}
               {/* 卡片標頭（橫式） */}
               <button
                 type="button"
@@ -87,6 +97,12 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                   height: HEADER_HEIGHT,
                 }}
                 aria-label={`切換 ${item.title} 展開狀態`}
+                onMouseDown={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width) * 100;
+                  const y = ((e.clientY - rect.top) / rect.height) * 100;
+                  setGlow({ id: item.id, x, y, t: Date.now() });
+                }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {item.icon && (
@@ -142,7 +158,10 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                 >
                   <div className="text-gold-200 text-sm space-y-3">
                     {item.description && <p style={{ opacity: 0.85 }}>{item.description}</p>}
-                    {item.content}
+                    <div style={{ position: 'relative' }}>
+                      <SparkleLayer active={isActive} intensity="medium" />
+                      {item.content}
+                    </div>
                   </div>
                 </motion.div>
               </motion.div>
