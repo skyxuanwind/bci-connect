@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
+import { isMobile } from '../utils/isMobile';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -18,6 +19,12 @@ const ProtectedRoute = ({ children }) => {
   if (!isAuthenticated) {
     // Redirect to login page with return url
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // 在手機端若請求的是 /dashboard，統一重導向到 /responsive-dashboard
+  // 這可確保無論登入前想進入的受保護頁面是 /dashboard，手機端都會進入響應式儀表板
+  if (isAuthenticated && isMobile() && location?.pathname === '/dashboard') {
+    return <Navigate to="/responsive-dashboard" replace />;
   }
 
   // Check if user account is active
