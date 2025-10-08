@@ -88,15 +88,17 @@ const Dashboard = () => {
     const isCore = Number(user.membershipLevel) === 1;
     const isAdminUser = isAdmin();
     
-    // 調試信息
-    console.log('用戶權限檢查:', {
-      user: user,
-      membershipLevel: user.membershipLevel,
-      membershipLevelNumber: Number(user.membershipLevel),
-      isCore,
-      isAdminUser,
-      result: isCore || isAdminUser
-    });
+    // 僅在開發環境輸出調試信息，避免生產環境噪音
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('用戶權限檢查:', {
+        user,
+        membershipLevel: user.membershipLevel,
+        membershipLevelNumber: Number(user.membershipLevel),
+        isCore,
+        isAdminUser,
+        result: isCore || isAdminUser
+      });
+    }
     
     return isCore || isAdminUser;
   };

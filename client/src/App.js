@@ -81,9 +81,9 @@ function App() {
   const flip = typeof window !== 'undefined' && new URLSearchParams(location.search).get('transition') === 'flip';
 
   const glowVariants = {
-    initial: { opacity: 0.6, filter: 'brightness(1.05) blur(4px)', y: 8 },
-    animate: { opacity: 1, filter: 'brightness(1) blur(0)', y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
-    exit: { opacity: 0, filter: 'brightness(0.95) blur(6px)', y: -6, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } },
+  initial: { opacity: 0.6, filter: 'brightness(1.05) blur(4px)', y: 8 },
+  animate: { opacity: 1, filter: 'brightness(1) blur(0px)', y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, filter: 'brightness(0.95) blur(6px)', y: -6, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } },
   };
   const flipVariants = {
     initial: { rotateY: -8, opacity: 0.6 },
