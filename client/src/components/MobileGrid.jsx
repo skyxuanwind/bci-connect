@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import SparkleLayer from './SparkleLayer';
+import FlowParticlesLayer from './FlowParticlesLayer';
 import '../styles/premium-card.css';
 import ExpandableCard from './ExpandableCard';
 
@@ -73,9 +74,11 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                 // 使選中卡片優先排列，其餘卡片置於後面群組（同向疊堆更集中）
                 order: isActive ? 0 : 1,
               }}
-              className="premium-card"
+              className={`premium-card ${isActive ? 'active' : ''}`}
               whileTap={{ scale: 0.98 }}
             >
+              {/* Light scan overlay（啟動時掃描）*/}
+              {isActive && <div className="light-scan" aria-hidden />}
               {/* Glow diffusion overlay */}
               {glow && glow.id === item.id && (
                 <div
@@ -159,7 +162,9 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                   <div className="text-gold-200 text-sm space-y-3">
                     {item.description && <p style={{ opacity: 0.85 }}>{item.description}</p>}
                     <div style={{ position: 'relative' }}>
+                      {/* 粒子層：展開時同時啟用星光與流動粒子 */}
                       <SparkleLayer active={isActive} intensity="medium" />
+                      <FlowParticlesLayer active={isActive} intensity="medium" />
                       {item.content}
                     </div>
                   </div>

@@ -50,8 +50,9 @@ export default function ResponsiveDashboard() {
     { id: 'digital-card', title: '電子名片', icon: <CreditCardIcon className="w-7 h-7" />, content: (
       <div>
         <p>管理個人 NFC 名片與分享設定。</p>
-        <div className="mt-2">
-          <Link to="/digital-wallet" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往電子名片</Link>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link to="/nfc-card-editor" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">NFC 電子名片</Link>
+          <Link to="/digital-wallet" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">數位名片夾</Link>
         </div>
       </div>
     ) },
@@ -74,8 +75,9 @@ export default function ResponsiveDashboard() {
     { id: 'ai-map', title: 'AI商業版圖', icon: <CpuChipIcon className="w-7 h-7" />, content: (
       <div>
         <p>AI 驅動的商業洞察與策略建議。</p>
-        <div className="mt-2">
-          <Link to="/ai-profile?tab=myBusiness" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往 AI 商業版圖</Link>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link to="/ai-profile" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">AI 深度畫像</Link>
+          <Link to="/business-dashboard" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">我的商業儀表板</Link>
         </div>
       </div>
     ) },
