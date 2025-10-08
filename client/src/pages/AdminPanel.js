@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import axios from '../config/axios';
 import CeremonyVideoManagement from '../components/admin/CeremonyVideoManagement';
 
 // 添加橋樑設計的CSS樣式
@@ -139,24 +140,14 @@ const AdminPanel = () => {
   // 檢查用戶權限
   const checkUserPermissions = async () => {
     try {
-      const response = await fetch('/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUserRole(userData.membershipLevel);
-        
-        if (userData.membershipLevel !== 'admin' && userData.membershipLevel !== 'core') {
-          toast.error('您沒有權限訪問管理員面板');
-          navigate('/dashboard');
-          return;
-        }
-      } else {
-        toast.error('無法驗證用戶權限');
-        navigate('/login');
+      const { data } = await axios.get('/api/auth/me');
+      const membershipLevel = data?.user?.membershipLevel;
+      setUserRole(membershipLevel);
+      
+      if (membershipLevel !== 'admin' && membershipLevel !== 'core') {
+        toast.error('您沒有權限訪問管理員面板');
+        navigate('/dashboard');
+        return;
       }
     } catch (error) {
       console.error('權限檢查失敗:', error);
@@ -916,6 +907,40 @@ const AdminPanel = () => {
 
       {/* 主要內容 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 核心功能快捷選單 */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">核心功能</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link to="/prospect-application" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
+              <div className="text-gray-900 font-medium">商訪申請表</div>
+              <div className="text-gray-500 text-sm">填寫與提交商訪申請</div>
+            </Link>
+            <Link to="/prospect-voting" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
+              <div className="text-gray-900 font-medium">商訪專區</div>
+              <div className="text-gray-500 text-sm">查看與管理商訪</div>
+            </Link>
+            <Link to="/blacklist" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
+              <div className="text-gray-900 font-medium">黑名單專區</div>
+              <div className="text-gray-500 text-sm">維護與查詢黑名單</div>
+            </Link>
+            <Link to="/financial" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
+              <div className="text-gray-900 font-medium">財務收支表</div>
+              <div className="text-gray-500 text-sm">查看財務記錄</div>
+            </Link>
+            <Link to="/complaints" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
+              <div className="text-gray-900 font-medium">申訴信箱</div>
+              <div className="text-gray-500 text-sm">處理成員申訴</div>
+            </Link>
+            <Link to="/checkin-scanner" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
+              <div className="text-gray-900 font-medium">報到系統</div>
+              <div className="text-gray-500 text-sm">活動現場掃描報到</div>
+            </Link>
+            <Link to="/attendance-management" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
+              <div className="text-gray-900 font-medium">出席管理</div>
+              <div className="text-gray-500 text-sm">管理與導出出席資料</div>
+            </Link>
+          </div>
+        </div>
         {/* 標籤導航 */}
         <div className="mb-8">
           <nav className="flex space-x-8">

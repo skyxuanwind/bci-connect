@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Avatar from './Avatar';
 import axios from 'axios';
+import BottomRoleNav from './BottomRoleNav';
 import {
   HomeIcon,
   UserGroupIcon,
@@ -77,6 +78,48 @@ const Layout = ({ children }) => {
     
     fetchPresentationUrl();
   }, []);
+
+  // 全局底部導覽：根據路由映射當前分頁
+  const getActiveKeyFromPath = (pathname) => {
+    if (pathname.startsWith('/profile')) return 'profile';
+    if (
+      pathname.startsWith('/admin') ||
+      pathname.startsWith('/admin-panel') ||
+      pathname.startsWith('/prospect-') ||
+      pathname.startsWith('/blacklist') ||
+      pathname.startsWith('/financial') ||
+      pathname.startsWith('/complaints') ||
+      pathname.startsWith('/checkin-scanner') ||
+      pathname.startsWith('/attendance-management')
+    ) return 'core';
+    return 'home';
+  };
+
+  const [activeTab, setActiveTab] = useState(getActiveKeyFromPath(location.pathname));
+  useEffect(() => {
+    setActiveTab(getActiveKeyFromPath(location.pathname));
+  }, [location.pathname]);
+
+  const handleBottomNavigate = (key) => {
+    setActiveTab(key);
+    switch (key) {
+      case 'home':
+        navigate('/responsive-dashboard');
+        break;
+      case 'profile':
+        navigate('/profile');
+        break;
+      case 'settings':
+        // 目前以個人資料頁作為設定入口
+        navigate('/profile');
+        break;
+      case 'core':
+        navigate('/admin-panel');
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -435,14 +478,8 @@ const Layout = ({ children }) => {
   );
 
   const TopBar = () => (
-    <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-primary-800 shadow">
-      <button
-        type="button"
-        className="px-4 border-r border-gold-600 text-gold-300 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gold-500 md:hidden"
-        onClick={() => setSidebarOpen(true)}
-      >
-        <Bars3Icon className="h-6 w-6" />
-      </button>
+    <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-primary-900 shadow">
+      {/* 移除手機端漢堡選單，保持乾淨頂部區域 */}
       <div className="flex-1 px-4 flex justify-between">
         <div className="flex-1 flex" />
         <div className="ml-4 flex items-center md:ml-6">
@@ -456,24 +493,7 @@ const Layout = ({ children }) => {
 
   return (
     <div>
-      {/* Mobile sidebar */}
-      <div className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? '' : 'pointer-events-none'}`}>
-        <div className={`fixed inset-0 bg-black bg-opacity-75 transition-opacity ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true" onClick={() => setSidebarOpen(false)} />
-        <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-primary-900 transform transition ease-in-out duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <div className="absolute top-0 right-0 -mr-12 pt-2">
-            <button
-              type="button"
-              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="sr-only">Close sidebar</span>
-              <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
-            </button>
-          </div>
-          <Sidebar mobile />
-        </div>
-        <div className="flex-shrink-0 w-14" aria-hidden="true">{/* Dummy element to force sidebar to shrink to fit close icon */}</div>
-      </div>
+      {/* 手機端隱藏側欄：移除整個 Mobile sidebar 結構 */}
 
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
@@ -492,6 +512,8 @@ const Layout = ({ children }) => {
             </div>
           </div>
         </main>
+        {/* 全局底部導覽（僅手機端顯示） */}
+        <BottomRoleNav active={activeTab} onNavigate={handleBottomNavigate} />
       </div>
     </div>
   );

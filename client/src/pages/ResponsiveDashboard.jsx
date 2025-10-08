@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import DesktopSidebar from '../components/DesktopSidebar';
 import MobileGrid from '../components/MobileGrid';
-import BottomRoleNav from '../components/BottomRoleNav';
 import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog6ToothIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 
 /**
@@ -12,8 +11,7 @@ import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog
  */
 export default function ResponsiveDashboard() {
   const [openId, setOpenId] = useState(null); // 當前展開的卡片 id
-  const [activeTab, setActiveTab] = useState('home'); // 底部導覽選中的分頁
-  const navigate = useNavigate();
+  // 底部導覽移至全局 Layout，移除本地 activeTab 與 navigate
 
   // 鍵盤 ESC 關閉展開卡片
   useEffect(() => {
@@ -91,28 +89,7 @@ export default function ResponsiveDashboard() {
     ) },
   ];
 
-  // 底部導覽鍵導向對應路由
-  const handleBottomNavigate = (key) => {
-    setActiveTab(key);
-    switch (key) {
-      case 'home':
-        navigate('/responsive-dashboard');
-        break;
-      case 'profile':
-        navigate('/profile');
-        break;
-      case 'settings':
-        // 目前使用個人檔案頁作為設定入口
-        navigate('/profile');
-        break;
-      case 'core':
-        // 核心／幹部／管理員導向控制面板
-        navigate('/admin-panel');
-        break;
-      default:
-        break;
-    }
-  };
+  // 底部導覽已整合到 Layout
 
   return (
     <div className="min-h-screen bg-primary-900 text-gold-200">
@@ -140,7 +117,7 @@ export default function ResponsiveDashboard() {
         </main>
       </div>
 
-      {/* 手機版：九宮格 + 底部導覽 */}
+      {/* 手機版：九宮格（底部導覽由 Layout 統一顯示） */}
       <div className="md:hidden">
         {/* 首頁九宮格主視覺 */}
         <header className="px-4 py-3 border-b border-primary-700 bg-primary-900">
@@ -149,9 +126,6 @@ export default function ResponsiveDashboard() {
         </header>
 
         <MobileGrid items={gridItems} openId={openId} setOpenId={setOpenId} />
-
-        {/* 底部導航：依權限動態顯示 3 或 4 個按鈕 */}
-        <BottomRoleNav active={activeTab} onNavigate={handleBottomNavigate} />
       </div>
     </div>
   );

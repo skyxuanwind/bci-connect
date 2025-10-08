@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import AvatarUpload from '../components/AvatarUpload';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { isMobile } from '../utils/isMobile';
 
 const Register = () => {
   const { register: registerUser, isAuthenticated } = useAuth();
@@ -42,7 +43,7 @@ const Register = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate(isMobile() ? '/responsive-dashboard' : '/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 

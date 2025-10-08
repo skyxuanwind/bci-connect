@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { isMobile } from '../utils/isMobile';
 
 const Login = () => {
   const { login, isAuthenticated } = useAuth();
@@ -22,8 +23,9 @@ const Login = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      const from = location.state?.from?.pathname || null;
+      const target = isMobile() ? '/responsive-dashboard' : (from || '/dashboard');
+      navigate(target, { replace: true });
     }
   }, [isAuthenticated, navigate, location]);
 
@@ -34,8 +36,9 @@ const Login = () => {
       const result = await login(data.email, data.password);
       
       if (result.success) {
-        const from = location.state?.from?.pathname || '/dashboard';
-        navigate(from, { replace: true });
+        const from = location.state?.from?.pathname || null;
+        const target = isMobile() ? '/responsive-dashboard' : (from || '/dashboard');
+        navigate(target, { replace: true });
       } else {
         setError('root', {
           type: 'manual',
