@@ -143,7 +143,15 @@ const AdminPanel = () => {
       const { data } = await axios.get('/api/auth/me');
       const membershipLevel = data?.user?.membershipLevel;
       const isAdminUser = data?.user?.isAdminUser === true;
-      setUserRole(membershipLevel);
+      
+      // 設定用戶角色：只有真正的管理員才設為 'admin'，其他設為 'core'
+      if (isAdminUser) {
+        setUserRole('admin');
+      } else if (membershipLevel === 1) {
+        setUserRole('core');
+      } else {
+        setUserRole('member');
+      }
 
       // 允許真正的 Admin（幹部）和核心會員（Level 1）進入管理員面板
       // 核心會員需要訪問儀式相關功能
