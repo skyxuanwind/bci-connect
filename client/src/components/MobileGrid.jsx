@@ -18,7 +18,7 @@ export default function MobileGrid({ items, openId, setOpenId }) {
   const [glow, setGlow] = React.useState(null);
 
   // 動畫與版面常數（確保一致角度與速度）
-  const HEADER_HEIGHT = 72; // 標題區固定高度，確保折疊時標題可見
+  const HEADER_HEIGHT = 76; // 標題區固定高度，提升可讀性與觸控舒適度
   const EXPANDED_BODY = 240; // 展開內容高度（可微調）
   const FOLD_ANGLE = -18; // 一致的翻頁折疊角度（同一方向）
   const DURATION = 0.35; // 一致的動畫速度
@@ -112,8 +112,8 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                     <div
                       aria-hidden
                       style={{
-                        width: 36,
-                        height: 36,
+                        width: 40,
+                        height: 40,
                         borderRadius: 12,
                         background: 'linear-gradient(135deg, rgba(255,214,102,0.12), rgba(255,214,102,0.02))',
                         border: '1px solid rgba(255,214,102,0.25)',
@@ -125,7 +125,7 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                       {item.icon}
                     </div>
                   )}
-                  <div style={{ fontSize: 16, fontWeight: 600 }}>{item.title}</div>
+                  <div className="text-base sm:text-lg font-semibold tracking-wide text-gold-100 antialiased">{item.title}</div>
                 </div>
                 <motion.span
                   initial={false}
@@ -159,7 +159,7 @@ export default function MobileGrid({ items, openId, setOpenId }) {
                     transformStyle: 'preserve-3d',
                   }}
                 >
-                  <div className="text-gold-200 text-sm space-y-3">
+                  <div className="text-gold-200 text-base sm:text-lg leading-relaxed antialiased space-y-3">
                     {item.description && <p style={{ opacity: 0.85 }}>{item.description}</p>}
                     <div style={{ position: 'relative' }}>
                       {/* 粒子層：展開時同時啟用星光與流動粒子 */}
