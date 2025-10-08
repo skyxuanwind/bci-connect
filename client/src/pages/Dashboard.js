@@ -187,16 +187,26 @@ const Dashboard = () => {
     }
   ];
 
-  // Core/Admin 專用功能
-  const coreAdminActions = [
+  // 核心專用功能
+  const coreActions = [
     {
       title: 'GBC 連結之橋儀式',
       description: '主持新會員入會儀式',
       href: '/connection-ceremony',
       icon: SparklesIcon,
       color: 'bg-gradient-to-r from-yellow-400 to-orange-500'
+    },
+    {
+      title: '活動報到管理',
+      description: '管理活動報到與出席',
+      href: '/attendance',
+      icon: QrCodeIcon,
+      color: 'bg-gradient-to-r from-blue-400 to-purple-500'
     }
   ];
+
+  // Admin 和 Core 共用功能（已移至各自專屬區域）
+  const coreAdminActions = [];
 
   if (loading) {
     return (
@@ -341,12 +351,48 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {/* Core Actions */}
+            {user?.membershipLevel === 1 && !isAdmin() && (
+              <div className="bg-gradient-to-br from-primary-800 to-primary-900 border border-gold-500 shadow-xl rounded-lg p-4 sm:p-6">
+                <div className="border-b border-gold-500 pb-4 mb-4 sm:mb-6">
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gold-100">核心功能</h2>
+                    <InfoButton tooltip="核心會員專用功能，包括主持入會儀式和活動報到管理等核心職責。" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {coreActions.map((action, index) => {
+                    return (
+                      <Link
+                        key={index}
+                        to={action.href}
+                        className="group flex items-center p-4 bg-primary-700 hover:bg-primary-600 border border-gold-600 hover:border-gold-400 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
+                        <div className={`flex-shrink-0 w-10 h-10 ${action.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}>
+                          <action.icon className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <h3 className="text-sm font-medium text-gold-100 group-hover:text-white">
+                            {action.title}
+                          </h3>
+                          <p className="text-xs text-gold-300 group-hover:text-gold-200">
+                            {action.description}
+                          </p>
+                        </div>
+                        <ArrowRightIcon className="w-5 h-5 text-gold-400 group-hover:text-gold-200 group-hover:translate-x-1 transition-all duration-200" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Admin Actions */}
             {isAdmin() && (
-              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
-                <div className="border-b border-gold-600 pb-4 mb-4 sm:mb-6">
+              <div className="bg-gradient-to-br from-primary-800 to-primary-900 border border-gold-500 shadow-xl rounded-lg p-4 sm:p-6">
+                <div className="border-b border-gold-500 pb-4 mb-4 sm:mb-6">
                   <div className="flex items-center space-x-2">
-                    <h2 className="text-lg sm:text-xl font-semibold text-gold-100">管理功能</h2>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gold-100">幹部功能</h2>
                     <InfoButton tooltip="管理員專用功能區域，包括會員審核、用戶管理、分會設定和統計報告等高級管理工具。" />
                   </div>
                 </div>

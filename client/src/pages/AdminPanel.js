@@ -145,8 +145,9 @@ const AdminPanel = () => {
       const isAdminUser = data?.user?.isAdminUser === true;
       setUserRole(membershipLevel);
 
-      // 僅允許 Admin 進入，避免將 Level 1（Core）誤判為 Admin
-      if (!isAdminUser && membershipLevel !== 'admin') {
+      // 僅允許真正的 Admin（幹部）進入管理員面板
+      // 核心會員（Level 1）不應該訪問管理員面板
+      if (!isAdminUser) {
         toast.error('您沒有權限訪問管理員面板');
         navigate('/dashboard');
         return;
