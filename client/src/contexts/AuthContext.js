@@ -207,7 +207,13 @@ export const AuthProvider = ({ children }) => {
 
   // Helper function to check if user is admin
   const isAdmin = () => {
-    return !!(user && Number(user.membershipLevel) === 1 && user.email && user.email.includes('admin'));
+    // 統一改用後端提供的 isAdminUser 旗標，避免將 Level 1 誤判為 Admin
+    // 兼容舊資料：若 membershipLevel 為字串 'admin' 亦視為管理員
+    const u = user;
+    if (!u) return false;
+    const byFlag = u.isAdminUser === true;
+    const byStringRole = u.membershipLevel === 'admin';
+    return !!(byFlag || byStringRole);
   };
 
   // Helper function to check if user is coach

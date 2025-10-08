@@ -142,9 +142,11 @@ const AdminPanel = () => {
     try {
       const { data } = await axios.get('/api/auth/me');
       const membershipLevel = data?.user?.membershipLevel;
+      const isAdminUser = data?.user?.isAdminUser === true;
       setUserRole(membershipLevel);
-      
-      if (membershipLevel !== 'admin' && membershipLevel !== 'core') {
+
+      // 僅允許 Admin 進入，避免將 Level 1（Core）誤判為 Admin
+      if (!isAdminUser && membershipLevel !== 'admin') {
         toast.error('您沒有權限訪問管理員面板');
         navigate('/dashboard');
         return;
