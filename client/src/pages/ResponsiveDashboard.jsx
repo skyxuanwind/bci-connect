@@ -27,7 +27,7 @@ export default function ResponsiveDashboard() {
         <p>管理引薦流程、追蹤成效與回饋。</p>
         <p className="text-xs text-gold-400">可接入引薦紀錄與統計</p>
         <div className="mt-2">
-          <Link to="/referrals" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往引薦系統</Link>
+          <Link to="/referrals" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">前往引薦系統</Link>
         </div>
       </div>
     ) },
@@ -35,7 +35,7 @@ export default function ResponsiveDashboard() {
       <div>
         <p>建立交流話題、媒合合作與跟進進度。</p>
         <div className="mt-2">
-          <Link to="/meetings" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">安排交流</Link>
+          <Link to="/meetings" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">安排交流</Link>
         </div>
       </div>
     ) },
@@ -43,7 +43,7 @@ export default function ResponsiveDashboard() {
       <div>
         <p>查看近期活動並快速報名。</p>
         <div className="mt-2">
-          <Link to="/events" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往活動列表</Link>
+          <Link to="/events" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">前往活動列表</Link>
         </div>
       </div>
     ) },
@@ -51,8 +51,8 @@ export default function ResponsiveDashboard() {
       <div>
         <p>管理個人 NFC 名片與分享設定。</p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <Link to="/nfc-card-editor" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">NFC 電子名片</Link>
-          <Link to="/digital-wallet" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">數位名片夾</Link>
+          <Link to="/nfc-card-editor" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">NFC 電子名片</Link>
+          <Link to="/digital-wallet" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">數位名片夾</Link>
         </div>
       </div>
     ) },
@@ -60,7 +60,7 @@ export default function ResponsiveDashboard() {
       <div>
         <p>瀏覽會員名錄與快速檢索。</p>
         <div className="mt-2">
-          <Link to="/members" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往會員目錄</Link>
+          <Link to="/members" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">前往會員目錄</Link>
         </div>
       </div>
     ) },
@@ -68,7 +68,7 @@ export default function ResponsiveDashboard() {
       <div>
         <p>商媒體素材管理與推廣入口。</p>
         <div className="mt-2">
-          <Link to="/business-media" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往商媒體</Link>
+          <Link to="/business-media" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">前往商媒體</Link>
         </div>
       </div>
     ) },
@@ -76,8 +76,8 @@ export default function ResponsiveDashboard() {
       <div>
         <p>AI 驅動的商業洞察與策略建議。</p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <Link to="/ai-profile" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">AI 深度畫像</Link>
-          <Link to="/business-dashboard" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">我的商業儀表板</Link>
+          <Link to="/ai-profile" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">AI 深度畫像</Link>
+          <Link to="/business-dashboard" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">我的商業儀表板</Link>
         </div>
       </div>
     ) },
@@ -85,7 +85,7 @@ export default function ResponsiveDashboard() {
       <div>
         <p>商會核心理念、制度與運作基礎。</p>
         <div className="mt-2">
-          <Link to="/foundation" className="inline-flex items-center px-3 py-1 rounded bg-primary-700 text-gold-200 hover:bg-primary-600">前往商會地基</Link>
+          <Link to="/foundation" className="inline-flex items-center px-4 py-2 rounded-xl bg-primary-700 text-gold-200 hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">前往商會地基</Link>
         </div>
       </div>
     ) },
@@ -106,14 +106,14 @@ export default function ResponsiveDashboard() {
           <section className="mt-6 grid grid-cols-12 gap-4">
             {/* 左側密集資訊卡片（示意） */}
             <div className="col-span-8 space-y-4">
-              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700">近7日引薦趨勢圖（可接入現有圖表）</div>
-              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700">會員活躍度熱圖（示意）</div>
-              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700">AI 策略建議摘要（示意）</div>
+              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700 shadow-xl">近7日引薦趨勢圖（可接入現有圖表）</div>
+              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700 shadow-xl">會員活躍度熱圖（示意）</div>
+              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700 shadow-xl">AI 策略建議摘要（示意）</div>
             </div>
             {/* 右側列表（示意） */}
             <div className="col-span-4 space-y-4">
-              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700">待辦事項列表</div>
-              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700">近期活動日程</div>
+              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700 shadow-xl">待辦事項列表</div>
+              <div className="rounded-xl bg-primary-800 p-4 border border-primary-700 shadow-xl">近期活動日程</div>
             </div>
           </section>
         </main>

@@ -231,28 +231,22 @@ const Dashboard = () => {
     <div className="min-h-screen bg-primary-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
-          {/* Welcome Section */}
-          <div className="bg-primary-800 border border-gold-600 text-white rounded-lg p-6 shadow-lg">
+          {/* Top Black-Gold App Bar */}
+          <div className="bg-gradient-to-r from-black via-primary-900 to-black border border-gold-600 text-white rounded-xl p-4 sm:p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-2 text-gold-100">
-                  歡迎回來，{user?.name}！
-                </h1>
-                <p className="text-gold-300 mb-4">
-                  {user?.company && `${user.company} • `}
-                  {user?.title}
-                </p>
-                <div className="flex items-center space-x-4">
-                  {user?.membershipLevel ? getMembershipLevelBadge(user.membershipLevel) : null}
-                  {user?.chapterName && (
-                    <span className="text-gold-300 text-sm">
-                      {user.chapterName}
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <img src="/images/gbc-logo.svg" alt="GBC Logo" className="h-8 w-auto sm:h-10 select-none" />
+                <span className="text-lg sm:text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500">
+                  Golden Bridge Conference
+                </span>
               </div>
-              <div className="hidden md:block">
-                <StarIcon className="h-16 w-16 text-gold-400" />
+              <div className="hidden md:flex items-center gap-4 text-gold-200">
+                {user?.membershipLevel ? getMembershipLevelBadge(user.membershipLevel) : null}
+                {user?.chapterName && (
+                  <span className="text-sm sm:text-base text-gold-300">
+                    {user.chapterName}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -261,7 +255,7 @@ const Dashboard = () => {
           {stats && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
               {/* 總引薦金額 - 所有用戶都能看到 */}
-              <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6 col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-2">
+              <div className="bg-primary-800 border border-gold-600 shadow-xl rounded-xl p-4 sm:p-6 col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-2">
                 <div className="flex items-center">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-600 rounded-lg flex items-center justify-center flex-shrink-0">
                     <CurrencyDollarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-900" />
@@ -278,7 +272,7 @@ const Dashboard = () => {
               {/* 管理員統計 */}
               {isAdmin() && (
                 <>
-                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
+                  <div className="bg-primary-800 border border-gold-600 shadow-xl rounded-xl p-4 sm:p-6">
                     <div className="flex items-center">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-500 rounded-lg flex items-center justify-center flex-shrink-0">
                         <UserGroupIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-900" />
@@ -290,7 +284,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
+                  <div className="bg-primary-800 border border-gold-600 shadow-xl rounded-xl p-4 sm:p-6">
                     <div className="flex items-center">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-400 rounded-lg flex items-center justify-center flex-shrink-0">
                         <UserIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-900" />
@@ -302,7 +296,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
+                  <div className="bg-primary-800 border border-gold-600 shadow-xl rounded-xl p-4 sm:p-6">
                     <div className="flex items-center">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gold-700 rounded-lg flex items-center justify-center flex-shrink-0">
                         <ClockIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gold-100" />
@@ -333,10 +327,10 @@ const Dashboard = () => {
           {/* Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* User Actions */}
-            <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-lg p-4 sm:p-6">
+            <div className="bg-primary-800 border border-gold-600 shadow-lg rounded-xl p-5 sm:p-6">
               <div className="border-b border-gold-600 pb-4 mb-4 sm:mb-6">
                 <div className="flex items-center space-x-2">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gold-100">快速操作</h2>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-gold-100 tracking-wide">快速操作</h2>
                   <InfoButton tooltip="這裡提供常用的功能快速入口，包括查看會員列表和編輯個人資料等基本操作。" />
                 </div>
               </div>
@@ -347,14 +341,18 @@ const Dashboard = () => {
                       <Link
                         to={action.href}
                         key={action.title}
-                        className="flex items-center p-3 sm:p-4 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-lg transition-all duration-200"
+                        className="flex items-center gap-4 p-4 sm:p-5 bg-primary-700 hover:bg-primary-600 border border-gold-700 hover:border-gold-500 rounded-xl transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/60 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]"
                       >
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 bg-black border border-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
+                        <div className={`w-12 h-12 sm:w-14 sm:h-14 bg-black border border-yellow-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner transition-transform duration-300 hover:scale-[1.03]`}>
+                          <Icon className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
                         </div>
-                        <div className="ml-3 sm:ml-4 flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gold-100 truncate">{action.title}</h3>
-                          <p className="text-xs text-gray-400 truncate">{action.description}</p>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-semibold text-gold-100 truncate antialiased">
+                            {action.title}
+                          </h3>
+                          <p className="text-sm sm:text-base text-gold-300 truncate leading-relaxed">
+                            {action.description}
+                          </p>
                         </div>
                       </Link>
                     );
