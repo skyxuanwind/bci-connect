@@ -328,9 +328,9 @@ const Members = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-6 md:gap-x-6 md:gap-y-7 xl:gap-x-8 xl:gap-y-9">
             {members.map((member) => (
-              <div key={member.id} className="card overflow-hidden bg-gradient-to-br from-primary-800 via-primary-700 to-primary-800 border border-gold-700 rounded-xl hover:shadow-2xl hover:border-gold-500/80 transition-shadow duration-300">
+              <div key={member.id} className="card group h-full flex flex-col overflow-hidden bg-gradient-to-br from-primary-900/80 via-primary-800/70 to-primary-900/80 border border-gold-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_18px_48px_rgba(202,161,74,0.25)] ring-1 ring-amber-400/15 hover:ring-amber-400/30 transition-all duration-300 antialiased">
                 {/* 50/50 Split Layout */}
                 <div className="grid grid-cols-1 md:grid-cols-2">
                   {/* Left: Avatar occupies 50% */}
@@ -353,7 +353,7 @@ const Members = () => {
                   <div className="p-6 md:p-7 flex flex-col justify-between">
                     {/* Basic Info */}
                     <div>
-                      <h3 className="text-lg leading-tight font-semibold text-gold-100 truncate">
+                      <h3 className="text-[16px] md:text-[17px] leading-tight font-semibold tracking-wide text-gold-100 truncate">
                         {member.name}
                       </h3>
                       <div className="mt-2">
@@ -364,7 +364,7 @@ const Members = () => {
                     {/* Company and Industry */}
                     <div className="space-y-2 mt-4">
                       <div className="flex items-center text-sm text-gold-300">
-                        <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
                         {/* Mobile: clamp to 2 lines; Desktop: fully visible */}
                         <span
                           className="block lg:hidden whitespace-normal break-words"
@@ -383,7 +383,7 @@ const Members = () => {
                         </span>
                       </div>
                       <div className="flex items-center text-sm text-gold-300">
-                        <TagIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <TagIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
                         {/* Mobile: clamp; Desktop: full */}
                         <span
                           className="block lg:hidden whitespace-normal break-words"
@@ -416,7 +416,7 @@ const Members = () => {
                     {member.contactNumber && canViewMember(member.membershipLevel) && (
                       <div className="mt-3">
                         <div className="flex items-center text-sm text-gold-300">
-                          <PhoneIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <PhoneIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
                           {/* Mobile: truncate; Desktop: show full */}
                           <span className="block lg:hidden truncate">{member.contactNumber}</span>
                           <span className="hidden lg:block break-words">{member.contactNumber}</span>
