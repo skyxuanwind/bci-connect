@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DesktopSidebar from '../components/DesktopSidebar';
 import MobileGrid from '../components/MobileGrid';
-import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog6ToothIcon, BriefcaseIcon, ClipboardDocumentListIcon, CheckBadgeIcon, ExclamationTriangleIcon, CurrencyDollarIcon, ChatBubbleLeftEllipsisIcon, QrCodeIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog6ToothIcon, BriefcaseIcon, ClipboardDocumentListIcon, CheckBadgeIcon, ExclamationTriangleIcon, CurrencyDollarIcon, ChatBubbleLeftEllipsisIcon, QrCodeIcon, ClipboardDocumentCheckIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 /**
  * ResponsiveDashboard 響應式儀表板頁面
@@ -26,8 +26,8 @@ export default function ResponsiveDashboard() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // 八張卡片：依指定順序與標題
-  const gridItems = [
+  // 主功能卡片：依指定順序與標題
+  let gridItems = [
     { id: 'referral-system', title: '引薦系統', icon: <BriefcaseIcon className="w-7 h-7" />, content: (
       <div>
         <p className="text-base sm:text-lg text-gold-200 antialiased">管理引薦流程、追蹤成效與回饋。</p>
@@ -96,6 +96,39 @@ export default function ResponsiveDashboard() {
       </div>
     ) },
   ];
+
+  // 核心功能：僅核心/幹部/管理員顯示，採同款質感卡片與過場
+  if (isCore || isCadre || adminUser) {
+    gridItems = [
+      ...gridItems,
+      {
+        id: 'coach-features',
+        title: '教練功能',
+        icon: <SparklesIcon className="w-7 h-7" />,
+        content: (
+          <div>
+            <p className="text-base sm:text-lg text-gold-200 antialiased">教練儀表板與學員協作工具。</p>
+            <div className="mt-2">
+              <Link to="/coach" className="inline-flex items-center px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-primary-700 text-gold-100 hover:text-gold-50 font-semibold text-sm sm:text-base hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">前往教練儀表板</Link>
+            </div>
+          </div>
+        )
+      },
+      {
+        id: 'financial-ledger',
+        title: '財務收支表',
+        icon: <CurrencyDollarIcon className="w-7 h-7" />,
+        content: (
+          <div>
+            <p className="text-base sm:text-lg text-gold-200 antialiased">管理商會財務記錄與查詢。</p>
+            <div className="mt-2">
+              <Link to="/financial" className="inline-flex items-center px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-primary-700 text-gold-100 hover:text-gold-50 font-semibold text-sm sm:text-base hover:bg-primary-600 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-yellow-500/50 hover:drop-shadow-[0_6px_16px_rgba(253,216,53,0.25)]">前往財務收支表</Link>
+            </div>
+          </div>
+        )
+      }
+    ];
+  }
 
   // 底部導覽已整合到 Layout
 
