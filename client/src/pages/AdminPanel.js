@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../config/axios';
+import '../styles/premium-card.css';
 import CeremonyVideoManagement from '../components/admin/CeremonyVideoManagement';
 import {
   ClipboardDocumentListIcon,
@@ -11,6 +13,7 @@ import {
   UsersIcon,
   CurrencyDollarIcon,
   QrCodeIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 
 // 添加橋樑設計的CSS樣式
@@ -927,7 +930,7 @@ const AdminPanel = () => {
 
       {/* 主要內容 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 核心功能 - Material Card 風格 */}
+        {/* 核心功能 - 與手機App版一致的質感卡片風格 */}
         {userRole !== 'member' && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-yellow-400 mb-4">核心功能</h2>
@@ -935,7 +938,7 @@ const AdminPanel = () => {
               {/* 商訪申請表 */}
               <Link
                 to="/prospect-application"
-                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+                className="group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
                   <ClipboardDocumentListIcon className="h-7 w-7 text-yellow-300" />
@@ -948,12 +951,13 @@ const AdminPanel = () => {
                   </div>
                 </div>
                 <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className="light-scan" aria-hidden />
               </Link>
 
               {/* 黑名單專區 */}
               <Link
                 to="/blacklist"
-                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+                className="group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
                   <ExclamationTriangleIcon className="h-7 w-7 text-yellow-300" />
@@ -966,12 +970,13 @@ const AdminPanel = () => {
                   </div>
                 </div>
                 <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className="light-scan" aria-hidden />
               </Link>
 
               {/* 申訴信箱 */}
               <Link
                 to="/complaints"
-                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+                className="group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
                   <ChatBubbleLeftEllipsisIcon className="h-7 w-7 text-yellow-300" />
@@ -984,12 +989,13 @@ const AdminPanel = () => {
                   </div>
                 </div>
                 <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className="light-scan" aria-hidden />
               </Link>
 
               {/* 出席管理 */}
               <Link
                 to="/attendance-management"
-                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+                className="group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
                   <ClipboardDocumentCheckIcon className="h-7 w-7 text-yellow-300" />
@@ -1002,6 +1008,45 @@ const AdminPanel = () => {
                   </div>
                 </div>
                 <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className="light-scan" aria-hidden />
+              </Link>
+
+              {/* 教練功能 */}
+              <Link
+                to="/coach"
+                className="group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300"
+              >
+                <div className="flex items-center gap-4">
+                  <SparklesIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">教練功能</div>
+                    <div className="text-gray-400 text-sm">教練儀表板與學員協作工具</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/coachees" className="text-yellow-400 hover:text-yellow-300">學員名單</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className="light-scan" aria-hidden />
+              </Link>
+
+              {/* 財務收支表 */}
+              <Link
+                to="/financial"
+                className="group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300"
+              >
+                <div className="flex items-center gap-4">
+                  <CurrencyDollarIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">財務收支表</div>
+                    <div className="text-gray-400 text-sm">管理商會財務記錄與查詢</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/foundation" className="text-yellow-400 hover:text-yellow-300">維基指南</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className="light-scan" aria-hidden />
               </Link>
             </div>
           </div>
