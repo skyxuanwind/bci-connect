@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import DesktopSidebar from '../components/DesktopSidebar';
 import MobileGrid from '../components/MobileGrid';
-import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog6ToothIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog6ToothIcon, BriefcaseIcon, ClipboardDocumentListIcon, CheckBadgeIcon, ExclamationTriangleIcon, CurrencyDollarIcon, ChatBubbleLeftEllipsisIcon, QrCodeIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 
 /**
  * ResponsiveDashboard 響應式儀表板頁面
@@ -11,6 +12,11 @@ import { HomeIcon, UsersIcon, CpuChipIcon, CalendarDaysIcon, CreditCardIcon, Cog
  */
 export default function ResponsiveDashboard() {
   const [openId, setOpenId] = useState(null); // 當前展開的卡片 id
+  const { user, isAdmin } = useAuth();
+  const level = user?.membershipLevel;
+  const isCore = level === 'core' || Number(level) === 1;
+  const isCadre = level === 'cadre' || Number(level) === 2;
+  const adminUser = typeof isAdmin === 'function' ? isAdmin() : false;
   // 底部導覽移至全局 Layout，移除本地 activeTab 與 navigate
 
   // 鍵盤 ESC 關閉展開卡片
@@ -132,6 +138,125 @@ export default function ResponsiveDashboard() {
         </header>
 
         <MobileGrid items={gridItems} openId={openId} setOpenId={setOpenId} />
+
+        {/* 核心/幹部功能清單卡片（不更動底部導覽；採用黑金卡片質感） */}
+        <section className="px-4 pt-4 pb-24 space-y-6">
+          {/* 核心功能（僅核心或管理員顯示） */}
+          {(isCore || adminUser) && (
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-gold-200 mb-3">核心功能</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 商訪申請表 */}
+              <Link to="/prospect-application" className="group rounded-2xl bg-gradient-to-br from-black/60 via-primary-900/80 to-primary-800/80 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ClipboardDocumentListIcon className="w-6 h-6 text-yellow-400" />
+                  <div>
+                    <div className="text-base sm:text-lg font-semibold text-gold-200 flex items-center">商訪申請表 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500 text-yellow-300">核心</span></div>
+                    <div className="text-sm text-gold-400">填寫與提交商訪申請</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gold-300 group-hover:text-yellow-300">前往</span>
+                  <Link to="/prospect-voting" className="text-xs text-yellow-300 hover:text-yellow-200 underline">商訪專區</Link>
+                </div>
+              </Link>
+              {/* 黑名單專區 */}
+              <Link to="/blacklist" className="group rounded-2xl bg-gradient-to-br from-black/60 via-primary-900/80 to-primary-800/80 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ExclamationTriangleIcon className="w-6 h-6 text-yellow-400" />
+                  <div>
+                    <div className="text-base sm:text-lg font-semibold text-gold-200 flex items-center">黑名單專區 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500 text-yellow-300">核心</span></div>
+                    <div className="text-sm text-gold-400">維護與查詢黑名單</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gold-300 group-hover:text-yellow-300">前往</span>
+                  <Link to="/foundation" className="text-xs text-yellow-300 hover:text-yellow-200 underline">操作指南</Link>
+                </div>
+              </Link>
+              {/* 申訴信箱 */}
+              <Link to="/complaints" className="group rounded-2xl bg-gradient-to-br from-black/60 via-primary-900/80 to-primary-800/80 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ChatBubbleLeftEllipsisIcon className="w-6 h-6 text-yellow-400" />
+                  <div>
+                    <div className="text-base sm:text-lg font-semibold text-gold-200 flex items-center">申訴信箱 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500 text-yellow-300">核心</span></div>
+                    <div className="text-sm text-gold-400">處理成員申訴</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gold-300 group-hover:text-yellow-300">前往</span>
+                  <Link to="/foundation" className="text-xs text-yellow-300 hover:text-yellow-200 underline">操作指南</Link>
+                </div>
+              </Link>
+              {/* 出席管理 */}
+              <Link to="/attendance-management" className="group rounded-2xl bg-gradient-to-br from-black/60 via-primary-900/80 to-primary-800/80 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ClipboardDocumentCheckIcon className="w-6 h-6 text-yellow-400" />
+                  <div>
+                    <div className="text-base sm:text-lg font-semibold text-gold-200 flex items-center">出席管理 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500 text-yellow-300">核心</span></div>
+                    <div className="text-sm text-gold-400">管理與導出出席資料</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gold-300 group-hover:text-yellow-300">前往</span>
+                  <Link to="/checkin-scanner" className="text-xs text-yellow-300 hover:text-yellow-200 underline">報到系統</Link>
+                </div>
+              </Link>
+            </div>
+          </div>
+          )}
+
+          {/* 幹部功能（僅幹部或管理員顯示） */}
+          {(isCadre || adminUser) && (
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-gold-200 mb-3">幹部功能</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 商訪專區 */}
+              <Link to="/prospect-voting" className="group rounded-2xl bg-gradient-to-br from-black/60 via-primary-900/80 to-primary-800/80 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CheckBadgeIcon className="w-6 h-6 text-yellow-400" />
+                  <div>
+                    <div className="text-base sm:text-lg font-semibold text-gold-200 flex items-center">商訪專區 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500 text-yellow-300">幹部</span></div>
+                    <div className="text-sm text-gold-400">查看與管理商訪</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gold-300 group-hover:text-yellow-300">前往</span>
+                  <Link to="/prospect-application" className="text-xs text-yellow-300 hover:text-yellow-200 underline">申請表</Link>
+                </div>
+              </Link>
+              {/* 財務收支表 */}
+              <Link to="/financial" className="group rounded-2xl bg-gradient-to-br from-black/60 via-primary-900/80 to-primary-800/80 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CurrencyDollarIcon className="w-6 h-6 text-yellow-400" />
+                  <div>
+                    <div className="text-base sm:text-lg font-semibold text-gold-200 flex items-center">財務收支表 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500 text-yellow-300">幹部</span></div>
+                    <div className="text-sm text-gold-400">查看財務記錄</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gold-300 group-hover:text-yellow-300">前往</span>
+                  <Link to="/foundation" className="text-xs text-yellow-300 hover:text-yellow-200 underline">操作指南</Link>
+                </div>
+              </Link>
+              {/* 報到系統 */}
+              <Link to="/checkin-scanner" className="group rounded-2xl bg-gradient-to-br from-black/60 via-primary-900/80 to-primary-800/80 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <QrCodeIcon className="w-6 h-6 text-yellow-400" />
+                  <div>
+                    <div className="text-base sm:text-lg font-semibold text-gold-200 flex items-center">報到系統 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500 text-yellow-300">幹部</span></div>
+                    <div className="text-sm text-gold-400">活動現場掃描報到</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gold-300 group-hover:text-yellow-300">前往</span>
+                  <Link to="/attendance-management" className="text-xs text-yellow-300 hover:text-yellow-200 underline">出席管理</Link>
+                </div>
+              </Link>
+            </div>
+          </div>
+          )}
+        </section>
       </div>
     </div>
   );

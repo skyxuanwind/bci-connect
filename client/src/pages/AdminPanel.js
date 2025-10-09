@@ -1021,19 +1021,7 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* 核心會員提示 */}
-        {userRole === 'core' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-            <div className="text-blue-800 text-lg font-semibold mb-2">
-              核心會員權限
-            </div>
-            <p className="text-blue-600">
-              您目前擁有核心會員權限，可以訪問管理員面板的基本功能。
-              <br />
-              如需訪問完整的管理功能，請聯繫系統管理員。
-            </p>
-          </div>
-        )}
+        {/* 移除底部核心會員提示文字，保持版面乾淨 */}
       </div>
     </div>
   );
