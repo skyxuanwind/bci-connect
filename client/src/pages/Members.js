@@ -13,7 +13,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   BuildingOfficeIcon,
-  BriefcaseIcon,
+  TagIcon,
   PhoneIcon,
   EyeIcon,
   ChatBubbleLeftRightIcon,
@@ -247,7 +247,7 @@ const Members = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="搜尋姓名、公司或職稱..."
+                  placeholder="搜尋姓名、公司或產業別..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="input"
@@ -330,17 +330,17 @@ const Members = () => {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {members.map((member) => (
-              <div key={member.id} className="card hover:shadow-lg transition-shadow duration-200">
+              <div key={member.id} className="card bg-gradient-to-br from-primary-800 via-primary-700 to-primary-800 border border-gold-700 rounded-xl hover:shadow-xl hover:border-gold-500/80 transition-shadow duration-300">
                 <div className="p-6">
                   {/* Avatar and Basic Info */}
-                  <div className="flex items-center mb-4">
+                  <div className="flex items-center mb-6">
                     <Avatar 
                       src={member.profilePictureUrl} 
                       alt={member.name}
-                      size="large"
+                      size="xl"
                     />
-                    <div className="ml-3 flex-1">
-                      <h3 className="text-sm font-medium text-gold-100 truncate">
+                    <div className="ml-4 flex-1">
+                      <h3 className="text-base leading-tight font-semibold text-gold-100 truncate">
                         {member.name}
                       </h3>
                       <div className="mt-1">
@@ -349,15 +349,37 @@ const Members = () => {
                     </div>
                   </div>
 
-                  {/* Company and Title */}
-                  <div className="space-y-2 mb-4">
+                  {/* Company and Industry */}
+                  <div className="space-y-2 mb-6">
                     <div className="flex items-center text-sm text-gold-300">
                       <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="truncate">{member.company}</span>
+                      <span
+                        className="whitespace-normal break-words"
+                        title={member.company}
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {member.company}
+                      </span>
                     </div>
                     <div className="flex items-center text-sm text-gold-300">
-                      <BriefcaseIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="truncate">{member.title}</span>
+                      <TagIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span
+                        className="whitespace-normal break-words"
+                        title={member.industry || '未提供'}
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {member.industry || '未提供'}
+                      </span>
                     </div>
                   </div>
 
