@@ -330,149 +330,160 @@ const Members = () => {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {members.map((member) => (
-              <div key={member.id} className="card bg-gradient-to-br from-primary-800 via-primary-700 to-primary-800 border border-gold-700 rounded-xl hover:shadow-xl hover:border-gold-500/80 transition-shadow duration-300">
-                <div className="p-6">
-                  {/* Avatar and Basic Info */}
-                  <div className="flex items-center mb-6">
-                    <Avatar 
-                      src={member.profilePictureUrl} 
-                      alt={member.name}
-                      size="xl"
-                    />
-                    <div className="ml-4 flex-1">
-                      <h3 className="text-base leading-tight font-semibold text-gold-100 truncate">
+              <div key={member.id} className="card overflow-hidden bg-gradient-to-br from-primary-800 via-primary-700 to-primary-800 border border-gold-700 rounded-xl hover:shadow-2xl hover:border-gold-500/80 transition-shadow duration-300">
+                {/* 50/50 Split Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 md:h-56">
+                  {/* Left: Avatar occupies 50% */}
+                  <div className="relative overflow-hidden bg-primary-900/40">
+                    {member.profilePictureUrl ? (
+                      <img
+                        src={member.profilePictureUrl}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full p-6">
+                        <Avatar src={member.profilePictureUrl} alt={member.name} size="2xl" />
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                  </div>
+
+                  {/* Right: Member info occupies remaining 50% */}
+                  <div className="p-6 md:p-7 flex flex-col justify-between">
+                    {/* Basic Info */}
+                    <div>
+                      <h3 className="text-lg leading-tight font-semibold text-gold-100 truncate">
                         {member.name}
                       </h3>
-                      <div className="mt-1">
+                      <div className="mt-2">
                         {getMembershipLevelBadge(member.membershipLevel)}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Company and Industry */}
-                  <div className="space-y-2 mb-6">
-                    <div className="flex items-center text-sm text-gold-300">
-                      <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span
-                        className="whitespace-normal break-words"
-                        title={member.company}
-                        style={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {member.company}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm text-gold-300">
-                      <TagIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span
-                        className="whitespace-normal break-words"
-                        title={member.industry || '未提供'}
-                        style={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {member.industry || '未提供'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Chapter */}
-                  {member.chapterName && (
-                    <div className="mb-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gold-600 text-primary-900">
-                        {member.chapterName}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Contact Info (if available) */}
-                  {member.contactNumber && canViewMember(member.membershipLevel) && (
-                    <div className="mb-4">
+                    {/* Company and Industry */}
+                    <div className="space-y-2 mt-4">
                       <div className="flex items-center text-sm text-gold-300">
-                        <PhoneIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">{member.contactNumber}</span>
+                        <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span
+                          className="whitespace-normal break-words"
+                          title={member.company}
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {member.company}
+                        </span>
+                      </div>
+                      <div className="flex items-center text-sm text-gold-300">
+                        <TagIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span
+                          className="whitespace-normal break-words"
+                          title={member.industry || '未提供'}
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {member.industry || '未提供'}
+                        </span>
                       </div>
                     </div>
-                  )}
 
-                  {/* Action Buttons */}
-                  {canViewMember(member.membershipLevel) && (
-                    <div className="mt-4 space-y-2">
-                      {/* 快速操作按鈕組 */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          to={`/members/${member.id}`}
-                          variant="secondary"
-                          className="flex items-center justify-center text-xs py-2"
-                          title="查看會員詳細資料"
-                        >
-                          <EyeIcon className="h-3 w-3 mr-1" />
-                          詳情
-                        </Button>
-                        
-                        {/* 聯絡按鈕 */}
-                        {member.contactNumber && (
+                    {/* Chapter */}
+                    {member.chapterName && (
+                      <div className="mt-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gold-600 text-primary-900">
+                          {member.chapterName}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Contact Info (if available) */}
+                    {member.contactNumber && canViewMember(member.membershipLevel) && (
+                      <div className="mt-3">
+                        <div className="flex items-center text-sm text-gold-300">
+                          <PhoneIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span className="truncate">{member.contactNumber}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    {canViewMember(member.membershipLevel) && (
+                      <div className="mt-4 space-y-2">
+                        {/* 快速操作按鈕組 */}
+                        <div className="grid grid-cols-2 gap-2">
                           <Button
-                            href={`tel:${member.contactNumber}`}
+                            to={`/members/${member.id}`}
                             variant="secondary"
                             className="flex items-center justify-center text-xs py-2"
-                            title="撥打電話"
+                            title="查看會員詳細資料"
                           >
-                            <PhoneIcon className="h-3 w-3 mr-1" />
-                            電話
+                            <EyeIcon className="h-3 w-3 mr-1" />
+                            詳情
                           </Button>
-                        )}
-                        
-                        {/* Email按鈕 */}
-                        {member.email && (
+                          {/* 聯絡按鈕 */}
+                          {member.contactNumber && (
+                            <Button
+                              href={`tel:${member.contactNumber}`}
+                              variant="secondary"
+                              className="flex items-center justify-center text-xs py-2"
+                              title="撥打電話"
+                            >
+                              <PhoneIcon className="h-3 w-3 mr-1" />
+                              電話
+                            </Button>
+                          )}
+                          {/* Email按鈕 */}
+                          {member.email && (
+                            <Button
+                              href={`mailto:${member.email}`}
+                              variant="secondary"
+                              className="flex items-center justify-center text-xs py-2"
+                              title="發送郵件"
+                            >
+                              <EnvelopeIcon className="h-3 w-3 mr-1" />
+                              郵件
+                            </Button>
+                          )}
+                          {/* 名片按鈕 */}
+                          {member.nfcCardUrl && (
+                            <Button
+                              href={member.nfcCardUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="secondary"
+                              className="flex items-center justify-center text-xs py-2"
+                              title="查看電子名片"
+                            >
+                              <CreditCardIcon className="h-3 w-3 mr-1" />
+                              名片
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Interview Schedule Button */}
+                        {member.interviewData && (
                           <Button
-                            href={`mailto:${member.email}`}
-                            variant="secondary"
-                            className="flex items-center justify-center text-xs py-2"
-                            title="發送郵件"
+                            to={`/member-interview/${member.id}`}
+                            variant="primary"
+                            className="w-full flex items-center justify-center text-sm"
                           >
-                            <EnvelopeIcon className="h-3 w-3 mr-1" />
-                            郵件
-                          </Button>
-                        )}
-                        
-                        {/* 名片按鈕 */}
-                        {member.nfcCardUrl && (
-                          <Button
-                            href={member.nfcCardUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="secondary"
-                            className="flex items-center justify-center text-xs py-2"
-                            title="查看電子名片"
-                          >
-                            <CreditCardIcon className="h-3 w-3 mr-1" />
-                            名片
+                            <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
+                            面談表
                           </Button>
                         )}
                       </div>
-                      
-                      {/* Interview Schedule Button */}
-                      {member.interviewData && (
-                        <Button
-                          to={`/member-interview/${member.id}`}
-                          variant="primary"
-                          className="w-full flex items-center justify-center text-sm"
-                        >
-                          <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
-                          面談表
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+
               </div>
             ))}
           </div>
