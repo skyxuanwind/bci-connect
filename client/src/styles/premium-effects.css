@@ -1,0 +1,131 @@
+/* 高級質感與互動效果樣式（磨砂玻璃、金屬質感、陰影、圓角） */
+
+.premium-card {
+  position: relative;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(18,18,18,0.65), rgba(28,28,28,0.55)) padding-box;
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px) saturate(1.15);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  transition: transform 240ms ease, box-shadow 240ms ease, background 240ms ease, border-color 240ms ease;
+}
+
+.premium-card::before {
+  /* 金屬斜紋質感疊層 */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: repeating-linear-gradient( 135deg, rgba(255, 215, 0, 0.06) 0px, rgba(255, 215, 0, 0.06) 2px, transparent 2px, transparent 8px );
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.premium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,215,0,0.16);
+}
+
+.premium-card:active {
+  transform: scale(0.98);
+}
+
+/* 光掃描與光暈擴散 */
+.premium-card .light-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient( to right, transparent 0%, rgba(255, 247, 200, 0.06) 40%, rgba(255, 247, 200, 0.16) 50%, rgba(255, 247, 200, 0.06) 60%, transparent 100% );
+  transform: translateX(-100%);
+  animation: lightScan 2600ms linear infinite;
+}
+
+@keyframes lightScan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.premium-card .pulse-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient( 110px 110px at var(--pulse-x, 50%) var(--pulse-y, 50%), rgba(255, 232, 145, 0.28), rgba(255, 232, 145, 0.18) 35%, rgba(255, 232, 145, 0.07) 55%, transparent 70% );
+  opacity: 0;
+}
+
+.premium-card.is-clicked .pulse-glow { animation: glowExpand 480ms ease-out forwards; }
+
+@keyframes glowExpand {
+  0% { opacity: 0.0; }
+  20% { opacity: 0.8; }
+  100% { opacity: 0; background-size: 140% 140%; }
+}
+
+/* 粒子星光閃爍 */
+.premium-card .particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6b1 0%, #fede8e 40%, rgba(255,255,255,0) 70%);
+  filter: drop-shadow(0 0 6px rgba(255, 232, 145, 0.75));
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.premium-card.is-clicked .particle { animation: sparklePop 600ms ease-out forwards; }
+
+@keyframes sparklePop {
+  0% { opacity: 0; transform: translate3d(0,0,0) scale(0.7); }
+  30% { opacity: 1; transform: translate3d(6px,-6px,0) scale(1.15); }
+  60% { opacity: 1; transform: translate3d(-8px,4px,0) scale(1.0); }
+  100% { opacity: 0; transform: translate3d(4px,8px,0) scale(0.8); }
+}
+
+/* 折疊翻頁效果（非選中卡片） */
+.premium-card.folded {
+  height: 64px;
+  overflow: hidden;
+  transform-origin: top center;
+  transform: perspective(800px) rotateX(12deg) translateY(-4px);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), height 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 420ms ease;
+  opacity: 0.88;
+}
+
+.premium-card .card-title { position: relative; z-index: 2; }
+
+/* 過場動畫 Overlay（光暈漸變） */
+.route-transition-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: radial-gradient( 220px 220px at 50% 50%, rgba(255, 232, 145, 0.15), rgba(255, 232, 145, 0.08) 35%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.85) 100% );
+}
+
+.route-transition-overlay.fade {
+  animation: overlayFade 420ms ease both;
+}
+
+@keyframes overlayFade {
+  0% { opacity: 0; }
+  40% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 3D 翻轉過場可選 */
+.route-transition-overlay.flip {
+  transform-origin: center;
+  animation: overlayFlip 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes overlayFlip {
+  0% { opacity: 0; transform: perspective(900px) rotateY(0deg); }
+  40% { opacity: 1; transform: perspective(900px) rotateY(22deg); }
+  100% { opacity: 0; transform: perspective(900px) rotateY(0deg); }
+}
+
+/* 性能優化 */
+.premium-card, .route-transition-overlay { will-change: transform, opacity; }
