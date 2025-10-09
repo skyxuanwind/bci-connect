@@ -43,7 +43,7 @@ const Register = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(isMobile() ? '/responsive-dashboard' : '/dashboard', { replace: true });
+      navigate(isMobile() ? '/mobile-app' : '/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 

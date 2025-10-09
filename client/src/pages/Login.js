@@ -24,7 +24,7 @@ const Login = () => {
   useEffect(() => {
     if (isAuthenticated) {
       const from = location.state?.from?.pathname || null;
-      const target = isMobile() ? '/responsive-dashboard' : (from || '/dashboard');
+      const target = isMobile() ? '/mobile-app' : (from || '/dashboard');
       navigate(target, { replace: true });
     }
   }, [isAuthenticated, navigate, location]);
@@ -37,7 +37,7 @@ const Login = () => {
       
       if (result.success) {
         const from = location.state?.from?.pathname || null;
-        const target = isMobile() ? '/responsive-dashboard' : (from || '/dashboard');
+        const target = isMobile() ? '/mobile-app' : (from || '/dashboard');
         navigate(target, { replace: true });
       } else {
         setError('root', {

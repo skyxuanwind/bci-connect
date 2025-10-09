@@ -21,10 +21,10 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 在手機端若請求的是 /dashboard，統一重導向到 /responsive-dashboard
-  // 這可確保無論登入前想進入的受保護頁面是 /dashboard，手機端都會進入響應式儀表板
+  // 在手機端若請求的是 /dashboard，統一重導向到 /mobile-app
+  // 這可確保無論登入前想進入的受保護頁面是 /dashboard，手機端都會進入手機App版
   if (isAuthenticated && isMobile() && location?.pathname === '/dashboard') {
-    return <Navigate to="/responsive-dashboard" replace />;
+    return <Navigate to="/mobile-app" replace />;
   }
 
   // Check if user account is active

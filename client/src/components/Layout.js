@@ -104,7 +104,7 @@ const Layout = ({ children }) => {
     setActiveTab(key);
     switch (key) {
       case 'home':
-        navigate('/responsive-dashboard');
+        navigate('/mobile-app');
         break;
       case 'profile':
         navigate('/profile');
@@ -128,7 +128,7 @@ const Layout = ({ children }) => {
 
   const navigation = [
     { name: '儀表板', href: '/dashboard', icon: HomeIcon },
-    { name: '響應式儀表板', href: '/responsive-dashboard', icon: RectangleStackIcon },
+    { name: '手機App版', href: '/mobile-app', icon: RectangleStackIcon },
     { name: '會員目錄', href: '/members', icon: UserGroupIcon },
     { name: '活動報名', href: '/events', icon: CalendarIcon },
     { name: '商會地基', href: '/foundation', icon: InformationCircleIcon },

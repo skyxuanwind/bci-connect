@@ -255,8 +255,8 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* 新增：響應式 Dashboard（手機版 APP 體驗，桌面維持現有設計） */}
-          <Route path="/responsive-dashboard" element={
+          {/* 新增：手機App版（手機版 APP 體驗，桌面維持現有設計） */}
+          <Route path="/mobile-app" element={
             <ProtectedRoute>
               <Layout>
                 <ResponsiveDashboard />
@@ -265,7 +265,7 @@ function App() {
           } />
 
           {/* 臨時公開版：行動端驗證用（不需登入） */}
-          <Route path="/m/responsive-dashboard" element={
+          <Route path="/m/mobile-app" element={
             <Layout>
               <ResponsiveDashboard />
             </Layout>
@@ -462,7 +462,7 @@ function App() {
         </AnimatePresence>
         {/* 浮動返回按鈕：除首頁外顯示，形成進入/返回閉環效果 */}
         <AnimatePresence initial={false}>
-          {location.pathname !== '/responsive-dashboard' && (
+          {location.pathname !== '/mobile-app' && (
             <FloatingBackButton show />
           )}
         </AnimatePresence>
