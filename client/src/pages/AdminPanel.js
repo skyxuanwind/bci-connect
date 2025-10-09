@@ -971,7 +971,7 @@ const AdminPanel = () => {
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-yellow-400 mb-4">核心功能</h2>
             <div className="grid grid-cols-1 gap-4">
-              {/* 商訪申請表 */}
+              {/* 商訪專區（含雙路由選項） */}
               <Link
                 to="/prospect-application"
                 onClick={(e) => handleCardClick(e, 'prospect')}
@@ -980,19 +980,27 @@ const AdminPanel = () => {
                 <div className="flex items-center gap-4">
                   <ClipboardDocumentListIcon className="h-7 w-7 text-yellow-300" />
                   <div>
-                    <div className="text-yellow-200 font-medium card-title">商訪申請表</div>
-                    <div className="text-gray-400 text-sm">填寫與提交商訪申請</div>
+                    <div className="text-yellow-200 font-medium card-title">商訪專區</div>
+                    <div className="text-gray-400 text-sm">商訪申請與管理入口</div>
                   </div>
                 </div>
-                <div className="card-details ${activeCard === 'prospect' ? 'open' : ''}">
-                  <p className="mt-3 text-sm text-gray-300">在此快速填寫商訪申請並提交。完成後可於商訪專區查看申請進度與結果。</p>
-                  <div className="mt-4">
+                <div className={`card-details ${activeCard === 'prospect' ? 'open' : ''}`}>
+                  <p className="mt-3 text-sm text-gray-300">在此快速進入商訪申請表或商訪專區。
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-3">
                     <Link
                       to="/prospect-application"
                       onClick={(e) => handleGoToRoute(e, '/prospect-application', 'fade')}
                       className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition"
                     >
-                      前往商訪申請
+                      前往商訪申請表
+                    </Link>
+                    <Link
+                      to="/prospect-voting"
+                      onClick={(e) => handleGoToRoute(e, '/prospect-voting', 'flip')}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-600 text-black font-medium hover:bg-yellow-500 transition"
+                    >
+                      前往商訪專區
                     </Link>
                   </div>
                 </div>
@@ -1177,9 +1185,9 @@ const AdminPanel = () => {
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-yellow-400 mb-4">幹部功能</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* 商訪專區 */}
+              {/* 商訪專區（幹部快速入口） */}
               <Link
-                to="/prospects"
+                to="/prospect-voting"
                 className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
               >
                 <div className="flex items-center gap-4">
