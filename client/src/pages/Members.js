@@ -328,9 +328,9 @@ const Members = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-6 md:gap-x-6 md:gap-y-7 xl:gap-x-8 xl:gap-y-9">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
             {members.map((member) => (
-              <div key={member.id} className="card group h-full flex flex-col overflow-hidden bg-gradient-to-br from-primary-900/80 via-primary-800/70 to-primary-900/80 border border-gold-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_18px_48px_rgba(202,161,74,0.25)] ring-1 ring-amber-400/15 hover:ring-amber-400/30 transition-all duration-300 antialiased">
+              <Link to={`/members/${member.id}`} key={member.id} className="card group h-full flex flex-col overflow-hidden bg-gradient-to-br from-primary-900/80 via-primary-800/70 to-primary-900/80 border border-gold-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_18px_48px_rgba(202,161,74,0.25)] ring-1 ring-amber-400/15 hover:ring-amber-400/30 transition-all duration-300 antialiased focus:outline-none focus:ring-2 focus:ring-amber-400">
                 {/* 50/50 Split Layout */}
                 <div className="grid grid-cols-1 md:grid-cols-2">
                   {/* Left: Avatar occupies 50% */}
@@ -350,7 +350,7 @@ const Members = () => {
                   </div>
 
                   {/* Right: Member info occupies remaining 50% */}
-                  <div className="p-6 md:p-7 flex flex-col justify-between">
+                  <div className="p-6 md:p-7 flex flex-col space-y-3">
                     {/* Basic Info */}
                     <div>
                       <h3 className="text-[16px] md:text-[17px] leading-tight font-semibold tracking-wide text-gold-100 truncate">
@@ -361,27 +361,8 @@ const Members = () => {
                       </div>
                     </div>
 
-                    {/* Company and Industry */}
-                    <div className="space-y-2 mt-4">
-                      <div className="flex items-center text-sm text-gold-300">
-                        <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
-                        {/* Mobile: clamp to 2 lines; Desktop: fully visible */}
-                        <span
-                          className="block lg:hidden whitespace-normal break-words"
-                          title={member.company}
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                          }}
-                        >
-                          {member.company}
-                        </span>
-                        <span className="hidden lg:block whitespace-normal break-words">
-                          {member.company}
-                        </span>
-                      </div>
+                    {/* Industry */}
+                    <div className="mt-2">
                       <div className="flex items-center text-sm text-gold-300">
                         <TagIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
                         {/* Mobile: clamp; Desktop: full */}
@@ -412,89 +393,11 @@ const Members = () => {
                       </div>
                     )}
 
-                    {/* Contact Info (if available) */}
-                    {member.contactNumber && canViewMember(member.membershipLevel) && (
-                      <div className="mt-3">
-                        <div className="flex items-center text-sm text-gold-300">
-                          <PhoneIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
-                          {/* Mobile: truncate; Desktop: show full */}
-                          <span className="block lg:hidden truncate">{member.contactNumber}</span>
-                          <span className="hidden lg:block break-words">{member.contactNumber}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    {canViewMember(member.membershipLevel) && (
-                      <div className="mt-4 space-y-2">
-                        {/* 快速操作按鈕組 */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            to={`/members/${member.id}`}
-                            variant="secondary"
-                            className="flex items-center justify-center text-xs py-2"
-                            title="查看會員詳細資料"
-                          >
-                            <EyeIcon className="h-3 w-3 mr-1" />
-                            詳情
-                          </Button>
-                          {/* 聯絡按鈕 */}
-                          {member.contactNumber && (
-                            <Button
-                              href={`tel:${member.contactNumber}`}
-                              variant="secondary"
-                              className="flex items-center justify-center text-xs py-2"
-                              title="撥打電話"
-                            >
-                              <PhoneIcon className="h-3 w-3 mr-1" />
-                              電話
-                            </Button>
-                          )}
-                          {/* Email按鈕 */}
-                          {member.email && (
-                            <Button
-                              href={`mailto:${member.email}`}
-                              variant="secondary"
-                              className="flex items-center justify-center text-xs py-2"
-                              title="發送郵件"
-                            >
-                              <EnvelopeIcon className="h-3 w-3 mr-1" />
-                              郵件
-                            </Button>
-                          )}
-                          {/* 名片按鈕 */}
-                          {member.nfcCardUrl && (
-                            <Button
-                              href={member.nfcCardUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              variant="secondary"
-                              className="flex items-center justify-center text-xs py-2"
-                              title="查看電子名片"
-                            >
-                              <CreditCardIcon className="h-3 w-3 mr-1" />
-                              名片
-                            </Button>
-                          )}
-                        </div>
-
-                        {/* Interview Schedule Button */}
-                        {member.interviewData && (
-                          <Button
-                            to={`/member-interview/${member.id}`}
-                            variant="primary"
-                            className="w-full flex items-center justify-center text-sm"
-                          >
-                            <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
-                            面談表
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                    {/* 移除聯絡資訊與操作按鈕，整卡可點擊導向詳情頁 */}
                   </div>
                 </div>
 
-              </div>
+              </Link>
             ))}
           </div>
 
