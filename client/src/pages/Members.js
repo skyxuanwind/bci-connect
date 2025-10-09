@@ -330,11 +330,43 @@ const Members = () => {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
             {members.map((member) => (
-              <Link to={`/members/${member.id}`} key={member.id} className="card group h-full md:aspect-[5/3] lg:aspect-[5/3] xl:aspect-[5/3] flex flex-col overflow-hidden bg-gradient-to-br from-primary-900/80 via-primary-800/70 to-primary-900/80 border border-gold-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_18px_48px_rgba(202,161,74,0.25)] ring-1 ring-amber-400/15 hover:ring-amber-400/30 transition-all duration-300 antialiased focus:outline-none focus:ring-2 focus:ring-amber-400">
-                {/* 50/50 Split Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 h-full">
-                  {/* Left: Avatar occupies 50% */}
-                  <div className="relative overflow-hidden bg-transparent md:h-full">
+              <Link to={`/members/${member.id}`} key={member.id} className="card group aspect-[2/3] flex flex-col overflow-hidden bg-gradient-to-br from-primary-900/80 via-primary-800/70 to-primary-900/80 border border-gold-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_18px_48px_rgba(202,161,74,0.25)] ring-1 ring-amber-400/15 hover:ring-amber-400/30 transition-all duration-300 antialiased focus:outline-none focus:ring-2 focus:ring-amber-400">
+                {/* 垂直上下佈局：上資訊、下頭像；固定比例並避免重排 */}
+                <div className="flex flex-col h-full select-none">
+                  {/* 上：會員資訊（固定 42% 高度，單行省略） */}
+                  <div className="flex-none basis-[42%] p-5 flex flex-col space-y-2">
+                    {/* 基本資訊 */}
+                    <div className="min-w-0">
+                      <h3 className="text-[16px] leading-tight font-semibold tracking-wide text-gold-100 whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
+                        {member.name}
+                      </h3>
+                      <div className="mt-2">
+                        {getMembershipLevelBadge(member.membershipLevel)}
+                      </div>
+                    </div>
+
+                    {/* 產業別：強制單行 */}
+                    <div className="mt-1 min-w-0">
+                      <div className="flex items-center text-sm text-gold-300 min-w-0">
+                        <TagIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
+                        <span className="whitespace-nowrap overflow-hidden text-ellipsis min-w-0" title={member.industry || '未提供'}>
+                          {member.industry || '未提供'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Chapter：單行膠囊 */}
+                    {member.chapterName && (
+                      <div className="mt-3">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gold-600 text-primary-900 whitespace-nowrap overflow-hidden text-ellipsis">
+                          {member.chapterName}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 下：會員頭像（固定 58% 高度，覆蓋容器） */}
+                  <div className="relative flex-none basis-[58%] overflow-hidden bg-transparent">
                     {member.profilePictureUrl ? (
                       <img
                         src={member.profilePictureUrl}
@@ -347,53 +379,6 @@ const Members = () => {
                       </div>
                     )}
                     <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/25 to-transparent pointer-events-none" />
-                  </div>
-
-                  {/* Right: Member info occupies remaining 50% */}
-                  <div className="p-6 md:p-7 flex flex-col space-y-3">
-                    {/* Basic Info */}
-                    <div>
-                      <h3 className="text-[16px] md:text-[17px] leading-tight font-semibold tracking-wide text-gold-100 truncate">
-                        {member.name}
-                      </h3>
-                      <div className="mt-2">
-                        {getMembershipLevelBadge(member.membershipLevel)}
-                      </div>
-                    </div>
-
-                  {/* Industry */}
-                  <div className="mt-2">
-                      <div className="flex items-center text-sm text-gold-300 min-w-0">
-                        <TagIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
-                        {/* Mobile: clamp; Desktop: full */}
-                        <span
-                          className="block lg:hidden whitespace-normal break-words"
-                          title={member.industry || '未提供'}
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                          }}
-                        >
-                          {member.industry || '未提供'}
-                        </span>
-                        <span className="hidden lg:block truncate">
-                          {member.industry || '未提供'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Chapter */}
-                    {member.chapterName && (
-                      <div className="mt-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gold-600 text-primary-900">
-                          {member.chapterName}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* 移除聯絡資訊與操作按鈕，整卡可點擊導向詳情頁 */}
                   </div>
                 </div>
 
