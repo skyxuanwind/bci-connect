@@ -8,7 +8,15 @@
   box-shadow: 0 10px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
   backdrop-filter: blur(12px) saturate(1.15);
   -webkit-backdrop-filter: blur(12px) saturate(1.15);
-  transition: transform 240ms ease, box-shadow 240ms ease, background 240ms ease, border-color 240ms ease;
+  /* 動畫一致性與性能變數 */
+  --fold-angle: 12deg;
+  --anim-ms: 300ms;
+  /* 60fps 與避免閃爍 */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  contain: layout paint;
+  transition: transform var(--anim-ms) ease, box-shadow var(--anim-ms) ease, background var(--anim-ms) ease, border-color var(--anim-ms) ease;
 }
 
 .premium-card::before {
@@ -89,12 +97,34 @@
   height: 64px;
   overflow: hidden;
   transform-origin: top center;
-  transform: perspective(800px) rotateX(12deg) translateY(-4px);
-  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), height 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 420ms ease;
+  transform: perspective(800px) rotateX(var(--fold-angle)) translateY(-4px);
+  transition: transform var(--anim-ms) cubic-bezier(0.22, 1, 0.36, 1), height var(--anim-ms) cubic-bezier(0.22, 1, 0.36, 1), opacity var(--anim-ms) ease;
   opacity: 0.88;
 }
 
 .premium-card .card-title { position: relative; z-index: 2; }
+
+/* 展開卡片與詳情區（保持標題可見） */
+.premium-card.expanded {
+  transform: translateZ(0) scale(1.01);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,215,0,0.18);
+}
+
+.premium-card .card-details {
+  pointer-events: none;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  will-change: transform, opacity, max-height;
+  transition: max-height var(--anim-ms) cubic-bezier(0.22, 1, 0.36, 1), opacity var(--anim-ms) ease, transform var(--anim-ms) ease;
+}
+
+.premium-card .card-details.open {
+  pointer-events: auto;
+  max-height: 360px;
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* 過場動畫 Overlay（光暈漸變） */
 .route-transition-overlay {
@@ -106,7 +136,7 @@
 }
 
 .route-transition-overlay.fade {
-  animation: overlayFade 420ms ease both;
+  animation: overlayFade var(--anim-ms) ease both;
 }
 
 @keyframes overlayFade {
@@ -118,7 +148,7 @@
 /* 3D 翻轉過場可選 */
 .route-transition-overlay.flip {
   transform-origin: center;
-  animation: overlayFlip 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: overlayFlip calc(var(--anim-ms) + 60ms) cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes overlayFlip {

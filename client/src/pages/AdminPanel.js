@@ -117,11 +117,10 @@ const AdminPanel = () => {
   const [activeCard, setActiveCard] = useState(null);
   const [transitionMode, setTransitionMode] = useState(null); // 'fade' | 'flip'
 
-  const handleCardClick = (e, path, id, mode = 'fade') => {
+  const handleCardClick = (e, id) => {
     e.preventDefault();
     setActiveCard(id);
     setFolding(true);
-    setTransitionMode(mode);
     const cardEl = e.currentTarget;
     const rect = cardEl.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -130,14 +129,19 @@ const AdminPanel = () => {
     cardEl.style.setProperty('--pulse-y', `${y}%`);
     cardEl.classList.add('is-clicked');
     setTimeout(() => { cardEl.classList.remove('is-clicked'); }, 520);
-    // 路由過場動畫後導向
+    // 當前卡片展開；不立即導向路由
+  };
+
+  const handleGoToRoute = (e, path, mode = 'fade') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTransitionMode(mode);
     setTimeout(() => {
       navigate(path);
-      // 重置折疊狀態（避免返回後仍折疊）
       setFolding(false);
       setActiveCard(null);
       setTransitionMode(null);
-    }, 420);
+    }, 300);
   };
   const [activeTab, setActiveTab] = useState('oath');
   const [isLoading, setIsLoading] = useState(false);
@@ -964,24 +968,33 @@ const AdminPanel = () => {
         {userRole !== 'member' && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-yellow-400 mb-4">核心功能</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {/* 商訪申請表 */}
               <Link
                 to="/prospect-application"
-                onClick={(e) => handleCardClick(e, '/prospect-application', 'prospect', 'fade')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${folding && activeCard !== 'prospect' ? 'folded' : ''}`}
+                onClick={(e) => handleCardClick(e, 'prospect')}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'prospect' ? 'expanded' : ''} ${folding && activeCard !== 'prospect' ? 'folded' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <ClipboardDocumentListIcon className="h-7 w-7 text-yellow-300" />
                   <div>
                     <div className="text-yellow-200 font-medium card-title">商訪申請表</div>
                     <div className="text-gray-400 text-sm">填寫與提交商訪申請</div>
-                    <div className="mt-2 text-xs text-gray-400">
-                      前往 <Link to="/prospects" className="text-yellow-400 hover:text-yellow-300">商訪專區</Link>
-                    </div>
                   </div>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className="card-details ${activeCard === 'prospect' ? 'open' : ''}">
+                  <p className="mt-3 text-sm text-gray-300">在此快速填寫商訪申請並提交。完成後可於商訪專區查看申請進度與結果。</p>
+                  <div className="mt-4">
+                    <Link
+                      to="/prospect-application"
+                      onClick={(e) => handleGoToRoute(e, '/prospect-application', 'fade')}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition"
+                    >
+                      前往商訪申請
+                    </Link>
+                  </div>
+                </div>
+                <span className="absolute top-3 right-3 text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
                 <div className="light-scan" aria-hidden />
                 <div className="pulse-glow" aria-hidden />
                 <span className="particle" style={{left:'12%', top:'20%'}} />
@@ -992,20 +1005,29 @@ const AdminPanel = () => {
               {/* 黑名單專區 */}
               <Link
                 to="/blacklist"
-                onClick={(e) => handleCardClick(e, '/blacklist', 'blacklist', 'fade')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${folding && activeCard !== 'blacklist' ? 'folded' : ''}`}
+                onClick={(e) => handleCardClick(e, 'blacklist')}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'blacklist' ? 'expanded' : ''} ${folding && activeCard !== 'blacklist' ? 'folded' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <ExclamationTriangleIcon className="h-7 w-7 text-yellow-300" />
                   <div>
                     <div className="text-yellow-200 font-medium card-title">黑名單專區</div>
                     <div className="text-gray-400 text-sm">維護與管理訪黑名單</div>
-                    <div className="mt-2 text-xs text-gray-400">
-                      前往 <Link to="/foundation" className="text-yellow-400 hover:text-yellow-300">操作指南</Link>
-                    </div>
                   </div>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className={`card-details ${activeCard === 'blacklist' ? 'open' : ''}`}>
+                  <p className="mt-3 text-sm text-gray-300">集中管理黑名單資料，支援新增、查詢、維護，並提供標準作業流程指南。</p>
+                  <div className="mt-4">
+                    <Link
+                      to="/blacklist"
+                      onClick={(e) => handleGoToRoute(e, '/blacklist', 'fade')}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition"
+                    >
+                      前往黑名單專區
+                    </Link>
+                  </div>
+                </div>
+                <span className="absolute top-3 right-3 text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
                 <div className="light-scan" aria-hidden />
                 <div className="pulse-glow" aria-hidden />
                 <span className="particle" style={{left:'18%', top:'26%'}} />
@@ -1016,20 +1038,29 @@ const AdminPanel = () => {
               {/* 申訴信箱 */}
               <Link
                 to="/complaints"
-                onClick={(e) => handleCardClick(e, '/complaints', 'complaints', 'fade')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${folding && activeCard !== 'complaints' ? 'folded' : ''}`}
+                onClick={(e) => handleCardClick(e, 'complaints')}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'complaints' ? 'expanded' : ''} ${folding && activeCard !== 'complaints' ? 'folded' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <ChatBubbleLeftEllipsisIcon className="h-7 w-7 text-yellow-300" />
                   <div>
                     <div className="text-yellow-200 font-medium card-title">申訴信箱</div>
                     <div className="text-gray-400 text-sm">處理成員申訴</div>
-                    <div className="mt-2 text-xs text-gray-400">
-                      前往 <Link to="/foundation" className="text-yellow-400 hover:text-yellow-300">維基指南</Link>
-                    </div>
                   </div>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className={`card-details ${activeCard === 'complaints' ? 'open' : ''}`}>
+                  <p className="mt-3 text-sm text-gray-300">統一接收與追蹤申訴案件，提供標準化處理流程與溝通紀錄。</p>
+                  <div className="mt-4">
+                    <Link
+                      to="/complaints"
+                      onClick={(e) => handleGoToRoute(e, '/complaints', 'fade')}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition"
+                    >
+                      前往申訴信箱
+                    </Link>
+                  </div>
+                </div>
+                <span className="absolute top-3 right-3 text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
                 <div className="light-scan" aria-hidden />
                 <div className="pulse-glow" aria-hidden />
                 <span className="particle" style={{left:'22%', top:'30%'}} />
@@ -1040,20 +1071,29 @@ const AdminPanel = () => {
               {/* 出席管理 */}
               <Link
                 to="/attendance-management"
-                onClick={(e) => handleCardClick(e, '/attendance-management', 'attendance', 'fade')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${folding && activeCard !== 'attendance' ? 'folded' : ''}`}
+                onClick={(e) => handleCardClick(e, 'attendance')}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'attendance' ? 'expanded' : ''} ${folding && activeCard !== 'attendance' ? 'folded' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <ClipboardDocumentCheckIcon className="h-7 w-7 text-yellow-300" />
                   <div>
                     <div className="text-yellow-200 font-medium card-title">出席管理</div>
                     <div className="text-gray-400 text-sm">管理與導出出席資料</div>
-                    <div className="mt-2 text-xs text-gray-400">
-                      前往 <Link to="/checkin-scanner" className="text-yellow-400 hover:text-yellow-300">報到系統</Link>
-                    </div>
                   </div>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className={`card-details ${activeCard === 'attendance' ? 'open' : ''}`}>
+                  <p className="mt-3 text-sm text-gray-300">管理活動出席紀錄，支援匯出報表與連動現場報到掃描系統。</p>
+                  <div className="mt-4">
+                    <Link
+                      to="/attendance-management"
+                      onClick={(e) => handleGoToRoute(e, '/attendance-management', 'fade')}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition"
+                    >
+                      前往出席管理
+                    </Link>
+                  </div>
+                </div>
+                <span className="absolute top-3 right-3 text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
                 <div className="light-scan" aria-hidden />
                 <div className="pulse-glow" aria-hidden />
                 <span className="particle" style={{left:'16%', top:'28%'}} />
@@ -1064,20 +1104,29 @@ const AdminPanel = () => {
               {/* 教練功能 */}
               <Link
                 to="/coach"
-                onClick={(e) => handleCardClick(e, '/coach', 'coach', 'flip')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${folding && activeCard !== 'coach' ? 'folded' : ''}`}
+                onClick={(e) => handleCardClick(e, 'coach')}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'coach' ? 'expanded' : ''} ${folding && activeCard !== 'coach' ? 'folded' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <SparklesIcon className="h-7 w-7 text-yellow-300" />
                   <div>
                     <div className="text-yellow-200 font-medium card-title">教練功能</div>
                     <div className="text-gray-400 text-sm">教練儀表板與學員協作工具</div>
-                    <div className="mt-2 text-xs text-gray-400">
-                      前往 <Link to="/coachees" className="text-yellow-400 hover:text-yellow-300">學員名單</Link>
-                    </div>
                   </div>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className={`card-details ${activeCard === 'coach' ? 'open' : ''}`}>
+                  <p className="mt-3 text-sm text-gray-300">集中查看學員進度、任務分配與教練指標，快速進入教練儀表板。</p>
+                  <div className="mt-4">
+                    <Link
+                      to="/coach"
+                      onClick={(e) => handleGoToRoute(e, '/coach', 'flip')}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition"
+                    >
+                      前往教練儀表板
+                    </Link>
+                  </div>
+                </div>
+                <span className="absolute top-3 right-3 text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
                 <div className="light-scan" aria-hidden />
                 <div className="pulse-glow" aria-hidden />
                 <span className="particle" style={{left:'20%', top:'22%'}} />
@@ -1088,20 +1137,29 @@ const AdminPanel = () => {
               {/* 財務收支表 */}
               <Link
                 to="/financial"
-                onClick={(e) => handleCardClick(e, '/financial', 'financial', 'fade')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 flex items-center justify-between bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${folding && activeCard !== 'financial' ? 'folded' : ''}`}
+                onClick={(e) => handleCardClick(e, 'financial')}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'financial' ? 'expanded' : ''} ${folding && activeCard !== 'financial' ? 'folded' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <CurrencyDollarIcon className="h-7 w-7 text-yellow-300" />
                   <div>
                     <div className="text-yellow-200 font-medium card-title">財務收支表</div>
                     <div className="text-gray-400 text-sm">管理商會財務記錄與查詢</div>
-                    <div className="mt-2 text-xs text-gray-400">
-                      前往 <Link to="/foundation" className="text-yellow-400 hover:text-yellow-300">維基指南</Link>
-                    </div>
                   </div>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+                <div className={`card-details ${activeCard === 'financial' ? 'open' : ''}`}>
+                  <p className="mt-3 text-sm text-gray-300">查詢與管理財務收支紀錄，提供分類、篩選與明細匯出功能。</p>
+                  <div className="mt-4">
+                    <Link
+                      to="/financial"
+                      onClick={(e) => handleGoToRoute(e, '/financial', 'fade')}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition"
+                    >
+                      前往財務收支表
+                    </Link>
+                  </div>
+                </div>
+                <span className="absolute top-3 right-3 text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
                 <div className="light-scan" aria-hidden />
                 <div className="pulse-glow" aria-hidden />
                 <span className="particle" style={{left:'24%', top:'24%'}} />
