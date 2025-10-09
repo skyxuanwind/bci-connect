@@ -330,23 +330,23 @@ const Members = () => {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
             {members.map((member) => (
-              <Link to={`/members/${member.id}`} key={member.id} className="card group h-full flex flex-col overflow-hidden bg-gradient-to-br from-primary-900/80 via-primary-800/70 to-primary-900/80 border border-gold-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_18px_48px_rgba(202,161,74,0.25)] ring-1 ring-amber-400/15 hover:ring-amber-400/30 transition-all duration-300 antialiased focus:outline-none focus:ring-2 focus:ring-amber-400">
+              <Link to={`/members/${member.id}`} key={member.id} className="card group h-full md:aspect-[5/3] lg:aspect-[5/3] xl:aspect-[5/3] flex flex-col overflow-hidden bg-gradient-to-br from-primary-900/80 via-primary-800/70 to-primary-900/80 border border-gold-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] hover:shadow-[0_18px_48px_rgba(202,161,74,0.25)] ring-1 ring-amber-400/15 hover:ring-amber-400/30 transition-all duration-300 antialiased focus:outline-none focus:ring-2 focus:ring-amber-400">
                 {/* 50/50 Split Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 h-full">
                   {/* Left: Avatar occupies 50% */}
-                  <div className="relative overflow-hidden bg-primary-900/40">
+                  <div className="relative overflow-hidden bg-transparent md:h-full">
                     {member.profilePictureUrl ? (
                       <img
                         src={member.profilePictureUrl}
                         alt={member.name}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full p-6">
                         <Avatar src={member.profilePictureUrl} alt={member.name} size="2xl" />
                       </div>
                     )}
-                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/25 to-transparent pointer-events-none" />
                   </div>
 
                   {/* Right: Member info occupies remaining 50% */}
@@ -361,9 +361,9 @@ const Members = () => {
                       </div>
                     </div>
 
-                    {/* Industry */}
-                    <div className="mt-2">
-                      <div className="flex items-center text-sm text-gold-300">
+                  {/* Industry */}
+                  <div className="mt-2">
+                      <div className="flex items-center text-sm text-gold-300 min-w-0">
                         <TagIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gold-300" />
                         {/* Mobile: clamp; Desktop: full */}
                         <span
@@ -378,7 +378,7 @@ const Members = () => {
                         >
                           {member.industry || '未提供'}
                         </span>
-                        <span className="hidden lg:block whitespace-normal break-words">
+                        <span className="hidden lg:block truncate">
                           {member.industry || '未提供'}
                         </span>
                       </div>
