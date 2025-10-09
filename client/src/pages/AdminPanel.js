@@ -3,6 +3,15 @@ import { toast } from 'react-toastify';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../config/axios';
 import CeremonyVideoManagement from '../components/admin/CeremonyVideoManagement';
+import {
+  ClipboardDocumentListIcon,
+  ExclamationTriangleIcon,
+  ChatBubbleLeftEllipsisIcon,
+  ClipboardDocumentCheckIcon,
+  UsersIcon,
+  CurrencyDollarIcon,
+  QrCodeIcon,
+} from '@heroicons/react/24/outline';
 
 // 添加橋樑設計的CSS樣式
 const bridgeStyles = `
@@ -918,40 +927,147 @@ const AdminPanel = () => {
 
       {/* 主要內容 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 核心功能快捷選單 */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">核心功能</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link to="/prospect-application" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
-              <div className="text-gray-900 font-medium">商訪申請表</div>
-              <div className="text-gray-500 text-sm">填寫與提交商訪申請</div>
-            </Link>
-            <Link to="/prospect-voting" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
-              <div className="text-gray-900 font-medium">商訪專區</div>
-              <div className="text-gray-500 text-sm">查看與管理商訪</div>
-            </Link>
-            <Link to="/blacklist" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
-              <div className="text-gray-900 font-medium">黑名單專區</div>
-              <div className="text-gray-500 text-sm">維護與查詢黑名單</div>
-            </Link>
-            <Link to="/financial" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
-              <div className="text-gray-900 font-medium">財務收支表</div>
-              <div className="text-gray-500 text-sm">查看財務記錄</div>
-            </Link>
-            <Link to="/complaints" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
-              <div className="text-gray-900 font-medium">申訴信箱</div>
-              <div className="text-gray-500 text-sm">處理成員申訴</div>
-            </Link>
-            <Link to="/checkin-scanner" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
-              <div className="text-gray-900 font-medium">報到系統</div>
-              <div className="text-gray-500 text-sm">活動現場掃描報到</div>
-            </Link>
-            <Link to="/attendance-management" className="block bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition">
-              <div className="text-gray-900 font-medium">出席管理</div>
-              <div className="text-gray-500 text-sm">管理與導出出席資料</div>
-            </Link>
+        {/* 核心功能 - Material Card 風格 */}
+        {userRole !== 'member' && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-yellow-400 mb-4">核心功能</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* 商訪申請表 */}
+              <Link
+                to="/prospect-application"
+                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <ClipboardDocumentListIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">商訪申請表</div>
+                    <div className="text-gray-400 text-sm">填寫與提交商訪申請</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/prospects" className="text-yellow-400 hover:text-yellow-300">商訪專區</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+              </Link>
+
+              {/* 黑名單專區 */}
+              <Link
+                to="/blacklist"
+                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <ExclamationTriangleIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">黑名單專區</div>
+                    <div className="text-gray-400 text-sm">維護與管理訪黑名單</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/foundation" className="text-yellow-400 hover:text-yellow-300">操作指南</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+              </Link>
+
+              {/* 申訴信箱 */}
+              <Link
+                to="/complaints"
+                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <ChatBubbleLeftEllipsisIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">申訴信箱</div>
+                    <div className="text-gray-400 text-sm">處理成員申訴</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/foundation" className="text-yellow-400 hover:text-yellow-300">維基指南</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+              </Link>
+
+              {/* 出席管理 */}
+              <Link
+                to="/attendance-management"
+                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <ClipboardDocumentCheckIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">出席管理</div>
+                    <div className="text-gray-400 text-sm">管理與導出出席資料</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/checkin-scanner" className="text-yellow-400 hover:text-yellow-300">報到系統</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">核心</span>
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* 幹部功能 - 僅限管理員 */}
+        {userRole === 'admin' && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-yellow-400 mb-4">幹部功能</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* 商訪專區 */}
+              <Link
+                to="/prospects"
+                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <UsersIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">商訪專區</div>
+                    <div className="text-gray-400 text-sm">查看與管理商訪</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/prospect-application" className="text-yellow-400 hover:text-yellow-300">商訪申請表</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">幹部</span>
+              </Link>
+
+              {/* 財務收支表 */}
+              <Link
+                to="/finance"
+                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <CurrencyDollarIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">財務收支表</div>
+                    <div className="text-gray-400 text-sm">管理財務記錄</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/foundation" className="text-yellow-400 hover:text-yellow-300">維基指南</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">幹部</span>
+              </Link>
+
+              {/* 報到系統 */}
+              <Link
+                to="/checkin-scanner"
+                className="group rounded-2xl bg-gradient-to-br from-black/60 via-yellow-900/30 to-yellow-800/20 border border-yellow-600/40 shadow-xl p-4 flex items-center justify-between hover:border-yellow-400/80 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <QrCodeIcon className="h-7 w-7 text-yellow-300" />
+                  <div>
+                    <div className="text-yellow-200 font-medium">報到系統</div>
+                    <div className="text-gray-400 text-sm">活動現場報到掃描</div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      前往 <Link to="/attendance-management" className="text-yellow-400 hover:text-yellow-300">出席管理</Link>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-yellow-700/30 text-yellow-300">幹部</span>
+              </Link>
+            </div>
+          </div>
+        )}
         {/* 標籤導航 - 僅管理員可見 */}
         {userRole === 'admin' && (
           <div className="mb-8">
