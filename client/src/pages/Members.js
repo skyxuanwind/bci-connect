@@ -328,11 +328,11 @@ const Members = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
             {members.map((member) => (
               <div key={member.id} className="card overflow-hidden bg-gradient-to-br from-primary-800 via-primary-700 to-primary-800 border border-gold-700 rounded-xl hover:shadow-2xl hover:border-gold-500/80 transition-shadow duration-300">
                 {/* 50/50 Split Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 md:h-56">
+                <div className="grid grid-cols-1 md:grid-cols-2">
                   {/* Left: Avatar occupies 50% */}
                   <div className="relative overflow-hidden bg-primary-900/40">
                     {member.profilePictureUrl ? (
@@ -365,8 +365,9 @@ const Members = () => {
                     <div className="space-y-2 mt-4">
                       <div className="flex items-center text-sm text-gold-300">
                         <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                        {/* Mobile: clamp to 2 lines; Desktop: fully visible */}
                         <span
-                          className="whitespace-normal break-words"
+                          className="block lg:hidden whitespace-normal break-words"
                           title={member.company}
                           style={{
                             display: '-webkit-box',
@@ -377,11 +378,15 @@ const Members = () => {
                         >
                           {member.company}
                         </span>
+                        <span className="hidden lg:block whitespace-normal break-words">
+                          {member.company}
+                        </span>
                       </div>
                       <div className="flex items-center text-sm text-gold-300">
                         <TagIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                        {/* Mobile: clamp; Desktop: full */}
                         <span
-                          className="whitespace-normal break-words"
+                          className="block lg:hidden whitespace-normal break-words"
                           title={member.industry || '未提供'}
                           style={{
                             display: '-webkit-box',
@@ -390,6 +395,9 @@ const Members = () => {
                             overflow: 'hidden'
                           }}
                         >
+                          {member.industry || '未提供'}
+                        </span>
+                        <span className="hidden lg:block whitespace-normal break-words">
                           {member.industry || '未提供'}
                         </span>
                       </div>
@@ -409,7 +417,9 @@ const Members = () => {
                       <div className="mt-3">
                         <div className="flex items-center text-sm text-gold-300">
                           <PhoneIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                          <span className="truncate">{member.contactNumber}</span>
+                          {/* Mobile: truncate; Desktop: show full */}
+                          <span className="block lg:hidden truncate">{member.contactNumber}</span>
+                          <span className="hidden lg:block break-words">{member.contactNumber}</span>
                         </div>
                       </div>
                     )}
