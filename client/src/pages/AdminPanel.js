@@ -116,11 +116,19 @@ const AdminPanel = () => {
   const [folding, setFolding] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const [transitionMode, setTransitionMode] = useState(null); // 'fade' | 'flip'
+  // 展開掃描僅觸發一次：記錄已觸發的卡片
+  const [scannedCards, setScannedCards] = useState(new Set());
 
   const handleCardClick = (e, id) => {
     e.preventDefault();
     setActiveCard(id);
     setFolding(true);
+    // 標記卡片已觸發一次掃描效果
+    setScannedCards((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
     const cardEl = e.currentTarget;
     const rect = cardEl.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -936,14 +944,8 @@ const AdminPanel = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                ← 返回儀表板
-              </button>
-              <h1 className="text-2xl font-bold text-gray-800">管理員控制面板</h1>
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-800">核心管理面板</h1>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">權限:</span>
@@ -973,7 +975,7 @@ const AdminPanel = () => {
               <Link
                 to="/prospect-application"
                 onClick={(e) => handleCardClick(e, 'prospect')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'prospect' ? 'expanded' : ''} ${folding && activeCard !== 'prospect' ? 'folded' : ''}`}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'prospect' ? 'expanded' : ''} ${folding && activeCard !== 'prospect' ? 'folded' : ''} ${scannedCards.has('prospect') ? 'has-scanned' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <ClipboardDocumentListIcon className="h-7 w-7 text-yellow-300" />
@@ -1006,7 +1008,7 @@ const AdminPanel = () => {
               <Link
                 to="/blacklist"
                 onClick={(e) => handleCardClick(e, 'blacklist')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'blacklist' ? 'expanded' : ''} ${folding && activeCard !== 'blacklist' ? 'folded' : ''}`}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'blacklist' ? 'expanded' : ''} ${folding && activeCard !== 'blacklist' ? 'folded' : ''} ${scannedCards.has('blacklist') ? 'has-scanned' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <ExclamationTriangleIcon className="h-7 w-7 text-yellow-300" />
@@ -1039,7 +1041,7 @@ const AdminPanel = () => {
               <Link
                 to="/complaints"
                 onClick={(e) => handleCardClick(e, 'complaints')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'complaints' ? 'expanded' : ''} ${folding && activeCard !== 'complaints' ? 'folded' : ''}`}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'complaints' ? 'expanded' : ''} ${folding && activeCard !== 'complaints' ? 'folded' : ''} ${scannedCards.has('complaints') ? 'has-scanned' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <ChatBubbleLeftEllipsisIcon className="h-7 w-7 text-yellow-300" />
@@ -1072,7 +1074,7 @@ const AdminPanel = () => {
               <Link
                 to="/attendance-management"
                 onClick={(e) => handleCardClick(e, 'attendance')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'attendance' ? 'expanded' : ''} ${folding && activeCard !== 'attendance' ? 'folded' : ''}`}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'attendance' ? 'expanded' : ''} ${folding && activeCard !== 'attendance' ? 'folded' : ''} ${scannedCards.has('attendance') ? 'has-scanned' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <ClipboardDocumentCheckIcon className="h-7 w-7 text-yellow-300" />
@@ -1105,7 +1107,7 @@ const AdminPanel = () => {
               <Link
                 to="/coach"
                 onClick={(e) => handleCardClick(e, 'coach')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'coach' ? 'expanded' : ''} ${folding && activeCard !== 'coach' ? 'folded' : ''}`}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'coach' ? 'expanded' : ''} ${folding && activeCard !== 'coach' ? 'folded' : ''} ${scannedCards.has('coach') ? 'has-scanned' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <SparklesIcon className="h-7 w-7 text-yellow-300" />
@@ -1138,7 +1140,7 @@ const AdminPanel = () => {
               <Link
                 to="/financial"
                 onClick={(e) => handleCardClick(e, 'financial')}
-                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'financial' ? 'expanded' : ''} ${folding && activeCard !== 'financial' ? 'folded' : ''}`}
+                className={`group premium-card rounded-2xl border border-gold-600 p-4 bg-primary-800/50 hover:bg-primary-700/60 transition-all duration-300 ${activeCard === 'financial' ? 'expanded' : ''} ${folding && activeCard !== 'financial' ? 'folded' : ''} ${scannedCards.has('financial') ? 'has-scanned' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <CurrencyDollarIcon className="h-7 w-7 text-yellow-300" />
