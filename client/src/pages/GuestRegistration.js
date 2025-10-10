@@ -127,16 +127,17 @@ const GuestRegistration = () => {
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">活動報名</h1>
           
-          {/* 活動圖片 */}
+          {/* 活動圖片（響應式比例與清晰度優化） */}
           {event.poster_image_url && (
-            <div className="mb-6">
-              <img 
-                src={event.poster_image_url} 
+            <div className="mb-6 event-poster-container">
+              <img
+                src={event.poster_image_url}
                 alt={event.title}
-                className="w-full max-h-160 object-contain rounded-lg bg-gray-50"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
+                className="event-poster-img"
+                loading="lazy"
+                decoding="async"
+                sizes="(min-width: 1024px) 1100px, (min-width: 640px) 800px, 100vw"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
             </div>
           )}

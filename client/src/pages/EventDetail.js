@@ -204,17 +204,17 @@ const EventDetail = () => {
 
         {/* Event Header */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Event Poster */}
+          {/* Event Poster (responsive, maintain aspect ratio without cropping) */}
           {event.poster_image_url && (
-            <div className="w-full h-64 md:h-80 overflow-hidden">
+            <div className="mb-6 event-poster-container">
               <img
                 src={event.poster_image_url}
                 alt={event.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error('Image failed to load:', e.target.src);
-                  e.target.style.display = 'none';
-                }}
+                className="event-poster-img"
+                loading="lazy"
+                decoding="async"
+                sizes="(min-width: 1024px) 1100px, (min-width: 640px) 800px, 100vw"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
             </div>
           )}

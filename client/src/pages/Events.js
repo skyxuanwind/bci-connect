@@ -121,17 +121,17 @@ const Events = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
               <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                {/* Event Poster */}
+                {/* Event Poster (responsive, consistent with detail/guest pages) */}
                 {event.poster_image_url && (
-                  <div className="w-full h-48 overflow-hidden">
+                  <div className="event-poster-container">
                     <img
                       src={event.poster_image_url}
                       alt={event.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        console.error('Image failed to load:', e.target.src);
-                        e.target.style.display = 'none';
-                      }}
+                      className="event-poster-img"
+                      loading="lazy"
+                      decoding="async"
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   </div>
                 )}

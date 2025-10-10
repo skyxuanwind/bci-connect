@@ -26,6 +26,39 @@
 }
 
 @layer components {
+  /* 活動圖片響應式容器與比例控制 */
+  .event-poster-container {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    border-radius: 0.75rem; /* 對齊整體圓角風格 */
+    background-color: #f9fafb; /* 與卡片背景一致的淺灰底 */
+    overflow: hidden; /* 防止內容溢出 */
+    aspect-ratio: 4 / 3; /* 行動裝置預設比例：4:3，避免過高或過窄 */
+  }
+  @media (min-width: 640px) {
+    .event-poster-container {
+      aspect-ratio: 16 / 9; /* 中小螢幕以上採用 16:9，更符合橫幅型海報 */
+    }
+  }
+  @media (min-width: 1024px) {
+    .event-poster-container {
+      max-width: 1100px; /* 大螢幕上適度放大展示 */
+    }
+  }
+
+  .event-poster-img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain; /* 保持圖片完整與正確比例，不裁切內容 */
+    object-position: center;
+    image-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f9fafb; /* 若透明背景，保持一致的底色 */
+  }
+
   /* Scrollbar Hide */
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
