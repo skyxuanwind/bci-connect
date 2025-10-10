@@ -67,7 +67,7 @@ const AvatarUpload = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
             <img
               src={preview}
               alt="頭像預覽"
-              className="w-full h-full object-cover rounded-full"
+              className="w-full h-full object-contain rounded-full"
             />
           ) : (
             <div className="text-center">
