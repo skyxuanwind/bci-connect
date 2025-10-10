@@ -362,7 +362,7 @@ const Members = () => {
                 <div className="flex-1 flex items-center justify-center p-3 sm:p-4 lg:p-5 pt-0">
                   <div className="w-full max-w-[120px] sm:max-w-[140px] lg:max-w-[160px] aspect-square">
                     <Avatar
-                      src={member.avatar_url}
+                      src={member.profilePictureUrl}
                       alt={member.name}
                       size="full"
                       className="w-full h-full object-contain object-center rounded-lg border-2 border-gold-600/20 hover:border-gold-500/40 transition-colors duration-300"
