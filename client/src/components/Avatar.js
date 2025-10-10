@@ -33,7 +33,7 @@ const Avatar = ({
         <img
           src={src}
           alt={alt}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain object-center"
           onError={(e) => {
             // 如果圖片載入失敗，隱藏圖片並顯示預設圖標
             e.target.style.display = 'none';

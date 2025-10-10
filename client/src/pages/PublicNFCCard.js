@@ -209,7 +209,7 @@ const PublicNFCCard = () => {
               <img 
                 src={block.content_data.url}
                 alt={block.content_data.alt || '圖片'}
-                className="w-full rounded-lg shadow-md object-cover"
+                className="w-full rounded-lg shadow-md object-contain"
                 style={{ maxHeight: '400px' }}
               />
             ) : (
@@ -400,7 +400,7 @@ const PublicNFCCard = () => {
                 <img 
                   src={member.profile_picture_url} 
                   alt={member.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain object-center"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

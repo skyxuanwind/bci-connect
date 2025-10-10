@@ -1100,7 +1100,7 @@ const DigitalWallet = () => {
                       <img
                         src={imgUrl}
                         alt="掃描名片"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain object-center"
                         onError={(e) => {
                           // 嘗試 HTTPS 重試一次
                           const currentSrc = e.currentTarget.src;
