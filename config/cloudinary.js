@@ -15,8 +15,14 @@ const storage = new CloudinaryStorage({
     folder: 'bci-connect/events', // Organize uploads in folders
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
     transformation: [
-      { width: 800, height: 600, crop: 'limit' }, // Limit image size
-      { quality: 'auto' } // Optimize quality
+      // 自動修剪去除邊緣白邊
+      { effect: 'trim' },
+      // 控制寬度上限，保持原始比例
+      { width: 1100, crop: 'limit' },
+      // 最佳化輸出
+      { quality: 'auto' },
+      { fetch_format: 'auto' },
+      { dpr: 'auto' }
     ]
   }
 });

@@ -129,7 +129,7 @@ const GuestRegistration = () => {
           
           {/* 活動圖片（響應式比例與清晰度優化） */}
           {event.poster_image_url && (
-            <div className="mb-6 event-poster-container">
+            <div className="mb-6 event-poster-container poster--compact">
               <img
                 src={event.poster_image_url}
                 alt={event.title}

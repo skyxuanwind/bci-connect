@@ -59,6 +59,30 @@
     background-color: #f9fafb; /* 若透明背景，保持一致的底色 */
   }
 
+  /* ===== Poster Variants ===== */
+  /* 無底色：移除任何容器與圖片背景色，避免白底突兀 */
+  .event-poster-container.poster--no-bg {
+    background-color: transparent;
+  }
+  .event-poster-container.poster--no-bg .event-poster-img {
+    background-color: transparent;
+  }
+
+  /* 原始尺寸：取消固定比例，依圖片本身高寬顯示 */
+  .event-poster-container.poster--intrinsic {
+    aspect-ratio: auto;
+    overflow: visible;
+  }
+  .event-poster-container.poster--intrinsic .event-poster-img {
+    height: auto;
+  }
+
+  /* 精緻留白：為圖片周圍提供柔和間距，避免突兀 */
+  .event-poster-container.poster--compact {
+    padding: clamp(8px, 2vw, 16px);
+    box-sizing: border-box;
+  }
+
   /* Scrollbar Hide */
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */

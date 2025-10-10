@@ -14,8 +14,14 @@ const uploadBufferToCloudinary = async (buffer) => {
         folder: 'bci-connect/events',
         resource_type: 'image',
         transformation: [
-          { width: 800, height: 600, crop: 'limit' },
-          { quality: 'auto' }
+          // 自動去除邊緣單色背景（多為白邊）
+          { effect: 'trim' },
+          // 寬度上限，保持長寬比，不強制高度限制
+          { width: 1100, crop: 'limit' },
+          // 圖片最佳化
+          { quality: 'auto' },
+          { fetch_format: 'auto' },
+          { dpr: 'auto' }
         ]
       },
       (error, result) => {
@@ -25,6 +31,26 @@ const uploadBufferToCloudinary = async (buffer) => {
     );
     uploadStream.end(buffer);
   });
+};
+
+// 將 Cloudinary 圖片 URL 插入前端展示最佳化的變換（e_trim 與寬度/品質）
+const transformCloudinaryUrl = (url) => {
+  try {
+    if (!url || typeof url !== 'string') return url;
+    const marker = '/image/upload/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return url; // 非 Cloudinary 標準路徑
+
+    // 若已包含 e_trim 則視為已處理
+    const rest = url.substring(idx + marker.length);
+    if (rest.startsWith('e_trim')) return url;
+
+    // 插入我們的變換片段
+    const transform = 'e_trim,w_1100,q_auto,f_auto,dpr_auto/';
+    return url.replace(marker, `${marker}${transform}`);
+  } catch (e) {
+    return url;
+  }
 };
 
 // Configure file filter for multer
@@ -189,9 +215,15 @@ router.get('/', authenticateToken, async (req, res) => {
       ORDER BY e.event_date ASC
     `);
     
+    // 套用 Cloudinary 展示變換
+    const events = result.rows.map(evt => ({
+      ...evt,
+      poster_image_url: transformCloudinaryUrl(evt.poster_image_url)
+    }));
+
     res.json({
       success: true,
-      events: result.rows
+      events
     });
   } catch (error) {
     console.error('Error fetching events:', error);
@@ -226,6 +258,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
     
     const event = eventResult.rows[0];
+    // 套用 Cloudinary 展示變換
+    event.poster_image_url = transformCloudinaryUrl(event.poster_image_url);
     
     // 檢查用戶是否已報名
     const registrationResult = await pool.query(`
@@ -458,9 +492,11 @@ router.get('/:id/public', async (req, res) => {
       });
     }
     
+    const event = result.rows[0];
+    event.poster_image_url = transformCloudinaryUrl(event.poster_image_url);
     res.json({
       success: true,
-      event: result.rows[0]
+      event
     });
   } catch (error) {
     console.error('Error fetching public event info:', error);

@@ -203,10 +203,10 @@ const EventDetail = () => {
         </div>
 
         {/* Event Header */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="rounded-lg overflow-hidden">
           {/* Event Poster (responsive, maintain aspect ratio without cropping) */}
           {event.poster_image_url && (
-            <div className="mb-6 event-poster-container">
+            <div className="mb-4 event-poster-container poster--no-bg poster--intrinsic poster--compact">
               <img
                 src={event.poster_image_url}
                 alt={event.title}
@@ -219,7 +219,7 @@ const EventDetail = () => {
             </div>
           )}
           
-          <div className="p-6">
+          <div className="p-6 bg-white rounded-lg shadow-md">
             <div className="flex items-start justify-between mb-2">
               <h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
               {getStatusBadge(event.status)}
