@@ -20,8 +20,8 @@ const checkAttendancePermission = async (req, res, next) => {
     
     const user = userResult.rows[0];
     
-    // 管理員或核心可以進行報到操作
-    if (user.membership_level === 1 || user.status === 'admin') {
+    // 管理員或核心可以進行報到操作（統一以 req.user.is_admin 判斷管理員）
+    if (req.user.is_admin || user.membership_level === 1) {
       next();
     } else {
       return res.status(403).json({ success: false, message: '權限不足，僅限活動工作人員使用' });
@@ -331,7 +331,7 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
     }
     
     const user = userResult.rows[0];
-    if (user.membership_level !== 1 && user.status !== 'admin') {
+    if (!req.user.is_admin && user.membership_level !== 1) {
       return res.status(403).json({ success: false, message: '權限不足' });
     }
     
@@ -414,7 +414,7 @@ router.get('/statistics', authenticateToken, async (req, res) => {
     }
     
     const user = userResult.rows[0];
-    if (user.membership_level !== 1 && user.status !== 'admin') {
+    if (!req.user.is_admin && user.membership_level !== 1) {
       return res.status(403).json({ success: false, message: '權限不足' });
     }
     
@@ -462,7 +462,7 @@ router.delete('/record/:recordId', authenticateToken, async (req, res) => {
       [userId]
     );
     
-    if (userResult.rows.length === 0 || (userResult.rows[0].membership_level !== 1 && userResult.rows[0].status !== 'admin')) {
+    if (userResult.rows.length === 0 || (!req.user.is_admin && userResult.rows[0].membership_level !== 1)) {
       return res.status(403).json({ success: false, message: '權限不足，僅限管理員或核心工作人員使用' });
     }
     

@@ -493,6 +493,17 @@ router.post('/login', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
+    // Compute admin flag (consistent with middleware)
+    const emailLower = String(user.email || '').toLowerCase();
+    const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').toLowerCase();
+    const isSystemAdmin = (
+      (defaultAdminEmail && emailLower === defaultAdminEmail) ||
+      emailLower === 'admin@bci-club.com' ||
+      String(user.status).toLowerCase() === 'admin' ||
+      String(user.membership_level).toLowerCase() === 'admin' ||
+      Number(user.id) === 1
+    );
+
     res.json({
       message: '登入成功',
       token,
@@ -514,7 +525,9 @@ router.post('/login', async (req, res) => {
         isCoach: !!user.is_coach,
         coachUserId: user.coach_user_id,
         mbti: user.mbti,
-        mbtiPublic: user.mbti_public
+        mbtiPublic: user.mbti_public,
+        // Expose unified admin flag for frontend
+        isAdminUser: !!isSystemAdmin
       }
     });
 
@@ -558,6 +571,17 @@ router.get('/me', authenticateToken, async (req, res) => {
       }
     }
 
+    // Compute admin flag (consistent with middleware)
+    const emailLower = String(user.email || '').toLowerCase();
+    const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').toLowerCase();
+    const isSystemAdmin = (
+      (defaultAdminEmail && emailLower === defaultAdminEmail) ||
+      emailLower === 'admin@bci-club.com' ||
+      String(user.status).toLowerCase() === 'admin' ||
+      String(user.membership_level).toLowerCase() === 'admin' ||
+      Number(user.id) === 1
+    );
+
     res.json({
       user: {
         id: user.id,
@@ -581,7 +605,9 @@ router.get('/me', authenticateToken, async (req, res) => {
         mbtiPublic: user.mbti_public,
         // 新增：教練權限資訊，供前端保留教練狀態
         isCoach: !!user.is_coach,
-        coachUserId: user.coach_user_id
+        coachUserId: user.coach_user_id,
+        // 新增：統一管理員旗標，供前端權限判斷
+        isAdminUser: !!isSystemAdmin
       }
     });
 

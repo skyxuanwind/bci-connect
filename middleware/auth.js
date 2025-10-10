@@ -46,11 +46,27 @@ const authenticateToken = async (req, res, next) => {
       return res.status(403).json({ message: '帳號未啟用或已被停用' });
     }
 
-    // Attach computed admin flag for downstream checks
-    req.user = { 
-      ...user, 
-      // Admin: highest membership level
-      is_admin: user.membership_level === 1,
+    // Attach computed role flags for downstream checks
+    const emailLower = String(user.email || '').toLowerCase();
+    const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').toLowerCase();
+    const isSystemAdmin = (
+      // Primary: configured default admin email
+      (defaultAdminEmail && emailLower === defaultAdminEmail) ||
+      // Fallback: known admin email used in production/test
+      emailLower === 'admin@bci-club.com' ||
+      // Legacy data compatibility: status or membership_level recorded as 'admin'
+      String(user.status).toLowerCase() === 'admin' ||
+      String(user.membership_level).toLowerCase() === 'admin' ||
+      // Safety fallback: first user often seeded as system admin
+      Number(user.id) === 1
+    );
+
+    req.user = {
+      ...user,
+      // Admin: explicit system admin, distinct from core members
+      is_admin: !!isSystemAdmin,
+      // Core member flag (Level 1)
+      is_core: Number(user.membership_level) === 1,
       // Coach flags
       is_coach: !!user.is_coach,
       coach_user_id: user.coach_user_id,
