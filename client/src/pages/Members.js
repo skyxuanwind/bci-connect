@@ -371,7 +371,7 @@ const Members = () => {
                       <img
                         src={member.profilePictureUrl}
                         alt={member.name}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-contain object-center"
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full p-6">

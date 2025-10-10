@@ -503,10 +503,10 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="md:pl-64 flex flex-col flex-1">
+      <div className="md:pl-64 flex flex-col flex-1 min-h-[100dvh]">
         <TopBar />
-        <main>
-          <div className="py-6">
+        <main className="flex-1 overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="py-6 pb-[88px] md:pb-6">
             <div className="px-4 sm:px-6 md:px-8">
               {children}
             </div>
