@@ -329,42 +329,42 @@ const Members = () => {
         </div>
       ) : (
         <>
-          {/* 會員網格 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          {/* 會員網格 - 手機端兩列、保持間距與對齊 */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6 items-stretch">
             {members.map((member) => (
               <div
                 key={member.id}
                 onClick={() => navigate(`/members/${member.id}`)}
-                className="bg-gradient-to-br from-primary-800 via-primary-800 to-primary-900 border border-gold-600/40 rounded-2xl overflow-hidden hover:border-gold-500/60 hover:shadow-2xl hover:shadow-gold-500/20 transition-all duration-500 hover:-translate-y-2 flex flex-col cursor-pointer group backdrop-blur-sm relative"
+                className="bg-gradient-to-br from-primary-800 via-primary-800 to-primary-900 border border-gold-600/40 rounded-2xl overflow-hidden hover:border-gold-500/60 hover:shadow-2xl hover:shadow-gold-500/20 transition-all duration-500 hover:-translate-y-2 flex flex-col cursor-pointer group backdrop-blur-sm relative h-full"
               >
                 {/* 高級光澤效果 */}
                 <div className="absolute inset-0 bg-gradient-to-br from-gold-500/5 via-transparent to-gold-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                 
                 {/* 會員資訊區域 - 自適應高度 */}
                 <div className="flex-shrink-0 p-4 sm:p-5 lg:p-6 space-y-3 relative z-10">
-                  {/* 分會資訊 - 最頂部顯著位置 */}
-                  <div className="flex items-center justify-center mb-2">
-                    <div className="bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400 text-primary-900 px-4 py-2 rounded-full text-xs font-bold shadow-xl border border-gold-400/30 backdrop-blur-sm">
-                      <BuildingOfficeIcon className="h-3 w-3 inline mr-1.5" />
-                      {member.chapterName || '未設定分會'}
-                    </div>
-                  </div>
-                  
-                  {/* 產業別 - 移至最上方 */}
+                  {/* 專業別（產業別） - 最上方 */}
                   <div className="text-gold-200 text-lg sm:text-xl lg:text-2xl text-center font-medium">
                     <span className="break-words hyphens-auto leading-relaxed drop-shadow-sm">
                       {member.industry || '未設定'}
                     </span>
                   </div>
-                  
-                  {/* 會員名稱 - 縮減與產業別間距至8px */}
+
+                  {/* 姓名 */}
                   <div className="mt-2">
                     <h3 className="text-gold-100 font-bold text-base sm:text-lg lg:text-xl break-words hyphens-auto leading-relaxed text-center drop-shadow-md">
                       {member.name}
                     </h3>
                   </div>
-                  
-                  {/* 會員等級 - 增強視覺效果 */}
+
+                  {/* 分會資訊 */}
+                  <div className="flex items-center justify-center mt-2">
+                    <div className="bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400 text-primary-900 px-4 py-2 rounded-full text-xs font-bold shadow-xl border border-gold-400/30 backdrop-blur-sm">
+                      <BuildingOfficeIcon className="h-3 w-3 inline mr-1.5" />
+                      {member.chapterName || '未設定分會'}
+                    </div>
+                  </div>
+
+                  {/* 會員等級（權限） */}
                   <div className="flex items-center justify-center mt-3">
                     <div className="relative">
                       <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-xl border-2 ${getMembershipLevelBadge(member.membership_level)} transform hover:scale-110 transition-all duration-300 backdrop-blur-sm`}>
@@ -388,7 +388,7 @@ const Members = () => {
                       size="xl"
                       fallbackIcon={GoldAvatarIcon}
                       fallbackIconClass="text-gold-400"
-                      className="w-full h-full object-contain object-center rounded-2xl border-3 border-gold-600/30 hover:border-gold-500/50 transition-all duration-500 shadow-2xl backdrop-blur-sm relative z-10 group-hover:shadow-gold-500/30"
+                      className="w-full h-full object-contain object-center rounded-2xl border-3 border-gold-600/30 hover:border-gold-500/50 transition-all duration-500 shadow-2xl backdrop-blur-sm relative z-10 group-hover:shadow-gold-500/30 bg-gradient-to-br from-black/85 via-gray-900/80 to-yellow-600/30"
                     />
                   </div>
                 </div>
