@@ -487,48 +487,7 @@ const NFCCardViewer = () => {
           </motion.div>
         </div>
 
-        {/* 聯絡方式（依旗標控制；若為 false 或無資料則完全不渲染） */}
-        {(cardData.ui_show_contacts !== false) && (cardData.user_phone || cardData.user_email || cardData.user_website || cardData.user_address) && (
-          <motion.div 
-            className="contact-info"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            {cardData.user_phone && (
-              <a href={`tel:${cardData.user_phone}`} className="contact-item phone">
-                <FaPhone className={`contact-icon ${iconClass}`} style={contactIconStyle} />
-                <span>{cardData.user_phone}</span>
-              </a>
-            )}
-            
-            {cardData.user_email && (
-              <a href={`mailto:${cardData.user_email}`} className="contact-item email">
-                <FaEnvelope className={`contact-icon ${iconClass}`} style={contactIconStyle} />
-                <span>{cardData.user_email}</span>
-              </a>
-            )}
-            
-            {cardData.user_website && (
-              <a 
-                href={cardData.user_website} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="contact-item website"
-              >
-                <FaGlobe className={`contact-icon ${iconClass}`} style={contactIconStyle} />
-                <span>{cardData.user_website}</span>
-              </a>
-            )}
-            
-            {cardData.user_address && (
-              <div className="contact-item address">
-                <FaMapMarkerAlt className={`contact-icon ${iconClass}`} style={contactIconStyle} />
-                <span>{cardData.user_address}</span>
-              </div>
-            )}
-          </motion.div>
-        )}
+        {/* 已依需求徹底移除完整版本聯絡資訊區塊 */}
 
         {/* 動態內容區塊 */}
         {cardData.content && cardData.content.length > 0 && (
