@@ -1319,19 +1319,7 @@
     height: 100px;
   }
 }
-/* 覆蓋：即時預覽 - 防止個人資訊文字溢出並優化排版 */
-.nfc-card-preview .user-info { flex: 1 1 auto; min-width: 0; }
-.nfc-card-preview .user-name,
-.nfc-card-preview .user-position,
-.nfc-card-preview .user-company {
-  max-width: 100%;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-.nfc-card-preview .avatar-container { display: flex; align-items: center; justify-content: center; }
-.nfc-card-preview .user-avatar,
-.nfc-card-preview .avatar-placeholder { flex-shrink: 0; }
+/* 即時預覽不再顯示個人資訊區塊，移除相關覆蓋樣式 */
 /* ==============================================
    共用：NFC Card Base（預覽 + 完整版）
    統一文字對比、陰影、行高，避免背景漸層或模糊影響
@@ -1365,10 +1353,8 @@
 }
 
 .nfc-card-base .user-position,
-.nfc-card-preview .user-position,
 .nfc-card-container .user-position,
 .nfc-card-base .user-company,
-.nfc-card-preview .user-company,
 .nfc-card-container .user-company {
   color: var(--text-secondary) !important;
   line-height: 1.35 !important;
@@ -1380,17 +1366,14 @@
 
 /* 在包含文字的容器移除不必要的模糊，提升可讀性 */
 .nfc-card-base .personal-info-section,
-.nfc-card-preview .personal-info-section,
 .nfc-card-container .personal-info-section,
 .nfc-card-base .content-block,
-.nfc-card-preview .content-block,
 .nfc-card-container .content-block {
   backdrop-filter: none !important;
 }
 
 /* 使用者資訊容器的排版與長字斷行一致化 */
 .nfc-card-base .user-info,
-.nfc-card-preview .user-info,
 .nfc-card-container .user-info {
   flex: 1 1 auto;
   min-width: 0;
@@ -1398,7 +1381,6 @@
 
 /* 固定：個人資訊水平版面（避免因自適應改為垂直排列） */
 .nfc-card-base .personal-info-section,
-.nfc-card-preview .personal-info-section,
 .nfc-card-container .personal-info-section {
   display: grid !important;
   grid-template-columns: auto 1fr !important;
@@ -1407,12 +1389,10 @@
   row-gap: 0 !important;
 }
 .nfc-card-base .avatar-container,
-.nfc-card-preview .avatar-container,
 .nfc-card-container .avatar-container {
   justify-self: start;
 }
 .nfc-card-base .user-info,
-.nfc-card-preview .user-info,
 .nfc-card-container .user-info {
   min-width: 0;
 }
@@ -1420,9 +1400,6 @@
 .nfc-card-base .user-name,
 .nfc-card-base .user-position,
 .nfc-card-base .user-company,
-.nfc-card-preview .user-name,
-.nfc-card-preview .user-position,
-.nfc-card-preview .user-company,
 .nfc-card-container .user-name,
 .nfc-card-container .user-position,
 .nfc-card-container .user-company {

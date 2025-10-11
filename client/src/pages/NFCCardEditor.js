@@ -70,9 +70,7 @@ const getYouTubeVideoId = (url) => {
   // 單畫面模式：永遠顯示預覽並隱藏左側列表與中欄
   // 強制預設為開啟，將左側基本設定與中間內容區塊隱藏
   const [singleScreenMode, setSingleScreenMode] = useState(true);
-  // 單一操作界面的覆蓋層：基本資訊與內容清單
-  const [showBasicInfoOverlay, setShowBasicInfoOverlay] = useState(false);
-  const [showContentListOverlay, setShowContentListOverlay] = useState(false);
+  // 移除覆蓋層：基本資訊與內容清單改為主介面就地編輯
   // 已移除自動帶入：改為完全手動維護欄位與內容
   // 提示視窗狀態
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -817,9 +815,23 @@ const getYouTubeVideoId = (url) => {
     }
   };
 
-  // 就地編輯：基本資訊（姓名 / 職稱 / 公司）
+  // 就地編輯：基本資訊（同步為標準內容區塊）
   const updateBasicField = (key, value) => {
-    setCardConfig(prev => ({ ...prev, [key]: value }));
+    setCardConfig(prev => {
+      const next = { ...prev, [key]: value };
+      const titleMap = {
+        user_name: '姓名',
+        user_title: '職稱',
+        user_company: '公司',
+        line_id: 'LINE ID',
+        self_intro: '自我介紹'
+      };
+      if (titleMap[key]) {
+        const updatedBlocks = upsertTextBlockByTitle(prev?.content_blocks, titleMap[key], value);
+        next.content_blocks = updatedBlocks;
+      }
+      return next;
+    });
   };
 
   // 以標題識別並新增/更新文字區塊（用於 LINE ID 與自我介紹）
@@ -982,17 +994,17 @@ const getYouTubeVideoId = (url) => {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-2xl font-bold text-gray-900">電子名片編輯器</h1>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setShowAddBlockModal(true)}
-                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors"
+                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-black via-gray-900 to-black text-yellow-300 border border-yellow-500/60 rounded-lg hover:text-yellow-200 hover:border-yellow-400 transition-all whitespace-nowrap"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 新增內容
               </button>
               <button
                 onClick={() => setShowDesktopTemplate(true)}
-                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-gray-800 to-gray-700 text-gold-100 rounded-lg hover:from-gray-700 hover:to-gray-600 transition-colors"
+                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-black via-gray-900 to-black text-yellow-300 border border-yellow-500/60 rounded-lg hover:text-yellow-200 hover:border-yellow-400 transition-all whitespace-nowrap"
               >
                 <Bars3Icon className="h-4 w-4 mr-2" />
                 模板選擇
@@ -1000,7 +1012,7 @@ const getYouTubeVideoId = (url) => {
               <button
                 onClick={handleSaveAll}
                 disabled={saving}
-                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-500 hover:to-green-400 transition-colors disabled:opacity-50"
+                className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-black via-gray-900 to-black text-yellow-300 border border-yellow-500/60 rounded-lg hover:text-yellow-200 hover:border-yellow-400 transition-all disabled:opacity-50 whitespace-nowrap"
               >
                 <CheckIcon className="h-4 w-4 mr-2" />
                 {saving ? '保存中…' : '保存'}
@@ -1009,7 +1021,7 @@ const getYouTubeVideoId = (url) => {
               <button
                 onClick={handleSaveAll}
                 disabled={saving}
-                className="md:hidden inline-flex items-center px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50"
+                className="md:hidden inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-black via-gray-900 to-black text-yellow-300 border border-yellow-500/60 rounded-lg hover:text-yellow-200 hover:border-yellow-400 transition-all disabled:opacity-50 whitespace-nowrap"
               >
                 <CheckIcon className="h-4 w-4 mr-1" />
                 {saving ? '保存中…' : '保存'}
@@ -1311,24 +1323,10 @@ const getYouTubeVideoId = (url) => {
                     <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
                     即時預覽
                   </h2>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowBasicInfoOverlay(true)}
-                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-amber-700 to-amber-600 text-amber-100 rounded-lg hover:from-amber-600 hover:to-amber-500 transition-colors text-sm"
-                      title="基本資訊"
-                    >
-                      基本資訊
-                    </button>
-                    <button
-                      onClick={() => setShowContentListOverlay(true)}
-                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-indigo-700 to-indigo-600 text-indigo-100 rounded-lg hover:from-indigo-600 hover:to-indigo-500 transition-colors text-sm"
-                      title="內容清單"
-                    >
-                      內容清單
-                    </button>
+                  <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
                     <button
                       onClick={() => setShowAddBlockModal(true)}
-                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors text-sm"
+                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-black via-gray-900 to-black text-yellow-300 border border-yellow-500/60 rounded-lg hover:text-yellow-200 hover:border-yellow-400 transition-all text-sm whitespace-nowrap"
                     >
                       <PlusIcon className="h-4 w-4 mr-1" />
                       新增內容
@@ -1338,7 +1336,7 @@ const getYouTubeVideoId = (url) => {
                 {singleScreenMode && (
                   <div className="mb-3 text-xs text-amber-200 bg-amber-800/30 border border-amber-500/40 rounded px-3 py-2 flex items-center">
                     <EyeIcon className="h-4 w-4 mr-2 text-amber-300" />
-                    已隱藏左側基本設定與中間內容區塊。請使用上方按鈕開啟覆蓋層進行操作。
+                    已隱藏左側基本設定與中間內容區塊。請直接在預覽卡片上使用「編輯」進行就地修改。
                   </div>
                 )}
                 
@@ -1371,104 +1369,9 @@ const getYouTubeVideoId = (url) => {
                       onInlineIconUpload={handleInlineIconUpload}
                     />
                   </div>
-                  {/* 單一操作界面：覆蓋層（基本資訊） */}
-                  {showBasicInfoOverlay && (
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-20 flex items-center justify-center p-4">
-                      <div className="bg-gradient-to-br from-gray-900 to-black border border-amber-500/40 rounded-xl shadow-xl w-full max-w-xl max-h-[80vh] overflow-y-auto">
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-amber-500/20">
-                          <h3 className="text-amber-100 font-semibold">基本資訊</h3>
-                          <button
-                            onClick={() => setShowBasicInfoOverlay(false)}
-                            className="text-amber-200 hover:text-amber-100"
-                          >
-                            關閉
-                          </button>
-                        </div>
-                        <div className="p-4 space-y-3">
-                          <label className="block text-sm text-amber-200">姓名</label>
-                          <input
-                            type="text"
-                            value={cardConfig?.user_name || ''}
-                            onChange={(e) => updateBasicField('user_name', e.target.value)}
-                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
-                          />
-                          <label className="block text-sm text-amber-200">職稱</label>
-                          <input
-                            type="text"
-                            value={cardConfig?.user_title || ''}
-                            onChange={(e) => updateBasicField('user_title', e.target.value)}
-                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
-                          />
-                          <label className="block text-sm text-amber-200">公司</label>
-                          <input
-                            type="text"
-                            value={cardConfig?.user_company || ''}
-                            onChange={(e) => updateBasicField('user_company', e.target.value)}
-                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
-                          />
-                          <label className="block text-sm text-amber-200">LINE ID</label>
-                          <input
-                            type="text"
-                            value={cardConfig?.line_id || ''}
-                            onChange={(e) => updateBasicField('line_id', e.target.value)}
-                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
-                          />
-                          <label className="block text-sm text-amber-200">自我介紹</label>
-                          <textarea
-                            rows={3}
-                            value={cardConfig?.self_intro || ''}
-                            onChange={(e) => updateBasicField('self_intro', e.target.value)}
-                            className="w-full px-3 py-2 rounded bg-gray-800 text-amber-100 border border-amber-500/30"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* 基本資訊覆蓋層已移除：改為主介面內聯編輯 */}
 
-                  {/* 單一操作界面：覆蓋層（內容清單） */}
-                  {showContentListOverlay && (
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-20 flex items-center justify-center p-4">
-                      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                          <h3 className="text-gray-900 font-semibold">內容清單</h3>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setShowAddBlockModal(true)}
-                              className="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-500 text-sm"
-                            >
-                              <PlusIcon className="h-4 w-4 mr-1" /> 新增內容
-                            </button>
-                            <button
-                              onClick={() => setShowContentListOverlay(false)}
-                              className="text-gray-600 hover:text-gray-900"
-                            >
-                              關閉
-                            </button>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          {cardConfig?.content_blocks && cardConfig.content_blocks.length > 0 ? (
-                            <DragDropContext onDragEnd={handleDragEnd}>
-                              <Droppable droppableId="content-blocks-overlay">
-                                {(provided) => (
-                                  <div {...provided.droppableProps} ref={provided.innerRef}>
-                                    {cardConfig.content_blocks.map((block, index) => renderBlockEditor(block, index))}
-                                    {provided.placeholder}
-                                  </div>
-                                )}
-                              </Droppable>
-                            </DragDropContext>
-                          ) : (
-                            <div className="text-center py-12 text-gray-500">
-                              <PhotoIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                              <p>尚未添加任何內容區塊</p>
-                              <p className="text-sm">按下上方按鈕開始添加內容</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* 內容清單覆蓋層已移除：按鈕與拖曳排序改在主界面執行 */}
                   {/* 底部拖曳把手（手機版） */}
                   <div className="absolute bottom-0 left-0 right-0 md:hidden flex justify-center items-center z-10 pb-2">
                     <div
@@ -2119,71 +2022,7 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
       <div className="card-content">
         {/* 移除名片標題與副標題（即時預覽不顯示） */}
 
-        {/* 個人資訊區塊 */}
-        <div className="personal-info-section">
-          <div className="avatar-container">
-            {user?.profilePictureUrl ? (
-              <img 
-                src={user.profilePictureUrl} 
-                alt={user.name}
-                className="user-avatar"
-              />
-            ) : (
-              <div className="avatar-placeholder">
-                <UserIcon className="h-12 w-12 text-white" />
-              </div>
-            )}
-          </div>
-          <div className="user-info">
-            <h2 className="user-name">{cardConfig?.user_name || user?.name || '用戶姓名'}</h2>
-            {(cardConfig?.user_title || user?.title) && (
-              <p className="user-position">{cardConfig?.user_title || user?.title}</p>
-            )}
-            {(cardConfig?.user_company || user?.company) && (
-              <p className="user-company">{cardConfig?.user_company || user?.company}</p>
-            )}
-            {/* 即時顯示：LINE 與自我介紹（僅在有資料時顯示） */}
-            {cardConfig?.line_id && (
-              <div className="mt-2 inline-flex items-center px-2 py-1 rounded bg-green-500/15 text-green-300 text-xs">
-                <span className="mr-1">💬</span>
-                <span>LINE ID：{cardConfig.line_id}</span>
-              </div>
-            )}
-            {cardConfig?.self_intro && (
-              <p className="mt-2 text-sm text-amber-200/90">{cardConfig.self_intro}</p>
-            )}
-          </div>
-          {/* 基本資訊就地編輯 Overlay */}
-              {editingBlockIndex === 'basic' && (
-            <div className="inline-editor-overlay">
-              <label>姓名</label>
-              <input
-                type="text"
-                value={cardConfig?.user_name || ''}
-                onChange={(e) => updateBasicField('user_name', e.target.value)}
-                className="inline-editor-input"
-              />
-              <label>職稱</label>
-              <input
-                type="text"
-                value={cardConfig?.user_title || ''}
-                onChange={(e) => updateBasicField('user_title', e.target.value)}
-                className="inline-editor-input"
-              />
-              <label>公司</label>
-              <input
-                type="text"
-                value={cardConfig?.user_company || ''}
-                onChange={(e) => updateBasicField('user_company', e.target.value)}
-                className="inline-editor-input"
-              />
-              <div className="inline-editor-toolbar">
-                <button className="inline-toolbar-button" onClick={() => setEditingBlockIndex(null)}>完成</button>
-              </div>
-              <div className="inline-editor-hint">基本資訊就地編輯（保存於基本設定）</div>
-            </div>
-          )}
-        </div>
+        {/* 個人資訊區塊已移除：改以內容區塊管理與就地編輯 */}
 
         {/* 內容區塊 */}
         <div className="content-blocks">

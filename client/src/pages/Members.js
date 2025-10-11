@@ -106,7 +106,7 @@ const Members = () => {
       2: '幹部',
       3: '會員'
     };
-    return levels[level] || '未設定';
+    return levels[level]; // 移除 || '未設定'，直接返回對應值或 undefined
   };
 
   const getMembershipLevelBadge = (level) => {
@@ -368,17 +368,19 @@ const Members = () => {
                     </div>
                   )}
 
-                  {/* 會員等級（權限） */}
-                  <div className="flex items-center justify-center mt-3">
-                    <div className="relative">
-                      <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-xl border-2 ${getMembershipLevelBadge(member.membership_level)} transform hover:scale-110 transition-all duration-300 backdrop-blur-sm`}>
-                        <UserIcon className="h-4 w-4 inline mr-1.5" />
-                        {getMembershipLevelText(member.membership_level)}
-                      </span>
-                      {/* 光暈效果 */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gold-400/20 to-gold-600/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+                  {/* 會員等級（權限） - 只在有有效等級時顯示 */}
+                  {getMembershipLevelText(member.membership_level) && (
+                    <div className="flex items-center justify-center mt-3">
+                      <div className="relative">
+                        <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-xl border-2 ${getMembershipLevelBadge(member.membership_level)} transform hover:scale-110 transition-all duration-300 backdrop-blur-sm`}>
+                          <UserIcon className="h-4 w-4 inline mr-1.5" />
+                          {getMembershipLevelText(member.membership_level)}
+                        </span>
+                        {/* 光暈效果 */}
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gold-400/20 to-gold-600/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 {/* 會員頭像區域 - 自適應高度 */}
