@@ -1558,3 +1558,33 @@
 .template-glassmorphism .social-link { background: linear-gradient(45deg, #3B82F6, #6366F1); color: #ffffff; box-shadow: 0 6px 18px rgba(59,130,246,0.25); }
 .template-glassmorphism .social-link:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 10px 28px rgba(59,130,246,0.35); }
 .template-glassmorphism .save-contact-btn { background: linear-gradient(45deg, #3B82F6, #6366F1); color: #ffffff; font-weight: 700; }
+/* ==============================================
+   模板：Cyberpunk 霓虹科技風格
+   設計：深色背景、霓虹藍紫與未來感元素
+   按鈕：霓虹漸層、高對比科技感
+   ============================================== */
+.template-cyberpunk { background: radial-gradient(circle at 20% 10%, rgba(0,255,255,0.08), transparent 35%), radial-gradient(circle at 80% 90%, rgba(255,0,153,0.08), transparent 35%), linear-gradient(135deg,#0b0f14,#0d1117 60%,#151a21); color:#e6fffa; position:relative; overflow:hidden; }
+.template-cyberpunk::before { content:''; position:absolute; inset:0; background: linear-gradient(45deg, transparent 30%, rgba(0,255,255,0.04) 50%, transparent 70%); pointer-events:none; }
+.template-cyberpunk .card-content { position:relative; z-index:1; text-align:center; padding:2.5rem 2rem; }
+.template-cyberpunk .user-avatar { width:110px; height:110px; border-radius:50%; margin:0 auto 1.5rem; border:2px solid #00ffff; box-shadow:0 0 25px rgba(0,255,255,0.35), inset 0 0 20px rgba(0,255,255,0.1); object-fit:cover; position:relative; }
+.template-cyberpunk .user-name { font-size:1.9rem; font-weight:700; color:#00ffff; text-shadow:0 0 12px rgba(0,255,255,0.55); letter-spacing:0.06em; margin-bottom:0.5rem; }
+.template-cyberpunk .user-position { color:#8a2be2; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:2rem; }
+.template-cyberpunk .content-block { background: rgba(0,255,255,0.06); border:1px solid rgba(0,255,255,0.25); backdrop-filter: blur(8px); margin-bottom:1.25rem; position:relative; }
+.template-cyberpunk .content-block:hover { background: rgba(0,255,255,0.09); border-color: rgba(0,255,255,0.45); transform: translateY(-2px); box-shadow: 0 6px 22px rgba(0,255,255,0.2); }
+.template-cyberpunk .block-title { color:#00ffff; font-weight:700; letter-spacing:0.08em; }
+.template-cyberpunk .social-link { background: linear-gradient(45deg, #00ffff, #8a2be2); color:#fff; box-shadow:0 4px 16px rgba(0,255,255,0.3); }
+.template-cyberpunk .social-link:hover { transform: translateY(-3px) scale(1.06); box-shadow:0 8px 26px rgba(0,255,255,0.45); }
+.template-cyberpunk .save-contact-btn { background: linear-gradient(90deg, #00ffff, #8a2be2 60%, #ff0099); color:#fff; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; box-shadow:0 6px 22px rgba(0,255,255,0.35); }
+
+/* 三種模板專屬按鈕樣式覆寫 */
+.template-cyberpunk .btn-primary { background: linear-gradient(90deg,#00ffff,#8a2be2); color:#0b0f14; border:1px solid rgba(0,255,255,0.5); box-shadow:0 6px 18px rgba(0,255,255,0.3); }
+.template-cyberpunk .btn-primary:hover { filter: brightness(1.05); box-shadow:0 10px 28px rgba(0,255,255,0.45); }
+.template-cyberpunk .btn-secondary { background: rgba(0,255,255,0.12); color:#e6fffa; border:1px solid rgba(0,255,255,0.35); }
+
+.template-handdrawn-cute .btn-primary { background: linear-gradient(45deg,#FF8FAB,#FFD1DC); color:#2D3748; border:1px solid rgba(255,143,171,0.45); box-shadow:0 6px 16px rgba(255,143,171,0.35); border-radius:999px; }
+.template-handdrawn-cute .btn-primary:hover { transform: translateY(-2px); box-shadow:0 10px 24px rgba(255,143,171,0.45); }
+.template-handdrawn-cute .btn-secondary { background: #FFF5F7; color:#2D3748; border:1px solid rgba(107,203,119,0.35); border-radius:999px; }
+
+.template-black-gold-prestige .btn-primary { background: linear-gradient(135deg,#0b0b0b,#121212); color:#D4AF37; border:1px solid rgba(212,175,55,0.45); box-shadow:0 6px 18px rgba(212,175,55,0.25); text-transform:uppercase; letter-spacing:0.06em; }
+.template-black-gold-prestige .btn-primary:hover { box-shadow:0 10px 28px rgba(212,175,55,0.35); }
+.template-black-gold-prestige .btn-secondary { background: rgba(212,175,55,0.08); color:#E5E7EB; border:1px solid rgba(212,175,55,0.3); }

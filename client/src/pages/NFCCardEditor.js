@@ -293,31 +293,15 @@ const getYouTubeVideoId = (url) => {
   };
 
   const fetchTemplates = async () => {
-    // 新的模板列表（五個新風格）
-    const newTemplates = [
+    // 僅保留三種模板風格（Cyberpunk、可愛手繪、黑金質感）
+    const allowedTemplates = [
       {
         id: 1,
-        name: '質感商務感',
-        description: '高質感商務設計，展現專業與品味的完美結合',
-        preview_image_url: '/nfc-templates/premium-business.svg',
-        is_active: true,
-        display_order: 1,
-        css_config: {
-          accentColor: '#B8860B',
-          primaryColor: '#ffffff',
-          secondaryColor: '#34495e',
-          iconPack: ['minimal', 'line', 'solid'],
-          dividerOptions: ['solid-thin', 'solid-medium', 'dashed'],
-          dividerOpacity: 0.6
-        }
-      },
-      {
-        id: 2,
         name: 'Cyberpunk風格',
         description: '未來科技感設計，霓虹色彩與數位美學的視覺衝擊',
         preview_image_url: '/nfc-templates/cyberpunk.svg',
         is_active: true,
-        display_order: 2,
+        display_order: 1,
         css_config: {
           accentColor: '#00ffff',
           primaryColor: '#e6fffa',
@@ -328,80 +312,12 @@ const getYouTubeVideoId = (url) => {
         }
       },
       {
-        id: 3,
-        name: '簡約日系風',
-        description: '日式極簡美學，清新自然的設計語言',
-        preview_image_url: '/nfc-templates/japanese-minimal.svg',
-        is_active: true,
-        display_order: 3,
-        css_config: {
-          accentColor: '#ffd700',
-          primaryColor: '#ffffff',
-          secondaryColor: '#f5f5f5',
-          iconPack: ['minimal', 'line'],
-          dividerOptions: ['solid-thin', 'dotted', 'double'],
-          dividerOpacity: 0.5
-        }
-      },
-      {
-        id: 4,
-        name: '創意行銷風格',
-        description: '活潑創意設計，吸引眼球的行銷視覺效果',
-        preview_image_url: '/nfc-templates/creative-marketing.svg',
-        is_active: true,
-        display_order: 4,
-        css_config: {
-          accentColor: '#ff6b35',
-          primaryColor: '#1f2937',
-          secondaryColor: '#4b5563',
-          iconPack: ['creative', 'rounded', 'filled'],
-          dividerOptions: ['solid-thin', 'gradient', 'curve-strong'],
-          dividerOpacity: 0.6
-        }
-      },
-      {
-        id: 5,
-        name: '塗鴉可愛風',
-        description: '手繪塗鴉風格，充滿童趣與創意的可愛設計',
-        preview_image_url: '/nfc-templates/cute-graffiti.svg',
-        is_active: true,
-        display_order: 5,
-        css_config: {
-          accentColor: '#ff8fab',
-          primaryColor: '#2d3748',
-          secondaryColor: '#6bcb77',
-          iconPack: ['handdrawn', 'rounded', 'filled'],
-          dividerOptions: ['dashed', 'dotted', 'solid-thin'],
-          dividerOpacity: 0.5
-        }
-      }
-    ];
-
-    // 追加：三款新模板
-    const extraTemplates = [
-      {
-        id: 6,
-        name: '黑金質感・商務尊榮風',
-        description: '黑金配色，高級質感與專業尊榮的商務風格',
-        preview_image_url: '/nfc-templates/black-gold-prestige.svg',
-        is_active: true,
-        display_order: 6,
-        css_config: {
-          accentColor: '#D4AF37',
-          primaryColor: '#121212',
-          secondaryColor: '#191919',
-          iconPack: ['elegant', 'minimal', 'line'],
-          dividerOptions: ['solid-thin', 'dashed', 'double'],
-          dividerOpacity: 0.6
-        }
-      },
-      {
-        id: 7,
+        id: 2,
         name: '可愛手繪風',
         description: '柔和馬卡龍色系與手繪插畫，溫暖可愛風格',
         preview_image_url: '/nfc-templates/handdrawn-cute.svg',
         is_active: true,
-        display_order: 7,
+        display_order: 2,
         css_config: {
           accentColor: '#FF8FAB',
           primaryColor: '#2D3748',
@@ -412,22 +328,25 @@ const getYouTubeVideoId = (url) => {
         }
       },
       {
-        id: 8,
-        name: '毛玻璃清透風',
-        description: 'Glassmorphism 清透設計，白與淺藍漸層的優雅科技感',
-        preview_image_url: '/nfc-templates/glassmorphism.svg',
+        id: 3,
+        name: '黑金質感・商務尊榮風',
+        description: '黑金配色，高級質感與專業尊榮的商務風格',
+        preview_image_url: '/nfc-templates/black-gold-prestige.svg',
         is_active: true,
-        display_order: 8,
+        display_order: 3,
         css_config: {
-          accentColor: '#3B82F6',
-          primaryColor: '#F8FAFC',
-          secondaryColor: '#E0F2FE',
-          iconPack: ['outline', 'minimal', 'glass'],
-          dividerOptions: ['solid-thin', 'gradient', 'wave-soft'],
-          dividerOpacity: 0.4
+          accentColor: '#D4AF37',
+          primaryColor: '#121212',
+          secondaryColor: '#191919',
+          iconPack: ['elegant', 'minimal', 'line'],
+          dividerOptions: ['solid-thin', 'dashed', 'double'],
+          dividerOpacity: 0.6
         }
       }
     ];
+
+    // 追加模板不再使用（限制僅三種風格）
+    const extraTemplates = [];
 
     try {
       const response = await axios.get('/api/nfc-cards/templates');
@@ -447,10 +366,9 @@ const getYouTubeVideoId = (url) => {
         )
       );
 
-      // 如果API返回舊模板或空數據，使用新模板（含追加三款）
+      // 如果 API 返回空或舊名，使用三種模板列表
       if (list.length === 0 || hasOldTemplates) {
-        console.log('使用新模板列表（API返回舊模板或空數據）');
-        setTemplates([...newTemplates, ...extraTemplates]);
+        setTemplates(allowedTemplates);
         return;
       }
 
@@ -474,19 +392,13 @@ const getYouTubeVideoId = (url) => {
         }
       }
       
-      // 加入三款新模板，並以名稱去重（避免重複）
-      const merged = [...unique, ...extraTemplates];
-      const seenNames = new Set();
-      const deduped = merged.filter(t => {
-        const name = (t.name || '').trim();
-        if (seenNames.has(name)) return false;
-        seenNames.add(name);
-        return true;
-      });
-      setTemplates(deduped);
+      // 僅保留三種模板（依名稱過濾）
+      const allowNames = new Set(['Cyberpunk風格','可愛手繪風','黑金質感・商務尊榮風']);
+      const filtered = unique.filter(t => allowNames.has(String(t?.name || '').trim()));
+      setTemplates(filtered.length ? filtered : allowedTemplates);
     } catch (error) {
-      console.error('獲取模板失敗，使用新模板列表:', error);
-      setTemplates([...newTemplates, ...extraTemplates]);
+      console.error('獲取模板失敗，使用三種模板列表:', error);
+      setTemplates(allowedTemplates);
     }
   };
 
@@ -2012,12 +1924,12 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
   const dividerOpacity = typeof cardConfig?.ui_divider_opacity === 'number' ? cardConfig.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
 
-  // 頭像上傳（使用既有 /api/uploads/inline 端點）
+  // 頭像上傳（改用既有 /api/nfc-cards/upload 端點）
   const uploadAvatar = async (file) => {
     try {
       const form = new FormData();
       form.append('file', file);
-      const resp = await axios.post('/api/uploads/inline', form, {
+      const resp = await axios.post('/api/nfc-cards/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const url = resp?.data?.url || resp?.data?.secure_url || resp?.data?.data?.url;

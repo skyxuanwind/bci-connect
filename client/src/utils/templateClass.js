@@ -6,37 +6,22 @@ export const mapTemplateNameToClass = (name) => {
   // 若已是類名則直接返回
   if (normalized.startsWith('template-')) return normalized;
 
+  // 僅保留三種模板風格的映射（含常見別名）：
   const MAP = {
-    // 新命名
-    '質感商務感': 'template-professional-business',
+    // 1) Cyberpunk 霓虹科技風（使用既有 futuristic 類名）
     'Cyberpunk風格': 'template-futuristic',
-    '簡約日系風': 'template-minimal-luxury',
-    '創意行銷風格': 'template-creative-brand',
-    '塗鴉可愛風': 'template-dynamic-interactive',
-    // 新增需求模板
-    '黑金質感・商務尊榮風': 'template-black-gold-prestige',
-    '可愛手繪風': 'template-handdrawn-cute',
-    '毛玻璃清透風': 'template-glassmorphism',
-
-    // 舊命名（與 MemberCard/NFCCardEditor 原有映射一致）
-    '極簡高級風格': 'template-minimal-luxury',
     '未來科技感風格': 'template-futuristic',
-    '創意品牌風格': 'template-creative-brand',
-    '專業商務風格': 'template-professional-business',
-    '動態互動風格': 'template-dynamic-interactive',
-
-    // 更早期命名
     '科技專業版': 'template-futuristic',
-    '活力創意版': 'template-creative-brand',
-    '簡約質感版': 'template-minimal-luxury',
-    '商務專業版': 'template-professional-business',
-    '現代簡約版': 'template-minimal-luxury',
-    '環保綠意版': 'template-dynamic-interactive',
-    '質感黑金版': 'template-minimal-luxury',
-    '插畫塗鴉版': 'template-dynamic-interactive'
+    // 2) 可愛手繪風
+    '可愛手繪風': 'template-handdrawn-cute',
+    '塗鴉可愛風': 'template-handdrawn-cute',
+    '插畫塗鴉版': 'template-handdrawn-cute',
+    // 3) 黑金質感・商務尊榮風
+    '黑金質感・商務尊榮風': 'template-black-gold-prestige',
+    '質感黑金版': 'template-black-gold-prestige'
   };
 
-  return MAP[normalized] || 'template-minimal-luxury';
+  return MAP[normalized] || 'template-futuristic';
 };
 
 // 根據是否深色模式，補上 dark-mode（僅未來科技風格適用）

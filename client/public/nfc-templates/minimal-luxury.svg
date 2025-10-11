@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="240" height="168" viewBox="0 0 240 168">
-  <rect width="240" height="168" fill="#0B1F3A"/>
-  <rect x="10" y="10" width="220" height="148" rx="16" fill="#121212" stroke="#C8A962" stroke-width="2"/>
-  <text x="20" y="40" fill="#C8A962" font-family="Inter, sans-serif" font-size="14">極簡高級風格</text>
-  <line x1="20" y1="50" x2="220" y2="50" stroke="#C8A962" stroke-width="1"/>
-  <circle cx="48" cy="98" r="24" fill="#1F2937" stroke="#C8A962"/>
-  <rect x="90" y="74" width="120" height="16" fill="#1F2937"/>
-  <rect x="90" y="98" width="120" height="12" fill="#1F2937"/>
-</svg>

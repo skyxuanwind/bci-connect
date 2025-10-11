@@ -15,22 +15,22 @@ const pool = new Pool({
 
 const NEW_TEMPLATES = [
   {
-    name: '質感商務感',
-    description: '高質感商務設計，展現專業與品味的完美結合',
-    category: 'premium-business',
+    name: '黑金質感・商務尊榮風',
+    description: '高端黑金配色，低調奢華的商務質感',
+    category: 'black-gold-prestige',
     css_config: {
-      className: 'template-premium-business',
-      primaryColor: '#1a365d',
-      secondaryColor: '#2d3748',
-      accentColor: '#3182ce',
-      backgroundColor: '#f7fafc',
+      className: 'template-black-gold-prestige',
+      primaryColor: '#0b0b0b',
+      secondaryColor: '#1a1a1a',
+      accentColor: '#d4af37',
+      backgroundColor: '#0f0f0f',
       fontFamily: 'Inter, sans-serif',
       borderRadius: '12px',
-      cardShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-      gradientFrom: '#1a365d',
-      gradientTo: '#2d3748'
+      cardShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.35)',
+      gradientFrom: '#0b0b0b',
+      gradientTo: '#1a1a1a'
     },
-    preview_image_url: '/nfc-templates/premium-business.svg'
+    preview_image_url: '/nfc-templates/black-gold-prestige.svg'
   },
   {
     name: 'Cyberpunk風格',
@@ -52,48 +52,11 @@ const NEW_TEMPLATES = [
     preview_image_url: '/nfc-templates/cyberpunk.svg'
   },
   {
-    name: '簡約日系風',
-    description: '日式極簡美學，清新自然的設計語言',
-    category: 'japanese-minimal',
+    name: '可愛手繪風',
+    description: '手繪可愛風格，溫暖童趣的生活美學',
+    category: 'handdrawn-cute',
     css_config: {
-      className: 'template-japanese-minimal',
-      primaryColor: '#2d3748',
-      secondaryColor: '#4a5568',
-      accentColor: '#38a169',
-      backgroundColor: '#fffffe',
-      fontFamily: 'Noto Sans JP, sans-serif',
-      borderRadius: '16px',
-      cardShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-      minimalist: true,
-      spacing: 'large'
-    },
-    preview_image_url: '/nfc-templates/japanese-minimal.svg'
-  },
-  {
-    name: '創意行銷風格',
-    description: '活潑創意設計，吸引眼球的行銷視覺效果',
-    category: 'creative-marketing',
-    css_config: {
-      className: 'template-creative-marketing',
-      primaryColor: '#d53f8c',
-      secondaryColor: '#ed64a6',
-      accentColor: '#f093fb',
-      backgroundColor: '#fef5e7',
-      fontFamily: 'Poppins, sans-serif',
-      borderRadius: '20px',
-      cardShadow: '0 15px 35px rgba(213, 63, 140, 0.2)',
-      gradientFrom: '#d53f8c',
-      gradientTo: '#f093fb',
-      vibrant: true
-    },
-    preview_image_url: '/nfc-templates/creative-marketing.svg'
-  },
-  {
-    name: '塗鴉可愛風',
-    description: '手繪塗鴉風格，充滿童趣與創意的可愛設計',
-    category: 'cute-graffiti',
-    css_config: {
-      className: 'template-cute-graffiti',
+      className: 'template-handdrawn-cute',
       primaryColor: '#ff6b6b',
       secondaryColor: '#4ecdc4',
       accentColor: '#ffe66d',
@@ -104,7 +67,7 @@ const NEW_TEMPLATES = [
       playful: true,
       handDrawn: true
     },
-    preview_image_url: '/nfc-templates/cute-graffiti.svg'
+    preview_image_url: '/nfc-templates/handdrawn-cute.svg'
   }
 ];
 
@@ -132,7 +95,7 @@ async function resetProductionTemplates() {
     await client.query(`
       ALTER TABLE nfc_card_templates 
       ADD CONSTRAINT nfc_card_templates_category_check 
-      CHECK (category IN ('premium-business', 'cyberpunk', 'japanese-minimal', 'creative-marketing', 'cute-graffiti'))
+      CHECK (category IN ('black-gold-prestige', 'cyberpunk', 'handdrawn-cute'))
     `);
     
     // 3. 插入新的模板

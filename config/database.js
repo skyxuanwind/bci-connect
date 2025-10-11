@@ -1186,10 +1186,10 @@ module.exports = {
     try {
       const templates = [
         {
-          name: '質感商務感',
-          description: '高質感商務設計，展現專業與品味的完美結合',
-          category: 'premium-business',
-          className: 'template-premium-business'
+          name: '黑金質感・商務尊榮風',
+          description: '高端黑金配色，低調奢華的商務質感',
+          category: 'black-gold-prestige',
+          className: 'template-black-gold-prestige'
         },
         {
           name: 'Cyberpunk風格',
@@ -1198,22 +1198,10 @@ module.exports = {
           className: 'template-cyberpunk'
         },
         {
-          name: '簡約日系風',
-          description: '日式極簡美學，清新自然的設計語言',
-          category: 'japanese-minimal',
-          className: 'template-japanese-minimal'
-        },
-        {
-          name: '創意行銷風格',
-          description: '活潑創意設計，吸引眼球的行銷視覺效果',
-          category: 'creative-marketing',
-          className: 'template-creative-marketing'
-        },
-        {
-          name: '塗鴉可愛風',
-          description: '手繪塗鴉風格，充滿童趣與創意的可愛設計',
-          category: 'cute-graffiti',
-          className: 'template-cute-graffiti'
+          name: '可愛手繪風',
+          description: '手繪可愛風格，溫暖童趣的生活美學',
+          category: 'handdrawn-cute',
+          className: 'template-handdrawn-cute'
         }
       ];
 
@@ -1229,7 +1217,7 @@ module.exports = {
           ADD CONSTRAINT nfc_card_templates_category_check 
           CHECK (category IN (
             'business', 'creative', 'minimal', 'tech', 'elegant', 'modern', 'eco', 'luxury', 'artistic',
-            'premium-business', 'cyberpunk', 'japanese-minimal', 'creative-marketing', 'cute-graffiti'
+            'black-gold-prestige', 'cyberpunk', 'handdrawn-cute'
           ))
         `);
       } catch (e) {
