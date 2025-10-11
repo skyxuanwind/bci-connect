@@ -17,7 +17,9 @@ import {
   PencilIcon,
   CheckIcon,
   XMarkIcon,
-  UserIcon
+  UserIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import {
   FaLinkedin,
@@ -1273,19 +1275,12 @@ const getYouTubeVideoId = (url) => {
                   <h2 className="text-lg font-semibold text-gray-900">內容區塊</h2>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setShowAddBlockModal(true)}
-                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 rounded-lg hover:from-yellow-500 hover:to-yellow-400 transition-colors text-sm"
+                      onClick={handleSaveContent}
+                      disabled={saving}
+                      className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                     >
-                      <PlusIcon className="h-4 w-4 mr-1" />
-                      新增內容
+                      {saving ? '保存中...' : '保存內容'}
                     </button>
-                  <button
-                    onClick={handleSaveContent}
-                    disabled={saving}
-                    className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-                  >
-                    {saving ? '保存中...' : '保存內容'}
-                  </button>
                   </div>
                 </div>
                 
@@ -1323,15 +1318,7 @@ const getYouTubeVideoId = (url) => {
                     <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
                     即時預覽
                   </h2>
-                  <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
-                    <button
-                      onClick={() => setShowAddBlockModal(true)}
-                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-black via-gray-900 to-black text-yellow-300 border border-yellow-500/60 rounded-lg hover:text-yellow-200 hover:border-yellow-400 transition-all text-sm whitespace-nowrap"
-                    >
-                      <PlusIcon className="h-4 w-4 mr-1" />
-                      新增內容
-                    </button>
-                  </div>
+                  <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap"></div>
                 </div>
                 {singleScreenMode && (
                   <div className="mb-3 text-xs text-amber-200 bg-amber-800/30 border border-amber-500/40 rounded px-3 py-2 flex items-center">
@@ -1494,16 +1481,24 @@ const getYouTubeVideoId = (url) => {
         )}
       </AnimatePresence>
 
-      {/* 全局固定：右下角模板選擇按鈕（僅行動端顯示） */}
+      {/* 全局固定：右下角浮動按鈕組（僅行動端顯示） */}
       <div
-        className="fixed bottom-4 right-4 md:hidden lg:hidden z-50"
+        className="fixed bottom-4 right-4 md:hidden z-50 flex flex-col gap-3"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <button
-          onClick={() => setShowTemplatePicker(true)}
-          className="px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-gray-900 font-medium shadow-lg hover:from-amber-400 hover:to-yellow-300 active:scale-95 transition text-sm"
+          onClick={() => setShowAddBlockModal(true)}
+          title="新增內容"
+          className="p-3 rounded-full bg-gradient-to-r from-black via-gray-900 to-black text-yellow-300 border border-yellow-500/60 shadow-lg hover:text-yellow-200 hover:border-yellow-400 active:scale-95 transition"
         >
-          模板選擇
+          <PlusIcon className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => setShowTemplatePicker(true)}
+          title="模板選擇"
+          className="p-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-gray-900 shadow-lg hover:from-amber-400 hover:to-yellow-300 active:scale-95 transition"
+        >
+          <Bars3Icon className="h-5 w-5" />
         </button>
       </div>
 
@@ -2017,12 +2012,109 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
   const dividerOpacity = typeof cardConfig?.ui_divider_opacity === 'number' ? cardConfig.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
 
+  // 頭像上傳（使用既有 /api/uploads/inline 端點）
+  const uploadAvatar = async (file) => {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const resp = await axios.post('/api/uploads/inline', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const url = resp?.data?.url || resp?.data?.secure_url || resp?.data?.data?.url;
+      if (url) {
+        updateBasicField('avatar_url', url);
+      } else {
+        alert('頭像上傳失敗，請重試');
+      }
+    } catch (e) {
+      alert('頭像上傳失敗，請重試');
+    }
+  };
+
   return (
     <div className={`nfc-card-container nfc-card-preview nfc-card-base ${templateClass}`}>
       <div className="card-content">
         {/* 移除名片標題與副標題（即時預覽不顯示） */}
 
         {/* 個人資訊區塊已移除：改以內容區塊管理與就地編輯 */}
+
+        {/* 頂部：頭像 + 基本資訊欄位（自動顯示，無需新增） */}
+        <div className="basic-info-panel px-3 py-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="relative">
+              <img
+                src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
+                alt="頭像"
+                className="w-16 h-16 rounded-full border border-gold-600 object-cover"
+              />
+              <label className="absolute -bottom-1 -right-1 p-1 bg-black/60 rounded-full cursor-pointer">
+                <PhotoIcon className="h-4 w-4 text-yellow-300" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const f = e.target.files && e.target.files[0];
+                    if (f) uploadAvatar(f);
+                  }}
+                />
+              </label>
+            </div>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                type="text"
+                className="inline-editor-input"
+                placeholder="姓名"
+                value={cardConfig?.user_name || ''}
+                onChange={(e) => updateBasicField('user_name', e.target.value)}
+              />
+              <input
+                type="text"
+                className="inline-editor-input"
+                placeholder="職稱"
+                value={cardConfig?.user_title || ''}
+                onChange={(e) => updateBasicField('user_title', e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+            <input
+              type="text"
+              className="inline-editor-input"
+              placeholder="電話"
+              value={cardConfig?.phone || ''}
+              onChange={(e) => updateBasicField('phone', e.target.value)}
+            />
+            <input
+              type="email"
+              className="inline-editor-input"
+              placeholder="Email"
+              value={cardConfig?.email || ''}
+              onChange={(e) => updateBasicField('email', e.target.value)}
+            />
+            <input
+              type="url"
+              className="inline-editor-input"
+              placeholder="網站"
+              value={cardConfig?.website || ''}
+              onChange={(e) => updateBasicField('website', e.target.value)}
+            />
+            <input
+              type="text"
+              className="inline-editor-input"
+              placeholder="LINE ID"
+              value={cardConfig?.line_id || ''}
+              onChange={(e) => updateBasicField('line_id', e.target.value)}
+            />
+          </div>
+          <textarea
+            rows={2}
+            className="inline-editor-input"
+            placeholder="自我介紹"
+            value={cardConfig?.self_intro || ''}
+            onChange={(e) => updateBasicField('self_intro', e.target.value)}
+          />
+        </div>
 
         {/* 內容區塊 */}
         <div className="content-blocks">
@@ -2031,11 +2123,18 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
               <div key={index} className="content-block" style={{ borderTop: borderTopCss }}>
                 {/* 工具列（置於卡片標題上方） */}
                 <div className="block-toolbar">
-                  <button className="inline-toolbar-button" onClick={() => setEditingBlockIndex(editingBlockIndex === index ? null : index)}>編輯</button>
-                  <button className="inline-toolbar-button" onClick={() => onToggleVisibility(index)}>{block?.is_visible === false ? '顯示' : '隱藏'}</button>
-                  <button className="inline-toolbar-button" onClick={() => onMoveUp(index)}>上移</button>
-                  <button className="inline-toolbar-button" onClick={() => onMoveDown(index)}>下移</button>
-                  <button className="inline-toolbar-button" onClick={() => onDeleteBlock(index)}>刪除</button>
+                  <button className="inline-toolbar-button" title="編輯" onClick={() => setEditingBlockIndex(editingBlockIndex === index ? null : index)}>
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                  <button className="inline-toolbar-button" title="上移" onClick={() => onMoveUp(index)}>
+                    <ChevronUpIcon className="h-4 w-4" />
+                  </button>
+                  <button className="inline-toolbar-button" title="下移" onClick={() => onMoveDown(index)}>
+                    <ChevronDownIcon className="h-4 w-4" />
+                  </button>
+                  <button className="inline-toolbar-button" title="刪除" onClick={() => onDeleteBlock(index)}>
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
                 </div>
                 <BlockPreview 
                   block={block} 
