@@ -342,12 +342,14 @@ const Members = () => {
                 
                 {/* 會員資訊區域 - 自適應高度 */}
                 <div className="flex-shrink-0 p-4 sm:p-5 lg:p-6 space-y-3 relative z-10">
-                  {/* 專業別（產業別） - 最上方 */}
-                  <div className="text-gold-200 text-lg sm:text-xl lg:text-2xl text-center font-medium">
-                    <span className="break-words hyphens-auto leading-relaxed drop-shadow-sm">
-                      {member.industry || '未設定'}
-                    </span>
-                  </div>
+                  {/* 專業別（產業別） - 只在有值時顯示 */}
+                  {member.industry && (
+                    <div className="text-gold-200 text-lg sm:text-xl lg:text-2xl text-center font-medium">
+                      <span className="break-words hyphens-auto leading-relaxed drop-shadow-sm">
+                        {member.industry}
+                      </span>
+                    </div>
+                  )}
 
                   {/* 姓名 */}
                   <div className="mt-2">
@@ -356,13 +358,15 @@ const Members = () => {
                     </h3>
                   </div>
 
-                  {/* 分會資訊 */}
-                  <div className="flex items-center justify-center mt-2">
-                    <div className="bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400 text-primary-900 px-4 py-2 rounded-full text-xs font-bold shadow-xl border border-gold-400/30 backdrop-blur-sm">
-                      <BuildingOfficeIcon className="h-3 w-3 inline mr-1.5" />
-                      {member.chapterName || '未設定分會'}
+                  {/* 分會資訊 - 只在有值時顯示 */}
+                  {member.chapterName && (
+                    <div className="flex items-center justify-center mt-2">
+                      <div className="bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400 text-primary-900 px-4 py-2 rounded-full text-xs font-bold shadow-xl border border-gold-400/30 backdrop-blur-sm">
+                        <BuildingOfficeIcon className="h-3 w-3 inline mr-1.5" />
+                        {member.chapterName}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* 會員等級（權限） */}
                   <div className="flex items-center justify-center mt-3">
