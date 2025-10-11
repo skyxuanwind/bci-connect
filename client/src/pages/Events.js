@@ -120,10 +120,10 @@ const Events = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <div key={event.id} className="card rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
                 {/* Event Poster (responsive, consistent with detail/guest pages) */}
                 {event.poster_image_url && (
-                  <div className="event-poster-container">
+                  <div className="event-poster-container poster--theme poster--compact">
                     <img
                       src={event.poster_image_url}
                       alt={event.title}
@@ -138,7 +138,7 @@ const Events = () => {
                 
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">
+                    <h3 className="text-lg font-semibold text-gray-900 heading-flow">
                       {event.title}
                     </h3>
                     {getStatusBadge(event.status)}
@@ -153,7 +153,7 @@ const Events = () => {
                     </div>
                   )}
                   
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                  <p className="text-gray-600 text-sm mb-4 text-flow">
                     {event.description || '暫無描述'}
                   </p>
                   

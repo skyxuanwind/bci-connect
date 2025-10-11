@@ -127,9 +127,9 @@ const GuestRegistration = () => {
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">活動報名</h1>
           
-          {/* 活動圖片（響應式比例與清晰度優化） */}
+          {/* 活動圖片（響應式比例與清晰度優化，使用系統配色背景） */}
           {event.poster_image_url && (
-            <div className="mb-6 event-poster-container poster--compact">
+            <div className="mb-6 event-poster-container poster--theme poster--compact">
               <img
                 src={event.poster_image_url}
                 alt={event.title}
@@ -143,8 +143,8 @@ const GuestRegistration = () => {
           )}
           
           <div className="border-l-4 border-blue-500 pl-4 mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">{event.title}</h2>
-            <div className="space-y-2 text-gray-600">
+            <h2 className="text-xl font-semibold text-gray-800 mb-2 heading-flow">{event.title}</h2>
+            <div className="space-y-2 text-gray-600 text-flow">
               <p><span className="font-medium">時間：</span>{formatDate(event.event_date)}</p>
               {event.location && (
                 <p><span className="font-medium">地點：</span>{event.location}</p>
@@ -157,8 +157,8 @@ const GuestRegistration = () => {
 
           {event.description && (
             <div className="mb-6">
-              <h3 className="font-medium text-gray-900 mb-2">活動描述</h3>
-              <p className="text-gray-600 whitespace-pre-wrap">{event.description}</p>
+              <h3 className="font-medium text-gray-900 mb-2 heading-flow">活動描述</h3>
+              <p className="text-gray-600 whitespace-pre-wrap text-flow">{event.description}</p>
             </div>
           )}
 

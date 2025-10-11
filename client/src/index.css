@@ -32,7 +32,7 @@
     max-width: 960px;
     margin: 0 auto;
     border-radius: 0.75rem; /* 對齊整體圓角風格 */
-    background-color: #f9fafb; /* 與卡片背景一致的淺灰底 */
+    background-color: #f9fafb; /* 預設：舊版白灰底（可用變體覆蓋） */
     overflow: hidden; /* 防止內容溢出 */
     aspect-ratio: 4 / 3; /* 行動裝置預設比例：4:3，避免過高或過窄 */
   }
@@ -81,6 +81,15 @@
   .event-poster-container.poster--compact {
     padding: clamp(8px, 2vw, 16px);
     box-sizing: border-box;
+  }
+
+  /* 系統配色主題：黑金卡片一致背景，取代白底 */
+  .event-poster-container.poster--theme {
+    background: linear-gradient(135deg, var(--black-true) 0%, var(--black-light) 50%, var(--black-true) 100%);
+    border: 1px solid rgba(217, 119, 6, 0.35);
+  }
+  .event-poster-container.poster--theme .event-poster-img {
+    background-color: transparent;
   }
 
   /* Scrollbar Hide */
@@ -319,6 +328,22 @@
 }
 
 @layer utilities {
+  /* 文字流排版：避免截斷與重疊，在不同裝置完整呈現 */
+  .text-flow {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  /* 標題流排版：平衡換行與可讀性 */
+  .heading-flow {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+    line-height: 1.35;
+    text-wrap: balance;
+  }
   .text-shadow {
     text-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
   }
