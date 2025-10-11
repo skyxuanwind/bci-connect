@@ -266,6 +266,11 @@ const getYouTubeVideoId = (url) => {
           user_email: card.user_email || (user?.email || ''),
           line_id: card.line_id || '',
           self_intro: card.self_intro || '',
+          // 顯示/移除切換（預設顯示）
+          ui_show_avatar: card.ui_show_avatar !== false,
+          ui_show_name: card.ui_show_name !== false,
+          ui_show_company: card.ui_show_company !== false,
+          ui_show_contacts: card.ui_show_contacts !== false,
           content_blocks: mappedBlocks
         });
       } else {
@@ -282,6 +287,11 @@ const getYouTubeVideoId = (url) => {
           user_email: user?.email || '',
           line_id: '',
           self_intro: '',
+          // 顯示/移除切換（預設顯示）
+          ui_show_avatar: true,
+          ui_show_name: true,
+          ui_show_company: true,
+          ui_show_contacts: true,
           content_blocks: []
         });
       }
@@ -527,6 +537,14 @@ const getYouTubeVideoId = (url) => {
     };
     next.custom_css = buildCustomCss(template, next);
     setCardConfig(next);
+  };
+
+  // UI 顯示切換：頭像 / 姓名 / 公司 / 聯絡資訊
+  const toggleUiVisibility = (key) => {
+    setCardConfig(prev => ({
+      ...prev,
+      [key]: !prev?.[key]
+    }));
   };
 
   const handleAddContentBlock = (blockType) => {
@@ -1085,79 +1103,44 @@ const getYouTubeVideoId = (url) => {
                     {saving ? '保存中...' : '保存基本設定'}
                   </button>
 
-                  {/* 常駐欄位：姓名 / 職稱 / 公司 / 手機 / Email / LINE ID / 自我介紹 */}
-                  <div className="mt-6 space-y-4 border-t pt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200">姓名</label>
-                      <input
-                        type="text"
-                        value={cardConfig?.user_name || ''}
-                        onChange={(e) => updateBasicField('user_name', e.target.value)}
-                        className="mt-1 w-full border border-gold-600 bg-black/40 rounded-md p-2 text-gold-100"
-                        placeholder="請輸入姓名"
-                      />
+                  {/* 顯示/移除切換：與預覽完全同步 */}
+                  <div className="mt-6 border-t pt-4">
+                    <h3 className="text-sm font-semibold text-gold-200 mb-3">顯示/移除</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex items-center gap-2 text-gold-100">
+                        <input
+                          type="checkbox"
+                          checked={!!cardConfig?.ui_show_avatar}
+                          onChange={() => toggleUiVisibility('ui_show_avatar')}
+                        />
+                        頭像
+                      </label>
+                      <label className="flex items-center gap-2 text-gold-100">
+                        <input
+                          type="checkbox"
+                          checked={!!cardConfig?.ui_show_name}
+                          onChange={() => toggleUiVisibility('ui_show_name')}
+                        />
+                        姓名 / 職稱
+                      </label>
+                      <label className="flex items-center gap-2 text-gold-100">
+                        <input
+                          type="checkbox"
+                          checked={!!cardConfig?.ui_show_company}
+                          onChange={() => toggleUiVisibility('ui_show_company')}
+                        />
+                        公司
+                      </label>
+                      <label className="flex items-center gap-2 text-gold-100">
+                        <input
+                          type="checkbox"
+                          checked={!!cardConfig?.ui_show_contacts}
+                          onChange={() => toggleUiVisibility('ui_show_contacts')}
+                        />
+                        聯絡資訊
+                      </label>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200">職稱</label>
-                      <input
-                        type="text"
-                        value={cardConfig?.user_title || ''}
-                        onChange={(e) => updateBasicField('user_title', e.target.value)}
-                        className="mt-1 w-full border border-gold-600 bg-black/40 rounded-md p-2 text-gold-100"
-                        placeholder="請輸入職稱"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200">公司</label>
-                      <input
-                        type="text"
-                        value={cardConfig?.user_company || ''}
-                        onChange={(e) => updateBasicField('user_company', e.target.value)}
-                        className="mt-1 w-full border border-gold-600 bg-black/40 rounded-md p-2 text-gold-100"
-                        placeholder="請輸入公司名稱"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200">手機</label>
-                      <input
-                        type="tel"
-                        value={cardConfig?.user_phone || ''}
-                        onChange={(e) => updateBasicField('user_phone', e.target.value)}
-                        className="mt-1 w-full border border-gold-600 bg-black/40 rounded-md p-2 text-gold-100"
-                        placeholder="例：0912-345-678"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200">電子信箱（僅顯示）</label>
-                      <input
-                        type="email"
-                        value={cardConfig?.user_email || user?.email || ''}
-                        readOnly
-                        className="mt-1 w-full border border-gold-600 bg-black/40 rounded-md p-2 text-gold-100"
-                        placeholder="信箱由註冊資料提供"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200">LINE ID</label>
-                      <input
-                        type="text"
-                        value={cardConfig?.line_id || ''}
-                        onChange={(e) => updateBasicField('line_id', e.target.value)}
-                        className="mt-1 w-full border border-gold-600 bg-black/40 rounded-md p-2 text-gold-100"
-                        placeholder="請輸入 LINE ID"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-200">自我介紹</label>
-                      <textarea
-                        value={cardConfig?.self_intro || ''}
-                        onChange={(e) => updateBasicField('self_intro', e.target.value)}
-                        className="mt-1 w-full border border-gold-600 bg-black/40 rounded-md p-2 text-gold-100"
-                        placeholder="簡短介紹自己（最多 140 字）"
-                        maxLength={140}
-                        rows={3}
-                      />
-                    </div>
+                    <p className="text-xs text-amber-200 mt-2">取消勾選即在預覽中移除相應欄位。</p>
                   </div>
                 </div>
               </div>
@@ -1228,14 +1211,33 @@ const getYouTubeVideoId = (url) => {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gold-100 flex items-center">
                     <EyeIcon className="h-5 w-5 mr-2 text-gold-400" />
-                    即時預覽
+                  即時預覽
                   </h2>
                   <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap"></div>
                 </div>
+                {/* 單畫面模式下的顯示/移除切換（與左側設定一致） */}
+                <div className="mb-3 grid grid-cols-2 gap-3">
+                  <label className="flex items-center gap-2 text-gold-100">
+                    <input type="checkbox" checked={!!cardConfig?.ui_show_avatar} onChange={() => toggleUiVisibility('ui_show_avatar')} />
+                    頭像
+                  </label>
+                  <label className="flex items-center gap-2 text-gold-100">
+                    <input type="checkbox" checked={!!cardConfig?.ui_show_name} onChange={() => toggleUiVisibility('ui_show_name')} />
+                    姓名 / 職稱
+                  </label>
+                  <label className="flex items-center gap-2 text-gold-100">
+                    <input type="checkbox" checked={!!cardConfig?.ui_show_company} onChange={() => toggleUiVisibility('ui_show_company')} />
+                    公司
+                  </label>
+                  <label className="flex items-center gap-2 text-gold-100">
+                    <input type="checkbox" checked={!!cardConfig?.ui_show_contacts} onChange={() => toggleUiVisibility('ui_show_contacts')} />
+                    聯絡資訊
+                  </label>
+                </div>
                 {singleScreenMode && (
                   <div className="mb-3 text-xs text-amber-200 bg-amber-800/30 border border-amber-500/40 rounded px-3 py-2 flex items-center">
-                    <EyeIcon className="h-4 w-4 mr-2 text-amber-300" />
-                    已隱藏左側基本設定與中間內容區塊。請直接在預覽卡片上使用「編輯」進行就地修改。
+                  <EyeIcon className="h-4 w-4 mr-2 text-amber-300" />
+                  已隱藏左側基本設定與中間內容區塊。請直接在預覽卡片上使用「編輯」進行就地修改。
                   </div>
                 )}
                 
@@ -1950,82 +1952,45 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
 
         {/* 個人資訊區塊已移除：改以內容區塊管理與就地編輯 */}
 
-        {/* 頂部：頭像 + 基本資訊欄位（自動顯示，無需新增） */}
+        {/* 頂部：頭像 + 基本資訊欄位（依可見性切換顯示） */}
         <div className="basic-info-panel px-3 py-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="relative">
-              <img
-                src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
-                alt="頭像"
-                className="w-16 h-16 rounded-full border border-gold-600 object-cover"
-              />
-              <label className="absolute -bottom-1 -right-1 p-1 bg-black/60 rounded-full cursor-pointer">
-                <PhotoIcon className="h-4 w-4 text-yellow-300" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const f = e.target.files && e.target.files[0];
-                    if (f) uploadAvatar(f);
-                  }}
+            {cardConfig?.ui_show_avatar && (
+              <div className="relative">
+                <img
+                  src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
+                  alt="頭像"
+                  className="w-32 h-32 rounded-full border-2 border-gold-500 object-cover shadow-lg"
                 />
-              </label>
-            </div>
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                type="text"
-                className="inline-editor-input"
-                placeholder="姓名"
-                value={cardConfig?.user_name || ''}
-                onChange={(e) => updateBasicField('user_name', e.target.value)}
-              />
-              <input
-                type="text"
-                className="inline-editor-input"
-                placeholder="職稱"
-                value={cardConfig?.user_title || ''}
-                onChange={(e) => updateBasicField('user_title', e.target.value)}
-              />
+                <label className="absolute -bottom-2 -right-2 p-1.5 bg-black/70 rounded-full cursor-pointer">
+                  <PhotoIcon className="h-5 w-5 text-yellow-300" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const f = e.target.files && e.target.files[0];
+                      if (f) uploadAvatar(f);
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              {cardConfig?.ui_show_name && (
+                <div className="text-gold-100 text-base font-semibold truncate">
+                  {cardConfig?.user_name || '—'}
+                  {cardConfig?.user_title && (
+                    <span className="ml-2 text-gold-300 font-normal">{cardConfig.user_title}</span>
+                  )}
+                </div>
+              )}
+              {cardConfig?.ui_show_company && (
+                <div className="text-sm text-gold-300 truncate">{cardConfig?.user_company || ''}</div>
+              )}
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
-            <input
-              type="text"
-              className="inline-editor-input"
-              placeholder="電話"
-              value={cardConfig?.phone || ''}
-              onChange={(e) => updateBasicField('phone', e.target.value)}
-            />
-            <input
-              type="email"
-              className="inline-editor-input"
-              placeholder="Email"
-              value={cardConfig?.email || ''}
-              onChange={(e) => updateBasicField('email', e.target.value)}
-            />
-            <input
-              type="url"
-              className="inline-editor-input"
-              placeholder="網站"
-              value={cardConfig?.website || ''}
-              onChange={(e) => updateBasicField('website', e.target.value)}
-            />
-            <input
-              type="text"
-              className="inline-editor-input"
-              placeholder="LINE ID"
-              value={cardConfig?.line_id || ''}
-              onChange={(e) => updateBasicField('line_id', e.target.value)}
-            />
-          </div>
-          <textarea
-            rows={2}
-            className="inline-editor-input"
-            placeholder="自我介紹"
-            value={cardConfig?.self_intro || ''}
-            onChange={(e) => updateBasicField('self_intro', e.target.value)}
-          />
+          {/* 移除所有基本資訊輸入欄位；聯絡資訊區塊改為下方內容區統一呈現 */}
         </div>
 
         {/* 內容區塊 */}
@@ -2048,14 +2013,31 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
                     <TrashIcon className="h-4 w-4" />
                   </button>
                 </div>
-                <BlockPreview 
+                {/* 聯絡資訊總切換：不顯示則略過相關類型 */}
+                {cardConfig?.ui_show_contacts ? (
+                  <BlockPreview 
                   block={block} 
                   index={index} 
                   editingBlockIndex={editingBlockIndex} 
                   updateBlockField={updateBlockField}
                   onInlineImageUpload={onInlineImageUpload}
                   onInlineIconUpload={onInlineIconUpload}
-                />
+                  />
+                ) : (
+                  // 若為聯絡資訊型別，直接不渲染；其他型別仍渲染
+                  ['contact','phone','email','website','line'].includes(block?.content_type)
+                    ? null
+                    : (
+                      <BlockPreview 
+                        block={block} 
+                        index={index} 
+                        editingBlockIndex={editingBlockIndex} 
+                        updateBlockField={updateBlockField}
+                        onInlineImageUpload={onInlineImageUpload}
+                        onInlineIconUpload={onInlineIconUpload}
+                      />
+                    )
+                )}
               </div>
             ))
           ) : (
