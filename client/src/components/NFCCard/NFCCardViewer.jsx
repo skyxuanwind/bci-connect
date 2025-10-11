@@ -449,9 +449,9 @@ const NFCCardViewer = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {/* 用戶頭像和基本信息 */}
+        {/* 用戶頭像和基本資訊（依可見性旗標顯示，與即時預覽一致） */}
         <div className="card-header">
-          {cardData.user_avatar && (
+          {(cardData.ui_show_avatar !== false) && (cardData.avatar_url || cardData.user_avatar) && (
             <motion.div 
               className="avatar-container"
               initial={{ scale: 0 }}
@@ -459,8 +459,8 @@ const NFCCardViewer = () => {
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             >
               <img 
-                src={cardData.user_avatar} 
-                alt={cardData.user_name}
+                src={cardData.avatar_url || cardData.user_avatar} 
+                alt={cardData.user_name || 'avatar'}
                 className="user-avatar"
               />
             </motion.div>
@@ -472,62 +472,63 @@ const NFCCardViewer = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <h1 className="user-name">{cardData.user_name}</h1>
-            {cardData.user_position && (
-              <p className="user-position">{cardData.user_position}</p>
+            {(cardData.ui_show_name !== false) && (
+              <>
+                <h1 className="user-name">{cardData.user_name}</h1>
+                {(cardData.user_title || cardData.user_position) && (
+                  <p className="user-position">{cardData.user_title || cardData.user_position}</p>
+                )}
+              </>
             )}
-            {cardData.user_company && (
+            {(cardData.ui_show_company !== false) && cardData.user_company && (
               <p className="user-company">{cardData.user_company}</p>
             )}
-            {cardData.card_title && (
-              <p className="card-title">{cardData.card_title}</p>
-            )}
-            {cardData.card_subtitle && (
-              <p className="card-subtitle">{cardData.card_subtitle}</p>
-            )}
+            {/* 與即時預覽一致：移除 card_title 與 card_subtitle 顯示 */}
           </motion.div>
         </div>
 
-        {/* 聯絡方式 */}
-        <motion.div 
-          className="contact-info"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          {cardData.user_phone && (
-            <a href={`tel:${cardData.user_phone}`} className="contact-item phone">
-              <FaPhone className={`contact-icon ${iconClass}`} style={contactIconStyle} />
-              <span>{cardData.user_phone}</span>
-            </a>
-          )}
-          
-          {cardData.user_email && (
-            <a href={`mailto:${cardData.user_email}`} className="contact-item email">
-              <FaEnvelope className={`contact-icon ${iconClass}`} style={contactIconStyle} />
-              <span>{cardData.user_email}</span>
-            </a>
-          )}
-          
-          {cardData.user_website && (
-            <a 
-              href={cardData.user_website} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="contact-item website"
-            >
-              <FaGlobe className={`contact-icon ${iconClass}`} style={contactIconStyle} />
-              <span>{cardData.user_website}</span>
-            </a>
-          )}
-          
-          {cardData.user_address && (
-            <div className="contact-item address">
-              <FaMapMarkerAlt className={`contact-icon ${iconClass}`} style={contactIconStyle} />
-              <span>{cardData.user_address}</span>
-            </div>
-          )}
-        </motion.div>
+        {/* 聯絡方式（依旗標控制；若為 false 或無資料則完全不渲染） */}
+        {(cardData.ui_show_contacts !== false) && (cardData.user_phone || cardData.user_email || cardData.user_website || cardData.user_address) && (
+          <motion.div 
+            className="contact-info"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            {cardData.user_phone && (
+              <a href={`tel:${cardData.user_phone}`} className="contact-item phone">
+                <FaPhone className={`contact-icon ${iconClass}`} style={contactIconStyle} />
+                <span>{cardData.user_phone}</span>
+              </a>
+            )}
+            
+            {cardData.user_email && (
+              <a href={`mailto:${cardData.user_email}`} className="contact-item email">
+                <FaEnvelope className={`contact-icon ${iconClass}`} style={contactIconStyle} />
+                <span>{cardData.user_email}</span>
+              </a>
+            )}
+            
+            {cardData.user_website && (
+              <a 
+                href={cardData.user_website} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="contact-item website"
+              >
+                <FaGlobe className={`contact-icon ${iconClass}`} style={contactIconStyle} />
+                <span>{cardData.user_website}</span>
+              </a>
+            )}
+            
+            {cardData.user_address && (
+              <div className="contact-item address">
+                <FaMapMarkerAlt className={`contact-icon ${iconClass}`} style={contactIconStyle} />
+                <span>{cardData.user_address}</span>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* 動態內容區塊 */}
         {cardData.content && cardData.content.length > 0 && (

@@ -266,6 +266,7 @@ const getYouTubeVideoId = (url) => {
           user_email: card.user_email || (user?.email || ''),
           line_id: card.line_id || '',
           self_intro: card.self_intro || '',
+          avatar_url: card.avatar_url || user?.avatar_url || '',
           // 顯示/移除切換（預設顯示）
           ui_show_avatar: card.ui_show_avatar !== false,
           ui_show_name: card.ui_show_name !== false,
@@ -287,6 +288,7 @@ const getYouTubeVideoId = (url) => {
           user_email: user?.email || '',
           line_id: '',
           self_intro: '',
+          avatar_url: user?.avatar_url || '',
           // 顯示/移除切換（預設顯示）
           ui_show_avatar: true,
           ui_show_name: true,
@@ -420,7 +422,13 @@ const getYouTubeVideoId = (url) => {
         template_id: cardConfig.template_id,
         custom_css: cardConfig.custom_css,
         card_title: cardConfig.card_title || '',
-        card_subtitle: cardConfig.card_subtitle || ''
+        card_subtitle: cardConfig.card_subtitle || '',
+        // 保存 UI 顯示旗標與頭像網址，供完整版本渲染一致
+        ui_show_avatar: !!cardConfig.ui_show_avatar,
+        ui_show_name: !!cardConfig.ui_show_name,
+        ui_show_company: !!cardConfig.ui_show_company,
+        ui_show_contacts: !!cardConfig.ui_show_contacts,
+        avatar_url: cardConfig.avatar_url || ''
       });
 
       // 同步更新使用者檔案（姓名/職稱/公司/手機）
@@ -428,7 +436,9 @@ const getYouTubeVideoId = (url) => {
         name: cardConfig.user_name || '',
         title: cardConfig.user_title || '',
         company: cardConfig.user_company || '',
-        contact_number: cardConfig.user_phone || ''
+        contact_number: cardConfig.user_phone || '',
+        // 同步更新使用者頭像以便 viewer 使用 user_avatar 字段
+        avatar_url: cardConfig.avatar_url || ''
       });
       setSuccessToastMessage('基本設定已保存');
       setShowSuccessToast(true);
@@ -489,7 +499,13 @@ const getYouTubeVideoId = (url) => {
         template_id: cardConfig.template_id,
         custom_css: cardConfig.custom_css,
         card_title: cardConfig.card_title || '',
-        card_subtitle: cardConfig.card_subtitle || ''
+        card_subtitle: cardConfig.card_subtitle || '',
+        // 保存 UI 顯示旗標與頭像網址
+        ui_show_avatar: !!cardConfig.ui_show_avatar,
+        ui_show_name: !!cardConfig.ui_show_name,
+        ui_show_company: !!cardConfig.ui_show_company,
+        ui_show_contacts: !!cardConfig.ui_show_contacts,
+        avatar_url: cardConfig.avatar_url || ''
       });
 
       // 同步更新使用者檔案（姓名/職稱/公司/手機）
@@ -497,7 +513,8 @@ const getYouTubeVideoId = (url) => {
         name: cardConfig.user_name || '',
         title: cardConfig.user_title || '',
         company: cardConfig.user_company || '',
-        contact_number: cardConfig.user_phone || ''
+        contact_number: cardConfig.user_phone || '',
+        avatar_url: cardConfig.avatar_url || ''
       });
       // 在保存前以內容區塊方式同步 LINE ID 與自我介紹
       let blocks = upsertTextBlockByTitle(cardConfig.content_blocks || [], '自我介紹', cardConfig.self_intro);
@@ -1937,6 +1954,13 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
       const url = resp?.data?.url || resp?.data?.secure_url || resp?.data?.data?.url;
       if (url) {
         updateBasicField('avatar_url', url);
+        // 立即同步到使用者檔案與名片設定，確保完整版本即時更新
+        try {
+          await axios.put('/api/users/profile', { avatar_url: url });
+          await axios.put('/api/nfc-cards/my-card', { avatar_url: url });
+        } catch (e) {
+          console.warn('同步頭像到後端時出現非致命錯誤', e);
+        }
       } else {
         alert('頭像上傳失敗，請重試');
       }
