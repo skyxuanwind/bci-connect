@@ -120,7 +120,7 @@ const Events = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <div key={event.id} className="card rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <div key={event.id} className="card rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
                 {/* Event Poster (responsive, consistent with detail/guest pages) */}
                 {event.poster_image_url && (
                   <div className="event-poster-container poster--theme poster--compact">
@@ -136,7 +136,7 @@ const Events = () => {
                   </div>
                 )}
                 
-                <div className="p-6">
+                <div className="p-6 flex flex-col flex-1">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold text-gray-900 heading-flow">
                       {event.title}
@@ -184,7 +184,7 @@ const Events = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-6">
+                  <div className="mt-auto pt-4">
                     <Button
                       to={`/events/${event.id}`}
                       variant="primary"
