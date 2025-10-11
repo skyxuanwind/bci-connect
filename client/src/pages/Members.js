@@ -335,69 +335,89 @@ const Members = () => {
               <div
                 key={member.id}
                 onClick={() => navigate(`/members/${member.id}`)}
-                className="bg-primary-800 border border-gold-600/30 rounded-xl overflow-hidden hover:border-gold-500/50 hover:shadow-lg hover:shadow-gold-500/10 transition-all duration-300 hover:-translate-y-1 flex flex-col cursor-pointer group"
+                className="bg-gradient-to-br from-primary-800 via-primary-800 to-primary-900 border border-gold-600/40 rounded-2xl overflow-hidden hover:border-gold-500/60 hover:shadow-2xl hover:shadow-gold-500/20 transition-all duration-500 hover:-translate-y-2 flex flex-col cursor-pointer group backdrop-blur-sm relative"
               >
+                {/* 高級光澤效果 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gold-500/5 via-transparent to-gold-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                
                 {/* 會員資訊區域 - 自適應高度 */}
-                <div className="flex-shrink-0 p-3 sm:p-4 lg:p-5 space-y-2 sm:space-y-3">
-                  {/* 會員名稱 */}
-                  <h3 className="text-gold-100 font-semibold text-sm sm:text-base lg:text-lg break-words hyphens-auto leading-relaxed text-center">
-                    {member.name}
-                  </h3>
+                <div className="flex-shrink-0 p-4 sm:p-5 lg:p-6 space-y-3 relative z-10">
+                  {/* 分會資訊 - 最頂部顯著位置 */}
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400 text-primary-900 px-4 py-2 rounded-full text-xs font-bold shadow-xl border border-gold-400/30 backdrop-blur-sm">
+                      <BuildingOfficeIcon className="h-3 w-3 inline mr-1.5" />
+                      {member.chapterName || '未設定分會'}
+                    </div>
+                  </div>
                   
-                  {/* 會員等級 */}
-                  <div className="flex items-center justify-center">
-                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getMembershipLevelBadge(member.membership_level)}`}>
-                      {member.membership_level}
+                  {/* 產業別 - 移至最上方 */}
+                  <div className="text-gold-200 text-lg sm:text-xl lg:text-2xl text-center font-medium">
+                    <span className="break-words hyphens-auto leading-relaxed drop-shadow-sm">
+                      {member.industry || '未設定'}
                     </span>
                   </div>
                   
-                  {/* 產業別 */}
-                  <div className="text-gold-300 text-base sm:text-lg text-center">
-                    <span className="break-words hyphens-auto leading-relaxed">
-                      {member.industry || '未設定'}
-                    </span>
+                  {/* 會員名稱 - 縮減與產業別間距至8px */}
+                  <div className="mt-2">
+                    <h3 className="text-gold-100 font-bold text-base sm:text-lg lg:text-xl break-words hyphens-auto leading-relaxed text-center drop-shadow-md">
+                      {member.name}
+                    </h3>
+                  </div>
+                  
+                  {/* 會員等級 - 增強視覺效果 */}
+                  <div className="flex items-center justify-center mt-3">
+                    <div className="relative">
+                      <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-xl border-2 ${getMembershipLevelBadge(member.membership_level)} transform hover:scale-110 transition-all duration-300 backdrop-blur-sm`}>
+                        <UserIcon className="h-4 w-4 inline mr-1.5" />
+                        {getMembershipLevelText(member.membership_level)}
+                      </span>
+                      {/* 光暈效果 */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gold-400/20 to-gold-600/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+                    </div>
                   </div>
                 </div>
                 
                 {/* 會員頭像區域 - 自適應高度 */}
-                <div className="flex-1 flex items-center justify-center p-3 sm:p-4 lg:p-5 pt-0">
-                  <div className="w-full max-w-[120px] sm:max-w-[140px] lg:max-w-[160px] aspect-square">
+                <div className="flex-1 flex items-center justify-center p-4 sm:p-5 lg:p-6 pt-2 relative z-10">
+                  <div className="w-full max-w-[130px] sm:max-w-[150px] lg:max-w-[170px] aspect-square relative">
+                    {/* 頭像光暈背景 */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-gold-500/20 via-gold-400/10 to-gold-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <Avatar
                       src={member.profilePictureUrl}
                       alt={member.name}
                       size="xl"
                       fallbackIcon={GoldAvatarIcon}
                       fallbackIconClass="text-gold-400"
-                      className="w-full h-full object-contain object-center rounded-lg border-2 border-gold-600/20 hover:border-gold-500/40 transition-colors duration-300"
+                      className="w-full h-full object-contain object-center rounded-2xl border-3 border-gold-600/30 hover:border-gold-500/50 transition-all duration-500 shadow-2xl backdrop-blur-sm relative z-10 group-hover:shadow-gold-500/30"
                     />
                   </div>
                 </div>
                 
                 {/* 操作按鈕區域 */}
-                <div className="flex-shrink-0 p-3 sm:p-4 lg:p-5 pt-0 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="flex-shrink-0 p-4 sm:p-5 lg:p-6 pt-2 space-y-3 relative z-10">
+                  <div className="grid grid-cols-2 gap-3">
                     {/* 聯絡按鈕 */}
                     {member.phone && (
                       <a
                         href={`tel:${member.phone}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center justify-center px-2 sm:px-3 py-2 bg-primary-700 hover:bg-primary-600 text-gold-100 border border-gold-600/30 hover:border-gold-500/50 rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium"
+                        className="flex items-center justify-center px-3 sm:px-4 py-2.5 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-600 hover:to-primary-500 text-gold-100 border border-gold-600/40 hover:border-gold-500/60 rounded-xl transition-all duration-300 text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl backdrop-blur-sm transform hover:scale-105"
                       >
-                        <PhoneIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <PhoneIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
                         <span className="hidden sm:inline">電話</span>
                       </a>
                     )}
                   </div>
                   
                   {/* 額外操作按鈕 */}
-                 <div className="grid grid-cols-2 gap-2">
+                 <div className="grid grid-cols-2 gap-3">
                    {member.email && (
                      <a
                        href={`mailto:${member.email}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center justify-center px-2 sm:px-3 py-2 bg-primary-700 hover:bg-primary-600 text-gold-100 border border-gold-600/30 hover:border-gold-500/50 rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium"
+                        className="flex items-center justify-center px-3 sm:px-4 py-2.5 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-600 hover:to-primary-500 text-gold-100 border border-gold-600/40 hover:border-gold-500/60 rounded-xl transition-all duration-300 text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl backdrop-blur-sm transform hover:scale-105"
                       >
-                        <EnvelopeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <EnvelopeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
                         <span className="hidden sm:inline">郵件</span>
                       </a>
                     )}
@@ -406,9 +426,9 @@ const Members = () => {
                       <Link
                         to={`/nfc/${member.nfc_card_id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center justify-center px-2 sm:px-3 py-2 bg-accent-600 hover:bg-accent-500 text-primary-900 rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium"
+                        className="flex items-center justify-center px-3 sm:px-4 py-2.5 bg-gradient-to-r from-accent-600 to-accent-500 hover:from-accent-500 hover:to-accent-400 text-primary-900 rounded-xl transition-all duration-300 text-xs sm:text-sm font-bold shadow-lg hover:shadow-xl backdrop-blur-sm transform hover:scale-105"
                       >
-                        <CreditCardIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <CreditCardIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
                         <span className="hidden sm:inline">名片</span>
                       </Link>
                     )}
