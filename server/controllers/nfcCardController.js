@@ -103,50 +103,62 @@ const getMyCard = async (req, res) => {
   }
 };
 
-// 更新名片基本信息
+// 更新名片基本信息（支持局部更新與 UI 顯示旗標、頭像網址）
 const updateMyCard = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { card_title, card_subtitle, template_id, custom_css } = req.body;
-    
-    const query = `
-      UPDATE nfc_cards 
-      SET 
-        card_title = $1,
-        card_subtitle = $2,
-        template_id = $3,
-        custom_css = $4,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = $5
-      RETURNING *
-    `;
-    
-    const result = await db.query(query, [
+    const {
       card_title,
       card_subtitle,
       template_id,
       custom_css,
+      // 追加支持的欄位：UI 顯示旗標與頭像網址
+      ui_show_avatar,
+      ui_show_name,
+      ui_show_company,
+      ui_show_contacts,
+      avatar_url
+    } = req.body;
+
+    // 使用 COALESCE 保持未提供欄位的原值，避免覆蓋為 NULL
+    const query = `
+      UPDATE nfc_cards 
+      SET 
+        card_title      = COALESCE($1, card_title),
+        card_subtitle   = COALESCE($2, card_subtitle),
+        template_id     = COALESCE($3, template_id),
+        custom_css      = COALESCE($4, custom_css),
+        ui_show_avatar  = COALESCE($5, ui_show_avatar),
+        ui_show_name    = COALESCE($6, ui_show_name),
+        ui_show_company = COALESCE($7, ui_show_company),
+        ui_show_contacts= COALESCE($8, ui_show_contacts),
+        avatar_url      = COALESCE($9, avatar_url),
+        updated_at      = CURRENT_TIMESTAMP
+      WHERE user_id = $10
+      RETURNING *
+    `;
+
+    const result = await db.query(query, [
+      card_title ?? null,
+      card_subtitle ?? null,
+      template_id ?? null,
+      custom_css ?? null,
+      ui_show_avatar ?? null,
+      ui_show_name ?? null,
+      ui_show_company ?? null,
+      ui_show_contacts ?? null,
+      avatar_url ?? null,
       userId
     ]);
-    
+
     if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '名片不存在'
-      });
+      return res.status(404).json({ success: false, message: '名片不存在' });
     }
-    
-    res.json({
-      success: true,
-      message: '名片更新成功',
-      card: result.rows[0]
-    });
+
+    res.json({ success: true, message: '名片更新成功', card: result.rows[0] });
   } catch (error) {
     console.error('更新名片失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '更新名片失敗'
-    });
+    res.status(500).json({ success: false, message: '更新名片失敗' });
   }
 };
 
