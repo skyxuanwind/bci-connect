@@ -20,6 +20,8 @@ import {
   UserIcon,
   ChevronUpIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   EnvelopeIcon,
   BuildingOfficeIcon,
   PhoneIcon
@@ -269,6 +271,8 @@ const getYouTubeVideoId = (url) => {
           line_id: card.line_id || '',
           self_intro: card.self_intro || '',
           avatar_url: card.avatar_url || user?.avatar_url || '',
+          // 新增：頭像樣式（original / full / square）
+          avatar_style: card.avatar_style || 'original',
           // 排版型別（預設 standard）
           layout_type: card.layout_type || 'standard',
           // 顯示/移除切換（預設顯示）
@@ -293,6 +297,7 @@ const getYouTubeVideoId = (url) => {
           line_id: '',
           self_intro: '',
           avatar_url: user?.avatar_url || '',
+          avatar_style: 'original',
           layout_type: 'standard',
           // 顯示/移除切換（預設顯示）
           ui_show_avatar: true,
@@ -619,6 +624,10 @@ const getYouTubeVideoId = (url) => {
         return { title: '影片標題', type: 'youtube', url: '', file: '', videoId: '' };
       case 'image':
         return { title: '圖片標題', url: '', alt: '圖片描述' };
+      case 'carousel':
+        return { title: '圖片輪播', images: [], autoplay: false };
+      case 'services':
+        return { title: '服務項目', items: [] };
       case 'social':
         return { linkedin: '', facebook: '', instagram: '', twitter: '', youtube: '', tiktok: '' };
       case 'map':
@@ -928,6 +937,8 @@ const getYouTubeVideoId = (url) => {
       link: '連結',
       video: '影片',
       image: '圖片',
+      carousel: '滑動圖片',
+      services: '服務項目',
       social: '社群',
       map: '地圖',
       icon: '圖標'
@@ -1290,6 +1301,7 @@ const getYouTubeVideoId = (url) => {
                       editingBlockIndex={editingBlockIndex}
                       updateBlockField={updateBlockField}
                       updateBasicField={updateBasicField}
+                      onSaveBasicInfo={handleSaveBasicInfo}
                       onDeleteBlock={handleDeleteBlock}
                       onToggleVisibility={toggleBlockVisibility}
                       onMoveUp={moveBlockUp}
@@ -1537,6 +1549,14 @@ const getYouTubeVideoId = (url) => {
                 <button onClick={() => handleAddContentBlock('image')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
                   <PhotoIcon className="h-5 w-5 text-blue-600" />
                   <span className="text-xs">圖片</span>
+                </button>
+                <button onClick={() => handleAddContentBlock('carousel')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <PhotoIcon className="h-5 w-5 text-purple-600" />
+                  <span className="text-xs">滑動圖片</span>
+                </button>
+                <button onClick={() => handleAddContentBlock('services')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
+                  <DocumentDuplicateIcon className="h-5 w-5 text-green-600" />
+                  <span className="text-xs">服務項目</span>
                 </button>
                 <button onClick={() => handleAddContentBlock('social')} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100">
                   <FaInstagram className="h-5 w-5 text-pink-500" />
@@ -1910,8 +1930,9 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 };
 
 // 模板預覽組件
-  const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockField, updateBasicField, onDeleteBlock, onToggleVisibility, onMoveUp, onMoveDown, setEditingBlockIndex, onInlineImageUpload, onInlineIconUpload }) => {
+  const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockField, updateBasicField, onDeleteBlock, onToggleVisibility, onMoveUp, onMoveDown, setEditingBlockIndex, onInlineImageUpload, onInlineIconUpload, onSaveBasicInfo }) => {
   const { user } = useAuth();
+  const [editingBasic, setEditingBasic] = useState(false);
   
   const hexToRgb = (hex) => {
     try {
@@ -1995,12 +2016,20 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
         <div className="basic-info-panel px-3 py-4">
           <div className="flex items-center gap-3 mb-3">
             {cardConfig?.ui_show_avatar && (
-              <div className="relative">
-                <img
-                  src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
-                  alt="頭像"
-                  className="w-32 h-32 rounded-full border-2 border-gold-500 object-cover shadow-lg"
-                />
+              <div className={`relative ${cardConfig?.avatar_style === 'full' ? 'w-full' : ''}`}>
+                {cardConfig?.avatar_style === 'full' ? (
+                  <img
+                    src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
+                    alt="頭像"
+                    className="w-full h-40 object-cover border-0 rounded-none shadow-lg"
+                  />
+                ) : (
+                  <img
+                    src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
+                    alt="頭像"
+                    className={`${cardConfig?.avatar_style === 'square' ? 'w-32 h-32 rounded-md' : 'w-32 h-32 rounded-full'} border-2 border-gold-500 object-cover shadow-lg`}
+                  />
+                )}
                 <label className="absolute -bottom-2 -right-2 p-1.5 bg-black/70 rounded-full cursor-pointer">
                   <PhotoIcon className="h-5 w-5 text-yellow-300" />
                   <input
@@ -2013,19 +2042,117 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                     }}
                   />
                 </label>
+                <div className="flex items-center gap-2 mt-2">
+                  <button
+                    className={`px-2 py-1 text-xs rounded ${cardConfig?.avatar_style === 'original' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300'}`}
+                    onClick={() => updateBasicField('avatar_style', 'original')}
+                  >原始</button>
+                  <button
+                    className={`px-2 py-1 text-xs rounded ${cardConfig?.avatar_style === 'full' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300'}`}
+                    onClick={() => updateBasicField('avatar_style', 'full')}
+                  >滿版</button>
+                  <button
+                    className={`px-2 py-1 text-xs rounded ${cardConfig?.avatar_style === 'square' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300'}`}
+                    onClick={() => updateBasicField('avatar_style', 'square')}
+                  >正方形</button>
+                </div>
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              {cardConfig?.ui_show_name && (
-                <div className="text-gold-100 text-base font-semibold truncate">
-                  {cardConfig?.user_name || '—'}
-                  {cardConfig?.user_title && (
-                    <span className="ml-2 text-gold-300 font-normal">{cardConfig.user_title}</span>
+            <div className="flex-1 min-w-0 relative">
+              {!editingBasic ? (
+                <div>
+                  {cardConfig?.ui_show_name && (
+                    <div className="text-gold-100 text-base font-semibold truncate">
+                      {cardConfig?.user_name || '—'}
+                      {cardConfig?.user_title && (
+                        <span className="ml-2 text-gold-300 font-normal">{cardConfig.user_title}</span>
+                      )}
+                    </div>
                   )}
+                  {cardConfig?.ui_show_company && (
+                    <div className="text-sm text-gold-300 truncate">{cardConfig?.user_company || ''}</div>
+                  )}
+                  <button
+                    className="absolute top-0 right-0 text-amber-200 hover:text-amber-100"
+                    onClick={() => setEditingBasic(true)}
+                    title="編輯基本資訊"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
                 </div>
-              )}
-              {cardConfig?.ui_show_company && (
-                <div className="text-sm text-gold-300 truncate">{cardConfig?.user_company || ''}</div>
+              ) : (
+                <div className="bg-black/30 border border-amber-400/40 rounded p-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-amber-300">姓名</label>
+                      <input
+                        type="text"
+                        value={cardConfig?.user_name || ''}
+                        onChange={(e) => updateBasicField('user_name', e.target.value)}
+                        className="inline-editor-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-amber-300">職稱</label>
+                      <input
+                        type="text"
+                        value={cardConfig?.user_title || ''}
+                        onChange={(e) => updateBasicField('user_title', e.target.value)}
+                        className="inline-editor-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-amber-300">公司</label>
+                      <input
+                        type="text"
+                        value={cardConfig?.user_company || ''}
+                        onChange={(e) => updateBasicField('user_company', e.target.value)}
+                        className="inline-editor-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-amber-300">聯絡電話</label>
+                      <input
+                        type="text"
+                        value={cardConfig?.user_phone || ''}
+                        onChange={(e) => updateBasicField('user_phone', e.target.value)}
+                        className="inline-editor-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-amber-300">LINE ID</label>
+                      <input
+                        type="text"
+                        value={cardConfig?.line_id || ''}
+                        onChange={(e) => updateBasicField('line_id', e.target.value)}
+                        className="inline-editor-input"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-amber-300">自我介紹</label>
+                      <textarea
+                        rows={2}
+                        value={cardConfig?.self_intro || ''}
+                        onChange={(e) => updateBasicField('self_intro', e.target.value)}
+                        className="inline-editor-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 mt-2">
+                    <button
+                      className="px-2 py-1 text-xs rounded bg-amber-500 text-gray-900"
+                      onClick={() => { onSaveBasicInfo && onSaveBasicInfo(); setEditingBasic(false); }}
+                    >
+                      保存
+                    </button>
+                    <button
+                      className="px-2 py-1 text-xs rounded bg-gray-800 text-amber-200 border border-amber-300"
+                      onClick={() => setEditingBasic(false)}
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -2183,6 +2310,8 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInlineImageUpload, onInlineIconUpload }) => {
   if (!block) return null;
   const { content_data } = block;
+  // 本地輪播索引（以區塊 index 為 key）
+  const [carouselIndexMap, setCarouselIndexMap] = useState({});
   
   switch (block.content_type) {
     case 'text':
@@ -2418,12 +2547,14 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
           </div>
           {content_data?.url ? (
             <div className="mb-2">
-              <img 
-                src={content_data.url} 
-                alt={content_data.alt} 
-                className="max-w-full h-16 object-cover rounded" 
-                style={{ maxHeight: '64px' }}
-              />
+              <a href={content_data.url} target="_blank" rel="noopener noreferrer">
+                <img 
+                  src={content_data.url} 
+                  alt={content_data.alt} 
+                  className="max-w-full h-16 object-cover rounded" 
+                  style={{ maxHeight: '64px' }}
+                />
+              </a>
             </div>
           ) : (
             <div className="text-amber-100 text-xs mb-2">
@@ -2470,6 +2601,247 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
           )}
         </div>
       );
+    
+    case 'carousel': {
+      const imgs = content_data?.images || [];
+      const curIdx = carouselIndexMap[index] || 0;
+      const goto = (n) => {
+        if (!imgs.length) return;
+        const next = (n + imgs.length) % imgs.length;
+        setCarouselIndexMap(prev => ({ ...prev, [index]: next }));
+      };
+      const prevSlide = () => goto(curIdx - 1);
+      const nextSlide = () => goto(curIdx + 1);
+
+      return (
+        <div>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {content_data?.title || '圖片輪播'}
+          </div>
+          {imgs.length > 0 ? (
+            <div className="relative">
+              <div className="w-full h-24 bg-black/20 rounded flex items-center justify-center overflow-hidden">
+                <img src={imgs[curIdx]?.url} alt={imgs[curIdx]?.alt || ''} className="h-24 w-auto object-cover rounded" />
+              </div>
+              <button onClick={prevSlide} className="absolute left-1 top-1/2 -translate-y-1/2 p-1 bg-black/40 text-amber-200 rounded hover:bg-black/60" aria-label="上一張">
+                <ChevronLeftIcon className="h-4 w-4" />
+              </button>
+              <button onClick={nextSlide} className="absolute right-1 top-1/2 -translate-y-1/2 p-1 bg-black/40 text-amber-200 rounded hover:bg-black/60" aria-label="下一張">
+                <ChevronRightIcon className="h-4 w-4" />
+              </button>
+              <div className="flex items-center justify-center gap-1 mt-2">
+                {imgs.map((_, i) => (
+                  <button key={i} onClick={() => goto(i)} className={`h-1.5 w-1.5 rounded-full ${i === curIdx ? 'bg-amber-400' : 'bg-amber-700 opacity-50'}`} aria-label={`第 ${i + 1} 張`} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-amber-100 text-xs mb-2">未添加圖片</div>
+          )}
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              <div className="text-amber-200 text-xs mt-2">圖片列表</div>
+              {(content_data?.images || []).map((img, i) => (
+                <div key={i} className="grid grid-cols-3 gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={img.url || ''}
+                    onChange={(e) => {
+                      const next = [...(content_data.images || [])];
+                      next[i] = { ...next[i], url: e.target.value };
+                      updateBlockField(index, 'images', next);
+                    }}
+                    placeholder="圖片網址"
+                    className="inline-editor-input col-span-2"
+                  />
+                  <input
+                    type="text"
+                    value={img.alt || ''}
+                    onChange={(e) => {
+                      const next = [...(content_data.images || [])];
+                      next[i] = { ...next[i], alt: e.target.value };
+                      updateBlockField(index, 'images', next);
+                    }}
+                    placeholder="描述"
+                    className="inline-editor-input"
+                  />
+                </div>
+              ))}
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  className="px-2 py-1 text-xs rounded bg-amber-500 text-gray-900"
+                  onClick={() => updateBlockField(index, 'images', [...(content_data?.images || []), { url: '', alt: '' }])}
+                >
+                  新增圖片
+                </button>
+              </div>
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'services': {
+      const items = content_data?.items || [];
+      const grouped = items.reduce((acc, it) => {
+        const key = it.group || '未分組';
+        acc[key] = acc[key] || [];
+        acc[key].push(it);
+        return acc;
+      }, {});
+
+      const moveItem = (from, to) => {
+        const arr = [...(content_data?.items || [])];
+        if (to < 0 || to >= arr.length) return;
+        const [moved] = arr.splice(from, 1);
+        arr.splice(to, 0, moved);
+        updateBlockField(index, 'items', arr);
+      };
+
+      return (
+        <div>
+          <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {content_data?.title || '服務項目'}
+          </div>
+          {items.length > 0 ? (
+            <div className="space-y-2">
+              {Object.keys(grouped).map((groupName, gi) => (
+                <div key={gi}>
+                  {groupName !== '未分組' && (
+                    <div className="text-amber-300 text-xs mb-1">{groupName}</div>
+                  )}
+                  <ul className="space-y-1">
+                    {grouped[groupName].map((it, i) => (
+                      <li key={`${groupName}-${i}`} className="flex items-start gap-2">
+                        {it.image_url && (
+                          <img src={it.image_url} alt={it.title || ''} className="h-10 w-10 rounded object-cover" />
+                        )}
+                        <div>
+                          <div className="text-amber-100 text-sm font-medium">
+                            {it.link ? (
+                              <a href={it.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                {it.title || '項目'}
+                              </a>
+                            ) : (
+                              it.title || '項目'
+                            )}
+                          </div>
+                          {it.description && (
+                            <div className="text-amber-300 text-xs">{it.description}</div>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-amber-100 text-xs mb-2">尚未新增服務項目</div>
+          )}
+          {editingBlockIndex === index && (
+            <div className="inline-editor-overlay">
+              <label>標題</label>
+              <input
+                type="text"
+                value={content_data?.title || ''}
+                onChange={(e) => updateBlockField(index, 'title', e.target.value)}
+                className="inline-editor-input"
+              />
+              {(content_data?.items || []).map((it, i) => (
+                <div key={i} className="grid grid-cols-6 gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={it.title || ''}
+                    onChange={(e) => {
+                      const next = [...(content_data.items || [])];
+                      next[i] = { ...next[i], title: e.target.value };
+                      updateBlockField(index, 'items', next);
+                    }}
+                    placeholder="項目標題"
+                    className="inline-editor-input"
+                  />
+                  <input
+                    type="text"
+                    value={it.description || ''}
+                    onChange={(e) => {
+                      const next = [...(content_data.items || [])];
+                      next[i] = { ...next[i], description: e.target.value };
+                      updateBlockField(index, 'items', next);
+                    }}
+                    placeholder="描述"
+                    className="inline-editor-input"
+                  />
+                  <input
+                    type="text"
+                    value={it.image_url || ''}
+                    onChange={(e) => {
+                      const next = [...(content_data.items || [])];
+                      next[i] = { ...next[i], image_url: e.target.value };
+                      updateBlockField(index, 'items', next);
+                    }}
+                    placeholder="圖片網址（可選）"
+                    className="inline-editor-input"
+                  />
+                  <input
+                    type="url"
+                    value={it.link || ''}
+                    onChange={(e) => {
+                      const next = [...(content_data.items || [])];
+                      next[i] = { ...next[i], link: e.target.value };
+                      updateBlockField(index, 'items', next);
+                    }}
+                    placeholder="項目連結（可選）"
+                    className="inline-editor-input"
+                  />
+                  <input
+                    type="text"
+                    value={it.group || ''}
+                    onChange={(e) => {
+                      const next = [...(content_data.items || [])];
+                      next[i] = { ...next[i], group: e.target.value };
+                      updateBlockField(index, 'items', next);
+                    }}
+                    placeholder="群組（可選）"
+                    className="inline-editor-input"
+                  />
+                  <div className="flex items-center gap-1">
+                    <button className="p-1 text-xs rounded bg-black/40 text-amber-200 hover:bg-black/60" onClick={() => moveItem(i, i - 1)} title="上移">
+                      <ChevronUpIcon className="h-4 w-4" />
+                    </button>
+                    <button className="p-1 text-xs rounded bg-black/40 text-amber-200 hover:bg-black/60" onClick={() => moveItem(i, i + 1)} title="下移">
+                      <ChevronDownIcon className="h-4 w-4" />
+                    </button>
+                    <button className="p-1 text-xs rounded bg-black/40 text-red-400 hover:bg-black/60" onClick={() => {
+                      const next = [...(content_data.items || [])];
+                      next.splice(i, 1);
+                      updateBlockField(index, 'items', next);
+                    }} title="刪除">
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  className="px-2 py-1 text-xs rounded bg-amber-500 text-gray-900"
+                  onClick={() => updateBlockField(index, 'items', [...(content_data?.items || []), { title: '', description: '', image_url: '', link: '', group: '' }])}
+                >新增項目</button>
+              </div>
+              <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
+            </div>
+          )}
+        </div>
+      );
+    }
     
     case 'social':
       return (
