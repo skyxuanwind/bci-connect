@@ -2032,18 +2032,6 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
                   <span className="text-amber-100 text-sm">{cardConfig.user_phone}</span>
                 </a>
               )}
-              {cardConfig?.user_email && (
-                <a href={`mailto:${cardConfig.user_email}`} className="contact-item flex items-center">
-                  <EnvelopeIcon className="contact-icon mr-3" />
-                  <span className="text-amber-100 text-sm">{cardConfig.user_email}</span>
-                </a>
-              )}
-              {cardConfig?.user_company && (
-                <div className="contact-item flex items-center">
-                  <BuildingOfficeIcon className="contact-icon mr-3" />
-                  <span className="text-amber-100 text-sm">{cardConfig.user_company}</span>
-                </div>
-              )}
             </div>
           </div>
         )}
