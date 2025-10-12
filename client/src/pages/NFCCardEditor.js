@@ -2021,20 +2021,7 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
           {/* 移除所有基本資訊輸入欄位；聯絡資訊區塊改為下方內容區統一呈現 */}
         </div>
 
-        {/* 聯絡資訊（預設顯示）：若無聯絡內容區塊且允許顯示，則以使用者資料呈現 */}
-        {cardConfig?.ui_show_contacts && !hasContactBlock && (
-          <div className="contact-info px-3 pb-2">
-            <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>聯絡資訊</div>
-            <div className="space-y-2">
-              {cardConfig?.user_phone && (
-                <a href={`tel:${cardConfig.user_phone}`} className="contact-item flex items-center">
-                  <PhoneIcon className="contact-icon mr-3" />
-                  <span className="text-amber-100 text-sm">{cardConfig.user_phone}</span>
-                </a>
-              )}
-            </div>
-          </div>
-        )}
+
 
         {/* 內容區塊 */}
         <div className="content-blocks">
