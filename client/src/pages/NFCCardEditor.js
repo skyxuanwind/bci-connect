@@ -19,7 +19,10 @@ import {
   XMarkIcon,
   UserIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  EnvelopeIcon,
+  BuildingOfficeIcon,
+  PhoneIcon
 } from '@heroicons/react/24/outline';
 import {
   FaLinkedin,
@@ -1942,6 +1945,7 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
   const dividerStyle = cardConfig?.ui_divider_style || template?.css_config?.dividerOptions?.[0] || 'solid-thin';
   const dividerOpacity = typeof cardConfig?.ui_divider_opacity === 'number' ? cardConfig.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
+  const hasContactBlock = (cardConfig?.content_blocks || []).some(b => ['contact','phone','email','website','line'].includes(b?.content_type));
 
   // 頭像上傳（改用既有 /api/nfc-cards/upload 端點）
   const uploadAvatar = async (file) => {
@@ -2016,6 +2020,33 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
           </div>
           {/* 移除所有基本資訊輸入欄位；聯絡資訊區塊改為下方內容區統一呈現 */}
         </div>
+
+        {/* 聯絡資訊（預設顯示）：若無聯絡內容區塊且允許顯示，則以使用者資料呈現 */}
+        {cardConfig?.ui_show_contacts && !hasContactBlock && (
+          <div className="contact-info px-3 pb-2">
+            <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>聯絡資訊</div>
+            <div className="space-y-2">
+              {cardConfig?.user_phone && (
+                <a href={`tel:${cardConfig.user_phone}`} className="contact-item flex items-center">
+                  <PhoneIcon className="contact-icon mr-3" />
+                  <span className="text-amber-100 text-sm">{cardConfig.user_phone}</span>
+                </a>
+              )}
+              {cardConfig?.user_email && (
+                <a href={`mailto:${cardConfig.user_email}`} className="contact-item flex items-center">
+                  <EnvelopeIcon className="contact-icon mr-3" />
+                  <span className="text-amber-100 text-sm">{cardConfig.user_email}</span>
+                </a>
+              )}
+              {cardConfig?.user_company && (
+                <div className="contact-item flex items-center">
+                  <BuildingOfficeIcon className="contact-icon mr-3" />
+                  <span className="text-amber-100 text-sm">{cardConfig.user_company}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 內容區塊 */}
         <div className="content-blocks">
