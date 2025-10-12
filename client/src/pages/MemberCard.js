@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from '../config/axios';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSwipeable } from 'react-swipeable';
 import {
   ShareIcon,
   DocumentArrowDownIcon,
@@ -34,6 +35,21 @@ import {
 } from 'react-icons/fa';
 import '../styles/templates.css';
 import { mapTemplateNameToClass } from '../utils/templateClass';
+
+// 將十六進位色碼轉換為 RGB 字串
+const hexToRgb = (hex) => {
+  try {
+    const clean = (hex || '').replace('#', '');
+    if (!clean) return '11, 15, 20';
+    const bigint = parseInt(clean, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `${r}, ${g}, ${b}`;
+  } catch {
+    return '11, 15, 20';
+  }
+};
 
 // 解析 YouTube 影片網址取得 videoId
 const getYouTubeVideoId = (url) => {
@@ -73,6 +89,20 @@ const MemberCard = () => {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [businessMediaItems, setBusinessMediaItems] = useState([]);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (cardData?.content_blocks?.length) {
+        setCurrentMediaIndex((currentMediaIndex + 1) % cardData.content_blocks.length);
+      }
+    },
+    onSwipedRight: () => {
+      if (cardData?.content_blocks?.length) {
+        setCurrentMediaIndex((currentMediaIndex - 1 + cardData.content_blocks.length) % cardData.content_blocks.length);
+      }
+    },
+    preventDefaultTouchmoveEvent: true,
+    trackTouch: true
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef(null);
@@ -136,6 +166,7 @@ const MemberCard = () => {
             line_id: found.line_id || ''
           },
           content_blocks: found.content_blocks || [],
+          layout_type: found.layout_type || 'standard',
           scanned_image_url: found.scanned_image_url
         };
         setCardData(transformed);
@@ -164,14 +195,15 @@ const MemberCard = () => {
         ui_show_company: cardConfig?.ui_show_company !== false,
         ui_show_contacts: cardConfig?.ui_show_contacts !== false,
         contact_info: {
-          phone: member?.contactNumber || '',
-          email: member?.email || '',
-          website: member?.website || '',
-          company: member?.company || '',
-          address: member?.address || '',
-          line_id: member?.line_id || ''
+          phone: cardConfig?.user_phone ?? member?.contactNumber ?? '',
+          email: cardConfig?.user_email ?? member?.email ?? '',
+          website: cardConfig?.user_website ?? member?.website ?? '',
+          company: cardConfig?.user_company ?? member?.company ?? '',
+          address: cardConfig?.user_address ?? member?.address ?? '',
+          line_id: cardConfig?.line_id ?? member?.line_id ?? ''
         },
-        content_blocks: cardConfig?.content_blocks || []
+        content_blocks: cardConfig?.content_blocks || [],
+        layout_type: cardConfig?.layout_type || 'standard'
       };
 
       setCardData(transformed);
@@ -713,39 +745,23 @@ const MemberCard = () => {
   const dividerStyle = cardData?.ui_divider_style || template?.css_config?.dividerOptions?.[0] || 'solid-thin';
   const dividerOpacity = typeof cardData?.ui_divider_opacity === 'number' ? cardData.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
+  const layoutType = cardData?.layout_type || 'standard';
+
+  // 背景樣式與模板配色一致
+  const backgroundStyle = (() => {
+    const css = template?.css_config || {};
+    if (css.backgroundGradient) {
+      return { backgroundImage: css.backgroundGradient };
+    }
+    if (css.backgroundColor) {
+      return { background: css.backgroundColor };
+    }
+    const rgb = hexToRgb(css.accentColor || css.secondaryColor || '#0b0f14');
+    return { background: `linear-gradient(to bottom, rgba(${rgb}, 0.12), #0b0f14)` };
+  })();
 
   return (
-    <div className="min-h-screen bg-primary-900">
-      {/* 頂部工具列 */}
-      <div className="sticky top-0 z-10 bg-primary-800/95 backdrop-blur-sm border-b border-gold-600/30">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 text-gold-300 hover:text-gold-100 transition-colors"
-          >
-            <ChevronLeftIcon className="h-6 w-6" />
-          </button>
-          <h1 className="text-lg font-semibold text-gold-100 truncate">
-            {cardData.user_name || '數位名片'}
-          </h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="p-2 text-gold-300 hover:text-gold-100 transition-colors"
-              title="分享名片"
-            >
-              <ShareIcon className="h-5 w-5" />
-            </button>
-            <button
-              onClick={downloadVCard}
-              className="p-2 text-gold-300 hover:text-gold-100 transition-colors"
-              title="下載聯絡人"
-            >
-              <DocumentArrowDownIcon className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen" style={backgroundStyle}>
 
       {/* 名片內容 */}
       <div className="max-w-md mx-auto">
@@ -779,50 +795,110 @@ const MemberCard = () => {
               </div>
             </div>
 
-            {/* 掃描名片圖片 */}
-            {cardData.scanned_image_url && (
-              <div className="content-block">
-                <h3 className="block-title">掃描名片</h3>
-                <div className="relative">
-                  <img
-                    src={cardData.scanned_image_url}
-                    alt="掃描名片"
-                    className="rounded-lg w-full object-contain cursor-zoom-in bg-gray-50"
-                    style={{ maxHeight: '480px' }}
-                    onClick={() => {
-                      setPreviewImageUrl(cardData.scanned_image_url);
-                      setImagePreviewOpen(true);
-                    }}
-                  />
-                  <button
-                    onClick={() => downloadImage(cardData.scanned_image_url, cardData.user_name)}
-                    className="absolute bottom-2 right-2 px-2 py-1 text-xs bg-white/90 text-gray-700 rounded shadow hover:bg-white"
-                    title="下載掃描原圖"
-                  >
-                    下載原圖
-                  </button>
-                </div>
-                <p className="mt-2 text-xs text-gray-500">點擊圖片可放大預覽</p>
-              </div>
-            )}
-
-            {/* 聯絡資訊 */}
-            {renderContactInfo()}
-
-            {/* 動態內容區塊 */}
-            {cardData.content_blocks && cardData.content_blocks
-              .sort((a, b) => a.display_order - b.display_order)
-              .map((block, idx) => {
-                const key = block?.id ?? `${block?.content_type || 'block'}-${block?.display_order ?? idx}-${idx}`;
-                return (
-                  <div key={key} className="content-block" style={{ borderTop: borderTopCss }}>
-                    {renderContentBlock(block)}
+            {/* 版型渲染：四宮格 / 滿版滑動 / 標準 */}
+            {layoutType === 'four_grid' ? (
+              <div className="px-3">
+                <AnimatePresence initial={false}>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(cardData.content_blocks || []).slice(0,4).map((block, idx) => {
+                      const key = block?.id ?? `${block?.content_type || 'block'}-${idx}`;
+                      return (
+                        <motion.div
+                          key={key}
+                          className="content-block bg-primary-800/40 rounded border border-gold-700/30 p-3"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.25 }}
+                        >
+                          {renderContentBlock(block)}
+                        </motion.div>
+                      );
+                    })}
                   </div>
-                );
-              })
-            }
-          </div>
-        </div>
+                </AnimatePresence>
+              </div>
+            ) : layoutType === 'full_slider' ? (
+              <div className="relative">
+                <div className="p-3">
+                  {cardData.content_blocks && cardData.content_blocks.length > 0 && (
+                    <AnimatePresence initial={false} mode="wait">
+                      <motion.div
+                        key={currentMediaIndex % cardData.content_blocks.length}
+                        className="content-block"
+                        style={{ borderTop: borderTopCss }}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.28 }}
+                        {...swipeHandlers}
+                      >
+                        {renderContentBlock(cardData.content_blocks[currentMediaIndex % cardData.content_blocks.length])}
+                      </motion.div>
+                    </AnimatePresence>
+                  )}
+                </div>
+                <div className="absolute inset-y-0 left-0 flex items-center">
+                  <button
+                    onClick={() => setCurrentMediaIndex((currentMediaIndex - 1 + cardData.content_blocks.length) % cardData.content_blocks.length)}
+                    className="m-2 px-3 py-2 rounded-full bg-black/40 text-white border border-gold-700/40"
+                  >◀</button>
+                </div>
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                  <button
+                    onClick={() => setCurrentMediaIndex((currentMediaIndex + 1) % cardData.content_blocks.length)}
+                    className="m-2 px-3 py-2 rounded-full bg-black/40 text-white border border-gold-700/40"
+                  >▶</button>
+                </div>
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2">
+                  {(cardData.content_blocks || []).map((_, i) => (
+                    <span key={i} className={`h-2 w-2 rounded-full ${i === (currentMediaIndex % cardData.content_blocks.length) ? 'bg-amber-400' : 'bg-primary-700'}`}/>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                {cardData.scanned_image_url && (
+                  <div className="content-block">
+                    <h3 className="block-title">掃描名片</h3>
+                    <div className="relative">
+                      <img
+                        src={cardData.scanned_image_url}
+                        alt="掃描名片"
+                        className="rounded-lg w-full object-contain cursor-zoom-in bg-gray-50"
+                        style={{ maxHeight: '480px' }}
+                        onClick={() => {
+                          setPreviewImageUrl(cardData.scanned_image_url);
+                          setImagePreviewOpen(true);
+                        }}
+                      />
+                      <button
+                        onClick={() => downloadImage(cardData.scanned_image_url, cardData.user_name)}
+                        className="absolute bottom-2 right-2 px-2 py-1 text-xs bg-white/90 text-gray-700 rounded shadow hover:bg-white"
+                        title="下載掃描原圖"
+                      >
+                        下載原圖
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">點擊圖片可放大預覽</p>
+                  </div>
+                )}
+                {renderContactInfo()}
+                {cardData.content_blocks && cardData.content_blocks
+                  .sort((a, b) => a.display_order - b.display_order)
+                  .map((block, idx) => {
+                    const key = block?.id ?? `${block?.content_type || 'block'}-${block?.display_order ?? idx}-${idx}`;
+                    return (
+                      <div key={key} className="content-block" style={{ borderTop: borderTopCss }}>
+                        {renderContentBlock(block)}
+                      </div>
+                    );
+                  })
+                }
+              </>
+            )}
+      </div>
+    </div>
       </div>
 
       {/* 成功提示 */}

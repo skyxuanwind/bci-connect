@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSwipeable } from 'react-swipeable';
 import { useParams } from 'react-router-dom';
 import axios from '../config/axios';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -36,6 +38,7 @@ const PublicNFCCard = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [isCollected, setIsCollected] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     fetchCardData();
@@ -298,6 +301,92 @@ const PublicNFCCard = () => {
     }
   };
 
+  // 四宮格專用渲染
+  const renderFourGridSection = (cardConfig) => {
+    const gridBlocks = (cardConfig?.content_blocks || []).slice(0, 4);
+    if (gridBlocks.length === 0) return null;
+    return (
+      <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">精選內容</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <AnimatePresence initial={false}>
+            {gridBlocks.map((block, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="bg-black/60 border border-yellow-500/20 rounded-xl p-4"
+              >
+                {renderContentBlock(block)}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+    );
+  };
+
+  // 滿版滑動專用渲染
+  const renderFullSliderSection = (cardConfig) => {
+    const blocks = cardConfig?.content_blocks || [];
+    if (blocks.length === 0) return null;
+    const clampIndex = (i) => {
+      const len = blocks.length;
+      return ((i % len) + len) % len;
+    };
+    const activeIndex = clampIndex(currentSlide);
+    const swipeHandlers = useSwipeable({
+      onSwipedLeft: () => setCurrentSlide(activeIndex + 1),
+      onSwipedRight: () => setCurrentSlide(activeIndex - 1),
+      preventDefaultTouchmoveEvent: true,
+      trackTouch: true
+    });
+    return (
+      <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-0 overflow-hidden">
+        <div className="relative">
+          <div className="p-6">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={activeIndex}
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.25 }}
+                {...swipeHandlers}
+              >
+                {renderContentBlock(blocks[activeIndex])}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-2">
+            {blocks.map((_, i) => (
+              <button
+                key={i}
+                aria-label={`slide-${i}`}
+                onClick={() => setCurrentSlide(i)}
+                className={`h-2 w-2 rounded-full ${i === activeIndex ? 'bg-amber-400' : 'bg-gray-500'}`}
+              />
+            ))}
+          </div>
+          <div className="absolute inset-y-0 left-0 flex items-center">
+            <button
+              onClick={() => setCurrentSlide(activeIndex - 1)}
+              className="m-2 px-3 py-2 rounded-full bg-black/60 text-white border border-yellow-500/30"
+            >◀</button>
+          </div>
+          <div className="absolute inset-y-0 right-0 flex items-center">
+            <button
+              onClick={() => setCurrentSlide(activeIndex + 1)}
+              className="m-2 px-3 py-2 rounded-full bg-black/60 text-white border border-yellow-500/30"
+            >▶</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -336,6 +425,56 @@ const PublicNFCCard = () => {
 
   const { member, cardConfig } = cardData;
   const cssConfig = cardConfig?.css_config || {};
+  const layoutType = cardConfig?.layout_type || 'standard';
+
+  // 根據版型渲染不同的內容區段
+  const renderByLayout = () => {
+    if (layoutType === 'four_grid') return renderFourGridSection(cardConfig);
+    if (layoutType === 'full_slider') return renderFullSliderSection(cardConfig);
+    return (
+      <>
+        {/* 聯絡信息 */}
+        <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">聯絡方式</h2>
+          <div className="space-y-3">
+            {member.contact_number && (
+              <a 
+                href={`tel:${member.contact_number}`}
+                className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
+              >
+                <PhoneIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
+                <span className="text-gray-900 dark:text-white">{member.contact_number}</span>
+              </a>
+            )}
+            {member.email && (
+              <a 
+                href={`mailto:${member.email}`}
+                className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
+              >
+                <EnvelopeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" />
+                <span className="text-gray-900 dark:text-white">{member.email}</span>
+              </a>
+            )}
+            {member.company && (
+              <div className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <BuildingOfficeIcon className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3" />
+                <span className="text-gray-900 dark:text-white">{member.company}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        {/* 動態內容區塊 */}
+        {cardConfig?.content_blocks && cardConfig.content_blocks.length > 0 && (
+          <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">更多信息</h2>
+            {cardConfig.content_blocks.map((block, index) => (
+              <div key={index}>{renderContentBlock(block)}</div>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  };
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -426,52 +565,31 @@ const PublicNFCCard = () => {
           </div>
         </div>
 
-        {/* 聯絡信息 */}
-        <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">聯絡方式</h2>
-          
-          <div className="space-y-3">
-            {member.contact_number && (
-              <a 
-                href={`tel:${member.contact_number}`}
-                className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
-              >
-                <PhoneIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
-                <span className="text-gray-900 dark:text-white">{member.contact_number}</span>
-              </a>
-            )}
-            
-            {member.email && (
-              <a 
-                href={`mailto:${member.email}`}
-                className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
-              >
-                <EnvelopeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" />
-                <span className="text-gray-900 dark:text-white">{member.email}</span>
-              </a>
-            )}
-            
-            {member.company && (
-              <div className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                <BuildingOfficeIcon className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3" />
-                <span className="text-gray-900 dark:text-white">{member.company}</span>
-              </div>
-            )}
+        {renderByLayout()}
+      </div>
+
+      {/* 底部社群按鈕式固定列 */}
+      {layoutType === 'bottom_social' && (
+        <div className="fixed bottom-4 inset-x-0">
+          <div className="max-w-2xl mx-auto px-4">
+            <div className="flex items-center justify-center gap-2 bg-black/70 border border-yellow-500/30 rounded-xl px-3 py-2">
+              {(() => {
+                const socialBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'social');
+                const entries = Object.entries(socialBlock?.content_data || {}).filter(([_, v]) => !!v);
+                return entries.length > 0 ? (
+                  entries.map(([key, url]) => (
+                    <a key={key} href={url} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-amber-600 text-amber-100 text-xs rounded">
+                      {key}
+                    </a>
+                  ))
+                ) : (
+                  <span className="text-amber-100 text-xs">請在社群區塊填入連結</span>
+                );
+              })()}
+            </div>
           </div>
         </div>
-
-        {/* 動態內容區塊 */}
-        {cardConfig?.content_blocks && cardConfig.content_blocks.length > 0 && (
-          <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">更多信息</h2>
-            {cardConfig.content_blocks.map((block, index) => (
-              <div key={index}>
-                {renderContentBlock(block)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* 分享成功提示 */}
       {showShareModal && (

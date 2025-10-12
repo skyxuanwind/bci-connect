@@ -270,6 +270,8 @@ const getYouTubeVideoId = (url) => {
           line_id: card.line_id || '',
           self_intro: card.self_intro || '',
           avatar_url: card.avatar_url || user?.avatar_url || '',
+          // 排版型別（預設 standard）
+          layout_type: card.layout_type || 'standard',
           // 顯示/移除切換（預設顯示）
           ui_show_avatar: card.ui_show_avatar !== false,
           ui_show_name: card.ui_show_name !== false,
@@ -292,6 +294,7 @@ const getYouTubeVideoId = (url) => {
           line_id: '',
           self_intro: '',
           avatar_url: user?.avatar_url || '',
+          layout_type: 'standard',
           // 顯示/移除切換（預設顯示）
           ui_show_avatar: true,
           ui_show_name: true,
@@ -426,6 +429,7 @@ const getYouTubeVideoId = (url) => {
         custom_css: cardConfig.custom_css,
         card_title: cardConfig.card_title || '',
         card_subtitle: cardConfig.card_subtitle || '',
+        layout_type: cardConfig.layout_type || 'standard',
         // 保存 UI 顯示旗標與頭像網址，供完整版本渲染一致
         ui_show_avatar: !!cardConfig.ui_show_avatar,
         ui_show_name: !!cardConfig.ui_show_name,
@@ -503,6 +507,7 @@ const getYouTubeVideoId = (url) => {
         custom_css: cardConfig.custom_css,
         card_title: cardConfig.card_title || '',
         card_subtitle: cardConfig.card_subtitle || '',
+        layout_type: cardConfig.layout_type || 'standard',
         // 保存 UI 顯示旗標與頭像網址
         ui_show_avatar: !!cardConfig.ui_show_avatar,
         ui_show_name: !!cardConfig.ui_show_name,
@@ -557,6 +562,60 @@ const getYouTubeVideoId = (url) => {
     };
     next.custom_css = buildCustomCss(template, next);
     setCardConfig(next);
+  };
+
+  // 生成三種排版的預設內容
+  const getDefaultBlocksForLayout = (layout) => {
+    const makeBlock = (type, data = {}) => ({
+      id: Date.now() + Math.random(),
+      content_type: type,
+      content_data: data,
+      display_order: 0,
+      is_visible: true,
+      custom_styles: {}
+    });
+
+    switch (layout) {
+      case 'bottom_social': {
+        const social = makeBlock('social', {
+          linkedin: '', facebook: '', instagram: '', twitter: '', youtube: '', tiktok: ''
+        });
+        const website = makeBlock('website', { title: '官方網站', url: '' });
+        return [website, social].map((b, i) => ({ ...b, display_order: i }));
+      }
+      case 'four_grid': {
+        // 四宮格預設：公司簡介、專長技能、作品集、聯絡方式
+        const intro = makeBlock('text', { title: '公司簡介', content: '在此撰寫公司簡介與服務重點。' });
+        const skills = makeBlock('text', { title: '專長技能', content: '技能A、技能B、技能C…' });
+        const portfolio = makeBlock('image', { title: '作品集', url: '', alt: '上傳代表作品圖片' });
+        const contact = makeBlock('text', { title: '聯絡方式', content: '電話、Email、網站、LINE ID…' });
+        return [intro, skills, portfolio, contact].map((b, i) => ({ ...b, display_order: i }));
+      }
+      case 'full_slider': {
+        const resume = makeBlock('text', { title: '個人簡歷', content: '輸入你的經歷、學歷與成就。' });
+        const portfolio = makeBlock('image', { title: '作品集封面', url: '', alt: '上傳代表作品圖片' });
+        const contact = makeBlock('text', { title: '聯絡方式', content: '電話、Email、網站、LINE ID…' });
+        return [resume, portfolio, contact].map((b, i) => ({ ...b, display_order: i }));
+      }
+      default:
+        return [];
+    }
+  };
+
+  // 排版切換（自動載入預設內容）
+  const handleLayoutTypeChange = (layout) => {
+    setCardConfig(prev => {
+      const defaults = getDefaultBlocksForLayout(layout);
+      const nextBlocks = defaults.length ? defaults : (prev?.content_blocks || []);
+      return {
+        ...prev,
+        layout_type: layout,
+        content_blocks: nextBlocks
+      };
+    });
+    setSuccessToastMessage('已套用排版並載入預設內容');
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 1000);
   };
 
   // UI 顯示切換：頭像 / 姓名 / 公司 / 聯絡資訊
@@ -999,6 +1058,24 @@ const getYouTubeVideoId = (url) => {
                 <h2 className="text-lg font-semibold text-gold-100 mb-4">基本設定</h2>
                 
                 <div className="space-y-4">
+                  {/* 排版選擇 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gold-300 mb-2">排版選擇</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        className={`px-3 py-2 rounded-lg border ${cardConfig?.layout_type === 'bottom_social' ? 'border-amber-500 bg-black/40 text-amber-200' : 'border-gold-600 text-gold-100'} hover:border-amber-400`}
+                        onClick={() => handleLayoutTypeChange('bottom_social')}
+                      >底部社群</button>
+                      <button
+                        className={`px-3 py-2 rounded-lg border ${cardConfig?.layout_type === 'four_grid' ? 'border-amber-500 bg-black/40 text-amber-200' : 'border-gold-600 text-gold-100'} hover:border-amber-400`}
+                        onClick={() => handleLayoutTypeChange('four_grid')}
+                      >四宮格</button>
+                      <button
+                        className={`px-3 py-2 rounded-lg border ${cardConfig?.layout_type === 'full_slider' ? 'border-amber-500 bg-black/40 text-amber-200' : 'border-gold-600 text-gold-100'} hover:border-amber-400`}
+                        onClick={() => handleLayoutTypeChange('full_slider')}
+                      >滿版滑動</button>
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gold-300 mb-2">
                       選擇模板
@@ -1901,7 +1978,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 };
 
 // 模板預覽組件
-const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockField, updateBasicField, onDeleteBlock, onToggleVisibility, onMoveUp, onMoveDown, setEditingBlockIndex, onInlineImageUpload, onInlineIconUpload }) => {
+  const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockField, updateBasicField, onDeleteBlock, onToggleVisibility, onMoveUp, onMoveDown, setEditingBlockIndex, onInlineImageUpload, onInlineIconUpload }) => {
   const { user } = useAuth();
   
   const hexToRgb = (hex) => {
@@ -1946,6 +2023,8 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
   const dividerOpacity = typeof cardConfig?.ui_divider_opacity === 'number' ? cardConfig.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
   const hasContactBlock = (cardConfig?.content_blocks || []).some(b => ['contact','phone','email','website','line'].includes(b?.content_type));
+  const layoutType = cardConfig?.layout_type || 'standard';
+  const firstSocialBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'social');
 
   // 頭像上傳（改用既有 /api/nfc-cards/upload 端點）
   const uploadAvatar = async (file) => {
@@ -2023,6 +2102,75 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
 
 
 
+        {/* 排版渲染 */}
+        {layoutType === 'four_grid' ? (
+          <div className="grid grid-cols-2 gap-3 p-3" style={{ borderTop: borderTopCss }}>
+            {/* 左上：頭像 */}
+            <div className="flex items-center justify-center bg-black/30 rounded p-3">
+              <img
+                src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
+                alt="頭像"
+                className="w-24 h-24 rounded-full border border-amber-500 object-cover"
+              />
+            </div>
+            {/* 右上：聯絡資訊 */}
+            <div className="bg-black/30 rounded p-3 text-amber-100 text-xs space-y-1">
+              {cardConfig?.user_phone && <div>📞 {cardConfig.user_phone}</div>}
+              {cardConfig?.user_email && <div>✉️ {cardConfig.user_email}</div>}
+              {hasContactBlock && <div>🔗 其他聯絡方式見下方區塊</div>}
+            </div>
+            {/* 左下：公司簡介（首個標題為 公司簡介 的文字區塊） */}
+            <div className="bg-black/30 rounded p-3">
+              <div className="text-amber-200 text-xs mb-1">公司簡介</div>
+              <div className="text-amber-100 text-xs">
+                {(cardConfig?.content_blocks || []).find(b => b?.content_type==='text' && (b?.content_data?.title||'')==='公司簡介')?.content_data?.content || '在此撰寫公司簡介'}
+              </div>
+            </div>
+            {/* 右下：專長技能 */}
+            <div className="bg-black/30 rounded p-3">
+              <div className="text-amber-200 text-xs mb-1">專長技能</div>
+              <div className="text-amber-100 text-xs">
+                {(cardConfig?.content_blocks || []).find(b => b?.content_type==='text' && (b?.content_data?.title||'')==='專長技能')?.content_data?.content || '技能A、技能B、技能C…'}
+              </div>
+            </div>
+          </div>
+        ) : layoutType === 'full_slider' ? (
+          <div className="overflow-x-auto no-scrollbar">
+            <div className="flex gap-3 p-3" style={{ minWidth: '100%' }}>
+              {/* Slide 1: 個人簡歷 */}
+              <div className="min-w-[80%] bg-black/30 rounded p-3">
+                <div className="text-amber-200 text-xs mb-1">個人簡歷</div>
+                <div className="text-amber-100 text-xs">
+                  {(cardConfig?.content_blocks || []).find(b => b?.content_type==='text' && (b?.content_data?.title||'')==='個人簡歷')?.content_data?.content || '輸入你的經歷、學歷與成就。'}
+                </div>
+              </div>
+              {/* Slide 2: 作品集 */}
+              <div className="min-w-[80%] bg-black/30 rounded p-3">
+                <div className="text-amber-200 text-xs mb-1">作品集</div>
+                {(() => {
+                  const img = (cardConfig?.content_blocks || []).find(b => b?.content_type==='image');
+                  return img?.content_data?.url ? (
+                    <img src={img.content_data.url} alt={img.content_data.alt || '作品'} className="w-full h-32 object-cover rounded" />
+                  ) : (
+                    <div className="text-amber-100 text-xs">請上傳代表作品圖片</div>
+                  );
+                })()}
+              </div>
+              {/* Slide 3: 聯絡方式 */}
+              <div className="min-w-[80%] bg-black/30 rounded p-3">
+                <div className="text-amber-200 text-xs mb-1">聯絡方式</div>
+                <div className="text-amber-100 text-xs space-y-1">
+                  {cardConfig?.user_phone && <div>📞 {cardConfig.user_phone}</div>}
+                  {cardConfig?.user_email && <div>✉️ {cardConfig.user_email}</div>}
+                  {(cardConfig?.line_id) && <div>💬 LINE：{cardConfig.line_id}</div>}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <></>
+        )}
+
         {/* 內容區塊 */}
         <div className="content-blocks">
           {cardConfig?.content_blocks?.length > 0 ? (
@@ -2075,6 +2223,22 @@ const TemplatePreview = ({ template, cardConfig, editingBlockIndex, updateBlockF
               <PhotoIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
               <p className="text-sm">尚未添加內容</p>
               <p className="text-xs mt-1">按下「新增內容」按鈕添加內容</p>
+            </div>
+          )}
+          {/* 底部社群按鈕式固定列 */}
+          {layoutType === 'bottom_social' && (
+            <div className="sticky bottom-2 mt-3">
+              <div className="flex items-center justify-center gap-2 bg-black/60 border border-amber-500/40 rounded-lg px-3 py-2">
+                {firstSocialBlock && Object.entries(firstSocialBlock.content_data || {}).filter(([_, v]) => !!v).length > 0 ? (
+                  Object.entries(firstSocialBlock.content_data || {}).filter(([_, v]) => !!v).map(([key]) => (
+                    <span key={key} className="px-2 py-1 bg-amber-600 text-amber-100 text-xs rounded">
+                      {key}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-amber-100 text-xs">請在社群區塊填入連結</span>
+                )}
+              </div>
             </div>
           )}
         </div>
