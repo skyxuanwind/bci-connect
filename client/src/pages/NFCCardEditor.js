@@ -72,8 +72,8 @@ const getYouTubeVideoId = (url) => {
     const [showAddBlockModal, setShowAddBlockModal] = useState(false);
     const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showDesktopTemplate, setShowDesktopTemplate] = useState(false);
-  // 單畫面模式：預設為關閉，顯示左側基本設定面板
-  const [singleScreenMode, setSingleScreenMode] = useState(false);
+  // 單畫面模式：僅保留即時預覽，隱藏基本設定與內容區塊
+  const [singleScreenMode, setSingleScreenMode] = useState(true);
   // 移除覆蓋層：基本資訊與內容清單改為主介面就地編輯
   // 已移除自動帶入：改為完全手動維護欄位與內容
   // 提示視窗狀態
