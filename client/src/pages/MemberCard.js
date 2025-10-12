@@ -153,6 +153,7 @@ const MemberCard = () => {
           user_title: found.title || '',
           user_company: found.company || '',
           avatar_url: found.avatar_url || '',
+          avatar_style: found.avatar_style || 'original',
           ui_show_avatar: found.ui_show_avatar !== false,
           ui_show_name: found.ui_show_name !== false,
           ui_show_company: found.ui_show_company !== false,
@@ -190,6 +191,7 @@ const MemberCard = () => {
         user_title: member?.title || '',
         user_company: member?.company || '',
         avatar_url: cardConfig?.avatar_url || member?.avatar_url || '',
+        avatar_style: cardConfig?.avatar_style || 'original',
         ui_show_avatar: cardConfig?.ui_show_avatar !== false,
         ui_show_name: cardConfig?.ui_show_name !== false,
         ui_show_company: cardConfig?.ui_show_company !== false,
@@ -771,12 +773,20 @@ const MemberCard = () => {
             <div className="basic-info-panel px-3 py-4">
               <div className="flex items-center gap-3 mb-3">
                 {cardData?.ui_show_avatar && (
-                  <div className="relative">
-                    <img
-                      src={cardData?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
-                      alt="頭像"
-                      className="w-32 h-32 rounded-full border-2 border-gold-500 object-cover shadow-lg"
-                    />
+                  <div className={`relative ${cardData?.avatar_style === 'full' ? 'w-full' : ''}`}>
+                    {cardData?.avatar_style === 'full' ? (
+                      <img
+                        src={cardData?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
+                        alt="頭像"
+                        className="w-full h-auto object-contain border-0 rounded-none shadow-lg"
+                      />
+                    ) : (
+                      <img
+                        src={cardData?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
+                        alt="頭像"
+                        className="w-32 h-32 rounded-full border-2 border-gold-500 object-cover shadow-lg"
+                      />
+                    )}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">

@@ -129,7 +129,31 @@ const PublicNFCCard = () => {
     }
   };
 
-  const renderContentBlock = (block) => {
+  const [blockCarouselIndexMap, setBlockCarouselIndexMap] = useState({});
+
+  // 啟用各區塊輪播的自動播放（僅依據目前卡片內容）
+  useEffect(() => {
+    const blocks = cardData?.cardConfig?.content_blocks || cardData?.cardConfig?.contentBlocks || cardData?.content_blocks || [];
+    const timers = [];
+    blocks.forEach((b, idx) => {
+      if (b?.content_type !== 'carousel') return;
+      const imgs = b?.content_data?.images || [];
+      const enabled = !!b?.content_data?.autoplay && imgs.length > 1;
+      const interval = Number(b?.content_data?.autoplay_interval || 3000);
+      if (!enabled) return;
+      const t = setInterval(() => {
+        setBlockCarouselIndexMap(prev => {
+          const cur = prev[idx] || 0;
+          const next = (cur + 1) % imgs.length;
+          return { ...prev, [idx]: next };
+        });
+      }, Math.max(1000, interval));
+      timers.push(t);
+    });
+    return () => timers.forEach(clearInterval);
+  }, [cardData?.content_blocks, cardData?.cardConfig]);
+
+  const renderContentBlock = (block, idx) => {
     switch (block.content_type) {
       case 'text':
         // 專用樣式：LINE ID（以標題辨識）
@@ -227,6 +251,49 @@ const PublicNFCCard = () => {
             )}
           </div>
         );
+      
+      case 'carousel': {
+        const imgs = block?.content_data?.images || [];
+        if (imgs.length === 0) {
+          return (
+            <div className="mb-4">
+              <div className="flex items-center justify-center h-32 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <PhotoIcon className="h-12 w-12 text-gray-400" />
+              </div>
+            </div>
+          );
+        }
+        const curIdx = blockCarouselIndexMap[idx] || 0;
+        const goto = (n) => {
+          const next = ((n % imgs.length) + imgs.length) % imgs.length;
+          setBlockCarouselIndexMap(prev => ({ ...prev, [idx]: next }));
+        };
+        const prevSlide = () => goto(curIdx - 1);
+        const nextSlide = () => goto(curIdx + 1);
+        return (
+          <div className="mb-4">
+            {block.content_data?.title && (
+              <h3 className="font-semibold text-lg mb-2">{block.content_data.title}</h3>
+            )}
+            <div className="relative">
+              <div className="w-full h-56 bg-black/10 dark:bg-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+                <img src={imgs[curIdx]?.url} alt="" className="max-h-56 w-auto object-contain" />
+              </div>
+              <button onClick={prevSlide} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-white rounded hover:bg-black/60" aria-label="上一張">
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+              <button onClick={nextSlide} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-white rounded hover:bg-black/60" aria-label="下一張">
+                <ChevronRightIcon className="h-5 w-5" />
+              </button>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                {imgs.map((_, i) => (
+                  <button key={i} onClick={() => goto(i)} className={`h-2 w-2 rounded-full ${i === curIdx ? 'bg-amber-400' : 'bg-gray-500'}`} aria-label={`第 ${i + 1} 張`} />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
       
       case 'social':
         const socialPlatforms = [
@@ -468,7 +535,7 @@ const PublicNFCCard = () => {
           <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">更多信息</h2>
             {cardConfig.content_blocks.map((block, index) => (
-              <div key={index}>{renderContentBlock(block)}</div>
+              <div key={index}>{renderContentBlock(block, index)}</div>
             ))}
           </div>
         )}

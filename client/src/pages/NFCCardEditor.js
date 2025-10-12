@@ -2021,7 +2021,7 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                   <img
                     src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
                     alt="頭像"
-                    className="w-full h-40 object-cover border-0 rounded-none shadow-lg"
+                    className="w-full h-auto object-contain border-0 rounded-none shadow-lg"
                   />
                 ) : (
                   <img
@@ -2629,7 +2629,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
       const prevSlide = () => goto(curIdx - 1);
       const nextSlide = () => goto(curIdx + 1);
 
-      // 內聯上傳並寫回對應圖片項目
+      // 內聯上傳並寫回對應圖片項目（僅檔案上傳，不需網址與名稱）
       const uploadCarouselImage = async (file, imageIdx) => {
         if (!file) return;
         try {
@@ -2641,7 +2641,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
           const url = resp?.data?.data?.url;
           if (url) {
             const next = [...(content_data?.images || [])];
-            next[imageIdx] = { ...(next[imageIdx] || {}), url, alt: file.name || next[imageIdx]?.alt || '' };
+            next[imageIdx] = { url };
             updateBlockField(index, 'images', next);
           } else {
             alert('圖片上傳失敗，請重試');
@@ -2729,33 +2729,18 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
                               className="grid grid-cols-12 gap-2 mt-2 items-center"
                             >
                               <div {...draggableProvided.dragHandleProps} className="col-span-1 text-center cursor-grab text-amber-300">⋮⋮</div>
-                              <input
-                                type="text"
-                                value={img.url || ''}
-                                onChange={(e) => {
-                                  const next = [...(content_data.images || [])];
-                                  next[i] = { ...next[i], url: e.target.value };
-                                  updateBlockField(index, 'images', next);
-                                }}
-                                placeholder="圖片網址"
-                                className="inline-editor-input col-span-6"
-                              />
-                              <input
-                                type="text"
-                                value={img.alt || ''}
-                                onChange={(e) => {
-                                  const next = [...(content_data.images || [])];
-                                  next[i] = { ...next[i], alt: e.target.value };
-                                  updateBlockField(index, 'images', next);
-                                }}
-                                placeholder="描述"
-                                className="inline-editor-input col-span-3"
-                              />
+                              <div className="col-span-8">
+                                {img?.url ? (
+                                  <img src={img.url} alt="" className="w-full h-16 object-contain rounded" />
+                                ) : (
+                                  <div className="w-full h-16 bg-black/20 rounded flex items-center justify-center text-amber-100 text-xs">未上傳圖片</div>
+                                )}
+                              </div>
                               <input
                                 type="file"
                                 accept="image/*"
                                 onChange={(e) => uploadCarouselImage(e.target.files?.[0], i)}
-                                className="inline-editor-input col-span-1"
+                                className="inline-editor-input col-span-2"
                               />
                               <button
                                 className="px-2 py-1 text-xs rounded bg-red-600 text-white col-span-1"
@@ -2775,12 +2760,6 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
                 </Droppable>
               </DragDropContext>
               <div className="flex items-center gap-2 mt-2">
-                <button
-                  className="px-2 py-1 text-xs rounded bg-amber-500 text-gray-900"
-                  onClick={() => updateBlockField(index, 'images', [...(content_data?.images || []), { url: '', alt: '' }])}
-                >
-                  新增圖片
-                </button>
                 <label className="px-2 py-1 text-xs rounded bg-amber-700 text-amber-100 cursor-pointer">
                   上傳新增
                   <input
@@ -2791,7 +2770,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
                       const f = e.target.files?.[0];
                       if (!f) return;
                       const nextIdx = (content_data?.images || []).length;
-                      updateBlockField(index, 'images', [...(content_data?.images || []), { url: '', alt: '' }]);
+                      updateBlockField(index, 'images', [...(content_data?.images || []), { url: '' }]);
                       // 延後上傳以確保陣列已擴充
                       setTimeout(() => uploadCarouselImage(f, nextIdx), 0);
                     }}
