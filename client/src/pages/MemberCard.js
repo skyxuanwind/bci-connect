@@ -268,6 +268,7 @@ const MemberCard = () => {
         card_title: found.card_title || scanned.name || '掃描名片',
         card_subtitle: found.card_subtitle || scanned.title || '',
         template_name: found.template_name || '極簡高級風格',
+        ui_show_contacts: found.ui_show_contacts !== false, // 加入 UI 顯示設定，預設為 true
         contact_info: {
           phone: found.contact_info?.phone || scanned.phone || scanned.mobile || '',
           email: found.contact_info?.email || scanned.email || '',
@@ -328,6 +329,7 @@ const MemberCard = () => {
           card_title: card.card_title || member?.name || '測試名片',
           card_subtitle: card.card_subtitle || '',
           template_name: card.template_name,
+          ui_show_contacts: card.ui_show_contacts !== false, // 加入 UI 顯示設定
           contact_info: {
             phone: member?.contact_number || '',
             email: member?.email || '',
@@ -362,6 +364,7 @@ const MemberCard = () => {
         card_title: card.card_title,
         card_subtitle: card.card_subtitle,
         template_name: card.template_name,
+        ui_show_contacts: card.ui_show_contacts !== false, // 加入 UI 顯示設定
         contact_info: {
           phone: member?.contact_number || card.user_phone || '',
           email: member?.email || card.user_email || '',
@@ -963,7 +966,8 @@ const MemberCard = () => {
   };
 
   const renderContactInfo = () => {
-    if (!cardData?.contact_info) return null;
+    // 檢查是否應該顯示聯絡資訊
+    if (!cardData?.ui_show_contacts || !cardData?.contact_info) return null;
 
     const { contact_info } = cardData;
     const contactItems = [];
