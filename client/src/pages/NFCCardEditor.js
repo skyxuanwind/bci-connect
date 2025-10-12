@@ -625,7 +625,7 @@ const getYouTubeVideoId = (url) => {
       case 'image':
         return { title: '圖片標題', url: '', alt: '圖片描述' };
       case 'carousel':
-        return { title: '圖片輪播', images: [], autoplay: false };
+        return { title: '圖片輪播', images: [], autoplay: true, autoplay_interval: 3000 };
       case 'services':
         return { title: '服務項目', items: [] };
       case 'social':
@@ -2312,6 +2312,22 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
   const { content_data } = block;
   // 本地輪播索引（以區塊 index 為 key）
   const [carouselIndexMap, setCarouselIndexMap] = useState({});
+  // 輪播自動播放計時器
+  useEffect(() => {
+    if (block.content_type !== 'carousel') return;
+    const imgs = content_data?.images || [];
+    const enabled = !!content_data?.autoplay && imgs.length > 1;
+    const interval = Number(content_data?.autoplay_interval || 3000);
+    if (!enabled) return;
+    const timer = setInterval(() => {
+      setCarouselIndexMap(prev => {
+        const cur = prev[index] || 0;
+        const next = (cur + 1) % imgs.length;
+        return { ...prev, [index]: next };
+      });
+    }, Math.max(1000, interval));
+    return () => clearInterval(timer);
+  }, [block.content_type, content_data?.autoplay, content_data?.autoplay_interval, content_data?.images?.length, index]);
   
   switch (block.content_type) {
     case 'text':
@@ -2613,6 +2629,37 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
       const prevSlide = () => goto(curIdx - 1);
       const nextSlide = () => goto(curIdx + 1);
 
+      // 內聯上傳並寫回對應圖片項目
+      const uploadCarouselImage = async (file, imageIdx) => {
+        if (!file) return;
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const resp = await axios.post('/api/nfc-cards/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          const url = resp?.data?.data?.url;
+          if (url) {
+            const next = [...(content_data?.images || [])];
+            next[imageIdx] = { ...(next[imageIdx] || {}), url, alt: file.name || next[imageIdx]?.alt || '' };
+            updateBlockField(index, 'images', next);
+          } else {
+            alert('圖片上傳失敗，請重試');
+          }
+        } catch (e) {
+          console.error('輪播圖片上傳失敗', e);
+          alert('圖片上傳失敗，請重試');
+        }
+      };
+
+      const onImagesDragEnd = (result) => {
+        if (!result.destination) return;
+        const next = Array.from(content_data?.images || []);
+        const [moved] = next.splice(result.source.index, 1);
+        next.splice(result.destination.index, 0, moved);
+        updateBlockField(index, 'images', next);
+      };
+
       return (
         <div>
           <div className="block-title text-amber-200" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
@@ -2621,7 +2668,7 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
           {imgs.length > 0 ? (
             <div className="relative">
               <div className="w-full h-24 bg-black/20 rounded flex items-center justify-center overflow-hidden">
-                <img src={imgs[curIdx]?.url} alt={imgs[curIdx]?.alt || ''} className="h-24 w-auto object-cover rounded" />
+                <img src={imgs[curIdx]?.url} alt={imgs[curIdx]?.alt || ''} className="h-24 w-auto object-contain rounded" />
               </div>
               <button onClick={prevSlide} className="absolute left-1 top-1/2 -translate-y-1/2 p-1 bg-black/40 text-amber-200 rounded hover:bg-black/60" aria-label="上一張">
                 <ChevronLeftIcon className="h-4 w-4" />
@@ -2647,33 +2694,86 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
                 onChange={(e) => updateBlockField(index, 'title', e.target.value)}
                 className="inline-editor-input"
               />
+              <div className="mt-2 flex items-center gap-3">
+                <label className="flex items-center gap-2 text-xs text-amber-200">
+                  <input
+                    type="checkbox"
+                    checked={!!content_data?.autoplay}
+                    onChange={(e) => updateBlockField(index, 'autoplay', e.target.checked)}
+                  />
+                  自動播放
+                </label>
+                <label className="flex items-center gap-2 text-xs text-amber-200">
+                  間隔(ms)
+                  <input
+                    type="number"
+                    min="1000"
+                    step="500"
+                    value={content_data?.autoplay_interval || 3000}
+                    onChange={(e) => updateBlockField(index, 'autoplay_interval', Number(e.target.value))}
+                    className="inline-editor-input w-24"
+                  />
+                </label>
+              </div>
               <div className="text-amber-200 text-xs mt-2">圖片列表</div>
-              {(content_data?.images || []).map((img, i) => (
-                <div key={i} className="grid grid-cols-3 gap-2 mt-2">
-                  <input
-                    type="text"
-                    value={img.url || ''}
-                    onChange={(e) => {
-                      const next = [...(content_data.images || [])];
-                      next[i] = { ...next[i], url: e.target.value };
-                      updateBlockField(index, 'images', next);
-                    }}
-                    placeholder="圖片網址"
-                    className="inline-editor-input col-span-2"
-                  />
-                  <input
-                    type="text"
-                    value={img.alt || ''}
-                    onChange={(e) => {
-                      const next = [...(content_data.images || [])];
-                      next[i] = { ...next[i], alt: e.target.value };
-                      updateBlockField(index, 'images', next);
-                    }}
-                    placeholder="描述"
-                    className="inline-editor-input"
-                  />
-                </div>
-              ))}
+              <DragDropContext onDragEnd={onImagesDragEnd}>
+                <Droppable droppableId={`carousel-${index}`}>
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                      {(content_data?.images || []).map((img, i) => (
+                        <Draggable key={`cimg-${i}`} draggableId={`cimg-${i}`} index={i}>
+                          {(draggableProvided) => (
+                            <div
+                              ref={draggableProvided.innerRef}
+                              {...draggableProvided.draggableProps}
+                              className="grid grid-cols-12 gap-2 mt-2 items-center"
+                            >
+                              <div {...draggableProvided.dragHandleProps} className="col-span-1 text-center cursor-grab text-amber-300">⋮⋮</div>
+                              <input
+                                type="text"
+                                value={img.url || ''}
+                                onChange={(e) => {
+                                  const next = [...(content_data.images || [])];
+                                  next[i] = { ...next[i], url: e.target.value };
+                                  updateBlockField(index, 'images', next);
+                                }}
+                                placeholder="圖片網址"
+                                className="inline-editor-input col-span-6"
+                              />
+                              <input
+                                type="text"
+                                value={img.alt || ''}
+                                onChange={(e) => {
+                                  const next = [...(content_data.images || [])];
+                                  next[i] = { ...next[i], alt: e.target.value };
+                                  updateBlockField(index, 'images', next);
+                                }}
+                                placeholder="描述"
+                                className="inline-editor-input col-span-3"
+                              />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => uploadCarouselImage(e.target.files?.[0], i)}
+                                className="inline-editor-input col-span-1"
+                              />
+                              <button
+                                className="px-2 py-1 text-xs rounded bg-red-600 text-white col-span-1"
+                                onClick={() => {
+                                  const next = [...(content_data.images || [])];
+                                  next.splice(i, 1);
+                                  updateBlockField(index, 'images', next);
+                                }}
+                              >刪除</button>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
               <div className="flex items-center gap-2 mt-2">
                 <button
                   className="px-2 py-1 text-xs rounded bg-amber-500 text-gray-900"
@@ -2681,6 +2781,22 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
                 >
                   新增圖片
                 </button>
+                <label className="px-2 py-1 text-xs rounded bg-amber-700 text-amber-100 cursor-pointer">
+                  上傳新增
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      const nextIdx = (content_data?.images || []).length;
+                      updateBlockField(index, 'images', [...(content_data?.images || []), { url: '', alt: '' }]);
+                      // 延後上傳以確保陣列已擴充
+                      setTimeout(() => uploadCarouselImage(f, nextIdx), 0);
+                    }}
+                  />
+                </label>
               </div>
               <div className="inline-editor-hint">正在就地編輯（自動保存）</div>
             </div>
