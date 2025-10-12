@@ -19,6 +19,22 @@ async function ensureAutoPopulateColumn() {
   }
 }
 
+// 動態確保 nfc_cards 具備 UI 顯示旗標與頭像網址欄位（Postgres）
+async function ensureUiFlagsColumns() {
+  try {
+    await pool.query(`
+      ALTER TABLE nfc_cards
+      ADD COLUMN IF NOT EXISTS ui_show_avatar   BOOLEAN DEFAULT true,
+      ADD COLUMN IF NOT EXISTS ui_show_name     BOOLEAN DEFAULT true,
+      ADD COLUMN IF NOT EXISTS ui_show_company  BOOLEAN DEFAULT true,
+      ADD COLUMN IF NOT EXISTS ui_show_contacts BOOLEAN DEFAULT true,
+      ADD COLUMN IF NOT EXISTS avatar_url       TEXT
+    `);
+  } catch (e) {
+    console.warn('確保 UI 顯示旗標與頭像欄位存在時發生非致命錯誤：', e?.message || String(e));
+  }
+}
+
 // 使用 Cloudinary 作為上傳儲存，僅允許圖片
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
@@ -186,10 +202,23 @@ router.get('/my-card', authenticateToken, async (req, res) => {
 router.put('/my-card', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { card_title, card_subtitle, template_id, custom_css, auto_populate_on_create } = req.body;
+    const { 
+      card_title, 
+      card_subtitle, 
+      template_id, 
+      custom_css, 
+      auto_populate_on_create,
+      // 新增：前端保存的 UI 顯示旗標與頭像網址
+      ui_show_avatar,
+      ui_show_name,
+      ui_show_company,
+      ui_show_contacts,
+      avatar_url
+    } = req.body;
 
     // 確保欄位存在
     await ensureAutoPopulateColumn();
+    await ensureUiFlagsColumns();
     
     // 檢查是否已有名片
     const existingCard = await pool.query(
@@ -202,10 +231,24 @@ router.put('/my-card', authenticateToken, async (req, res) => {
     if (existingCard.rows.length === 0) {
       // 創建新名片
       const newCardResult = await pool.query(
-        `INSERT INTO nfc_cards (user_id, template_id, card_title, card_subtitle, custom_css, is_active, auto_populate_on_create)
-         VALUES ($1, $2, $3, $4, $5, true, COALESCE($6, false))
+        `INSERT INTO nfc_cards (
+           user_id, template_id, card_title, card_subtitle, custom_css, is_active, auto_populate_on_create,
+           ui_show_avatar, ui_show_name, ui_show_company, ui_show_contacts, avatar_url
+         )
+         VALUES (
+           $1, $2, $3, $4, $5, true, COALESCE($6, false),
+           COALESCE($7, true), COALESCE($8, true), COALESCE($9, true), COALESCE($10, true), $11
+         )
          RETURNING id`,
-        [userId, template_id, card_title, card_subtitle, custom_css, auto_populate_on_create]
+        [
+          userId, 
+          template_id, 
+          card_title, 
+          card_subtitle, 
+          custom_css, 
+          auto_populate_on_create,
+          ui_show_avatar, ui_show_name, ui_show_company, ui_show_contacts, avatar_url
+        ]
       );
       cardId = newCardResult.rows[0].id;
     } else {
@@ -213,9 +256,24 @@ router.put('/my-card', authenticateToken, async (req, res) => {
       cardId = existingCard.rows[0].id;
       await pool.query(
         `UPDATE nfc_cards 
-         SET template_id = $1, card_title = $2, card_subtitle = $3, custom_css = $4, auto_populate_on_create = COALESCE($5, auto_populate_on_create), updated_at = CURRENT_TIMESTAMP
-         WHERE id = $6`,
-        [template_id, card_title, card_subtitle, custom_css, auto_populate_on_create, cardId]
+         SET 
+           template_id = COALESCE($1, template_id),
+           card_title = COALESCE($2, card_title),
+           card_subtitle = COALESCE($3, card_subtitle),
+           custom_css = COALESCE($4, custom_css),
+           auto_populate_on_create = COALESCE($5, auto_populate_on_create),
+           ui_show_avatar   = COALESCE($6, ui_show_avatar),
+           ui_show_name     = COALESCE($7, ui_show_name),
+           ui_show_company  = COALESCE($8, ui_show_company),
+           ui_show_contacts = COALESCE($9, ui_show_contacts),
+           avatar_url       = COALESCE($10, avatar_url),
+           updated_at = CURRENT_TIMESTAMP
+         WHERE id = $11`,
+        [
+          template_id, card_title, card_subtitle, custom_css, auto_populate_on_create,
+          ui_show_avatar, ui_show_name, ui_show_company, ui_show_contacts, avatar_url,
+          cardId
+        ]
       );
     }
     
