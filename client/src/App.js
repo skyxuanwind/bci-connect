@@ -446,7 +446,7 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } />
-          <Route path="/member-card/:id" element={<MemberCard />} />
+          <Route path="/card/:memberId" element={<MemberCard />} />
           <Route path="/nfc-analytics" element={
             <ProtectedRoute>
               <Layout>
