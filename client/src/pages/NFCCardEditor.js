@@ -563,59 +563,9 @@ const getYouTubeVideoId = (url) => {
     setCardConfig(next);
   };
 
-  // 生成三種排版的預設內容
-  const getDefaultBlocksForLayout = (layout) => {
-    const makeBlock = (type, data = {}) => ({
-      id: Date.now() + Math.random(),
-      content_type: type,
-      content_data: data,
-      display_order: 0,
-      is_visible: true,
-      custom_styles: {}
-    });
+  // 已移除：排版預設內容生成（bottom_social / four_grid / full_slider）
 
-    switch (layout) {
-      case 'bottom_social': {
-        const social = makeBlock('social', {
-          linkedin: '', facebook: '', instagram: '', twitter: '', youtube: '', tiktok: ''
-        });
-        const website = makeBlock('website', { title: '官方網站', url: '' });
-        return [website, social].map((b, i) => ({ ...b, display_order: i }));
-      }
-      case 'four_grid': {
-        // 四宮格預設：公司簡介、專長技能、作品集、聯絡方式
-        const intro = makeBlock('text', { title: '公司簡介', content: '在此撰寫公司簡介與服務重點。' });
-        const skills = makeBlock('text', { title: '專長技能', content: '技能A、技能B、技能C…' });
-        const portfolio = makeBlock('image', { title: '作品集', url: '', alt: '上傳代表作品圖片' });
-        const contact = makeBlock('text', { title: '聯絡方式', content: '電話、Email、網站、LINE ID…' });
-        return [intro, skills, portfolio, contact].map((b, i) => ({ ...b, display_order: i }));
-      }
-      case 'full_slider': {
-        const resume = makeBlock('text', { title: '個人簡歷', content: '輸入你的經歷、學歷與成就。' });
-        const portfolio = makeBlock('image', { title: '作品集封面', url: '', alt: '上傳代表作品圖片' });
-        const contact = makeBlock('text', { title: '聯絡方式', content: '電話、Email、網站、LINE ID…' });
-        return [resume, portfolio, contact].map((b, i) => ({ ...b, display_order: i }));
-      }
-      default:
-        return [];
-    }
-  };
-
-  // 排版切換（自動載入預設內容）
-  const handleLayoutTypeChange = (layout) => {
-    setCardConfig(prev => {
-      const defaults = getDefaultBlocksForLayout(layout);
-      const nextBlocks = defaults.length ? defaults : (prev?.content_blocks || []);
-      return {
-        ...prev,
-        layout_type: layout,
-        content_blocks: nextBlocks
-      };
-    });
-    setSuccessToastMessage('已套用排版並載入預設內容');
-    setShowSuccessToast(true);
-    setTimeout(() => setShowSuccessToast(false), 1000);
-  };
+  // 已移除：排版切換與載入預設內容
 
   // UI 顯示切換：頭像 / 姓名 / 公司 / 聯絡資訊
   const toggleUiVisibility = (key) => {
@@ -1057,24 +1007,7 @@ const getYouTubeVideoId = (url) => {
                 <h2 className="text-lg font-semibold text-gold-100 mb-4">基本設定</h2>
                 
                 <div className="space-y-4">
-                  {/* 排版選擇 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gold-300 mb-2">排版選擇</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        className={`px-3 py-2 rounded-lg border ${cardConfig?.layout_type === 'bottom_social' ? 'border-amber-500 bg-black/40 text-amber-200' : 'border-gold-600 text-gold-100'} hover:border-amber-400`}
-                        onClick={() => handleLayoutTypeChange('bottom_social')}
-                      >底部社群</button>
-                      <button
-                        className={`px-3 py-2 rounded-lg border ${cardConfig?.layout_type === 'four_grid' ? 'border-amber-500 bg-black/40 text-amber-200' : 'border-gold-600 text-gold-100'} hover:border-amber-400`}
-                        onClick={() => handleLayoutTypeChange('four_grid')}
-                      >四宮格</button>
-                      <button
-                        className={`px-3 py-2 rounded-lg border ${cardConfig?.layout_type === 'full_slider' ? 'border-amber-500 bg-black/40 text-amber-200' : 'border-gold-600 text-gold-100'} hover:border-amber-400`}
-                        onClick={() => handleLayoutTypeChange('full_slider')}
-                      >滿版滑動</button>
-                    </div>
-                  </div>
+                  {/* 已移除：排版選擇區塊（bottom_social / four_grid / full_slider） */}
                   <div>
                     <label className="block text-sm font-medium text-gold-300 mb-2">
                       選擇模板
