@@ -447,6 +447,8 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/card/:memberId" element={<MemberCard />} />
+          {/* 別名路由：完整版名片頁 */}
+          <Route path="/member-card/:memberId" element={<MemberCard />} />
           <Route path="/nfc-analytics" element={
             <ProtectedRoute>
               <Layout>
