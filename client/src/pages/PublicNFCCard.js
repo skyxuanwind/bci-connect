@@ -131,6 +131,17 @@ const PublicNFCCard = () => {
 
   const [blockCarouselIndexMap, setBlockCarouselIndexMap] = useState({});
 
+  // LINE 深連結（支援一般 ID 與官方帳號）
+  const buildLineDeepLink = (raw) => {
+    const id = String(raw || '').trim();
+    if (!id) return '';
+    const hasAt = id.startsWith('@') || id.includes('@');
+    const clean = id.replace(/^@/, '');
+    return hasAt
+      ? `https://line.me/R/ti/p/@${clean}`
+      : `https://line.me/R/ti/p/~${clean}`;
+  };
+
   // 啟用各區塊輪播的自動播放（僅依據目前卡片內容）
   useEffect(() => {
     const blocks = cardData?.cardConfig?.content_blocks || cardData?.cardConfig?.contentBlocks || cardData?.content_blocks || [];
@@ -160,15 +171,8 @@ const PublicNFCCard = () => {
         if ((block.content_data?.title || '').trim() === 'LINE ID') {
           const lineId = (block.content_data?.content || '').trim();
           if (!lineId) return null;
-          return (
-            <div className="mb-4">
-              <div className="flex items-center p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                <ChatBubbleLeftRightIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
-                <span className="text-gray-900 dark:text-white font-medium">LINE ID</span>
-                <span className="ml-2 text-gray-700 dark:text-gray-300">{lineId}</span>
-              </div>
-            </div>
-          );
+          // 不在下方生成卡片；改由頭像區域顯示，這裡返回 null 以避免重複
+          return null;
         }
         return (
           <div className="mb-4">
@@ -277,7 +281,7 @@ const PublicNFCCard = () => {
             )}
             <div className="relative">
               <div className="w-full h-56 bg-black/10 dark:bg-white/5 rounded-lg flex items-center justify-center overflow-hidden">
-                <img src={imgs[curIdx]?.url} alt="" className="max-h-56 w-auto object-contain" />
+                <img src={(imgs[curIdx]?.url) || (imgs[curIdx]?.src) || imgs[curIdx]} alt="" className="max-h-56 w-auto object-contain" />
               </div>
               <button onClick={prevSlide} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-white rounded hover:bg-black/60" aria-label="上一張">
                 <ChevronLeftIcon className="h-5 w-5" />
@@ -622,6 +626,25 @@ const PublicNFCCard = () => {
             <p className="text-white/80 mb-4">
               {cardConfig?.card_subtitle || `${member.title} @ ${member.company}`}
             </p>
+            {/* LINE 直接加好友（來自內容區塊的 LINE ID） */}
+            {(() => {
+              const lineBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'text' && (b?.content_data?.title || '').trim() === 'LINE ID');
+              const lineId = (lineBlock?.content_data?.content || '').trim();
+              if (!lineId) return null;
+              const deeplink = buildLineDeepLink(lineId);
+              return (
+                <div className="mt-2">
+                  <a
+                    href={deeplink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-3 py-1 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm"
+                  >
+                    加 LINE：{lineId}
+                  </a>
+                </div>
+              );
+            })()}
             
             {/* 會員等級 */}
             <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 text-white text-sm">

@@ -1979,6 +1979,17 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
   const layoutType = cardConfig?.layout_type || 'standard';
   const firstSocialBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'social');
 
+  // LINE 深連結（支援一般 ID 與官方帳號）
+  const buildLineDeepLink = (raw) => {
+    const id = String(raw || '').trim();
+    if (!id) return '';
+    const hasAt = id.startsWith('@') || id.includes('@');
+    const clean = id.replace(/^@/, '');
+    return hasAt
+      ? `https://line.me/R/ti/p/@${clean}`
+      : `https://line.me/R/ti/p/~${clean}`;
+  };
+
   // 頭像上傳（改用既有 /api/nfc-cards/upload 端點）
   const uploadAvatar = async (file) => {
     try {
@@ -2077,6 +2088,25 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                 {cardConfig?.ui_show_company && (
                   <div className="text-sm text-gold-300 mb-2">{cardConfig?.user_company || ''}</div>
                 )}
+                {/* LINE 直接加好友（來源：基本資訊或內容區塊） */}
+                {(() => {
+                  const blockLine = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'text' && (b?.content_data?.title || '').trim() === 'LINE ID');
+                  const lineId = (cardConfig?.line_id || blockLine?.content_data?.content || '').trim();
+                  if (!lineId) return null;
+                  const deeplink = buildLineDeepLink(lineId);
+                  return (
+                    <div className="mt-2 mb-2">
+                      <a
+                        href={deeplink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-3 py-1 rounded-full bg-green-600 hover:bg-green-700 text-white text-xs"
+                      >
+                        加 LINE：{lineId}
+                      </a>
+                    </div>
+                  );
+                })()}
                 <button
                   className="inline-flex items-center px-3 py-1.5 text-xs bg-amber-600 hover:bg-amber-500 text-white rounded-md transition-colors"
                   onClick={() => setEditingBasic(true)}
@@ -2350,6 +2380,13 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
   
   switch (block.content_type) {
     case 'text':
+      {
+        const isLineIdBlock = ((content_data?.title || '').trim() === 'LINE ID');
+        // 非編輯狀態時隱藏 LINE ID 區塊，避免與頭像下方按鈕重複
+        if (isLineIdBlock && editingBlockIndex !== index) {
+          return null;
+        }
+      }
       return (
         <div>
           <div className="block-title">
