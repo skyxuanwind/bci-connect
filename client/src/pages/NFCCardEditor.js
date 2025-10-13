@@ -2014,9 +2014,10 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 
         {/* 頂部：頭像 + 基本資訊欄位（依可見性切換顯示） */}
         <div className="basic-info-panel px-3 py-4">
-          <div className="flex items-center gap-3 mb-3">
-            {cardConfig?.ui_show_avatar && (
-              <div className={`relative ${cardConfig?.avatar_style === 'full' ? 'w-full' : ''}`}>
+          {/* 頭像區域 */}
+          {cardConfig?.ui_show_avatar && (
+            <div className={`mb-4 ${cardConfig?.avatar_style === 'full' ? 'w-full' : 'flex justify-center'}`}>
+              <div className="relative">
                 {cardConfig?.avatar_style === 'full' ? (
                   <img
                     src={cardConfig?.avatar_url || user?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
@@ -2042,119 +2043,134 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
                     }}
                   />
                 </label>
-                <div className="flex items-center gap-2 mt-2">
-                  <button
-                    className={`px-2 py-1 text-xs rounded ${cardConfig?.avatar_style === 'original' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300'}`}
-                    onClick={() => updateBasicField('avatar_style', 'original')}
-                  >原始</button>
-                  <button
-                    className={`px-2 py-1 text-xs rounded ${cardConfig?.avatar_style === 'full' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300'}`}
-                    onClick={() => updateBasicField('avatar_style', 'full')}
-                  >滿版</button>
-                  <button
-                    className={`px-2 py-1 text-xs rounded ${cardConfig?.avatar_style === 'square' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300'}`}
-                    onClick={() => updateBasicField('avatar_style', 'square')}
-                  >正方形</button>
-                </div>
               </div>
-            )}
-            <div className="flex-1 min-w-0 relative">
-              {!editingBasic ? (
-                <div>
-                  {cardConfig?.ui_show_name && (
-                    <div className="text-gold-100 text-base font-semibold truncate">
-                      {cardConfig?.user_name || '—'}
-                      {cardConfig?.user_title && (
-                        <span className="ml-2 text-gold-300 font-normal">{cardConfig.user_title}</span>
-                      )}
-                    </div>
-                  )}
-                  {cardConfig?.ui_show_company && (
-                    <div className="text-sm text-gold-300 truncate">{cardConfig?.user_company || ''}</div>
-                  )}
-                  <button
-                    className="absolute top-0 right-0 text-amber-200 hover:text-amber-100"
-                    onClick={() => setEditingBasic(true)}
-                    title="編輯基本資訊"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-black/30 border border-amber-400/40 rounded p-3 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+              {/* 頭像樣式切換按鈕移至頭像下方 */}
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <button
+                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${cardConfig?.avatar_style === 'original' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300 hover:bg-gray-700'}`}
+                  onClick={() => updateBasicField('avatar_style', 'original')}
+                >原始</button>
+                <button
+                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${cardConfig?.avatar_style === 'full' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300 hover:bg-gray-700'}`}
+                  onClick={() => updateBasicField('avatar_style', 'full')}
+                >滿版</button>
+                <button
+                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${cardConfig?.avatar_style === 'square' ? 'bg-amber-500 text-gray-900' : 'bg-gray-800 text-amber-200 border border-amber-300 hover:bg-gray-700'}`}
+                  onClick={() => updateBasicField('avatar_style', 'square')}
+                >正方形</button>
+              </div>
+            </div>
+          )}
+          
+          {/* 基本資訊區域 */}
+          <div className="relative">
+            {!editingBasic ? (
+              <div className="text-center">
+                {cardConfig?.ui_show_name && (
+                  <div className="text-gold-100 text-base font-semibold mb-1">
+                    {cardConfig?.user_name || '—'}
+                    {cardConfig?.user_title && (
+                      <span className="ml-2 text-gold-300 font-normal">{cardConfig.user_title}</span>
+                    )}
+                  </div>
+                )}
+                {cardConfig?.ui_show_company && (
+                  <div className="text-sm text-gold-300 mb-2">{cardConfig?.user_company || ''}</div>
+                )}
+                <button
+                  className="inline-flex items-center px-3 py-1.5 text-xs bg-amber-600 hover:bg-amber-500 text-white rounded-md transition-colors"
+                  onClick={() => setEditingBasic(true)}
+                  title="編輯基本資訊"
+                >
+                  <PencilIcon className="h-3 w-3 mr-1" />
+                  編輯資訊
+                </button>
+              </div>
+            ) : (
+              <div className="bg-black/40 border border-amber-400/50 rounded-lg p-4 space-y-4">
+                {/* 改為單欄佈局，避免擠壓 */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-amber-300">姓名</label>
+                      <label className="block text-xs text-amber-300 mb-1">姓名</label>
                       <input
                         type="text"
                         value={cardConfig?.user_name || ''}
                         onChange={(e) => updateBasicField('user_name', e.target.value)}
                         className="inline-editor-input"
+                        placeholder="請輸入姓名"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-amber-300">職稱</label>
+                      <label className="block text-xs text-amber-300 mb-1">職稱</label>
                       <input
                         type="text"
                         value={cardConfig?.user_title || ''}
                         onChange={(e) => updateBasicField('user_title', e.target.value)}
                         className="inline-editor-input"
+                        placeholder="請輸入職稱"
                       />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-amber-300 mb-1">公司</label>
+                    <input
+                      type="text"
+                      value={cardConfig?.user_company || ''}
+                      onChange={(e) => updateBasicField('user_company', e.target.value)}
+                      className="inline-editor-input"
+                      placeholder="請輸入公司名稱"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-amber-300">公司</label>
-                      <input
-                        type="text"
-                        value={cardConfig?.user_company || ''}
-                        onChange={(e) => updateBasicField('user_company', e.target.value)}
-                        className="inline-editor-input"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-amber-300">聯絡電話</label>
+                      <label className="block text-xs text-amber-300 mb-1">聯絡電話</label>
                       <input
                         type="text"
                         value={cardConfig?.user_phone || ''}
                         onChange={(e) => updateBasicField('user_phone', e.target.value)}
                         className="inline-editor-input"
+                        placeholder="請輸入電話號碼"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-amber-300">LINE ID</label>
+                      <label className="block text-xs text-amber-300 mb-1">LINE ID</label>
                       <input
                         type="text"
                         value={cardConfig?.line_id || ''}
                         onChange={(e) => updateBasicField('line_id', e.target.value)}
                         className="inline-editor-input"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-xs text-amber-300">自我介紹</label>
-                      <textarea
-                        rows={2}
-                        value={cardConfig?.self_intro || ''}
-                        onChange={(e) => updateBasicField('self_intro', e.target.value)}
-                        className="inline-editor-input"
+                        placeholder="請輸入 LINE ID"
                       />
                     </div>
                   </div>
-                  <div className="flex items-center justify-end gap-2 mt-2">
-                    <button
-                      className="px-2 py-1 text-xs rounded bg-amber-500 text-gray-900"
-                      onClick={() => { onSaveBasicInfo && onSaveBasicInfo(); setEditingBasic(false); }}
-                    >
-                      保存
-                    </button>
-                    <button
-                      className="px-2 py-1 text-xs rounded bg-gray-800 text-amber-200 border border-amber-300"
-                      onClick={() => setEditingBasic(false)}
-                    >
-                      取消
-                    </button>
+                  <div>
+                    <label className="block text-xs text-amber-300 mb-1">自我介紹</label>
+                    <textarea
+                      rows={3}
+                      value={cardConfig?.self_intro || ''}
+                      onChange={(e) => updateBasicField('self_intro', e.target.value)}
+                      className="inline-editor-input resize-none"
+                      placeholder="請輸入自我介紹"
+                    />
                   </div>
                 </div>
-              )}
-            </div>
+                <div className="flex items-center justify-end gap-3 pt-2 border-t border-amber-400/30">
+                  <button
+                    className="px-4 py-2 text-xs rounded-md bg-amber-500 hover:bg-amber-400 text-gray-900 font-medium transition-colors"
+                    onClick={() => { onSaveBasicInfo && onSaveBasicInfo(); setEditingBasic(false); }}
+                  >
+                    保存
+                  </button>
+                  <button
+                    className="px-4 py-2 text-xs rounded-md bg-gray-700 hover:bg-gray-600 text-amber-200 border border-amber-300/50 transition-colors"
+                    onClick={() => setEditingBasic(false)}
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           {/* 移除所有基本資訊輸入欄位；聯絡資訊區塊改為下方內容區統一呈現 */}
         </div>
@@ -2308,13 +2324,13 @@ const BlockContentEditor = ({ block, onSave, onCancel }) => {
 
 // 區塊預覽組件（支援就地編輯 overlay）
 const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInlineImageUpload, onInlineIconUpload }) => {
-  if (!block) return null;
-  const { content_data } = block;
   // 本地輪播索引（以區塊 index 為 key）
   const [carouselIndexMap, setCarouselIndexMap] = useState({});
+  
   // 輪播自動播放計時器
   useEffect(() => {
-    if (block.content_type !== 'carousel') return;
+    if (!block || block.content_type !== 'carousel') return;
+    const { content_data } = block;
     const imgs = content_data?.images || [];
     const enabled = !!content_data?.autoplay && imgs.length > 1;
     const interval = Number(content_data?.autoplay_interval || 3000);
@@ -2327,7 +2343,10 @@ const BlockPreview = ({ block, index, editingBlockIndex, updateBlockField, onInl
       });
     }, Math.max(1000, interval));
     return () => clearInterval(timer);
-  }, [block.content_type, content_data?.autoplay, content_data?.autoplay_interval, content_data?.images?.length, index]);
+  }, [block?.content_type, block?.content_data?.autoplay, block?.content_data?.autoplay_interval, block?.content_data?.images?.length, index]);
+  
+  if (!block) return null;
+  const { content_data } = block;
   
   switch (block.content_type) {
     case 'text':

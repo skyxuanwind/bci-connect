@@ -1258,13 +1258,24 @@
 
 .inline-editor-input {
   width: 100%;
-  padding: 6px 8px;
+  padding: 8px 12px;
   border: 1px solid rgba(255, 215, 0, 0.4);
   background: #0b0b0b;
   color: #fffbdd;
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: 6px;
+  font-size: 13px;
   outline: none;
+  transition: all 0.2s ease;
+}
+
+.inline-editor-input:focus {
+  border-color: rgba(255, 215, 0, 0.8);
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+}
+
+.inline-editor-input::placeholder {
+  color: rgba(255, 215, 0, 0.5);
 }
 
 .inline-editor-hint {
