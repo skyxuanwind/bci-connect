@@ -224,6 +224,42 @@ const NFCCardViewer = () => {
     });
   };
 
+  // 建立 LINE 深連結（支援一般 ID 與官方帳號）
+  const buildLineDeepLink = (raw) => {
+    const id = String(raw || '').trim();
+    if (!id) return '';
+    const hasAt = id.startsWith('@') || id.includes('@');
+    const clean = id.replace(/^@/, '');
+    return hasAt
+      ? `https://line.me/R/ti/p/@${clean}`
+      : `https://line.me/R/ti/p/~${clean}`;
+  };
+
+  // 圖片輪播索引（每個內容區塊個別維護）
+  const [blockCarouselIndexMap, setBlockCarouselIndexMap] = useState({});
+
+  // 啟用各區塊輪播自動播放
+  useEffect(() => {
+    const blocks = cardData?.content || [];
+    const timers = [];
+    blocks.forEach((b, idx) => {
+      if (b?.content_type !== 'carousel') return;
+      const imgs = b?.content_data?.images || [];
+      const enabled = !!b?.content_data?.autoplay && imgs.length > 1;
+      const interval = Number(b?.content_data?.autoplay_interval || 3000);
+      if (!enabled) return;
+      const t = setInterval(() => {
+        setBlockCarouselIndexMap(prev => {
+          const cur = prev[idx] || 0;
+          const next = (cur + 1) % imgs.length;
+          return { ...prev, [idx]: next };
+        });
+      }, Math.max(1000, interval));
+      timers.push(t);
+    });
+    return () => timers.forEach(clearInterval);
+  }, [cardData?.content]);
+
   const renderContentBlock = (content) => {
     const { content_type, content_data } = content;
     const usesLayer = ['wave-soft', 'curve-strong'].includes((cssVars.dividerStyle || '').toLowerCase());
@@ -232,11 +268,32 @@ const NFCCardViewer = () => {
 
     switch (content_type) {
       case 'text':
+        // 特別處理 LINE ID：提供可直接加好友的深連結
+        if ((content_data?.title || '').trim() === 'LINE ID') {
+          const lineId = (content_data?.content || content_data?.description || '').trim();
+          if (!lineId) return null;
+          const deeplink = buildLineDeepLink(lineId);
+          return (
+            <div className="content-block text-block" style={{ borderTop: borderTopCss }}>
+              {usesLayer && renderDividerLayer()}
+              <h3>LINE ID</h3>
+              <a
+                href={deeplink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-button"
+              >
+                <FaExternalLinkAlt className={`link-icon ${iconClass}`} style={{ color: cssVars.accent }} />
+                立即加為好友（{lineId}）
+              </a>
+            </div>
+          );
+        }
         return (
           <div className="content-block text-block" style={{ borderTop: borderTopCss }}>
             {usesLayer && renderDividerLayer()}
             <h3>{content_data.title}</h3>
-            <p>{content_data.description}</p>
+            <p>{content_data.description || content_data.content}</p>
           </div>
         );
 
@@ -300,6 +357,47 @@ const NFCCardViewer = () => {
             )}
           </div>
         );
+
+      case 'carousel': {
+        const imgs = content_data?.images || [];
+        if (imgs.length === 0) {
+          return (
+            <div className="content-block image-block" style={{ borderTop: borderTopCss }}>
+              {usesLayer && renderDividerLayer()}
+              {content_data.title && <h3>{content_data.title}</h3>}
+              <div className="content-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 160 }}>
+                無圖片
+              </div>
+            </div>
+          );
+        }
+        const idx = (cardData?.content || []).indexOf(content);
+        const curIdx = blockCarouselIndexMap[idx] || 0;
+        const goto = (n) => {
+          const next = ((n % imgs.length) + imgs.length) % imgs.length;
+          setBlockCarouselIndexMap(prev => ({ ...prev, [idx]: next }));
+        };
+        const prevSlide = () => goto(curIdx - 1);
+        const nextSlide = () => goto(curIdx + 1);
+        return (
+          <div className="content-block image-block" style={{ borderTop: borderTopCss }}>
+            {usesLayer && renderDividerLayer()}
+            {content_data.title && <h3>{content_data.title}</h3>}
+            <div className="relative">
+              <div className="video-container" style={{ minHeight: 200 }}>
+                <img src={imgs[curIdx]?.url} alt="" className="content-image" />
+              </div>
+              <button onClick={prevSlide} className="action-btn" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} aria-label="上一張">‹</button>
+              <button onClick={nextSlide} className="action-btn" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }} aria-label="下一張">›</button>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+                {imgs.map((_, i) => (
+                  <button key={i} onClick={() => goto(i)} className="action-btn" aria-label={`第 ${i + 1} 張`} style={{ width: 10, height: 10, borderRadius: '50%', padding: 0, background: i === curIdx ? 'gold' : 'gray' }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
 
       case 'social':
         return (
