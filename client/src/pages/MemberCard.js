@@ -74,6 +74,17 @@ const getYouTubeVideoId = (url) => {
   }
 };
 
+// LINE 深連結（支援一般 ID 與官方帳號）
+const buildLineDeepLink = (raw) => {
+  const id = String(raw || '').trim();
+  if (!id) return '';
+  const hasAt = id.startsWith('@') || id.includes('@');
+  const clean = id.replace(/^@/, '');
+  return hasAt
+    ? `https://line.me/R/ti/p/@${clean}`
+    : `https://line.me/R/ti/p/~${clean}`;
+};
+
 const MemberCard = () => {
   const { memberId } = useParams();
   const navigate = useNavigate();
@@ -89,6 +100,7 @@ const MemberCard = () => {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [businessMediaItems, setBusinessMediaItems] = useState([]);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [blockCarouselIndexMap, setBlockCarouselIndexMap] = useState({});
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => {
       if (cardData?.content_blocks?.length) {
@@ -106,6 +118,28 @@ const MemberCard = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef(null);
+
+  // 啟用各內容區塊的輪播自動播放（僅針對 carousel 型別）
+  useEffect(() => {
+    const blocks = cardData?.content_blocks || [];
+    const timers = [];
+    blocks.forEach((b, idx) => {
+      if (b?.content_type !== 'carousel') return;
+      const imgs = b?.content_data?.images || [];
+      const enabled = !!b?.content_data?.autoplay && imgs.length > 1;
+      const interval = Number(b?.content_data?.autoplay_interval || 3000);
+      if (!enabled) return;
+      const t = setInterval(() => {
+        setBlockCarouselIndexMap(prev => {
+          const cur = prev[idx] || 0;
+          const next = (cur + 1) % imgs.length;
+          return { ...prev, [idx]: next };
+        });
+      }, Math.max(1000, interval));
+      timers.push(t);
+    });
+    return () => timers.forEach(clearInterval);
+  }, [cardData?.content_blocks]);
 
   // 獲取名片資料
   const fetchCardData = async () => {
@@ -432,14 +466,19 @@ const MemberCard = () => {
     );
   };
 
-  // 渲染內容區塊（基於預覽邏輯）
-  const renderContentBlock = (block) => {
+  // 渲染內容區塊（加入 LINE ID 隱藏與 carousel 支援）
+  const renderContentBlock = (block, index) => {
     if (!block || !block.content_data) return null;
 
     const { content_data } = block;
+    const titleText = (content_data?.title || '').trim();
 
     switch (block.content_type) {
       case 'text':
+        // 專用樣式：LINE ID（以標題辨識，完整版本不重複顯示）
+        if (titleText === 'LINE ID') {
+          return null;
+        }
         return (
           <div className="content-block">
             <h3 className="block-title">{content_data.title || '文字區塊'}</h3>
@@ -555,6 +594,61 @@ const MemberCard = () => {
             )}
           </div>
         );
+
+      case 'carousel': {
+        const imgs = content_data?.images || [];
+        const curIdx = blockCarouselIndexMap[index] || 0;
+        const goto = (n) => {
+          if (!imgs.length) return;
+          const next = (n + imgs.length) % imgs.length;
+          setBlockCarouselIndexMap(prev => ({ ...prev, [index]: next }));
+        };
+        const prevSlide = () => goto(curIdx - 1);
+        const nextSlide = () => goto(curIdx + 1);
+
+        return (
+          <div className="content-block">
+            <h3 className="block-title">{content_data?.title || '圖片輪播'}</h3>
+            {imgs.length > 0 ? (
+              <div className="relative">
+                <div className="w-full bg-black/20 rounded flex items-center justify-center overflow-hidden" style={{ minHeight: '180px' }}>
+                  <img
+                    src={imgs[curIdx]?.url}
+                    alt={imgs[curIdx]?.alt || ''}
+                    className="max-h-72 w-auto object-contain rounded"
+                  />
+                </div>
+                <button
+                  onClick={prevSlide}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-amber-200 rounded hover:bg-black/60"
+                  aria-label="上一張"
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={nextSlide}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-amber-200 rounded hover:bg-black/60"
+                  aria-label="下一張"
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </button>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  {imgs.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => goto(i)}
+                      className={`h-2 w-2 rounded-full ${i === curIdx ? 'bg-amber-400' : 'bg-amber-700 opacity-60'}`}
+                      aria-label={`第 ${i + 1} 張`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-amber-100 text-xs">未添加圖片</div>
+            )}
+          </div>
+        );
+      }
 
       case 'social':
         const socialPlatforms = [
@@ -801,6 +895,20 @@ const MemberCard = () => {
                   {cardData?.ui_show_company && (
                     <div className="text-sm text-gold-300 truncate">{cardData?.user_company || ''}</div>
                   )}
+                  {(cardData?.contact_info?.line_id || cardData?.line_id) && (
+                    <div className="mt-2">
+                      <a
+                        href={buildLineDeepLink(cardData?.contact_info?.line_id || cardData?.line_id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-green-600/20 text-green-300 border border-green-500/40 hover:bg-green-600/30 hover:text-green-200 transition-colors"
+                      >
+                        <FaLine className="h-4 w-4" />
+                        <span className="text-xs">LINE 加好友</span>
+                        <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -821,7 +929,7 @@ const MemberCard = () => {
                           exit={{ opacity: 0, y: -8 }}
                           transition={{ duration: 0.25 }}
                         >
-                          {renderContentBlock(block)}
+                          {renderContentBlock(block, idx)}
                         </motion.div>
                       );
                     })}
@@ -843,7 +951,10 @@ const MemberCard = () => {
                         transition={{ duration: 0.28 }}
                         {...swipeHandlers}
                       >
-                        {renderContentBlock(cardData.content_blocks[currentMediaIndex % cardData.content_blocks.length])}
+                        {renderContentBlock(
+                          cardData.content_blocks[currentMediaIndex % cardData.content_blocks.length],
+                          currentMediaIndex % cardData.content_blocks.length
+                        )}
                       </motion.div>
                     </AnimatePresence>
                   )}
@@ -900,7 +1011,7 @@ const MemberCard = () => {
                     const key = block?.id ?? `${block?.content_type || 'block'}-${block?.display_order ?? idx}-${idx}`;
                     return (
                       <div key={key} className="content-block" style={{ borderTop: borderTopCss }}>
-                        {renderContentBlock(block)}
+                        {renderContentBlock(block, idx)}
                       </div>
                     );
                   })
