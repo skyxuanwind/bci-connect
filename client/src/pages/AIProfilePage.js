@@ -52,6 +52,15 @@ const AIProfilePage = ({ standaloneTab }) => {
         return tabParam && allowedTabs.includes(tabParam) ? tabParam : 'overview';
       })();
   const [activeTab, setActiveTab] = useState(initialTab);
+  // 切換分頁時同步 URL 參數，便於直接分享進入（移至元件內）
+  const handleTabChange = (tab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', tab);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, '', newUrl);
+  };
   // 精簡版：當作為獨立頁且分頁為 myBusiness 時啟用
   const isMinimalDashboard = isStandalone && activeTab === 'myBusiness';
   // 我的商業儀表板狀態
@@ -2273,12 +2282,3 @@ const AIProfilePage = ({ standaloneTab }) => {
 };
 
 export default AIProfilePage;
-  // 切換分頁時同步 URL 參數，便於直接分享進入
-  const handleTabChange = (tab) => {
-    if (tab === activeTab) return;
-    setActiveTab(tab);
-    const params = new URLSearchParams(window.location.search);
-    params.set('tab', tab);
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState(null, '', newUrl);
-  };

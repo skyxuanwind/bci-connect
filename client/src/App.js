@@ -72,6 +72,7 @@ import FoundationManagement from './pages/admin/FoundationManagement';
 import EventsCalendar from './pages/EventsCalendar';
 import ResponsiveDashboard from './pages/ResponsiveDashboard';
 import FloatingBackButton from './components/FloatingBackButton';
+import CardStudio from './pages/CardStudio';
 
 
 
@@ -436,6 +437,15 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <NFCCardEditor />
+              </Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* Linktree 風格 Studio（NFC 電子名片編輯器新介面） */}
+          <Route path="/studio" element={
+            <ProtectedRoute>
+              <Layout>
+                <CardStudio />
               </Layout>
             </ProtectedRoute>
           } />

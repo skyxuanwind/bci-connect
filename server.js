@@ -31,6 +31,7 @@ const digitalWalletRoutes = require('./routes/digital-wallet');
 const businessMediaRoutes = require('./routes/business-media');
 const feedbackRoutes = require('./routes/feedback');
 const businessDashboardRoutes = require('./routes/business-dashboard');
+const linksRoutes = require('./routes/links');
 
 // 已移除：會員許願版與 AI 智慧通知路由
 const aiProfilesRoutes = require('./routes/ai-profiles');
@@ -156,6 +157,10 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/business-dashboard', businessDashboardRoutes);
 const aiStrategyRoutes = require('./routes/ai-strategy');
 app.use('/api/ai-strategy', aiStrategyRoutes);
+
+// 短網址 API 與根路徑轉址
+app.use('/api/links', linksRoutes.router);
+app.get('/l/:code', linksRoutes.redirectShortLink);
 
 // 已移除：會員許願版與 AI 智慧通知 API
 app.use('/api/ai-profiles', aiProfilesRoutes);
