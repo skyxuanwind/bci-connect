@@ -37,6 +37,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../styles/templates.css';
 import { mapTemplateNameToClass } from '../utils/templateClass';
+import CardStudio from './CardStudio';
 
 // 解析 YouTube 影片網址取得 videoId（支援 watch?v=、youtu.be、embed、shorts 等格式）
 const getYouTubeVideoId = (url) => {
@@ -85,6 +86,7 @@ const getYouTubeVideoId = (url) => {
   // 使用者層級偏好與操作狀態
   const [userPreferences, setUserPreferences] = useState({ auto_populate_on_create: false, single_screen_edit: false });
   const [savingUserPref, setSavingUserPref] = useState(false);
+  const [activeModule, setActiveModule] = useState('studio');
   // 已移除：立即套用個人資訊按鈕狀態
 
   // 行動版預覽高度（可上下拖曳調整）以提供更多內容空間
@@ -946,7 +948,7 @@ const getYouTubeVideoId = (url) => {
     return labels[type] || type;
   };
 
-  if (loading) {
+  if (activeModule === 'blocks' && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="large" />
@@ -966,6 +968,32 @@ const getYouTubeVideoId = (url) => {
             <h1 className="text-2xl font-bold text-gray-900">電子名片編輯器</h1>
             
             <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap overflow-x-auto no-scrollbar">
+              {/* 模組切換：Studio / 進階設計 */}
+              <button
+                onClick={() => setActiveModule('studio')}
+                className={`px-3 py-2 border rounded-lg ${activeModule==='studio' ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-transparent text-yellow-300 border-yellow-500/60'}`}
+                aria-label="切換至 Studio 模組"
+              >
+                Studio
+              </button>
+              <button
+                onClick={() => setActiveModule('blocks')}
+                className={`px-3 py-2 border rounded-lg ${activeModule==='blocks' ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-transparent text-yellow-300 border-yellow-500/60'}`}
+                aria-label="切換至進階設計"
+              >
+                進階設計
+              </button>
+
+              {/* 模組切換結束；加入預覽模式 */}
+              <button
+                onClick={() => setSingleScreenMode(prev => !prev)}
+                className="inline-flex items-center px-3 py-2 bg-amber-500/20 text-amber-200 border border-amber-400/50 rounded-lg hover:bg-amber-500/30 transition-all"
+                aria-label="切換預覽模式"
+              >
+                <EyeIcon className="h-4 w-4 mr-2" />
+                {singleScreenMode ? '退出預覽' : '預覽模式'}
+              </button>
+              {/* 原有操作按鈕群 */}
               <button
                 onClick={() => setShowAddBlockModal(true)}
                 className="hidden md:inline-flex items-center px-4 py-2 bg-gradient-to-r from-black via-gray-900 to-black text-yellow-300 border border-yellow-500/60 rounded-lg hover:text-yellow-200 hover:border-yellow-400 transition-all whitespace-nowrap"
@@ -1009,7 +1037,13 @@ const getYouTubeVideoId = (url) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-4rem)]">
+      {activeModule === 'studio' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <CardStudio />
+        </div>
+      )}
+
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-4rem)] ${activeModule === 'studio' ? 'hidden' : ''}`}>
         {/* 編輯模式 - 三欄布局：基本設定、內容編輯、即時預覽 */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-full">
             {/* 左側：基本設定 */}
