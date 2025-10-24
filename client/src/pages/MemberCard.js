@@ -35,6 +35,7 @@ import {
 } from 'react-icons/fa';
 import '../styles/templates.css';
 import { mapTemplateNameToClass } from '../utils/templateClass';
+import { QRCodeSVG } from 'qrcode.react';
 
 // 將十六進位色碼轉換為 RGB 字串
 const hexToRgb = (hex) => {
@@ -96,6 +97,8 @@ const MemberCard = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [shareShortUrl, setShareShortUrl] = useState('');
   const [previewImageUrl, setPreviewImageUrl] = useState('');
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [businessMediaItems, setBusinessMediaItems] = useState([]);
@@ -118,6 +121,7 @@ const MemberCard = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef(null);
+  const viewTrackedRef = useRef(false);
 
   // 啟用各內容區塊的輪播自動播放（僅針對 carousel 型別）
   useEffect(() => {
@@ -202,7 +206,8 @@ const MemberCard = () => {
           },
           content_blocks: found.content_blocks || [],
           layout_type: found.layout_type || 'standard',
-          scanned_image_url: found.scanned_image_url
+          scanned_image_url: found.scanned_image_url,
+          card_id: found.id || found.card_id || null
         };
         setCardData(transformed);
         setTemplate({ name: found.template_name || 'default', css_config: found.css_config || {} });
@@ -239,7 +244,8 @@ const MemberCard = () => {
           line_id: cardConfig?.line_id ?? member?.line_id ?? ''
         },
         content_blocks: cardConfig?.content_blocks || [],
-        layout_type: cardConfig?.layout_type || 'standard'
+        layout_type: cardConfig?.layout_type || 'standard',
+        card_id: cardConfig?.id || null
       };
 
       setCardData(transformed);
@@ -262,6 +268,15 @@ const MemberCard = () => {
     }
   }, [memberId]);
 
+  // 首次瀏覽上報
+  useEffect(() => {
+    if (!cardData || viewTrackedRef.current) return;
+    const cid = cardData?.card_id || cardData?.id;
+    if (!cid) return;
+    viewTrackedRef.current = true;
+    trackEvent('view', { source: 'page_view' });
+  }, [cardData]);
+
   // 顯示成功訊息
   const showSuccess = (message) => {
     setSuccessMessage(message);
@@ -269,31 +284,89 @@ const MemberCard = () => {
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
+  // 事件上報
+  const trackEvent = async (eventType, opts = {}) => {
+    try {
+      if (memberId === 'test') return;
+      const payload = {
+        cardId: cardData?.card_id || cardData?.id,
+        eventType,
+        contentType: opts.contentType,
+        contentId: opts.contentId,
+        source: opts.source || 'member_card',
+        referrer: document.referrer || ''
+      };
+      if (!payload.cardId) return;
+      await axios.post('/api/nfc-analytics/track', payload);
+    } catch (e) {
+      // 靜默失敗
+    }
+  };
+
   // 分享功能
   const handleShare = async () => {
     const url = window.location.href;
     const title = `${cardData?.user_name || ''}的數位名片`;
+
+    // 先生成短連結（失敗則退回原連結）
+    let shortUrl = url;
+    try {
+      const resp = await axios.post('/api/links/shorten', {
+        url,
+        label: `nfc-card-${memberId}`
+      });
+      shortUrl = resp.data?.shortUrl || url;
+      setShareShortUrl(shortUrl);
+    } catch (e) {
+      setShareShortUrl(url);
+    }
     
     if (navigator.share) {
       try {
-        await navigator.share({ title, url });
+        await navigator.share({ title, url: shortUrl });
         showSuccess('分享成功！');
+        trackEvent('share', { source: 'web_share_api' });
       } catch (error) {
         if (error.name !== 'AbortError') {
-          fallbackShare(url);
+          fallbackShare(shortUrl);
         }
       }
     } else {
-      fallbackShare(url);
+      fallbackShare(shortUrl);
     }
   };
 
-  const fallbackShare = (url) => {
-    navigator.clipboard.writeText(url).then(() => {
+  const fallbackShare = (urlToCopy) => {
+    navigator.clipboard.writeText(urlToCopy).then(() => {
       showSuccess('連結已複製到剪貼簿！');
+      trackEvent('share', { source: 'copy_link' });
     }).catch(() => {
       setShowShareModal(true);
     });
+  };
+
+  // 打開 QR 浮層（若尚未生成短連結則先生成）
+  const openQrModal = async () => {
+    try {
+      let target = shareShortUrl || window.location.href;
+      if (!shareShortUrl) {
+        try {
+          const resp = await axios.post('/api/links/shorten', {
+            url: window.location.href,
+            label: `nfc-card-${memberId}`
+          });
+          target = resp.data?.shortUrl || window.location.href;
+          setShareShortUrl(target);
+        } catch (e) {
+          // fallback to full url
+          setShareShortUrl(target);
+        }
+      }
+      setShowQrModal(true);
+      trackEvent('qr_show', { source: 'qr_button' });
+    } catch (e) {
+      setShowQrModal(true);
+    }
   };
 
   // 下載 vCard
@@ -327,6 +400,7 @@ const MemberCard = () => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         showSuccess('聯絡人已下載！');
+        trackEvent('vcard_download', { source: 'local' });
         return;
       }
 
@@ -345,6 +419,7 @@ const MemberCard = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       showSuccess('聯絡人已下載！');
+      trackEvent('vcard_download', { source: 'server' });
     } catch (error) {
       console.error('下載 vCard 失敗:', error);
       showSuccess('下載失敗，請稍後再試');
@@ -451,6 +526,7 @@ const MemberCard = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gold-100 hover:text-gold-200 transition-colors break-all"
+                    onClick={() => trackEvent('contact_click', { contentType: contact.label, contentId: contact.value })}
                   >
                     {contact.value}
                     <ArrowTopRightOnSquareIcon className="h-3 w-3 inline ml-1" />
@@ -497,6 +573,7 @@ const MemberCard = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gold-200 hover:text-gold-100 transition-colors flex items-center gap-2"
+                onClick={() => trackEvent('content_click', { contentType: 'link', contentId: content_data.url })}
               >
                 <LinkIcon className="h-4 w-4" />
                 {content_data.url}
@@ -516,6 +593,7 @@ const MemberCard = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gold-200 hover:text-gold-100 transition-colors flex items-center gap-2"
+                onClick={() => trackEvent('content_click', { contentType: 'news', contentId: content_data.url })}
               >
                 <LinkIcon className="h-4 w-4" />
                 查看新聞
@@ -535,6 +613,7 @@ const MemberCard = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gold-200 hover:text-gold-100 transition-colors flex items-center gap-2"
+                onClick={() => trackEvent('content_click', { contentType: 'file', contentId: content_data.url })}
               >
                 <DocumentArrowDownIcon className="h-4 w-4" />
                 下載檔案
@@ -676,6 +755,7 @@ const MemberCard = () => {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-800 hover:bg-primary-700 transition-colors"
                   style={{ borderLeft: `3px solid ${platform.color}` }}
+                  onClick={() => trackEvent('content_click', { contentType: 'social', contentId: platform.key })}
                 >
                   <span style={{ color: platform.color }}>{platform.icon}</span>
                   <span className="text-gold-200">{platform.name}</span>
@@ -701,6 +781,7 @@ const MemberCard = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 hover:bg-primary-700 rounded-lg transition-colors text-gold-200"
+                  onClick={() => trackEvent('content_click', { contentType: 'map', contentId: content_data.address })}
                 >
                   <span>🗺️</span>
                   在 Google Maps 中查看
@@ -913,6 +994,33 @@ const MemberCard = () => {
               </div>
             </div>
 
+            {/* 操作按鈕列 */}
+            <div className="px-3">
+              <div className="action-buttons">
+                <button
+                  className="action-btn share-btn"
+                  onClick={handleShare}
+                >
+                  <ShareIcon className="h-5 w-5" />
+                  分享名片
+                </button>
+                <button
+                  className="action-btn download-btn"
+                  onClick={downloadVCard}
+                >
+                  <DocumentArrowDownIcon className="h-5 w-5" />
+                  下載聯絡人
+                </button>
+                <button
+                  className="action-btn bookmark-btn"
+                  onClick={openQrModal}
+                >
+                  <PhotoIcon className="h-5 w-5" />
+                  顯示 QR Code
+                </button>
+              </div>
+            </div>
+
             {/* 版型渲染：四宮格 / 滿版滑動 / 標準 */}
             {layoutType === 'four_grid' ? (
               <div className="px-3">
@@ -1066,17 +1174,28 @@ const MemberCard = () => {
               </div>
               <div className="space-y-3">
                 <div className="p-3 bg-primary-700 rounded border text-gold-200 text-sm break-all">
-                  {window.location.href}
+                  {shareShortUrl || window.location.href}
                 </div>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
+                    const target = shareShortUrl || window.location.href;
+                    navigator.clipboard.writeText(target);
                     showSuccess('連結已複製！');
+                    trackEvent('share', { source: 'copy_link_modal' });
                     setShowShareModal(false);
                   }}
                   className="w-full px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white rounded-lg transition-colors"
                 >
-                  複製連結
+                  複製短連結
+                </button>
+                <button
+                  onClick={() => {
+                    setShowShareModal(false);
+                    openQrModal();
+                  }}
+                  className="w-full px-4 py-2 bg-primary-700 hover:bg-primary-600 text-gold-100 rounded-lg transition-colors"
+                >
+                  顯示 QR Code
                 </button>
               </div>
             </motion.div>
@@ -1116,6 +1235,20 @@ const MemberCard = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* QR Code 彈窗 */}
+      {showQrModal && (
+        <div className="qr-overlay" onClick={() => setShowQrModal(false)}>
+          <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>掃描 QR Code 分享名片</h3>
+            <div className="qr-code-container">
+              <QRCodeSVG value={shareShortUrl || window.location.href} size={200} />
+            </div>
+            <p>可長按儲存或直接掃描</p>
+            <button className="close-qr-btn" onClick={() => setShowQrModal(false)}>關閉</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

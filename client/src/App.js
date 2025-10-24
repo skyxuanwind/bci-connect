@@ -54,8 +54,8 @@ import AIProfilePage from './pages/AIProfilePage';
 // 已移除：AI 通知測試頁面
 import CoachDashboard from './pages/coach/CoachDashboard';
 
-// NFC 電子名片系統組件
-import NFCEditorV2 from './pages/NFCEditorV2';
+// NFC 電子名片系統組件（新版編輯器）
+import CardStudioPro from './pages/CardStudioPro';
 import MemberCard from './pages/MemberCard';
 import DigitalWallet from './pages/DigitalWallet';
 import NFCAnalytics from './pages/NFCAnalytics';
@@ -436,7 +436,7 @@ function App() {
           <Route path="/nfc-card-editor" element={
             <ProtectedRoute>
               <Layout>
-                <NFCEditorV2 />
+                <CardStudioPro />
               </Layout>
             </ProtectedRoute>
           } />
