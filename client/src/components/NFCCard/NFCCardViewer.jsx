@@ -28,6 +28,7 @@ const NFCCardViewer = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareShortUrl, setShareShortUrl] = useState('');
   const [cssVars, setCssVars] = useState({ dividerStyle: 'solid-thin', dividerOpacity: 0.6, accent: '#cccccc', iconPack: '' });
 
   useEffect(() => {
@@ -38,16 +39,28 @@ const NFCCardViewer = () => {
   const fetchCardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/nfc-cards/member/${userId}`);
+      const params = new URLSearchParams(window.location.search);
+      const shareVersion = Number(params.get('v')) || Date.now();
+      const response = await axios.get(`/api/nfc-cards/member/${userId}`, {
+        params: { v: shareVersion },
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       if (response.data.success) {
-        setCardData(response.data.data);
+        const data = response.data.data;
+        const serverVersion = new Date(data?.updated_at || Date.now()).getTime();
+        if (serverVersion > shareVersion) {
+          const baseUrl = `${window.location.origin}${window.location.pathname}`;
+          const newUrl = `${baseUrl}?v=${serverVersion}`;
+          window.history.replaceState(null, '', newUrl);
+        }
+        setCardData(data);
         // 解析 custom_css 以取得 UI 變數
-        const templateCfg = response.data.data.template_css_config || {};
+        const templateCfg = data.template_css_config || {};
         const accentFallback = templateCfg.accentColor || templateCfg.secondaryColor || '#cccccc';
-        const vars = parseCssVars(response.data.data.custom_css, accentFallback);
+        const vars = parseCssVars(data.custom_css, accentFallback);
         setCssVars(vars);
         // 檢查是否支援深色模式
-        if (response.data.data.template_css_config?.supports_dark_mode) {
+        if (data.template_css_config?.supports_dark_mode) {
           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
           setDarkMode(prefersDark);
         }
@@ -179,9 +192,10 @@ const NFCCardViewer = () => {
   const handleDownloadVCard = async () => {
     try {
       const response = await axios.get(`/api/nfc-cards/member/${userId}/vcard`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        params: { v: Date.now() },
+        headers: { 'Cache-Control': 'no-cache' }
       });
-      
       const blob = new Blob([response.data], { type: 'text/vcard' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -198,20 +212,40 @@ const NFCCardViewer = () => {
   };
 
   const handleShare = async () => {
-    const shareData = {
-      title: `${cardData.user_name}的電子名片`,
-      text: `查看 ${cardData.user_name} 的電子名片`,
-      url: window.location.href
-    };
-
-    if (navigator.share) {
+    try {
+      const baseUrl = getVersionedUrl();
+      let shortUrl = baseUrl;
       try {
-        await navigator.share(shareData);
-      } catch (error) {
-        console.error('分享失敗:', error);
+        const resp = await axios.post('/api/links/shorten', {
+          url: baseUrl,
+          label: `nfc-card-${userId}`
+        });
+        shortUrl = resp.data?.shortUrl || baseUrl;
+      } catch (e) {
+        // 短連結服務不可用時，退回使用原始帶版本 URL
+        shortUrl = baseUrl;
+      }
+      setShareShortUrl(shortUrl);
+
+      const shareData = {
+        title: `${cardData.user_name}的電子名片`,
+        text: `查看 ${cardData.user_name} 的電子名片`,
+        url: shortUrl
+      };
+
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+        } catch (error) {
+          if (error?.name !== 'AbortError') {
+            setShowShareModal(true);
+          }
+        }
+      } else {
         setShowShareModal(true);
       }
-    } else {
+    } catch (err) {
+      console.error('分享流程發生錯誤:', err);
       setShowShareModal(true);
     }
   };
@@ -629,25 +663,25 @@ const NFCCardViewer = () => {
               <h3>分享名片</h3>
               <div className="share-options">
                 <button 
-                  onClick={() => copyToClipboard(window.location.href)}
+                  onClick={() => copyToClipboard(shareShortUrl || getVersionedUrl())}
                   className="share-option"
                 >
                   📋 複製連結
                 </button>
                 <button 
-                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')}
+                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareShortUrl || getVersionedUrl())}`, '_blank')}
                   className="share-option facebook"
                 >
                   📘 Facebook
                 </button>
                 <button 
-                  onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`查看 ${cardData.user_name} 的電子名片`)}`, '_blank')}
+                  onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareShortUrl || getVersionedUrl())}&text=${encodeURIComponent(`查看 ${cardData.user_name} 的電子名片`)}`, '_blank')}
                   className="share-option twitter"
                 >
                   🐦 Twitter
                 </button>
                 <button 
-                  onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, '_blank')}
+                  onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareShortUrl || getVersionedUrl())}`, '_blank')}
                   className="share-option linkedin"
                 >
                   💼 LinkedIn
@@ -668,3 +702,11 @@ const NFCCardViewer = () => {
 };
 
 export default NFCCardViewer;
+
+
+  const getVersionedUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const currentV = params.get('v') || `${Date.now()}`;
+    params.set('v', currentV);
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  };

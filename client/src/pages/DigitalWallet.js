@@ -483,8 +483,12 @@ const DigitalWallet = () => {
         return;
       }
 
-      // 常規名片：以 userId 呼叫 API 端點
-      const response = await fetch(`/api/nfc-cards/member/${memberParam}/vcard`);
+      // 常規名片：以 userId 呼叫 API 端點，加入版本參數避免快取
+      const qs = new URLSearchParams();
+      qs.set('v', String(Date.now()));
+      const response = await fetch(`/api/nfc-cards/member/${memberParam}/vcard?${qs.toString()}`, {
+        cache: 'no-store'
+      });
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);

@@ -4,6 +4,7 @@ import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
 import { uploadImage } from '../services/nfcCards';
 import AvatarUpload from '../components/AvatarUpload';
 import { toast } from 'react-hot-toast';
+import axios from '../config/axios';
 
 // 簡易主題集合（≥10）
 const THEMES = [
@@ -320,10 +321,20 @@ export default function CardStudioPro() {
   const generateShare = async () => {
     try {
       const base = window.location.origin;
-      const url = `${base}/card/${user?.id || 'me'}`;
-      // 若後端提供短鏈服務，可在此接入；目前直接使用原始網址
-      setShareUrl(url);
-      await dbSet(`cards/${user.id}/editor`, { themeId, blocks, info, avatarUrl, shareUrl: url });
+      const params = new URLSearchParams();
+      params.set('v', `${Date.now()}`);
+      const rawUrl = `${base}/card/${user?.id || 'me'}?${params.toString()}`;
+
+      // 嘗試生成短連結；若失敗則使用原始帶版本參數的 URL
+      try {
+        const resp = await axios.post('/api/links/shorten', { url: rawUrl, label: `nfc-card-${user?.id || 'me'}` });
+        setShareUrl(resp.data?.shortUrl || rawUrl);
+      } catch {
+        setShareUrl(rawUrl);
+      }
+
+      // 儲存原始帶版本參數的 URL 到資料庫（避免短連結服務不可用）
+      await dbSet(`cards/${user.id}/editor`, { themeId, blocks, info, avatarUrl, shareUrl: rawUrl });
       toast.success('已生成分享連結');
     } catch { toast.error('生成連結失敗'); }
   };

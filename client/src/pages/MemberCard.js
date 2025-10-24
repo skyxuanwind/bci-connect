@@ -215,8 +215,18 @@ const MemberCard = () => {
       }
 
       // 從後端 API 獲取
-      const response = await axios.get(`/api/nfc-cards/member/${memberId}`);
+      const params = new URLSearchParams(window.location.search);
+      const shareVersion = Number(params.get('v')) || Date.now();
+      const response = await axios.get(`/api/nfc-cards/member/${memberId}`, {
+        params: { v: shareVersion },
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       const { member, cardConfig } = response.data;
+      const serverVersion = new Date(cardConfig?.updated_at || member?.updated_at || Date.now()).getTime();
+      if (serverVersion > shareVersion) {
+        const newUrl = `${window.location.origin}/member-card/${memberId}?v=${serverVersion}`;
+        window.history.replaceState(null, '', newUrl);
+      }
 
       if (!member && !cardConfig) {
         setError('找不到該名片');
@@ -305,9 +315,12 @@ const MemberCard = () => {
 
   // 分享功能
   const handleShare = async () => {
-    const url = window.location.href;
+    const params = new URLSearchParams(window.location.search);
+    const currentV = params.get('v') || `${Date.now()}`;
+    const base = `${window.location.origin}/member-card/${memberId}`;
+    const url = `${base}?v=${currentV}`;
     const title = `${cardData?.user_name || ''}的數位名片`;
-
+  
     // 先生成短連結（失敗則退回原連結）
     let shortUrl = url;
     try {
@@ -348,27 +361,29 @@ const MemberCard = () => {
   // 打開 QR 浮層（若尚未生成短連結則先生成）
   const openQrModal = async () => {
     try {
-      let target = shareShortUrl || window.location.href;
+      const params = new URLSearchParams(window.location.search);
+      const currentV = params.get('v') || `${Date.now()}`;
+      const base = `${window.location.origin}/member-card/${memberId}`;
+      let target = shareShortUrl || `${base}?v=${currentV}`;
       if (!shareShortUrl) {
         try {
           const resp = await axios.post('/api/links/shorten', {
-            url: window.location.href,
+            url: `${base}?v=${currentV}`,
             label: `nfc-card-${memberId}`
           });
-          target = resp.data?.shortUrl || window.location.href;
+          target = resp.data?.shortUrl || `${base}?v=${currentV}`;
           setShareShortUrl(target);
         } catch (e) {
-          // fallback to full url
           setShareShortUrl(target);
         }
       }
       setShowQrModal(true);
       trackEvent('qr_show', { source: 'qr_button' });
-    } catch (e) {
+    } catch {
       setShowQrModal(true);
     }
   };
-
+  
   // 下載 vCard
   const downloadVCard = async () => {
     try {
@@ -1174,11 +1189,14 @@ const MemberCard = () => {
               </div>
               <div className="space-y-3">
                 <div className="p-3 bg-primary-700 rounded border text-gold-200 text-sm break-all">
-                  {shareShortUrl || window.location.href}
+                  {shareShortUrl || `${window.location.origin}/member-card/${memberId}?v=${(new URLSearchParams(window.location.search).get('v')) || Date.now()}`}
                 </div>
                 <button
                   onClick={() => {
-                    const target = shareShortUrl || window.location.href;
+                    const params = new URLSearchParams(window.location.search);
+                    const currentV = params.get('v') || `${Date.now()}`;
+                    const fullUrl = `${window.location.origin}/member-card/${memberId}?v=${currentV}`;
+                    const target = shareShortUrl || fullUrl;
                     navigator.clipboard.writeText(target);
                     showSuccess('連結已複製！');
                     trackEvent('share', { source: 'copy_link_modal' });
@@ -1242,7 +1260,7 @@ const MemberCard = () => {
           <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
             <h3>掃描 QR Code 分享名片</h3>
             <div className="qr-code-container">
-              <QRCodeSVG value={shareShortUrl || window.location.href} size={200} />
+              <QRCodeSVG value={shareShortUrl || `${window.location.origin}/member-card/${memberId}?v=${(new URLSearchParams(window.location.search).get('v')) || Date.now()}`} size={200} />
             </div>
             <p>可長按儲存或直接掃描</p>
             <button className="close-qr-btn" onClick={() => setShowQrModal(false)}>關閉</button>

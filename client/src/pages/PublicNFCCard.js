@@ -38,6 +38,7 @@ const PublicNFCCard = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [isCollected, setIsCollected] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareShortUrl, setShareShortUrl] = useState('');
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -48,8 +49,20 @@ const PublicNFCCard = () => {
   const fetchCardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/nfc-cards/member/${memberId}`);
+      const params = new URLSearchParams(window.location.search);
+      const shareVersion = Number(params.get('v')) || Date.now();
+      const response = await axios.get(`/api/nfc-cards/member/${memberId}`, {
+        params: { v: shareVersion },
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       setCardData(response.data);
+      const serverVersion = Number(response.data?.cardConfig?.version || response.data?.version || 0);
+      if (!params.get('v') || (serverVersion && serverVersion > shareVersion)) {
+        const newVersion = serverVersion || Date.now();
+        params.set('v', String(newVersion));
+        const newUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState(null, '', newUrl);
+      }
     } catch (error) {
       console.error('獲取電子名片失敗:', error);
       setError('無法載入電子名片');
@@ -90,8 +103,12 @@ const PublicNFCCard = () => {
 
   const handleDownloadVCard = async () => {
     try {
+      const params = new URLSearchParams(window.location.search);
+      const v = Number(params.get('v')) || Date.now();
       const response = await axios.get(`/api/nfc-cards/member/${memberId}/vcard`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        params: { v },
+        headers: { 'Cache-Control': 'no-cache' }
       });
       
       const blob = new Blob([response.data], { type: 'text/vcard' });
@@ -109,21 +126,28 @@ const PublicNFCCard = () => {
   };
 
   const handleShare = async () => {
-    const shareData = {
-      title: `${cardData.member.name} - 電子名片`,
-      text: `查看 ${cardData.member.name} 的電子名片`,
-      url: window.location.href
-    };
+    const title = `${cardData.member.name} - 電子名片`;
+    const url = getVersionedUrl();
+    let shortUrl = url;
+
+    // 先嘗試生成短連結，失敗則退回原連結
+    try {
+      const resp = await axios.post('/api/links/shorten', { url, label: `nfc-card-${memberId}` });
+      shortUrl = resp.data?.shortUrl || url;
+      setShareShortUrl(shortUrl);
+    } catch (error) {
+      setShareShortUrl(url);
+    }
 
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({ title, url: shortUrl });
       } catch (error) {
         console.log('分享取消');
       }
     } else {
-      // 複製到剪貼板
-      navigator.clipboard.writeText(window.location.href);
+      // 複製到剪貼板（優先短連結）
+      navigator.clipboard.writeText(shortUrl);
       setShowShareModal(true);
       setTimeout(() => setShowShareModal(false), 2000);
     }
@@ -140,6 +164,14 @@ const PublicNFCCard = () => {
     return hasAt
       ? `https://line.me/R/ti/p/@${clean}`
       : `https://line.me/R/ti/p/~${clean}`;
+  };
+
+  // 產生帶版本參數的目前頁面 URL（避免快取）
+  const getVersionedUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const currentV = params.get('v') || `${Date.now()}`;
+    params.set('v', currentV);
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
   };
 
   // 啟用各區塊輪播的自動播放（僅依據目前卡片內容）
