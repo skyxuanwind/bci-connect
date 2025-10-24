@@ -443,9 +443,7 @@ function App() {
 
           {/* Linktree 風格 Studio（NFC 電子名片編輯器新介面） */}
           <Route path="/studio" element={
-            <ProtectedRoute>
-              <Navigate to="/nfc-card-editor" replace />
-            </ProtectedRoute>
+            <Navigate to="/nfc-card-editor" replace />
           } />
           <Route path="/digital-wallet" element={
             <ProtectedRoute>
