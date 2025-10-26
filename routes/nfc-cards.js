@@ -335,6 +335,28 @@ router.get('/templates', async (req, res) => {
   }
 });
 
+// 行業列表（用於行業導向模板選擇） - 公開端點
+router.get('/industries', async (req, res) => {
+  try {
+    const items = [
+      { key: 'photographer', name: '攝影師', emoji: '📸', description: '個人簡介 + 作品輪播', thumbnail_url: '/nfc-templates/creative-marketing.svg' },
+      { key: 'store', name: '店家', emoji: '🏪', description: '營業資訊 + 互動地圖 + 數位菜單', thumbnail_url: '/nfc-templates/premium-business.svg' },
+      { key: 'business', name: '商務人士', emoji: '👔', description: '聯絡資訊 + 經歷時間軸 + 文件下載', thumbnail_url: '/nfc-templates/premium-business.svg' },
+      { key: 'designer', name: '設計師', emoji: '🎨', description: '作品集展示 + 社群連結', thumbnail_url: '/nfc-templates/creative-marketing.svg' },
+      { key: 'fitness', name: '健身教練', emoji: '💪', description: '課程方案 + 預約聯絡', thumbnail_url: '/nfc-templates/premium-business.svg' },
+      { key: 'restaurant', name: '餐飲', emoji: '🍜', description: '菜單展示 + 外送平台連結', thumbnail_url: '/nfc-templates/japanese-minimal.svg' },
+      { key: 'education', name: '教育顧問', emoji: '📚', description: '課程介紹 + 資源下載', thumbnail_url: '/nfc-templates/japanese-minimal.svg' },
+      { key: 'legal', name: '律師/法律', emoji: '⚖️', description: '專業簡介 + 成功案例', thumbnail_url: '/nfc-templates/premium-business.svg' },
+      { key: 'musician', name: '音樂人', emoji: '🎵', description: '音樂/影片 + 社群互動', thumbnail_url: '/nfc-templates/cyberpunk.svg' }
+    ];
+
+    res.json({ success: true, items });
+  } catch (error) {
+    console.warn('獲取行業列表失敗（非致命）:', error?.message || String(error));
+    res.status(200).json({ success: true, items: [], fallback: true });
+  }
+});
+
 // 重置 NFC 模板端點
 router.post('/reset-templates', async (req, res) => {
   try {

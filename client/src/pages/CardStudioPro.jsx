@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
 import { uploadImage } from '../services/nfcCards';
 import AvatarUpload from '../components/AvatarUpload';
 import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // 簡易主題集合（≥10）
 const THEMES = [
@@ -288,6 +289,97 @@ const BlockAddModal = ({ onAdd, onClose }) => {
   );
 };
 
+// 行業選擇覆蓋層（頁面載入即顯示）
+const IndustryPicker = ({ onClose }) => {
+  const navigate = useNavigate();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [offline, setOffline] = useState(!navigator.onLine);
+
+  const fetchIndustries = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const resp = await axios.get('/api/nfc-cards/industries');
+      const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
+      setItems(list);
+    } catch (e) {
+      setError('資料載入失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const onOnline = () => setOffline(false);
+    const onOffline = () => setOffline(true);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    fetchIndustries();
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
+  const go = (key) => navigate(`/industry-templates?industry=${encodeURIComponent(key)}`);
+
+  return (
+    <AnimatePresence initial={false}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+        <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }} className="w-full max-w-4xl rounded-2xl bg-slate-900 text-white border border-white/10 shadow-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-xl font-semibold">選擇行業</div>
+              <div className="text-xs opacity-70">我們將為您匹配合適模板與範例</div>
+            </div>
+            <button onClick={onClose} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20">稍後選擇</button>
+          </div>
+
+          {offline && (
+            <div className="mb-3 text-sm rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-2">
+              當前離線狀態，將顯示有限資訊；恢復連線後可重試。
+            </div>
+          )}
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="rounded-2xl p-4 bg-white/5 border border-white/10 animate-pulse">
+                  <div className="h-6 w-24 bg-white/10 rounded mb-2" />
+                  <div className="h-4 w-40 bg-white/10 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-6">
+              <div className="text-sm opacity-80">{error}</div>
+              <button onClick={fetchIndustries} className="mt-3 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500">重試</button>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-6 text-sm opacity-70">暫無行業資料</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {items.map(item => (
+                <motion.button key={item.key} onClick={() => go(item.key)} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} className="group rounded-2xl p-4 bg-white/5 hover:bg-white/10 border border-white/10 text-left transition">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">{item.emoji || '🔖'}</div>
+                    <div>
+                      <div className="font-semibold">{item.name}</div>
+                      <div className="text-xs opacity-80">{item.description || ''}</div>
+                    </div>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 export default function CardStudioPro() {
   const { user } = useAuth();
   const location = useLocation();
@@ -300,6 +392,7 @@ export default function CardStudioPro() {
   const [buttonStyleId, setButtonStyleId] = useState('solid-blue');
   const [bgStyle, setBgStyle] = useState('');
   const [dragIndex, setDragIndex] = useState(null);
+  const [showIndustryPicker, setShowIndustryPicker] = useState(true);
 
   const [info, setInfo] = useState({ name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', linkedin: '' });
   const [avatarFile, setAvatarFile] = useState(null);
@@ -339,6 +432,65 @@ export default function CardStudioPro() {
             { id: 'x2', type: 'link', title: '公司網站', url: 'https://gbc-connect.com' },
             { id: 'x3', type: 'link', title: '下載履歷 PDF', url: 'https://example.com/resume.pdf' },
             { id: 'x4', type: 'contact' }
+          ]
+        };
+      case 'designer':
+        return {
+          info: { name: 'Mina Wu', title: '品牌設計師', company: 'Studio M', email: 'mina@studio-m.com', instagram: 'https://instagram.com/mina.design' },
+          blocks: [
+            { id: 'd1', type: 'richtext', html: '<strong>設計理念：</strong>以使用者為中心，兼具美感與功能。' },
+            { id: 'd2', type: 'carousel', images: Array.from({ length: 8 }, (_, i) => `https://picsum.photos/seed/design${i}/640/480`) },
+            { id: 'd3', type: 'link', title: 'Behance 作品集', url: 'https://behance.net' },
+            { id: 'd4', type: 'contact' }
+          ]
+        };
+      case 'fitness':
+        return {
+          info: { name: 'Leo Wang', title: '私人教練', company: 'FitLab', phone: '+886976000000', email: 'leo@fitlab.com' },
+          blocks: [
+            { id: 'f1', type: 'richtext', html: '<strong>課程方案：</strong>增肌減脂、體態雕塑、跑步訓練。' },
+            { id: 'f2', type: 'link', title: '線上預約', url: 'https://example.com/booking' },
+            { id: 'f3', type: 'video', url: 'https://youtu.be/dQw4w9WgXcQ' },
+            { id: 'f4', type: 'contact' }
+          ]
+        };
+      case 'restaurant':
+        return {
+          info: { name: '森日料', title: '餐飲品牌', company: 'Mori Sushi', phone: '+886934000000', email: 'info@mori-sushi.com' },
+          blocks: [
+            { id: 'r1', type: 'carousel', images: Array.from({ length: 6 }, (_, i) => `https://picsum.photos/seed/food${i}/640/480`) },
+            { id: 'r2', type: 'link', title: '外送平台', url: 'https://foodpanda.tw' },
+            { id: 'r3', type: 'richtext', html: '<strong>主廚推薦：</strong>季節限定鮮魚與創意壽司。' },
+            { id: 'r4', type: 'contact' }
+          ]
+        };
+      case 'education':
+        return {
+          info: { name: 'BetterEdu', title: '教育顧問', company: 'Better Education', email: 'hello@betteredu.com' },
+          blocks: [
+            { id: 'e1', type: 'richtext', html: '<strong>課程介紹：</strong>升學規劃、留學準備、職涯諮詢。' },
+            { id: 'e2', type: 'link', title: '資源下載', url: 'https://example.com/resources' },
+            { id: 'e3', type: 'video', url: 'https://vimeo.com/76979871' },
+            { id: 'e4', type: 'contact' }
+          ]
+        };
+      case 'legal':
+        return {
+          info: { name: 'Grace Lin', title: '律師', company: 'Lin & Partners', phone: '+886930000000', email: 'grace@linpartners.com' },
+          blocks: [
+            { id: 'l1', type: 'richtext', html: '<strong>專業簡介：</strong>商務法務、智慧財產權、民事訴訟。' },
+            { id: 'l2', type: 'link', title: '成功案例', url: 'https://example.com/cases' },
+            { id: 'l3', type: 'contact' }
+          ]
+        };
+      case 'musician':
+        return {
+          info: { name: 'Echo Lee', title: '音樂創作人', company: 'Echo Records', email: 'echo@records.com', youtube: 'https://youtube.com/@echo' },
+          blocks: [
+            { id: 'm1', type: 'video', url: 'https://youtu.be/dQw4w9WgXcQ' },
+            { id: 'm2', type: 'richtext', html: '<strong>最新單曲：</strong>融合電子與搖滾的跨界作品。' },
+            { id: 'm3', type: 'link', title: 'Spotify', url: 'https://spotify.com' },
+            { id: 'm4', type: 'contact' }
           ]
         };
       default:
@@ -513,6 +665,9 @@ export default function CardStudioPro() {
 
   return (
     <div className="min-h-screen" style={{ background: theme.colors.bg, backgroundImage: bgStyle || undefined }}>
+      {showIndustryPicker && (
+        <IndustryPicker onClose={() => setShowIndustryPicker(false)} />
+      )}
       <div className="max-w-6xl mx-auto p-4">
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
           {/* 左：設定面板 */}
