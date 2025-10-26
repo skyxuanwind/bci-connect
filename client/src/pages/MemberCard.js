@@ -34,6 +34,8 @@ import {
   FaLine
 } from 'react-icons/fa';
 import '../styles/templates.css';
+import '../styles/premium-card.css';
+import '../styles/premium-effects.css';
 import { mapTemplateNameToClass } from '../utils/templateClass';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -926,55 +928,34 @@ const MemberCard = () => {
 
       {/* 名片內容 */}
       <div className="max-w-md mx-auto">
-        <div className={`nfc-card-container nfc-card-base ${templateClass}`}>
+        <div className={`nfc-card-preview nfc-card-base premium-card ${templateClass}`}>
+          <div className="light-scan" />
           <div className="card-content">
-            {/* 頂部：頭像 + 基本資訊 */}
-            <div className="basic-info-panel px-3 py-4">
-              <div className="flex items-center gap-3 mb-3">
-                {cardData?.ui_show_avatar && (
-                  <div className={`relative ${cardData?.avatar_style === 'full' ? 'w-full' : ''}`}>
-                    {cardData?.avatar_style === 'full' ? (
-                      <img
-                        src={cardData?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
-                        alt="頭像"
-                        className="w-full h-auto object-contain border-0 rounded-none shadow-lg"
-                      />
-                    ) : (
-                      <img
-                        src={cardData?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
-                        alt="頭像"
-                        className="w-32 h-32 rounded-full border-2 border-gold-500 object-cover shadow-lg"
-                      />
-                    )}
+            {/* 頂部：頭像 + 基本資訊（新版樣式） */}
+            <div className="personal-info-section">
+              <div className="avatar-container">
+                {cardData?.ui_show_avatar && cardData?.avatar_url ? (
+                  <img
+                    src={cardData?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
+                    alt="頭像"
+                    className="user-avatar"
+                  />
+                ) : (
+                  <div className="avatar-placeholder">
+                    {(cardData?.user_name || 'N').slice(0,1).toUpperCase()}
                   </div>
                 )}
-                <div className="flex-1 min-w-0">
-                  {cardData?.ui_show_name && (
-                    <div className="text-gold-100 text-base font-semibold truncate">
-                      {cardData?.user_name || '—'}
-                      {cardData?.user_title && (
-                        <span className="ml-2 text-gold-300 font-normal">{cardData.user_title}</span>
-                      )}
-                    </div>
-                  )}
-                  {cardData?.ui_show_company && (
-                    <div className="text-sm text-gold-300 truncate">{cardData?.user_company || ''}</div>
-                  )}
-                  {(cardData?.contact_info?.line_id || cardData?.line_id) && (
-                    <div className="mt-2">
-                      <a
-                        href={buildLineDeepLink(cardData?.contact_info?.line_id || cardData?.line_id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-green-600/20 text-green-300 border border-green-500/40 hover:bg-green-600/30 hover:text-green-200 transition-colors"
-                      >
-                        <FaLine className="h-4 w-4" />
-                        <span className="text-xs">LINE 加好友</span>
-                        <ArrowTopRightOnSquareIcon className="h-3 w-3" />
-                      </a>
-                    </div>
-                  )}
-                </div>
+              </div>
+              <div className="user-info">
+                {cardData?.ui_show_name && (
+                  <div className="user-name">{cardData?.user_name || '—'}</div>
+                )}
+                {cardData?.user_title && (
+                  <div className="user-position">{cardData?.user_title}</div>
+                )}
+                {cardData?.ui_show_company && cardData?.user_company && (
+                  <div className="user-company">{cardData?.user_company}</div>
+                )}
               </div>
             </div>
 
