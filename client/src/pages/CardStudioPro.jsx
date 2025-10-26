@@ -185,16 +185,44 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
   );
 };
 
-const ThemePicker = ({ themeId, setThemeId }) => {
+const ThemeSelect = ({ themeId, setThemeId }) => {
+  const [open, setOpen] = useState(false);
+  const current = THEMES.find(t => t.id === themeId) || THEMES[0];
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {THEMES.map(t => (
-        <button key={t.id} onClick={() => setThemeId(t.id)} aria-label={`選擇主題 ${t.name}`}
-          className={`rounded-xl p-2 border ${themeId === t.id ? 'ring-2 ring-blue-400' : ''}`} style={{ background: t.colors.card, color: t.colors.text }}>
-          <div className="h-20 rounded-md" style={{ background: t.colors.bg }} />
-          <div className="mt-2 text-xs">{t.name}</div>
-        </button>
-      ))}
+    <div className="relative">
+      <button type="button" onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between rounded-lg border border-white/20 px-3 py-2 bg-white/5 hover:bg-white/10 active:scale-[0.98] transition duration-150">
+        <div className="flex items-center gap-3">
+          <div className="relative h-20 w-[120px] rounded-md overflow-hidden ring-1 ring-white/10 shadow-sm">
+            <div className="absolute inset-0" style={{ background: current.colors.bg }} />
+            <div className="absolute inset-0 opacity-25 bg-[radial-gradient(120px_60px_at_15%_10%,rgba(255,255,255,0.35),transparent_50%)]" />
+            <div className="absolute inset-0 border border-white/10 rounded-md" />
+          </div>
+          <span className="text-sm">{current.name}</span>
+        </div>
+        <svg className="h-4 w-4 opacity-70" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-2 w-full max-h-64 overflow-auto rounded-lg border border-white/20 bg-gray-800/90 p-2 shadow-xl backdrop-blur">
+          {THEMES.map(t => (
+            <button
+              key={t.id}
+              onClick={() => { setThemeId(t.id); setOpen(false); }}
+              className={`w-full flex items-center gap-3 rounded-md p-2 hover:bg-white/10 active:scale-[0.99] transition ${themeId === t.id ? 'ring-2 ring-blue-400' : ''}`}
+              aria-label={`選擇主題 ${t.name}`}
+            >
+              <div className="relative h-20 w-[120px] rounded-md overflow-hidden ring-1 ring-white/10 shadow-sm">
+                <div className="absolute inset-0" style={{ background: t.colors.bg }} />
+                <div className="absolute inset-0 opacity-25 bg-[radial-gradient(120px_60px_at_15%_10%,rgba(255,255,255,0.35),transparent_50%)]" />
+                <div className="absolute inset-0 border border-white/10 rounded-md" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm">{t.name}</div>
+                <div className="text-xs opacity-60">{t.colors.card}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -582,95 +610,73 @@ export default function CardStudioPro() {
       <div className="max-w-6xl mx-auto p-4">
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
           {/* 左：設定面板 */}
-          <div className="bg-white/90 rounded-2xl p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">名片資訊</h2>
-              <button onClick={handleSave} className="px-3 py-2 rounded bg-blue-600 text-white" aria-label="儲存" disabled={saving}>{saving ? '儲存中…' : '儲存'}</button>
-            </div>
-            <div className="mt-3">
-              <AvatarUpload currentAvatar={avatarUrl} onAvatarChange={setAvatarFile} />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                <label className="text-sm">姓名<input aria-label="姓名" value={info.name} onChange={(e)=>setInfo({...info, name:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-                <label className="text-sm">公司名稱<input aria-label="公司名稱" value={info.company} onChange={(e)=>setInfo({...info, company:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-                <label className="text-sm">職稱<input aria-label="職稱" value={info.title} onChange={(e)=>setInfo({...info, title:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-                <label className="text-sm">手機（含國碼）<input aria-label="手機" placeholder="+886912345678" value={info.phone} onChange={(e)=>setInfo({...info, phone:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-                <label className="text-sm">LINE ID<input aria-label="LINE ID" value={info.line} onChange={(e)=>setInfo({...info, line:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-                <label className="text-sm">電子郵件<input aria-label="電子郵件" value={info.email} onChange={(e)=>setInfo({...info, email:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-                <label className="text-sm">Facebook 連結<input aria-label="Facebook" value={info.facebook} onChange={(e)=>setInfo({...info, facebook:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-                <label className="text-sm">LinkedIn 連結<input aria-label="LinkedIn" value={info.linkedin} onChange={(e)=>setInfo({...info, linkedin:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-              </div>
-            </div>
+          <div className="bg-white/10 backdrop-blur-xl backdrop-saturate-150 rounded-2xl p-4 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200 ease-out active:scale-[0.997] touch-manipulation">
+             <div className="flex items-center justify-between">
+               <h2 className="text-lg font-semibold">名片資訊</h2>
+               <button onClick={handleSave} className="px-3 py-2 rounded bg-blue-600 text-white" aria-label="儲存" disabled={saving}>{saving ? '儲存中…' : '儲存'}</button>
+             </div>
+             <div className="mt-3">
+               <AvatarUpload currentAvatar={avatarUrl} onAvatarChange={setAvatarFile} />
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                 <label className="text-sm">姓名<input aria-label="姓名" value={info.name} onChange={(e)=>setInfo({...info, name:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
+                 <label className="text-sm">公司名稱<input aria-label="公司名稱" value={info.company} onChange={(e)=>setInfo({...info, company:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
+                 <label className="text-sm">職稱<input aria-label="職稱" value={info.title} onChange={(e)=>setInfo({...info, title:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
+                 <label className="text-sm">手機（含國碼）<input aria-label="手機" placeholder="+886912345678" value={info.phone} onChange={(e)=>setInfo({...info, phone:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+                 <label className="text-sm">LINE ID<input aria-label="LINE ID" value={info.line} onChange={(e)=>setInfo({...info, line:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+                 <label className="text-sm">電子郵件<input aria-label="電子郵件" value={info.email} onChange={(e)=>setInfo({...info, email:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+                 <label className="text-sm">Facebook 連結<input aria-label="Facebook" value={info.facebook} onChange={(e)=>setInfo({...info, facebook:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+                 <label className="text-sm">LinkedIn 連結<input aria-label="LinkedIn" value={info.linkedin} onChange={(e)=>setInfo({...info, linkedin:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+               </div>
+             </div>
 
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-2">主題選擇</h3>
-              <label className="text-sm">主題</label>
-              <select value={themeId} onChange={(e)=>setThemeId(e.target.value)} className="mt-1 w-full border rounded p-2">
-                {THEMES.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
-              </select>
-              <ThemePicker themeId={themeId} setThemeId={setThemeId} />
-            </div>
+            <div className="mt-6 border-t border-white/10 pt-4">
+               <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l3 7h7l-5.5 4 2 7-6.5-4.5L5.5 21l2-7L2 10h7l3-7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>主題選擇</h3>
+               <label className="text-sm">主題</label>
+               <ThemeSelect themeId={themeId} setThemeId={setThemeId} />
+             </div>
 
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-2">行業模板</h3>
-              {industriesLoading && <div className="text-xs text-gray-500">載入中...</div>}
-              {industriesError && <div className="text-xs text-red-600">{industriesError}</div>}
-              {!industriesLoading && !industriesError && (
-                <div className="space-y-2">
-                  {industries.length === 0 && (
-                    <div className="text-xs text-gray-600">目前沒有可用模板</div>
-                  )}
-                  {industries.map((ind) => (
-                    <div key={ind.key || ind.id} className="flex items-center justify-between border rounded p-2">
-                      <div className="text-sm">{ind.name || ind.title || ind.key}</div>
-                      <button onClick={()=>applyIndustry(ind.key || ind.id)} className="text-xs px-2 py-1 rounded bg-gray-900 text-white">套用</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <div className="mt-6 border-t border-white/10 pt-4">
+               <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v18M3 12h18" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>樣式設計</h3>
+               <label className="text-sm">按鈕樣式</label>
+               <select value={buttonStyleId} onChange={(e)=>setButtonStyleId(e.target.value)} className="mt-1 w-full border rounded p-2 bg-white/5 hover:bg-white/8 active:bg-white/10 transition-colors">
+                 {BUTTON_STYLES.map(s => (<option key={s.id} value={s.id}>{s.name}</option>))}
+               </select>
+               <label className="text-sm mt-3">背景風格</label>
+               <select value={bgStyle} onChange={(e)=>setBgStyle(e.target.value)} className="mt-1 w-full border rounded p-2 bg-white/5 hover:bg-white/8 active:bg-white/10 transition-colors">
+                 {BG_PRESETS.map(b => (<option key={b.id} value={b.css}>{b.name}</option>))}
+               </select>
+             </div>
 
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-2">樣式設計</h3>
-              <label className="text-sm">按鈕樣式</label>
-              <select value={buttonStyleId} onChange={(e)=>setButtonStyleId(e.target.value)} className="mt-1 w-full border rounded p-2">
-                {BUTTON_STYLES.map(s => (<option key={s.id} value={s.id}>{s.name}</option>))}
-              </select>
-              <label className="text-sm mt-3">背景風格</label>
-              <select value={bgStyle} onChange={(e)=>setBgStyle(e.target.value)} className="mt-1 w-full border rounded p-2">
-                {BG_PRESETS.map(b => (<option key={b.id} value={b.css}>{b.name}</option>))}
-              </select>
-            </div>
+            <div className="mt-6 border-t border-white/10 pt-4">
+               <div className="flex items-center justify-between">
+                 <h3 className="text-sm font-semibold">內容模塊</h3>
+                 <button onClick={()=>setShowAdd(true)} className="px-3 py-2 rounded bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-700 transition-colors" aria-label="新增模塊">新增</button>
+               </div>
+               <div className="mt-3 space-y-2">
+                 {blocks.map((b, i) => (
+                   <div key={b.id} draggable onDragStart={()=>onDragStart(i)} onDragOver={onDragOver} onDrop={()=>onDrop(i)} className="border rounded-lg p-2 flex items-center justify-between bg-white/5 hover:bg-white/8 active:bg-white/10 transition-all duration-150 shadow-sm">
+                     <div className="flex items-center gap-2">
+                       <span className="cursor-grab select-none">≡</span>
+                       <div className="text-sm">{b.type}</div>
+                     </div>
+                     <button onClick={()=>removeBlock(b.id)} className="text-xs text-red-600 hover:text-red-500 active:text-red-400 transition-colors">刪除</button>
+                   </div>
+                 ))}
+                 {blocks.length === 0 && (
+                   <div className="text-xs text-gray-600">尚未添加模塊</div>
+                 )}
+               </div>
+             </div>
 
-            <div className="mt-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">內容模塊</h3>
-                <button onClick={()=>setShowAdd(true)} className="px-3 py-2 rounded bg-gray-900 text-white" aria-label="新增模塊">新增</button>
-              </div>
-              <div className="mt-3 space-y-2">
-                {blocks.map((b, i) => (
-                  <div key={b.id} draggable onDragStart={()=>onDragStart(i)} onDragOver={onDragOver} onDrop={()=>onDrop(i)} className="border rounded-lg p-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="cursor-grab select-none">≡</span>
-                      <div className="text-sm">{b.type}</div>
-                    </div>
-                    <button onClick={()=>removeBlock(b.id)} className="text-xs text-red-600">刪除</button>
-                  </div>
-                ))}
-                {blocks.length === 0 && (
-                  <div className="text-xs text-gray-600">尚未添加模塊</div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">名片操作</h3>
-                <div className="flex items-center gap-2">
-                  <button onClick={openCard} className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition-colors">開啟名片</button>
-                  <button onClick={copyCardUrl} className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-900 text-white transition-colors">複製名片網址</button>
-                </div>
-              </div>
-            </div>
+            <div className="mt-6 border-t border-white/10 pt-4">
+               <div className="flex items-center justify-between">
+                 <h3 className="text-sm font-semibold">名片操作</h3>
+                 <div className="flex items-center gap-2">
+              <button onClick={openCard} className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white transition-colors">開啟名片</button>
+              <button onClick={copyCardUrl} className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-900 active:bg-black text-white transition-colors">複製名片網址</button>
+                 </div>
+               </div>
+             </div>
           </div>
 
           {/* 右：即時預覽 */}

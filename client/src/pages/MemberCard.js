@@ -151,244 +151,6 @@ const MemberCard = () => {
       setLoading(true);
       setError('');
 
-      // 測試名片
-      if (memberId === 'test') {
-        setCardData({
-          card_title: '測試名片',
-          card_subtitle: '',
-          user_name: user?.name || '測試用戶',
-          user_title: user?.title || '',
-          user_company: user?.company || '',
-          avatar_url: user?.avatar_url || '',
-          ui_show_avatar: true,
-          ui_show_name: true,
-          ui_show_company: true,
-          ui_show_contacts: true,
-          contact_info: {
-            phone: user?.contactNumber || '',
-            email: user?.email || '',
-            website: '',
-            company: user?.company || '',
-            address: '',
-            line_id: ''
-          },
-          content_blocks: []
-        });
-        setTemplate({ name: 'default', css_config: {} });
-        return;
-      }
-
-      // 從數位錢包獲取
-      const walletResponse = await axios.get('/api/digital-wallet/cards');
-      const walletCards = walletResponse.data?.cards || [];
-      const found = walletCards.find(c => c.id === memberId || c.member_id === memberId);
-
-      if (found) {
-        const transformed = {
-          card_title: found.card_title || found.name || '數位名片',
-          card_subtitle: found.card_subtitle || found.title || '',
-          user_name: found.name || '',
-          user_title: found.title || '',
-          user_company: found.company || '',
-          avatar_url: found.avatar_url || '',
-          avatar_style: found.avatar_style || 'original',
-          ui_show_avatar: found.ui_show_avatar !== false,
-          ui_show_name: found.ui_show_name !== false,
-          ui_show_company: found.ui_show_company !== false,
-          ui_show_contacts: found.ui_show_contacts !== false,
-          contact_info: {
-            phone: found.phone || '',
-            email: found.email || '',
-            website: found.website || '',
-            company: found.company || '',
-            address: found.address || '',
-            line_id: found.line_id || ''
-          },
-          content_blocks: found.content_blocks || [],
-          layout_type: found.layout_type || 'standard',
-          scanned_image_url: found.scanned_image_url,
-          card_id: found.id || found.card_id || null
-        };
-        setCardData(transformed);
-        setTemplate({ name: found.template_name || 'default', css_config: found.css_config || {} });
-        return;
-      }
-
-      // 從後端 API 獲取
-      const params = new URLSearchParams(window.location.search);
-      const shareVersion = Number(params.get('v')) || Date.now();
-      const response = await axios.get(`/api/nfc-cards/member/${memberId}`, {
-        params: { v: shareVersion },
-        headers: { 'Cache-Control': 'no-cache' }
-      });
-      const { member, cardConfig } = response.data;
-      const serverVersion = new Date(cardConfig?.updated_at || member?.updated_at || Date.now()).getTime();
-      if (serverVersion > shareVersion) {
-        const newUrl = `${window.location.origin}/member-card/${memberId}?v=${serverVersion}`;
-        window.history.replaceState(null, '', newUrl);
-      }
-
-      if (!member && !cardConfig) {
-        setError('找不到該名片');
-        return;
-      }
-
-      const transformed = {
-        card_title: cardConfig?.card_title || member?.name || '會員名片',
-        card_subtitle: cardConfig?.card_subtitle || member?.title || '',
-        user_name: member?.name || '',
-        user_title: member?.title || '',
-        user_company: member?.company || '',
-        avatar_url: cardConfig?.avatar_url || member?.avatar_url || '',
-        avatar_style: cardConfig?.avatar_style || 'original',
-        ui_show_avatar: cardConfig?.ui_show_avatar !== false,
-        ui_show_name: cardConfig?.ui_show_name !== false,
-        ui_show_company: cardConfig?.ui_show_company !== false,
-        ui_show_contacts: cardConfig?.ui_show_contacts !== false,
-        contact_info: {
-          phone: cardConfig?.user_phone ?? member?.contactNumber ?? '',
-          email: cardConfig?.user_email ?? member?.email ?? '',
-          website: cardConfig?.user_website ?? member?.website ?? '',
-          company: cardConfig?.user_company ?? member?.company ?? '',
-          address: cardConfig?.user_address ?? member?.address ?? '',
-          line_id: cardConfig?.line_id ?? member?.line_id ?? ''
-        },
-        content_blocks: cardConfig?.content_blocks || [],
-        layout_type: cardConfig?.layout_type || 'standard',
-        card_id: cardConfig?.id || null
-      };
-
-      setCardData(transformed);
-      setTemplate({
-        name: cardConfig?.template_name || 'default',
-        css_config: cardConfig?.css_config || {}
-      });
-
-    } catch (error) {
-      console.error('獲取名片資料失敗:', error);
-      setError('載入名片失敗，請稍後再試');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (memberId) {
-      fetchCardData();
-    }
-  }, [memberId]);
-
-  // 首次瀏覽上報
-  useEffect(() => {
-    if (!cardData || viewTrackedRef.current) return;
-    const cid = cardData?.card_id || cardData?.id;
-    if (!cid) return;
-    viewTrackedRef.current = true;
-    trackEvent('view', { source: 'page_view' });
-  }, [cardData]);
-
-  // 顯示成功訊息
-  const showSuccess = (message) => {
-    setSuccessMessage(message);
-    setShowSuccessToast(true);
-    setTimeout(() => setShowSuccessToast(false), 3000);
-  };
-
-  // 事件上報
-  const trackEvent = async (eventType, opts = {}) => {
-    try {
-      if (memberId === 'test') return;
-      const payload = {
-        cardId: cardData?.card_id || cardData?.id,
-        eventType,
-        contentType: opts.contentType,
-        contentId: opts.contentId,
-        source: opts.source || 'member_card',
-        referrer: document.referrer || ''
-      };
-      if (!payload.cardId) return;
-      await axios.post('/api/nfc-analytics/track', payload);
-    } catch (e) {
-      // 靜默失敗
-    }
-  };
-
-  // 分享功能
-  const handleShare = async () => {
-    const params = new URLSearchParams(window.location.search);
-    const currentV = params.get('v') || `${Date.now()}`;
-    const base = `${window.location.origin}/member-card/${memberId}`;
-    const url = `${base}?v=${currentV}`;
-    const title = `${cardData?.user_name || ''}的數位名片`;
-  
-    // 先生成短連結（失敗則退回原連結）
-    let shortUrl = url;
-    try {
-      const resp = await axios.post('/api/links/shorten', {
-        url,
-        label: `nfc-card-${memberId}`
-      });
-      shortUrl = resp.data?.shortUrl || url;
-      setShareShortUrl(shortUrl);
-    } catch (e) {
-      setShareShortUrl(url);
-    }
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, url: shortUrl });
-        showSuccess('分享成功！');
-        trackEvent('share', { source: 'web_share_api' });
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          fallbackShare(shortUrl);
-        }
-      }
-    } else {
-      fallbackShare(shortUrl);
-    }
-  };
-
-  const fallbackShare = (urlToCopy) => {
-    navigator.clipboard.writeText(urlToCopy).then(() => {
-      showSuccess('連結已複製到剪貼簿！');
-      trackEvent('share', { source: 'copy_link' });
-    }).catch(() => {
-      setShowShareModal(true);
-    });
-  };
-
-  // 打開 QR 浮層（若尚未生成短連結則先生成）
-  const openQrModal = async () => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const currentV = params.get('v') || `${Date.now()}`;
-      const base = `${window.location.origin}/member-card/${memberId}`;
-      let target = shareShortUrl || `${base}?v=${currentV}`;
-      if (!shareShortUrl) {
-        try {
-          const resp = await axios.post('/api/links/shorten', {
-            url: `${base}?v=${currentV}`,
-            label: `nfc-card-${memberId}`
-          });
-          target = resp.data?.shortUrl || `${base}?v=${currentV}`;
-          setShareShortUrl(target);
-        } catch (e) {
-          setShareShortUrl(target);
-        }
-      }
-      setShowQrModal(true);
-      trackEvent('share', { source: 'qr_button' });
-    } catch {
-      setShowQrModal(true);
-    }
-  };
-  
-  // 下載 vCard
-  const downloadVCard = async () => {
-    try {
-      if (!cardData) return;
-
       // 測試名片：本地生成 vCard
       if (memberId === 'test') {
         const info = cardData?.contact_info || {};
@@ -1050,118 +812,25 @@ const MemberCard = () => {
 
             {/* 版型渲染：四宮格 / 滿版滑動 / 標準 */}
             {layoutType === 'four_grid' ? (
-              <div className="px-3">
-                <AnimatePresence initial={false}>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(cardData.content_blocks || []).slice(0,4).map((block, idx) => {
-                      const key = block?.id ?? `${block?.content_type || 'block'}-${idx}`;
-                      return (
-                        <motion.div
-                          key={key}
-                          className="content-block bg-primary-800/40 rounded border border-gold-700/30 p-3"
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          transition={{ duration: 0.25 }}
-                        >
-                          {renderContentBlock(block, idx)}
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </AnimatePresence>
-              </div>
+              <FourGridLayout cardData={cardData} renderContentBlock={renderContentBlock} />
             ) : layoutType === 'full_slider' ? (
-              <div className="relative">
-                <div className="p-3">
-                  {cardData.content_blocks && cardData.content_blocks.length > 0 && (
-                    <AnimatePresence initial={false} mode="wait">
-                      <motion.div
-                        key={currentMediaIndex % cardData.content_blocks.length}
-                        className="content-block"
-                        style={{ borderTop: borderTopCss }}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.28 }}
-                        {...swipeHandlers}
-                      >
-                        {renderContentBlock(
-                          cardData.content_blocks[currentMediaIndex % cardData.content_blocks.length],
-                          currentMediaIndex % cardData.content_blocks.length
-                        )}
-                      </motion.div>
-                    </AnimatePresence>
-                  )}
-                </div>
-                <div className="absolute inset-y-0 left-0 flex items-center">
-                  <button
-                    onClick={() => setCurrentMediaIndex((currentMediaIndex - 1 + cardData.content_blocks.length) % cardData.content_blocks.length)}
-                    className="m-2 px-3 py-2 rounded-full bg-black/40 text-white border border-gold-700/40"
-                  >◀</button>
-                </div>
-                <div className="absolute inset-y-0 right-0 flex items-center">
-                  <button
-                    onClick={() => setCurrentMediaIndex((currentMediaIndex + 1) % cardData.content_blocks.length)}
-                    className="m-2 px-3 py-2 rounded-full bg-black/40 text-white border border-gold-700/40"
-                  >▶</button>
-                </div>
-                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2">
-                  {(cardData.content_blocks || []).map((_, i) => (
-                    <span key={i} className={`h-2 w-2 rounded-full ${i === (currentMediaIndex % cardData.content_blocks.length) ? 'bg-amber-400' : 'bg-primary-700'}`}/>
-                  ))}
-                </div>
-              </div>
+              <FullSliderLayout
+                cardData={cardData}
+                renderContentBlock={renderContentBlock}
+                borderTopCss={borderTopCss}
+                currentMediaIndex={currentMediaIndex}
+                setCurrentMediaIndex={setCurrentMediaIndex}
+                swipeHandlers={swipeHandlers}
+              />
             ) : (
-              <>
-                {cardData.scanned_image_url && (
-                  <div className="content-block">
-                    <h3 className="block-title">掃描名片</h3>
-                    <div className="relative">
-                      <motion.img
-                        src={cardData.scanned_image_url}
-                        alt="掃描名片"
-                        className="rounded-lg w-full object-contain cursor-zoom-in bg-gray-50"
-                        style={{ maxHeight: '480px' }}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        onClick={() => {
-                          setPreviewImageUrl(cardData.scanned_image_url);
-                          setImagePreviewOpen(true);
-                        }}
-                      />
-                      <button
-                        onClick={() => downloadImage(cardData.scanned_image_url, cardData.user_name)}
-                        className="absolute bottom-2 right-2 px-2 py-1 text-xs bg-white/90 text-gray-700 rounded shadow hover:bg-white"
-                        title="下載掃描原圖"
-                      >
-                        下載原圖
-                      </button>
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">點擊圖片可放大預覽</p>
-                  </div>
-                )}
-                {renderContactInfo()}
-                {cardData.content_blocks && cardData.content_blocks
-                  .sort((a, b) => a.display_order - b.display_order)
-                  .map((block, idx) => {
-                    const key = block?.id ?? `${block?.content_type || 'block'}-${block?.display_order ?? idx}-${idx}`;
-                    return (
-                      <motion.div
-                        key={key}
-                        className="content-block"
-                        style={{ borderTop: borderTopCss }}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.25 }}
-                      >
-                        {renderContentBlock(block, idx)}
-                      </motion.div>
-                    );
-                  })
-                }
-              </>
+              <StandardLayout
+                cardData={cardData}
+                renderContentBlock={renderContentBlock}
+                borderTopCss={borderTopCss}
+                onOpenPreview={(url) => { setPreviewImageUrl(url); setImagePreviewOpen(true); }}
+                onDownload={(url, username) => downloadImage(url, username)}
+                renderContactInfo={renderContactInfo}
+              />
             )}
       </div>
     </div>
@@ -1294,3 +963,52 @@ const MemberCard = () => {
 };
 
 export default MemberCard;
+
+const StandardLayout = ({ cardData, renderContentBlock, borderTopCss, onOpenPreview, onDownload, renderContactInfo }) => (
+  <>
+    {cardData.scanned_image_url && (
+      <div className="content-block">
+        <h3 className="block-title">掃描名片</h3>
+        <div className="relative">
+          <motion.img
+            src={cardData.scanned_image_url}
+            alt="掃描名片"
+            className="rounded-lg w-full object-contain cursor-zoom-in bg-gray-50"
+            style={{ maxHeight: '480px' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => onOpenPreview(cardData.scanned_image_url)}
+          />
+          <button
+            onClick={() => onDownload(cardData.scanned_image_url, cardData.user_name)}
+            className="absolute bottom-2 right-2 px-2 py-1 text-xs bg-white/90 text-gray-700 rounded shadow hover:bg-white"
+            title="下載掃描原圖"
+          >
+            下載原圖
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-gray-500">點擊圖片可放大預覽</p>
+      </div>
+    )}
+    {renderContactInfo && renderContactInfo()}
+    {cardData.content_blocks && cardData.content_blocks
+      .sort((a, b) => a.display_order - b.display_order)
+      .map((block, idx) => {
+        const key = block?.id ?? `${block?.content_type || 'block'}-${block?.display_order ?? idx}-${idx}`;
+        return (
+          <motion.div
+            key={key}
+            className="content-block"
+            style={{ borderTop: borderTopCss }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            {renderContentBlock(block, idx)}
+          </motion.div>
+        );
+      })
+    }
+  </>
+);
