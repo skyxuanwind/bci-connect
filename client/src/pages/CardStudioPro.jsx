@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
 import { uploadImage } from '../services/nfcCards';
 import AvatarUpload from '../components/AvatarUpload';
 import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
-import { motion, AnimatePresence } from 'framer-motion';
+// framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
 const THEMES = [
@@ -289,104 +289,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
   );
 };
 
-// 行業選擇覆蓋層（頁面載入即顯示）
-const IndustryPicker = ({ onClose, onPick }) => {
-  const navigate = useNavigate();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [offline, setOffline] = useState(!navigator.onLine);
-
-  const fetchIndustries = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const resp = await axios.get('/api/nfc-cards/industries');
-      const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
-      setItems(list);
-    } catch (e) {
-      setError('資料載入失敗');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const onOnline = () => setOffline(false);
-    const onOffline = () => setOffline(true);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    fetchIndustries();
-    return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  }, []);
-
-  // 在編輯器內直接套用模板，不再跳轉到行業模板頁
-  const go = (key) => {
-    if (typeof onPick === 'function') {
-      onPick(key);
-    } else {
-      // 回退：若未提供 onPick，保持在本頁（或導回編輯器）
-      navigate(`/nfc-card-editor?template=${encodeURIComponent(key)}`);
-    }
-  };
-
-  return (
-    <AnimatePresence initial={false}>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
-        <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }} className="w-full max-w-4xl rounded-2xl bg-slate-900 text-white border border-white/10 shadow-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <div className="text-xl font-semibold">選擇行業</div>
-              <div className="text-xs opacity-70">我們將為您匹配合適模板與範例</div>
-            </div>
-            <button onClick={onClose} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20">稍後選擇</button>
-          </div>
-
-          {offline && (
-            <div className="mb-3 text-sm rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-2">
-              當前離線狀態，將顯示有限資訊；恢復連線後可重試。
-            </div>
-          )}
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="rounded-2xl p-4 bg-white/5 border border-white/10 animate-pulse">
-                  <div className="h-6 w-24 bg-white/10 rounded mb-2" />
-                  <div className="h-4 w-40 bg-white/10 rounded" />
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-6">
-              <div className="text-sm opacity-80">{error}</div>
-              <button onClick={fetchIndustries} className="mt-3 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500">重試</button>
-            </div>
-          ) : items.length === 0 ? (
-            <div className="text-center py-6 text-sm opacity-70">暫無行業資料</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {items.map(item => (
-                <motion.button key={item.key} onClick={() => go(item.key)} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} className="group rounded-2xl p-4 bg-white/5 hover:bg-white/10 border border-white/10 text-left transition">
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">{item.emoji || '🔖'}</div>
-                    <div>
-                      <div className="font-semibold">{item.name}</div>
-                      <div className="text-xs opacity-80">{item.description || ''}</div>
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-};
+// IndustryPicker 覆蓋層已移除；行業選擇已改為側邊欄常駐清單。
 
 export default function CardStudioPro() {
   const { user } = useAuth();
@@ -395,18 +298,65 @@ export default function CardStudioPro() {
   const [blocks, setBlocks] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [shareUrl, setShareUrl] = useState('');
-  const [nfcStatus, setNfcStatus] = useState('idle');
   const [buttonStyleId, setButtonStyleId] = useState('solid-blue');
   const [bgStyle, setBgStyle] = useState('');
   const [dragIndex, setDragIndex] = useState(null);
-  const [showIndustryPicker, setShowIndustryPicker] = useState(true);
+
+  // 行業資料（側邊欄常駐）
+  const [industries, setIndustries] = useState([]);
+  const [industriesLoading, setIndustriesLoading] = useState(true);
+  const [industriesError, setIndustriesError] = useState('');
 
   const [info, setInfo] = useState({ name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', linkedin: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState('');
 
   const theme = useMemo(() => THEMES.find(t => t.id === themeId) || THEMES[0], [themeId]);
+
+  // 行業載入（側邊欄常駐）
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const resp = await axios.get('/api/nfc-cards/industries');
+        const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
+        if (alive) setIndustries(list);
+      } catch (e) {
+        if (alive) setIndustriesError('資料載入失敗');
+      } finally {
+        if (alive) setIndustriesLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const applyIndustry = (key) => {
+    const sample = getTemplateSample(key);
+    if (sample?.blocks) setBlocks(sample.blocks);
+    if (sample?.info) setInfo(sample.info);
+    toast.success('已套用行業模板');
+  };
+
+  const getCardUrl = () => `${window.location.origin}/member-card/${user?.id || 'me'}?v=${Date.now()}`;
+  const openCard = () => { const url = getCardUrl(); window.open(url, '_blank', 'noopener'); };
+  const copyCardUrl = async () => {
+    const url = getCardUrl();
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      toast.success('名片網址已複製');
+    } catch {
+      toast.error('複製失敗，請手動複製');
+    }
+  };
 
   const getTemplateSample = (tpl) => {
     switch (tpl) {
@@ -517,7 +467,7 @@ export default function CardStudioPro() {
         setBlocks(Array.isArray(data.blocks) ? data.blocks : []);
         setInfo(data.info || {});
         setAvatarUrl(data.avatarUrl || '');
-        setShareUrl(data.shareUrl || '');
+        // removed shareUrl(data.shareUrl)
         setButtonStyleId(data.design?.buttonStyleId || 'solid-blue');
         setBgStyle(data.design?.bgStyle || '');
       } else {
@@ -529,7 +479,7 @@ export default function CardStudioPro() {
             setBlocks(Array.isArray(draft.blocks) ? draft.blocks : []);
             setInfo(draft.info || {});
             setAvatarUrl(draft.avatarUrl || '');
-            setShareUrl(draft.shareUrl || '');
+            // removed shareUrl(draft.shareUrl)
             setButtonStyleId(draft.design?.buttonStyleId || 'solid-blue');
             setBgStyle(draft.design?.bgStyle || '');
           } catch {}
@@ -549,7 +499,7 @@ export default function CardStudioPro() {
       setBlocks(Array.isArray(data.blocks) ? data.blocks : []);
       setInfo(data.info || {});
       setAvatarUrl(data.avatarUrl || '');
-      setShareUrl(data.shareUrl || '');
+      // removed shareUrl(data.shareUrl)
       setButtonStyleId(data.design?.buttonStyleId || 'solid-blue');
       setBgStyle(data.design?.bgStyle || '');
     });
@@ -559,14 +509,14 @@ export default function CardStudioPro() {
   // 自動儲存與離線快取
   useEffect(() => {
     if (!user?.id) return;
-    const draft = { themeId, blocks, info, avatarUrl, shareUrl, design: { buttonStyleId, bgStyle } };
+    const draft = { themeId, blocks, info, avatarUrl, design: { buttonStyleId, bgStyle } };
     try { localStorage.setItem(`card_editor_${user.id}`, JSON.stringify(draft)); } catch {}
     if (!navigator.onLine) return;
     const t = setTimeout(async () => {
       try { await dbSet(`cards/${user.id}/editor`, draft); } catch {}
     }, 800);
     return () => clearTimeout(t);
-  }, [themeId, blocks, info, avatarUrl, shareUrl, buttonStyleId, bgStyle, user?.id]);
+  }, [themeId, blocks, info, avatarUrl, buttonStyleId, bgStyle, user?.id]);
 
   // 上線後同步離線草稿
   useEffect(() => {
@@ -613,7 +563,7 @@ export default function CardStudioPro() {
         const up = await uploadImage(avatarFile);
         avatar = up?.url || avatarUrl;
       }
-      const payload = { themeId, blocks, info, avatarUrl: avatar, shareUrl, design: { buttonStyleId, bgStyle } };
+      const payload = { themeId, blocks, info, avatarUrl: avatar, design: { buttonStyleId, bgStyle } };
       await dbSet(`cards/${user.id}/editor`, payload);
       setAvatarUrl(avatar);
       toast.success('已儲存');
@@ -623,64 +573,12 @@ export default function CardStudioPro() {
     } finally { setSaving(false); }
   };
 
-  const generateShare = async () => {
-    try {
-      const base = window.location.origin;
-      const params = new URLSearchParams();
-      params.set('v', `${Date.now()}`);
-      const rawUrl = `${base}/member-card/${user?.id || 'me'}?${params.toString()}`;
+  // removed: 生成分享連結功能（generateShare）
 
-      // 嘗試生成短連結；若失敗則使用原始帶版本參數的 URL
-      try {
-        const resp = await axios.post('/api/links/shorten', { url: rawUrl, label: `nfc-card-${user?.id || 'me'}` });
-        setShareUrl(resp.data?.shortUrl || rawUrl);
-      } catch {
-        setShareUrl(rawUrl);
-      }
-
-      // 儲存原始帶版本參數的 URL 到資料庫（避免短連結服務不可用）
-      await dbSet(`cards/${user.id}/editor`, { themeId, blocks, info, avatarUrl, shareUrl: rawUrl });
-      toast.success('已生成分享連結');
-    } catch { toast.error('生成連結失敗'); }
-  };
-
-  const startNfcWrite = async () => {
-    setNfcStatus('writing');
-    try {
-      const targetUrl = shareUrl || `${window.location.origin}/member-card/${user?.id || 'me'}`;
-      if (typeof window !== 'undefined' && 'NDEFWriter' in window) {
-        try {
-          const writer = new window.NDEFWriter();
-          await writer.write(targetUrl);
-          setNfcStatus('success');
-          toast.success('NFC 寫入完成');
-        } catch (err) {
-          console.warn('Web NFC 寫入失敗或未授權：', err);
-          setNfcStatus('error');
-          toast.error('NFC 寫入失敗');
-        }
-      } else {
-        await new Promise((r) => setTimeout(r, 800));
-        setNfcStatus(targetUrl ? 'success' : 'error');
-      }
-    } catch (e) {
-      console.error(e);
-      setNfcStatus('error');
-    } finally {
-      setTimeout(() => setNfcStatus('idle'), 2500);
-    }
-  };
+  // removed: NFC 寫入功能（startNfcWrite）
 
   return (
     <div className="min-h-screen" style={{ background: theme.colors.bg, backgroundImage: bgStyle || undefined }}>
-      {showIndustryPicker && (
-        <IndustryPicker onClose={() => setShowIndustryPicker(false)} onPick={(key) => {
-          const sample = getTemplateSample(key);
-          if (sample?.blocks) setBlocks(sample.blocks);
-          if (sample?.info) setInfo(sample.info);
-          setShowIndustryPicker(false);
-        }} />
-      )}
       <div className="max-w-6xl mx-auto p-4">
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
           {/* 左：設定面板 */}
@@ -705,7 +603,30 @@ export default function CardStudioPro() {
 
             <div className="mt-6">
               <h3 className="text-sm font-semibold mb-2">主題選擇</h3>
+              <label className="text-sm">主題</label>
+              <select value={themeId} onChange={(e)=>setThemeId(e.target.value)} className="mt-1 w-full border rounded p-2">
+                {THEMES.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
+              </select>
               <ThemePicker themeId={themeId} setThemeId={setThemeId} />
+            </div>
+
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold mb-2">行業模板</h3>
+              {industriesLoading && <div className="text-xs text-gray-500">載入中...</div>}
+              {industriesError && <div className="text-xs text-red-600">{industriesError}</div>}
+              {!industriesLoading && !industriesError && (
+                <div className="space-y-2">
+                  {industries.length === 0 && (
+                    <div className="text-xs text-gray-600">目前沒有可用模板</div>
+                  )}
+                  {industries.map((ind) => (
+                    <div key={ind.key || ind.id} className="flex items-center justify-between border rounded p-2">
+                      <div className="text-sm">{ind.name || ind.title || ind.key}</div>
+                      <button onClick={()=>applyIndustry(ind.key || ind.id)} className="text-xs px-2 py-1 rounded bg-gray-900 text-white">套用</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="mt-6">
@@ -743,32 +664,11 @@ export default function CardStudioPro() {
 
             <div className="mt-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">分享</h3>
-                <button onClick={generateShare} className="px-3 py-2 rounded bg-green-600 text-white">生成分享連結</button>
-              </div>
-              {shareUrl && (
-                <div className="mt-2 text-sm break-all">
-                  <a href={shareUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">{shareUrl}</a>
+                <h3 className="text-sm font-semibold">名片操作</h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={openCard} className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition-colors">開啟名片</button>
+                  <button onClick={copyCardUrl} className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-900 text-white transition-colors">複製名片網址</button>
                 </div>
-              )}
-              <div className="mt-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">NFC</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-block w-2.5 h-2.5 rounded-full ${
-                        nfcStatus === 'writing' ? 'bg-blue-500 animate-pulse' :
-                        nfcStatus === 'success' ? 'bg-emerald-500' :
-                        nfcStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
-                      }`} />
-                      <span className="text-xs text-gray-600">
-                        {nfcStatus === 'idle' ? '待命' : nfcStatus === 'writing' ? '寫入中…' : nfcStatus === 'success' ? '完成' : '錯誤'}
-                      </span>
-                    </div>
-                    <button onClick={startNfcWrite} className="px-3 py-2 rounded bg-indigo-600 text-white">寫入 NFC</button>
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-gray-500">請使用支援 Web NFC 的裝置（Android Chrome）</div>
               </div>
             </div>
           </div>
@@ -784,3 +684,5 @@ export default function CardStudioPro() {
     </div>
   );
 }
+
+// removed: duplicate hooks and helpers (already inside CardStudioPro)
