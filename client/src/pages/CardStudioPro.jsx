@@ -630,21 +630,76 @@ export default function CardStudioPro() {
              </div>
 
             <div className="mt-6 border-t border-white/10 pt-4">
-               <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l3 7h7l-5.5 4 2 7-6.5-4.5L5.5 21l2-7L2 10h7l3-7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>主題選擇</h3>
-               <label className="text-sm">主題</label>
-               <ThemeSelect themeId={themeId} setThemeId={setThemeId} />
-             </div>
+               <h3 className="text-sm font-semibold mb-2 flex items-center justify-between">
+                 <span>行業模板</span>
+                 <button
+                   onClick={async () => {
+                     try {
+                       setIndustriesLoading(true);
+                       setIndustriesError('');
+                       const resp = await axios.get('/api/nfc-cards/industries');
+                       const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
+                       setIndustries(list);
+                     } catch (e) {
+                       setIndustriesError('行業資料載入失敗');
+                     } finally {
+                       setIndustriesLoading(false);
+                     }
+                   }}
+                   className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs"
+                 >重載</button>
+               </h3>
 
-            <div className="mt-6 border-t border-white/10 pt-4">
-               <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v18M3 12h18" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>樣式設計</h3>
-               <label className="text-sm">按鈕樣式</label>
-               <select value={buttonStyleId} onChange={(e)=>setButtonStyleId(e.target.value)} className="mt-1 w-full border rounded p-2 bg-white/5 hover:bg-white/8 active:bg-white/10 transition-colors">
-                 {BUTTON_STYLES.map(s => (<option key={s.id} value={s.id}>{s.name}</option>))}
-               </select>
-               <label className="text-sm mt-3">背景風格</label>
-               <select value={bgStyle} onChange={(e)=>setBgStyle(e.target.value)} className="mt-1 w-full border rounded p-2 bg-white/5 hover:bg-white/8 active:bg-white/10 transition-colors">
-                 {BG_PRESETS.map(b => (<option key={b.id} value={b.css}>{b.name}</option>))}
-               </select>
+               {industriesLoading ? (
+                 <div className="grid grid-cols-1 gap-2">
+                   {Array.from({ length: 6 }).map((_, i) => (
+                     <div key={i} className="rounded-lg p-3 bg-white/5 border border-white/10 animate-pulse">
+                       <div className="h-4 w-24 bg-white/10 rounded mb-1" />
+                       <div className="h-3 w-40 bg-white/10 rounded" />
+                     </div>
+                   ))}
+                 </div>
+               ) : industriesError ? (
+                 <div className="text-xs opacity-80">
+                   {industriesError}
+                   <button
+                     onClick={async () => {
+                       try {
+                         setIndustriesLoading(true);
+                         setIndustriesError('');
+                         const resp = await axios.get('/api/nfc-cards/industries');
+                         const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
+                         setIndustries(list);
+                       } catch (e) {
+                         setIndustriesError('行業資料載入失敗');
+                       } finally {
+                         setIndustriesLoading(false);
+                       }
+                     }}
+                     className="ml-2 px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500"
+                   >重試</button>
+                 </div>
+               ) : industries.length === 0 ? (
+                 <div className="text-xs opacity-70">暫無行業資料</div>
+               ) : (
+                 <div className="grid grid-cols-1 gap-2">
+                   {industries.map(cat => (
+                     <button
+                       key={cat.key}
+                       onClick={() => applyIndustry(cat.key)}
+                       className="group rounded-lg p-3 bg-white/5 hover:bg-white/10 border border-white/10 text-left"
+                     >
+                       <div className="flex items-center gap-2">
+                         <div className="text-lg">{cat.emoji || '🔖'}</div>
+                         <div>
+                           <div className="text-xs font-semibold">{cat.name}</div>
+                           <div className="text-[11px] opacity-70">{cat.description || '含範例，可立即套用並編輯'}</div>
+                         </div>
+                       </div>
+                     </button>
+                   ))}
+                 </div>
+               )}
              </div>
 
             <div className="mt-6 border-t border-white/10 pt-4">

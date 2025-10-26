@@ -162,7 +162,7 @@ export default function IndustryTemplates() {
                       <div className="text-sm font-semibold">{t.name}</div>
                       <div className="text-xs opacity-70">{t.category}</div>
                       <div className="mt-2 flex items-center gap-2">
-                        <button onClick={() => useTemplate(industryKey)} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs">使用此模板</button>
+                        <button onClick={() => navigate(`/nfc-card-editor?industry=${encodeURIComponent(industryKey)}&template=${encodeURIComponent(t.category)}`)} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs">使用此模板</button>
                         <button onClick={() => navigate('/nfc-card-editor')} className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs">前往編輯器</button>
                       </div>
                     </div>

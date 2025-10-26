@@ -123,6 +123,203 @@ const MemberCard = () => {
   const videoRef = useRef(null);
   const viewTrackedRef = useRef(false);
 
+  // 分析追蹤（保持輕量，錯誤忽略）
+  const trackEvent = async (eventType, extra = {}) => {
+    try {
+      const payload = {
+        eventType,
+        cardId: Number(String(cardData?.id || memberId).replace(/\D/g, '')) || undefined,
+        referrer: typeof document !== 'undefined' ? document.referrer || '' : '',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        ...extra
+      };
+      await axios.post('/api/nfc-analytics/track', payload).catch(() => {});
+    } catch {}
+  };
+
+  // 從資料列轉換為內容區塊
+  const mapRowToBlock = (row) => {
+    const type = row.content_type || row.block_type;
+    let data = {};
+    try {
+      switch (type) {
+        case 'text':
+          data = { title: row.title || row.content_data?.title || '', content: row.content || row.content_data?.content || '' };
+          break;
+        case 'link':
+          data = { title: row.title || row.content_data?.title || '', url: row.url || row.content_data?.url || '' };
+          break;
+        case 'video':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            type: row.video_type || row.content_data?.type || (row.url ? 'youtube' : (row.file_url || row.file || row.content_data?.file ? 'file' : '')),
+            url: row.url || row.content_data?.url || '',
+            videoId: row.video_id || row.content_data?.videoId || '',
+            file: row.file_url || row.file || row.content_data?.file || ''
+          };
+          break;
+        case 'image':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            url: row.image_url || row.url || row.content_data?.url || '',
+            alt: row.content_data?.alt || row.title || '',
+            caption: row.content_data?.caption || ''
+          };
+          break;
+        case 'social': {
+          const parsed = typeof row.content === 'string' ? (() => { try { return JSON.parse(row.content); } catch { return {}; } })() : (row.content || row.content_data || {});
+          data = parsed || {};
+          break;
+        }
+        case 'map':
+          data = {
+            title: row.title || row.content_data?.title || '',
+            address: row.map_address || row.content_data?.address || '',
+            map_url: row.url || row.content_data?.map_url || '',
+            coordinates: row.map_coordinates || row.content_data?.coordinates || null
+          };
+          break;
+        case 'carousel': {
+          const images = Array.isArray(row.content_data?.images) ? row.content_data.images : [];
+          data = { title: row.title || row.content_data?.title || '', images };
+          break;
+        }
+        default:
+          data = row.content_data || {};
+      }
+    } catch {
+      data = row.content_data || {};
+    }
+
+    return {
+      id: row.id,
+      content_type: type,
+      content_data: data,
+      display_order: row.display_order ?? 0,
+      is_visible: row.is_visible ?? true,
+      custom_styles: row.custom_styles || {}
+    };
+  };
+
+  // 顯示成功提示
+  const showSuccess = (message) => {
+    try {
+      setSuccessMessage(String(message || '操作成功'));
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 2000);
+    } catch {}
+  };
+
+  // 分享與 QR Code 操作
+  const handleShare = async () => {
+    try {
+      setShowShareModal(true);
+      const params = new URLSearchParams(window.location.search);
+      const currentV = params.get('v') || `${Date.now()}`;
+      const fullUrl = `${window.location.origin}/member-card/${memberId}?v=${currentV}`;
+      if (!shareShortUrl) {
+        const resp = await axios.post('/api/nfc-links/shorten', { url: fullUrl }).catch(() => null);
+        const short = resp?.data?.shortUrl || resp?.data?.url || '';
+        if (short) setShareShortUrl(short);
+      }
+      trackEvent('share_open', { source: 'action_btn' });
+    } catch {}
+  };
+
+  const openQrModal = () => {
+    try {
+      setShowQrModal(true);
+      trackEvent('qr_open', { source: 'action_btn' });
+    } catch {}
+  };
+
+  // 載入名片資料
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        let transformed;
+
+        if (memberId === 'test') {
+          const resp = await axios.get('/api/nfc-cards/public/test-card');
+          const data = resp.data || {};
+          const member = data.member || {};
+          const card = data.cardConfig || {};
+          const rows = Array.isArray(card.content_blocks) ? card.content_blocks : [];
+          transformed = {
+            id: card.id,
+            user_name: member?.name || card.card_title || '測試名片',
+            user_title: card.card_subtitle || '',
+            user_company: member?.company || '',
+            template_name: card.template_name,
+            ui_show_name: true,
+            ui_show_company: true,
+            ui_show_avatar: !!card.avatar_url,
+            avatar_style: 'circle',
+            avatar_url: card.avatar_url || '',
+            contact_info: {
+              phone: member?.contact_number || '',
+              email: member?.email || '',
+              website: member?.website || '',
+              company: member?.company || '',
+              address: member?.address || '',
+              line_id: member?.line_id || ''
+            },
+            layout_type: card.layout_type || 'standard',
+            ui_divider_style: card.ui_divider_style || 'solid-thin',
+            ui_divider_opacity: typeof card.ui_divider_opacity === 'number' ? card.ui_divider_opacity : 0.6,
+            content_blocks: rows.map(mapRowToBlock)
+          };
+        } else {
+          const resp = await axios.get(`/api/nfc-cards/member/${memberId}`);
+          const data = resp.data || {};
+          const member = data.member || {};
+          const card = data.cardConfig || {};
+          const rows = Array.isArray(card.content_blocks) ? card.content_blocks : [];
+          transformed = {
+            id: card.id,
+            user_name: member?.name || card.card_title || '',
+            user_title: card.card_subtitle || '',
+            user_company: member?.company || card.user_company || '',
+            template_name: card.template_name,
+            ui_show_name: true,
+            ui_show_company: true,
+            ui_show_avatar: !!card.avatar_url,
+            avatar_style: 'circle',
+            avatar_url: card.avatar_url || '',
+            contact_info: {
+              phone: member?.contact_number || card.user_phone || '',
+              email: member?.email || card.user_email || '',
+              website: member?.website || card.user_website || '',
+              company: member?.company || card.user_company || '',
+              address: member?.address || card.user_address || '',
+              line_id: member?.line_id || card.line_id || ''
+            },
+            layout_type: card.layout_type || 'standard',
+            ui_divider_style: card.ui_divider_style || 'solid-thin',
+            ui_divider_opacity: typeof card.ui_divider_opacity === 'number' ? card.ui_divider_opacity : 0.6,
+            content_blocks: rows.map(mapRowToBlock)
+          };
+        }
+
+        if (!alive) return;
+        setCardData(transformed);
+        setTemplate({ name: transformed.template_name });
+        setLoading(false);
+        setError('');
+      } catch (e) {
+        console.error('載入名片失敗:', e);
+        if (!alive) return;
+        setError(e?.response?.status === 404 ? '名片不存在' : '載入失敗');
+        setLoading(false);
+      }
+    };
+    load();
+    return () => { alive = false; };
+  }, [memberId]);
+
   // 啟用各內容區塊的輪播自動播放（僅針對 carousel 型別）
   useEffect(() => {
     const blocks = cardData?.content_blocks || [];
@@ -222,6 +419,9 @@ const MemberCard = () => {
       showSuccess('下載失敗，請稍後再試');
     }
   };
+
+  // 將下載 vCard 函數名稱對齊渲染用到的 downloadVCard
+  const downloadVCard = fetchCardData;
 
   // 渲染聯絡資訊（基於預覽邏輯）
   const renderContactInfo = () => {
@@ -964,51 +1164,33 @@ const MemberCard = () => {
 
 export default MemberCard;
 
-const StandardLayout = ({ cardData, renderContentBlock, borderTopCss, onOpenPreview, onDownload, renderContactInfo }) => (
-  <>
-    {cardData.scanned_image_url && (
-      <div className="content-block">
-        <h3 className="block-title">掃描名片</h3>
-        <div className="relative">
-          <motion.img
-            src={cardData.scanned_image_url}
-            alt="掃描名片"
-            className="rounded-lg w-full object-contain cursor-zoom-in bg-gray-50"
-            style={{ maxHeight: '480px' }}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={() => onOpenPreview(cardData.scanned_image_url)}
-          />
-          <button
-            onClick={() => onDownload(cardData.scanned_image_url, cardData.user_name)}
-            className="absolute bottom-2 right-2 px-2 py-1 text-xs bg-white/90 text-gray-700 rounded shadow hover:bg-white"
-            title="下載掃描原圖"
-          >
-            下載原圖
-          </button>
-        </div>
-        <p className="mt-2 text-xs text-gray-500">點擊圖片可放大預覽</p>
+const FourGridLayout = ({ cardData, renderContentBlock }) => (
+  <div className="px-3 grid grid-cols-2 gap-4">
+    {(cardData?.content?.content_blocks || []).map((block, i) => (
+      <div key={block?.id || i} className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
+        {renderContentBlock(block, i)}
       </div>
-    )}
-    {renderContactInfo && renderContactInfo()}
-    {cardData.content_blocks && cardData.content_blocks
-      .sort((a, b) => a.display_order - b.display_order)
-      .map((block, idx) => {
-        const key = block?.id ?? `${block?.content_type || 'block'}-${block?.display_order ?? idx}-${idx}`;
-        return (
-          <motion.div
-            key={key}
-            className="content-block"
-            style={{ borderTop: borderTopCss }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            {renderContentBlock(block, idx)}
-          </motion.div>
-        );
-      })
-    }
-  </>
+    ))}
+  </div>
+);
+
+const FullSliderLayout = ({ cardData, renderContentBlock, borderTopCss, currentMediaIndex, setCurrentMediaIndex, swipeHandlers }) => (
+  <div className="px-3" {...(swipeHandlers || {})}>
+    {(cardData?.content?.content_blocks || []).map((block, i) => (
+      <div key={block?.id || i} className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10" style={borderTopCss}>
+        {renderContentBlock(block, i)}
+      </div>
+    ))}
+  </div>
+);
+
+const StandardLayout = ({ cardData, renderContentBlock, borderTopCss, onOpenPreview, onDownload, renderContactInfo }) => (
+  <div className="px-3">
+    {typeof renderContactInfo === 'function' ? renderContactInfo(cardData) : null}
+    {(cardData?.content?.content_blocks || []).map((block, i) => (
+      <div key={block?.id || i} className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10" style={borderTopCss}>
+        {renderContentBlock(block, i)}
+      </div>
+    ))}
+  </div>
 );
