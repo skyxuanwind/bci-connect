@@ -173,6 +173,15 @@ router.post('/track', async (req, res) => {
     // 兼容 contentType/contentId 與 content_type/content_id
     const normalizedContentType = contentType || req.body.content_type || null;
     const normalizedContentId = contentId || req.body.content_id || null;
+
+    // 事件型別正規化，避免 DB CHECK 觸發 500
+    const allowedEventTypes = new Set(['view', 'share', 'vcard_download', 'contact_click']);
+    let normalizedEventType = (eventType || '').toLowerCase();
+    if (normalizedEventType === 'content_click') normalizedEventType = 'contact_click';
+    if (normalizedEventType === 'qr_show') normalizedEventType = 'share';
+    if (!allowedEventTypes.has(normalizedEventType)) {
+      normalizedEventType = 'view';
+    }
     
     // 構建額外數據
     const additionalData = {
@@ -189,7 +198,7 @@ router.post('/track', async (req, res) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
       cardIdInt, 
-      eventType, 
+      normalizedEventType, 
       visitorIp, 
       userAgent, 
       referrer, 

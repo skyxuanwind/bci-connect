@@ -73,7 +73,9 @@ import EventsCalendar from './pages/EventsCalendar';
 import ResponsiveDashboard from './pages/ResponsiveDashboard';
 import FloatingBackButton from './components/FloatingBackButton';
 
-
+import IndustryTemplates from './pages/IndustryTemplates';
+import LinksPage from './pages/LinksPage';
+import ShopPage from './pages/ShopPage';
 
 
 function App() {
@@ -455,6 +457,9 @@ function App() {
           <Route path="/card/:memberId" element={<MemberCard />} />
           {/* 別名路由：完整版名片頁 */}
           <Route path="/member-card/:memberId" element={<MemberCard />} />
+          <Route path="/industry-templates" element={<IndustryTemplates />} />
+          <Route path="/member-card/:memberId/links" element={<LinksPage />} />
+          <Route path="/member-card/:memberId/shop" element={<ShopPage />} />
           <Route path="/nfc-analytics" element={
             <ProtectedRoute>
               <Layout>

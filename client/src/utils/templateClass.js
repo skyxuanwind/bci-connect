@@ -6,19 +6,45 @@ export const mapTemplateNameToClass = (name) => {
   // 若已是類名則直接返回
   if (normalized.startsWith('template-')) return normalized;
 
-  // 僅保留三種模板風格的映射（含常見別名）：
+  // 擴充行業導向模板映射：
   const MAP = {
-    // 1) Cyberpunk 霓虹科技風（使用既有 futuristic 類名）
+    // 風格別名
     'Cyberpunk風格': 'template-futuristic',
     '未來科技感風格': 'template-futuristic',
     '科技專業版': 'template-futuristic',
-    // 2) 可愛手繪風
     '可愛手繪風': 'template-handdrawn-cute',
     '塗鴉可愛風': 'template-handdrawn-cute',
     '插畫塗鴉版': 'template-handdrawn-cute',
-    // 3) 黑金質感・商務尊榮風
     '黑金質感・商務尊榮風': 'template-black-gold-prestige',
-    '質感黑金版': 'template-black-gold-prestige'
+    '質感黑金版': 'template-black-gold-prestige',
+
+    // 行業模板
+    'photographer': 'template-photographer',
+    '攝影師': 'template-photographer',
+
+    'store': 'template-store',
+    '店家': 'template-store',
+
+    'business': 'template-business',
+    '商務人士': 'template-business',
+
+    'designer': 'template-designer',
+    '設計師': 'template-designer',
+
+    'fitness': 'template-fitness',
+    '健身教練': 'template-fitness',
+
+    'restaurant': 'template-restaurant',
+    '餐飲': 'template-restaurant',
+
+    'education': 'template-education',
+    '教育顧問': 'template-education',
+
+    'legal': 'template-legal',
+    '律師/法律': 'template-legal',
+
+    'musician': 'template-musician',
+    '音樂人': 'template-musician'
   };
 
   return MAP[normalized] || 'template-futuristic';

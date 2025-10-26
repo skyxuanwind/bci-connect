@@ -378,7 +378,7 @@ const MemberCard = () => {
         }
       }
       setShowQrModal(true);
-      trackEvent('qr_show', { source: 'qr_button' });
+      trackEvent('share', { source: 'qr_button' });
     } catch {
       setShowQrModal(true);
     }
@@ -588,7 +588,7 @@ const MemberCard = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gold-200 hover:text-gold-100 transition-colors flex items-center gap-2"
-                onClick={() => trackEvent('content_click', { contentType: 'link', contentId: content_data.url })}
+                onClick={() => trackEvent('contact_click', { contentType: 'link', contentId: content_data.url })}
               >
                 <LinkIcon className="h-4 w-4" />
                 {content_data.url}
@@ -608,7 +608,7 @@ const MemberCard = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gold-200 hover:text-gold-100 transition-colors flex items-center gap-2"
-                onClick={() => trackEvent('content_click', { contentType: 'news', contentId: content_data.url })}
+                onClick={() => trackEvent('contact_click', { contentType: 'news', contentId: content_data.url })}
               >
                 <LinkIcon className="h-4 w-4" />
                 查看新聞
@@ -628,7 +628,7 @@ const MemberCard = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gold-200 hover:text-gold-100 transition-colors flex items-center gap-2"
-                onClick={() => trackEvent('content_click', { contentType: 'file', contentId: content_data.url })}
+                onClick={() => trackEvent('contact_click', { contentType: 'file', contentId: content_data.id })}
               >
                 <DocumentArrowDownIcon className="h-4 w-4" />
                 下載檔案
@@ -770,7 +770,7 @@ const MemberCard = () => {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-800 hover:bg-primary-700 transition-colors"
                   style={{ borderLeft: `3px solid ${platform.color}` }}
-                  onClick={() => trackEvent('content_click', { contentType: 'social', contentId: platform.key })}
+                  onClick={() => trackEvent('contact_click', { contentType: 'social', contentId: platform.key })}
                 >
                   <span style={{ color: platform.color }}>{platform.icon}</span>
                   <span className="text-gold-200">{platform.name}</span>
@@ -796,7 +796,7 @@ const MemberCard = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 hover:bg-primary-700 rounded-lg transition-colors text-gold-200"
-                  onClick={() => trackEvent('content_click', { contentType: 'map', contentId: content_data.address })}
+                  onClick={() => trackEvent('contact_click', { contentType: 'map', contentId: content_data.address })}
                 >
                   <span>🗺️</span>
                   在 Google Maps 中查看
@@ -953,7 +953,14 @@ const MemberCard = () => {
   })();
 
   return (
-    <div className="min-h-screen" style={backgroundStyle}>
+    <motion.div
+      className="min-h-screen"
+      style={backgroundStyle}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.28, ease: 'easeOut' }}
+    >
 
       {/* 名片內容 */}
       <div className="max-w-md mx-auto">
@@ -1011,7 +1018,12 @@ const MemberCard = () => {
 
             {/* 操作按鈕列 */}
             <div className="px-3">
-              <div className="action-buttons">
+              <motion.div
+                className="action-buttons"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+              >
                 <button
                   className="action-btn share-btn"
                   onClick={handleShare}
@@ -1033,7 +1045,7 @@ const MemberCard = () => {
                   <PhotoIcon className="h-5 w-5" />
                   顯示 QR Code
                 </button>
-              </div>
+              </motion.div>
             </div>
 
             {/* 版型渲染：四宮格 / 滿版滑動 / 標準 */}
@@ -1106,11 +1118,14 @@ const MemberCard = () => {
                   <div className="content-block">
                     <h3 className="block-title">掃描名片</h3>
                     <div className="relative">
-                      <img
+                      <motion.img
                         src={cardData.scanned_image_url}
                         alt="掃描名片"
                         className="rounded-lg w-full object-contain cursor-zoom-in bg-gray-50"
                         style={{ maxHeight: '480px' }}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
                         onClick={() => {
                           setPreviewImageUrl(cardData.scanned_image_url);
                           setImagePreviewOpen(true);
@@ -1133,9 +1148,16 @@ const MemberCard = () => {
                   .map((block, idx) => {
                     const key = block?.id ?? `${block?.content_type || 'block'}-${block?.display_order ?? idx}-${idx}`;
                     return (
-                      <div key={key} className="content-block" style={{ borderTop: borderTopCss }}>
+                      <motion.div
+                        key={key}
+                        className="content-block"
+                        style={{ borderTop: borderTopCss }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25 }}
+                      >
                         {renderContentBlock(block, idx)}
-                      </div>
+                      </motion.div>
                     );
                   })
                 }
@@ -1267,7 +1289,7 @@ const MemberCard = () => {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 
