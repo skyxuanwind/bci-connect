@@ -290,7 +290,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
 };
 
 // 行業選擇覆蓋層（頁面載入即顯示）
-const IndustryPicker = ({ onClose }) => {
+const IndustryPicker = ({ onClose, onPick }) => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -323,7 +323,15 @@ const IndustryPicker = ({ onClose }) => {
     };
   }, []);
 
-  const go = (key) => navigate(`/industry-templates?industry=${encodeURIComponent(key)}`);
+  // 在編輯器內直接套用模板，不再跳轉到行業模板頁
+  const go = (key) => {
+    if (typeof onPick === 'function') {
+      onPick(key);
+    } else {
+      // 回退：若未提供 onPick，保持在本頁（或導回編輯器）
+      navigate(`/nfc-card-editor?template=${encodeURIComponent(key)}`);
+    }
+  };
 
   return (
     <AnimatePresence initial={false}>
@@ -666,7 +674,12 @@ export default function CardStudioPro() {
   return (
     <div className="min-h-screen" style={{ background: theme.colors.bg, backgroundImage: bgStyle || undefined }}>
       {showIndustryPicker && (
-        <IndustryPicker onClose={() => setShowIndustryPicker(false)} />
+        <IndustryPicker onClose={() => setShowIndustryPicker(false)} onPick={(key) => {
+          const sample = getTemplateSample(key);
+          if (sample?.blocks) setBlocks(sample.blocks);
+          if (sample?.info) setInfo(sample.info);
+          setShowIndustryPicker(false);
+        }} />
       )}
       <div className="max-w-6xl mx-auto p-4">
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">

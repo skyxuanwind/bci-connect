@@ -16,7 +16,9 @@ let db;
 
 export const initFirebase = () => {
   if (!config.apiKey || !config.databaseURL) {
-    console.warn('[Firebase] Missing env, falling back to local storage.');
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('[Firebase] Missing env, falling back to local storage.');
+    }
     return null;
   }
   if (!app) app = initializeApp(config);

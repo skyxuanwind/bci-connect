@@ -436,11 +436,17 @@ function App() {
           
           {/* NFC Routes */}
           <Route path="/nfc-card-editor" element={
-            <ProtectedRoute>
+            (process.env.NODE_ENV !== 'production') ? (
               <Layout>
                 <CardStudioPro />
               </Layout>
-            </ProtectedRoute>
+            ) : (
+              <ProtectedRoute>
+                <Layout>
+                  <CardStudioPro />
+                </Layout>
+              </ProtectedRoute>
+            )
           } />
 
           {/* Linktree 風格 Studio（NFC 電子名片編輯器新介面） */}
