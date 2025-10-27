@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from '../config/axios';
 import IndustryTemplateModal from '../components/IndustryTemplateModal';
+import { BookmarkIcon } from '@heroicons/react/24/outline';
 
 // 專業 SVG 圖標組件（24x24px，支持淺色/深色主題）
 const IndustryIcons = {
@@ -117,7 +118,7 @@ export default function IndustryTemplates() {
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [errorTemplates, setErrorTemplates] = useState('');
   const [offline, setOffline] = useState(!navigator.onLine);
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(true);
 
   const fetchIndustries = async () => {
     setLoadingIndustries(true);
@@ -271,7 +272,7 @@ export default function IndustryTemplates() {
                         {IconComponent ? (
                           <IconComponent className="w-6 h-6" isDark={true} />
                         ) : (
-                          <div className="text-2xl">🔖</div>
+                          <BookmarkIcon className="w-6 h-6 text-white/80" />
                         )}
                         <div>
                           <div className="font-semibold">{cat.name}</div>

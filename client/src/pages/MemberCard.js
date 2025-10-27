@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../config/axios';
+import { dbGet } from '../services/firebaseClient';
 import LoadingSpinner from '../components/LoadingSpinner';
 import BlockCustomizer from '../components/BlockCustomizer';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -286,17 +287,96 @@ const MemberCard = () => {
     } catch {}
   };
 
-  // 載入名片資料
+  // 載入名片資料（優先使用 CardStudioPro 編輯器資料；無則回退現有 API）
   useEffect(() => {
     let alive = true;
     const load = async () => {
       try {
         setLoading(true);
         setError('');
-        let transformed;
 
+        const vParam = (() => { try { return new URLSearchParams(window.location.search).get('v'); } catch { return null; } })();
+
+        // 1) 嘗試讀取編輯器保存的最新版本（Firebase 或本地快取）
+        const editorData = await dbGet(`cards/${memberId}/editor`).catch(() => null);
+        if (editorData && Array.isArray(editorData.blocks)) {
+          const info = editorData.info || {};
+          const blocks = Array.isArray(editorData.blocks) ? editorData.blocks : [];
+
+          const normalizeBlocks = blocks.map(b => {
+            const id = b.id || `${b.type || 'block'}-${Math.random().toString(36).slice(2,8)}`;
+            switch (b.type) {
+              case 'richtext':
+                return { id, content_type: 'richtext', content_data: { title: b.title || '', html: b.html || '' } };
+              case 'link':
+                return { id, content_type: 'link', content_data: { title: b.title || '連結', url: b.url || '' } };
+              case 'carousel':
+                return {
+                  id,
+                  content_type: 'carousel',
+                  content_data: {
+                    title: b.title || '圖片輪播',
+                    images: (Array.isArray(b.images) ? b.images : []).map(img => (
+                      typeof img === 'string' ? { url: img } : (img?.url ? img : null)
+                    )).filter(Boolean)
+                  }
+                };
+              case 'video': {
+                const url = b.url || '';
+                let typ = 'file';
+                try {
+                  const u = new URL(url);
+                  if (u.hostname.includes('youtube') || u.hostname.includes('youtu.be')) typ = 'youtube';
+                  else if (u.hostname.includes('vimeo')) typ = 'vimeo';
+                } catch {}
+                return { id, content_type: 'video', content_data: { title: b.title || '影片', url, type: typ } };
+              }
+              case 'contact':
+                return { id, content_type: 'contact', content_data: { title: b.title || '聯絡方式' } };
+              default:
+                return { id, content_type: b.type || 'text', content_data: b };
+            }
+          });
+
+          const transformed = {
+            id: editorData.id || memberId,
+            user_name: info.name || '',
+            user_title: info.title || '',
+            user_company: info.company || '',
+            template_name: editorData.themeId || 'simple',
+            ui_show_name: true,
+            ui_show_company: true,
+            ui_show_avatar: !!editorData.avatarUrl,
+            avatar_style: 'circle',
+            avatar_url: editorData.avatarUrl || '',
+            ui_show_contacts: true,
+            contact_info: {
+              phone: info.phone || '',
+              email: info.email || '',
+              website: info.website || '',
+              company: info.company || '',
+              address: info.address || '',
+              line_id: info.line || ''
+            },
+            layout_type: 'standard',
+            ui_divider_style: 'solid-thin',
+            ui_divider_opacity: 0.6,
+            design: { buttonStyleId: editorData.design?.buttonStyleId || 'solid-blue', bgStyle: editorData.design?.bgStyle || '' },
+            content_blocks: normalizeBlocks
+          };
+
+          if (!alive) return;
+          setCardData(transformed);
+          setTemplate({ name: transformed.template_name });
+          setLoading(false);
+          setError('');
+          return; // 已使用最新編輯器資料
+        }
+
+        // 2) 回退：使用既有 API 取得舊版資料
+        let transformed;
         if (memberId === 'test') {
-          const resp = await axios.get('/api/nfc-cards/public/test-card');
+          const resp = await axios.get('/api/nfc-cards/public/test-card' + (vParam ? `?v=${vParam}` : ''));
           const data = resp.data || {};
           const member = data.member || {};
           const card = data.cardConfig || {};
@@ -326,7 +406,7 @@ const MemberCard = () => {
             content_blocks: rows.map(mapRowToBlock)
           };
         } else {
-          const resp = await axios.get(`/api/nfc-cards/member/${memberId}`);
+          const resp = await axios.get(`/api/nfc-cards/member/${memberId}${vParam ? `?v=${vParam}` : ''}`);
           const data = resp.data || {};
           const member = data.member || {};
           const card = data.cardConfig || {};
@@ -592,6 +672,17 @@ const MemberCard = () => {
           </div>
         );
 
+      case 'richtext':
+        return (
+          <div className="content-block">
+            {content_data.title && (<h3 className="block-title">{content_data.title}</h3>)}
+            <div
+              className="prose prose-invert max-w-none text-gold-200"
+              dangerouslySetInnerHTML={{ __html: content_data.html || '' }}
+            />
+          </div>
+        );
+
       case 'link':
       case 'website':
         return (
@@ -813,7 +904,7 @@ const MemberCard = () => {
                   className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 hover:bg-primary-700 rounded-lg transition-colors text-gold-200"
                   onClick={() => trackEvent('contact_click', { contentType: 'map', contentId: content_data.address })}
                 >
-                  <span>🗺️</span>
+                  <MapPinIcon className="h-4 w-4" />
                   在 Google Maps 中查看
                   <ArrowTopRightOnSquareIcon className="h-3 w-3" />
                 </a>
@@ -869,6 +960,36 @@ const MemberCard = () => {
             </div>
           </div>
         );
+
+      case 'contact': {
+        if ((cardData?.layout_type || 'standard') === 'standard') return null;
+        const info = cardData?.contact_info || {};
+        const buttons = [];
+        if (info.phone) buttons.push({ label: '電話', href: `tel:${info.phone}` });
+        if (info.email) buttons.push({ label: '電子郵件', href: `mailto:${info.email}` });
+        if (info.website) buttons.push({ label: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}` });
+        if (buttons.length === 0) return null;
+        return (
+          <div className="content-block">
+            <h3 className="block-title">{content_data.title || '聯絡方式'}</h3>
+            <div className="flex flex-wrap gap-2">
+              {buttons.map((b, idx) => (
+                <a
+                  key={idx}
+                  href={b.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-lg text-white text-sm transition-colors"
+                  style={{ backgroundColor: accentColor }}
+                  onClick={() => trackEvent('contact_click', { contentType: 'contact', contentId: b.label })}
+                >
+                  {b.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      }
 
       default:
         return null;
@@ -952,15 +1073,18 @@ const MemberCard = () => {
   }
 
   const templateClass = getTemplateClassName();
-  const accentColor = template?.css_config?.accentColor || template?.css_config?.secondaryColor || '#cccccc';
+  const accentColor = (cardData?.design ? '#3B82F6' : (template?.css_config?.accentColor || template?.css_config?.secondaryColor || '#cccccc'));
   const dividerStyle = cardData?.ui_divider_style || template?.css_config?.dividerOptions?.[0] || 'solid-thin';
   const dividerOpacity = typeof cardData?.ui_divider_opacity === 'number' ? cardData.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
   const layoutType = cardData?.layout_type || 'standard';
 
-  // 背景樣式與模板配色一致
+  // 背景樣式：優先使用編輯器設計的 bgStyle，其次使用模板配色
   const backgroundStyle = (() => {
     const css = template?.css_config || {};
+    if (cardData?.design?.bgStyle) {
+      return { backgroundImage: cardData.design.bgStyle };
+    }
     if (css.backgroundGradient) {
       return { backgroundImage: css.backgroundGradient };
     }
@@ -971,10 +1095,12 @@ const MemberCard = () => {
     return { background: `linear-gradient(to bottom, rgba(${rgb}, 0.12), #0b0f14)` };
   })();
 
+  const chineseFontStack = "-apple-system, BlinkMacSystemFont, 'PingFang SC','PingFang TC','Noto Sans CJK','Microsoft YaHei','Segoe UI','Helvetica Neue', Arial, sans-serif";
+
   return (
     <motion.div
       className="min-h-screen"
-      style={backgroundStyle}
+      style={{ ...backgroundStyle, fontFamily: chineseFontStack }}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
