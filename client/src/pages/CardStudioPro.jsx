@@ -5,6 +5,7 @@ import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
 import { uploadImage } from '../services/nfcCards';
 import AvatarUpload from '../components/AvatarUpload';
 import IndustrySelect from '../components/NFCCard/IndustrySelect';
+import BlockEditor from '../components/NFCCard/BlockEditor';
 import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
 // framer-motion 未使用，已移除覆蓋層

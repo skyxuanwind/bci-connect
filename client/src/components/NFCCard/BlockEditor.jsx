@@ -97,7 +97,7 @@ export default function BlockEditor({ block, onChange, onRemove }) {
               onChange={(e) => update({ html: e.target.value })}
             />
           </label>
-          <div className="text-[11px] opacity-70">提示：可使用 <strong>、<em>、<br/> 等標籤進行排版。</div>
+          <div className="text-[11px] opacity-70">提示：可使用 &lt;strong&gt;、&lt;em&gt;、&lt;br/&gt; 等標籤進行排版。</div>
         </div>
       )}
 
