@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
 import { uploadImage } from '../services/nfcCards';
 import AvatarUpload from '../components/AvatarUpload';
+import IndustrySelect from '../components/NFCCard/IndustrySelect';
 import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
 // framer-motion 未使用，已移除覆蓋層
@@ -561,6 +562,7 @@ export default function CardStudioPro() {
 
   const addBlock = (b) => { setBlocks(prev => [...prev, b]); setShowAdd(false); };
   const removeBlock = (id) => setBlocks(prev => prev.filter(b => b.id !== id));
+  const updateBlock = (index, next) => setBlocks(prev => prev.map((b, i) => (i === index ? next : b)));
 
   const moveBlock = (from, to) => {
     setBlocks(prev => {
@@ -679,26 +681,26 @@ export default function CardStudioPro() {
                      className="ml-2 px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500"
                    >重試</button>
                  </div>
-               ) : industries.length === 0 ? (
-                 <div className="text-xs opacity-70">暫無行業資料</div>
                ) : (
-                 <div className="grid grid-cols-1 gap-2">
-                   {industries.map(cat => (
-                     <button
-                       key={cat.key}
-                       onClick={() => applyIndustry(cat.key)}
-                       className="group rounded-lg p-3 bg-white/5 hover:bg-white/10 border border-white/10 text-left"
-                     >
-                       <div className="flex items-center gap-2">
-                         <div className="text-lg">{cat.emoji || '🔖'}</div>
-                         <div>
-                           <div className="text-xs font-semibold">{cat.name}</div>
-                           <div className="text-[11px] opacity-70">{cat.description || '含範例，可立即套用並編輯'}</div>
-                         </div>
-                       </div>
-                     </button>
-                   ))}
-                 </div>
+                 <IndustrySelect
+                   items={industries}
+                   loading={industriesLoading}
+                   error={industriesError}
+                   onReload={async () => {
+                     try {
+                       setIndustriesLoading(true);
+                       setIndustriesError('');
+                       const resp = await axios.get('/api/nfc-cards/industries');
+                       const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
+                       setIndustries(list);
+                     } catch (e) {
+                       setIndustriesError('行業資料載入失敗');
+                     } finally {
+                       setIndustriesLoading(false);
+                     }
+                   }}
+                   onSelect={(key) => applyIndustry(key)}
+                 />
                )}
              </div>
 
@@ -707,20 +709,24 @@ export default function CardStudioPro() {
                  <h3 className="text-sm font-semibold">內容模塊</h3>
                  <button onClick={()=>setShowAdd(true)} className="px-3 py-2 rounded bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-700 transition-colors" aria-label="新增模塊">新增</button>
                </div>
-               <div className="mt-3 space-y-2">
-                 {blocks.map((b, i) => (
-                   <div key={b.id} draggable onDragStart={()=>onDragStart(i)} onDragOver={onDragOver} onDrop={()=>onDrop(i)} className="border rounded-lg p-2 flex items-center justify-between bg-white/5 hover:bg-white/8 active:bg-white/10 transition-all duration-150 shadow-sm">
-                     <div className="flex items-center gap-2">
-                       <span className="cursor-grab select-none">≡</span>
-                       <div className="text-sm">{b.type}</div>
-                     </div>
-                     <button onClick={()=>removeBlock(b.id)} className="text-xs text-red-600 hover:text-red-500 active:text-red-400 transition-colors">刪除</button>
-                   </div>
-                 ))}
-                 {blocks.length === 0 && (
-                   <div className="text-xs text-gray-600">尚未添加模塊</div>
-                 )}
-               </div>
+              <div className="mt-3 space-y-3">
+                {blocks.map((b, i) => (
+                  <div key={b.id} draggable onDragStart={()=>onDragStart(i)} onDragOver={onDragOver} onDrop={()=>onDrop(i)}>
+                    <div className="mb-2 text-[11px] opacity-70 flex items-center gap-2">
+                      <span className="cursor-grab select-none">≡</span>
+                      <span>拖曳以排序</span>
+                    </div>
+                    <BlockEditor
+                      block={b}
+                      onChange={(next)=>updateBlock(i, next)}
+                      onRemove={()=>removeBlock(b.id)}
+                    />
+                  </div>
+                ))}
+                {blocks.length === 0 && (
+                  <div className="text-xs opacity-70">尚未新增模塊，請點選「新增」。</div>
+                )}
+              </div>
              </div>
 
             <div className="mt-6 border-t border-white/10 pt-4">

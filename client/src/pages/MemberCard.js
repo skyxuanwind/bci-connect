@@ -1068,14 +1068,18 @@ const MemberCard = () => {
                 )}
               </div>
               <div className="user-info">
-                {cardData?.ui_show_name && (
-                  <div className="user-name">{cardData?.user_name || '—'}</div>
-                )}
-                {cardData?.user_title && (
-                  <div className="user-position">{cardData?.user_title}</div>
-                )}
-                {cardData?.ui_show_company && cardData?.user_company && (
-                  <div className="user-company">{cardData?.user_company}</div>
+                {(cardData?.ui_show_name || cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
+                  <div className="name-title-row">
+                    {cardData?.ui_show_name && (
+                      <span className="user-name">{cardData?.user_name || '—'}</span>
+                    )}
+                    {cardData?.user_title && (
+                      <span className="user-position">{cardData?.user_title}</span>
+                    )}
+                    {(cardData?.ui_show_company && cardData?.user_company) && (
+                      <span className="user-company">@ {cardData?.user_company}</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

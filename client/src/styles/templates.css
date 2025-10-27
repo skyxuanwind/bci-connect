@@ -1452,6 +1452,28 @@
   flex-direction: initial !important;
 }
 
+/* 水平排列：姓名與職稱 */
+.nfc-card-base .name-title-row,
+.nfc-card-preview .name-title-row,
+.nfc-card-container .name-title-row {
+  display: flex !important;
+  align-items: baseline !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+}
+.nfc-card-base .name-title-row .user-name,
+.nfc-card-preview .name-title-row .user-name,
+.nfc-card-container .name-title-row .user-name,
+.nfc-card-base .name-title-row .user-position,
+.nfc-card-preview .name-title-row .user-position,
+.nfc-card-container .name-title-row .user-position,
+.nfc-card-base .name-title-row .user-company,
+.nfc-card-preview .name-title-row .user-company,
+.nfc-card-container .name-title-row .user-company {
+  display: inline !important;
+  margin-bottom: 0 !important;
+}
+
 /* 擴展卡片容器上下內距，確保內容完整顯示 */
 .nfc-card-container .card-content,
 .nfc-card-preview .card-content,

@@ -623,13 +623,18 @@ const PublicNFCCard = () => {
               )}
             </div>
             
-            {/* 基本信息 */}
-            <h1 className="text-2xl font-bold text-white mb-2">
-              {cardConfig?.card_title || member.name}
-            </h1>
-            <p className="text-white/80 mb-4">
-              {cardConfig?.card_subtitle || `${member.title} @ ${member.company}`}
-            </p>
+            {/* 基本信息：姓名＋職稱＋公司橫向排列 */}
+            <div className="flex flex-wrap items-baseline justify-center gap-2 text-white mb-4">
+              <h1 className="text-2xl font-bold">
+                {cardConfig?.card_title || member.name}
+              </h1>
+              {(cardConfig?.card_subtitle || member.title || member.company) && (
+                <span className="text-white/80">
+                  {(cardConfig?.card_subtitle || member.title || '')}
+                  {member.company ? ` @ ${member.company}` : ''}
+                </span>
+              )}
+            </div>
             {/* LINE 直接加好友（來自內容區塊的 LINE ID） */}
             {(() => {
               const lineBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'text' && (b?.content_data?.title || '').trim() === 'LINE ID');
