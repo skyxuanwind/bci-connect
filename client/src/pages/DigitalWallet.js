@@ -448,65 +448,7 @@ const DigitalWallet = () => {
     }
   };
 
-  const downloadVCard = async (card) => {
-    try {
-      const memberParam = getMemberIdForCard(card);
-      if (!memberParam) {
-        alert('找不到名片擁有者資訊，無法下載 vCard');
-        return;
-      }
-
-      // 掃描名片：本地生成 vCard
-      if (String(memberParam).startsWith('scanned_')) {
-        const scanned = card.scanned_data || {};
-        const lines = [
-          'BEGIN:VCARD',
-          'VERSION:3.0',
-          `FN:${card.card_title || scanned.name || ''}`,
-          `ORG:${scanned.company || ''}`,
-          `TITLE:${scanned.title || ''}`,
-          `EMAIL:${scanned.email || ''}`,
-          `TEL:${scanned.phone || scanned.mobile || ''}`,
-          `URL:${scanned.website || ''}`,
-          `NOTE:${card.personal_note || ''}`,
-          'END:VCARD'
-        ];
-        const blob = new Blob([lines.join('\r\n')], { type: 'text/vcard' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${card.card_title || scanned.name || 'contact'}.vcf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        return;
-      }
-
-      // 常規名片：以 userId 呼叫 API 端點，加入版本參數避免快取
-      const qs = new URLSearchParams();
-      qs.set('v', String(Date.now()));
-      const response = await fetch(`/api/nfc-cards/member/${memberParam}/vcard?${qs.toString()}`, {
-        cache: 'no-store'
-      });
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${card.card_title || 'contact'}.vcf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        throw new Error('下載失敗');
-      }
-    } catch (error) {
-      console.error('下載 vCard 失敗:', error);
-      alert('下載失敗，請稍後再試');
-    }
-  };
+  // vCard 下載功能已移除
 
   const exportAllCards = () => {
     const dataStr = JSON.stringify(savedCards, null, 2);
@@ -1357,13 +1299,7 @@ const DigitalWallet = () => {
                         </button>
                       ) : null; })()}
                       
-                      <button
-                        onClick={() => downloadVCard(card)}
-                        className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
-                        title="下載 vCard"
-                      >
-                        <ArrowDownTrayIcon className="h-4 w-4" />
-                      </button>
+                      {/* 下載聯絡人按鈕已移除 */}
                     </div>
                   </div>
                   

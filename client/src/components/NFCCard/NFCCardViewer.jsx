@@ -7,7 +7,6 @@ import {
   FaEnvelope, 
   FaGlobe, 
   FaMapMarkerAlt, 
-  FaDownload, 
   FaHeart, 
   FaShare,
   FaLinkedin,
@@ -189,27 +188,7 @@ const NFCCardViewer = () => {
     }
   };
 
-  const handleDownloadVCard = async () => {
-    try {
-      const response = await axios.get(`/api/nfc-cards/member/${userId}/vcard`, {
-        responseType: 'blob',
-        params: { v: Date.now() },
-        headers: { 'Cache-Control': 'no-cache' }
-      });
-      const blob = new Blob([response.data], { type: 'text/vcard' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${cardData.user_name || 'contact'}.vcf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('下載 vCard 失敗:', error);
-      alert('下載失敗，請稍後再試');
-    }
-  };
+  // vCard 下載功能已移除
 
   const handleShare = async () => {
     try {
@@ -548,16 +527,6 @@ const NFCCardViewer = () => {
             title="分享名片"
           >
             <FaShare />
-          </motion.button>
-          
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleDownloadVCard}
-            className="action-btn download-btn"
-            title="下載聯絡人"
-          >
-            <FaDownload />
           </motion.button>
           
           {cardData.template_css_config?.supports_dark_mode && (

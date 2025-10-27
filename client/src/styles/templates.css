@@ -1484,6 +1484,42 @@
   }
 }
 
+/* 覆寫：移除 premium-card 斜紋背景與掃描特效 */
+.premium-card {
+  background-image: none !important;
+}
+.premium-card::before,
+.premium-card::after {
+  background: none !important;
+  background-image: none !important;
+  opacity: 0 !important;
+}
+.premium-card .light-scan,
+.premium-card .pulse-glow,
+.premium-card .particle,
+.premium-glow,
+.flow-particle,
+.sparkle-dot {
+  display: none !important;
+  animation: none !important;
+}
+
+/* 排版斷字優化：姓名/職稱/公司使用正常斷行 */
+.nfc-card-base .user-name,
+.nfc-card-preview .user-name,
+.nfc-card-container .user-name,
+.nfc-card-base .user-position,
+.nfc-card-preview .user-position,
+.nfc-card-container .user-position,
+.nfc-card-base .user-company,
+.nfc-card-preview .user-company,
+.nfc-card-container .user-company {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
+  letter-spacing: normal !important;
+}
+
 /* ==============================================
    新增模板：黑金質感・商務尊榮風
    ============================================== */

@@ -4,12 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from '../config/axios';
 import { dbGet } from '../services/firebaseClient';
 import LoadingSpinner from '../components/LoadingSpinner';
-import BlockCustomizer from '../components/BlockCustomizer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import {
   ShareIcon,
-  DocumentArrowDownIcon,
   PhotoIcon,
   XMarkIcon,
   ChevronLeftIcon,
@@ -103,7 +101,7 @@ const MemberCard = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
-  const [showBlockCustomizer, setShowBlockCustomizer] = useState(false);
+  // 自定義板塊入口改為導向 Pro 編輯器
   const [customizedBlocks, setCustomizedBlocks] = useState([]);
   const [shareShortUrl, setShareShortUrl] = useState('');
   const [previewImageUrl, setPreviewImageUrl] = useState('');
@@ -475,63 +473,7 @@ const MemberCard = () => {
     return () => timers.forEach(clearInterval);
   }, [cardData?.content_blocks]);
 
-  // 獲取名片資料
-  const fetchCardData = async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      // 測試名片：本地生成 vCard
-      if (memberId === 'test') {
-        const info = cardData?.contact_info || {};
-        const lines = [
-          'BEGIN:VCARD',
-          'VERSION:3.0',
-          `FN:${cardData?.user_name || ''}`,
-          `ORG:${info.company || ''}`,
-          `TITLE:${cardData?.user_title || ''}`,
-          `EMAIL:${info.email || ''}`,
-          info.phone ? `TEL;TYPE=CELL:${info.phone}` : '',
-          `URL:${info.website || ''}`,
-          info.address ? `ADR;TYPE=WORK:;;${info.address};;;;` : '',
-          'END:VCARD'
-        ].filter(Boolean);
-
-        const blob = new Blob([lines.join('\r\n')], { type: 'text/vcard' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${cardData?.user_name || 'contact'}.vcf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        showSuccess('聯絡人已下載！');
-        trackEvent('vcard_download', { source: 'local' });
-        return;
-      }
-
-      // 一般名片：後端下載
-      const response = await axios.get(`/api/nfc-cards/member/${memberId}/vcard`, {
-        responseType: 'blob'
-      });
-      
-      const blob = new Blob([response.data], { type: 'text/vcard' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${cardData?.user_name || 'contact'}.vcf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showSuccess('聯絡人已下載！');
-      trackEvent('vcard_download', { source: 'server' });
-    } catch (error) {
-      console.error('下載 vCard 失敗:', error);
-      showSuccess('下載失敗，請稍後再試');
-    }
-  };
+  // vCard 下載功能已移除
 
   // 下載圖片
   const downloadImage = async (imageUrl, filename) => {
@@ -553,8 +495,7 @@ const MemberCard = () => {
     }
   };
 
-  // 將下載 vCard 函數名稱對齊渲染用到的 downloadVCard
-  const downloadVCard = fetchCardData;
+  // vCard 下載功能已移除
 
   // 渲染聯絡資訊（基於預覽邏輯）
   const renderContactInfo = () => {
@@ -1110,7 +1051,6 @@ const MemberCard = () => {
       {/* 名片內容 */}
       <div className="max-w-md mx-auto">
         <div className={`nfc-card-preview nfc-card-base premium-card ${templateClass}`}>
-          <div className="light-scan" />
           <div className="card-content">
             {/* 頂部：頭像 + 基本資訊（新版樣式） */}
             <div className="personal-info-section">
@@ -1155,16 +1095,10 @@ const MemberCard = () => {
                   <ShareIcon className="h-5 w-5" />
                   分享名片
                 </button>
-                <button
-                  className="action-btn download-btn"
-                  onClick={downloadVCard}
-                >
-                  <DocumentArrowDownIcon className="h-5 w-5" />
-                  下載聯絡人
-                </button>
+                {/* 移除下載聯絡人按鈕 */}
                 <button
                   className="action-btn customize-btn"
-                  onClick={() => setShowBlockCustomizer(true)}
+                  onClick={() => navigate('/nfc-card-editor')}
                 >
                   <Cog6ToothIcon className="h-5 w-5" />
                   自定義板塊
@@ -1211,14 +1145,7 @@ const MemberCard = () => {
     </div>
       </div>
 
-      {/* 板塊自定義模態窗口 */}
-      <BlockCustomizer
-        blocks={cardData?.content_blocks || []}
-        onBlocksChange={handleBlocksChange}
-        isOpen={showBlockCustomizer}
-        onClose={() => setShowBlockCustomizer(false)}
-        onSave={handleBlocksChange}
-      />
+      {/* 自定義板塊入口改為導向 Pro 編輯器 */}
 
       {/* 成功提示 */}
       <AnimatePresence>

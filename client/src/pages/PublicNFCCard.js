@@ -13,7 +13,6 @@ import {
   PhotoIcon,
   HeartIcon,
   ShareIcon,
-  ArrowDownTrayIcon,
   BuildingOfficeIcon,
   UserIcon,
   ChatBubbleLeftRightIcon
@@ -101,29 +100,7 @@ const PublicNFCCard = () => {
     }
   };
 
-  const handleDownloadVCard = async () => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const v = Number(params.get('v')) || Date.now();
-      const response = await axios.get(`/api/nfc-cards/member/${memberId}/vcard`, {
-        responseType: 'blob',
-        params: { v },
-        headers: { 'Cache-Control': 'no-cache' }
-      });
-      
-      const blob = new Blob([response.data], { type: 'text/vcard' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${cardData.member.name}.vcf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('下載聯絡人失敗:', error);
-    }
-  };
+  // vCard 下載功能已移除
 
   const handleShare = async () => {
     const title = `${cardData.member.name} - 電子名片`;
@@ -614,12 +591,7 @@ const PublicNFCCard = () => {
               <ShareIcon className="h-5 w-5" />
             </button>
             
-            <button
-              onClick={handleDownloadVCard}
-              className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
-            >
-              <ArrowDownTrayIcon className="h-5 w-5" />
-            </button>
+            {/* 下載聯絡人按鈕已移除 */}
           </div>
         </div>
       </div>

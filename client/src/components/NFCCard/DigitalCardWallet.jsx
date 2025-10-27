@@ -7,7 +7,6 @@ import {
   FaTrash,
   FaEdit,
   FaEye,
-  FaDownload,
   FaShare,
   FaHeart,
   FaHeartBroken,
@@ -180,26 +179,7 @@ const DigitalCardWallet = () => {
     }
   };
 
-  const downloadVCard = async (bookmark) => {
-    try {
-      const response = await axios.get(`/api/nfc-cards/member/${bookmark.userId}/vcard`, {
-        responseType: 'blob'
-      });
-      
-      const blob = new Blob([response.data], { type: 'text/vcard' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${bookmark.userName || 'contact'}.vcf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('下載 vCard 失敗:', error);
-      alert('下載失敗，請稍後再試');
-    }
-  };
+  // vCard 下載功能已移除
 
   const shareCard = async (bookmark) => {
     const cardUrl = `${window.location.origin}/member-card/${bookmark.userId}`;
@@ -530,13 +510,7 @@ const DigitalCardWallet = () => {
                       >
                         <FaShare />
                       </button>
-                      <button
-                        onClick={() => downloadVCard(bookmark)}
-                        className="card-action-btn download-btn"
-                        title="下載聯絡人"
-                      >
-                        <FaDownload />
-                      </button>
+                      {/* 下載聯絡人按鈕已移除 */}
                       <button
                         onClick={() => removeBookmark(bookmark.userId)}
                         className="card-action-btn remove-btn"
