@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../config/axios';
 import LoadingSpinner from '../components/LoadingSpinner';
+import BlockCustomizer from '../components/BlockCustomizer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import {
@@ -22,7 +23,8 @@ import {
   BuildingOfficeIcon,
   MapPinIcon,
   LinkIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import {
   FaLinkedin,
@@ -100,6 +102,8 @@ const MemberCard = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
+  const [showBlockCustomizer, setShowBlockCustomizer] = useState(false);
+  const [customizedBlocks, setCustomizedBlocks] = useState([]);
   const [shareShortUrl, setShareShortUrl] = useState('');
   const [previewImageUrl, setPreviewImageUrl] = useState('');
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
@@ -124,6 +128,53 @@ const MemberCard = () => {
   const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef(null);
   const viewTrackedRef = useRef(false);
+
+  // 處理板塊自定義
+  const handleBlocksChange = (updatedBlocks) => {
+    setCustomizedBlocks(updatedBlocks);
+    // 可以在這裡保存到本地存儲或發送到服務器
+    localStorage.setItem(`customized_blocks_${memberId}`, JSON.stringify(updatedBlocks));
+  };
+
+  // 獲取要顯示的板塊（考慮自定義設置）
+  const getDisplayBlocks = () => {
+    const originalBlocks = cardData?.content_blocks || [];
+    
+    // 如果有自定義設置，使用自定義設置
+    if (customizedBlocks.length > 0) {
+      return customizedBlocks
+        .filter(block => block.visible !== false)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+    
+    return originalBlocks;
+  };
+
+  // 載入自定義設置
+  useEffect(() => {
+    if (memberId) {
+      const saved = localStorage.getItem(`customized_blocks_${memberId}`);
+      if (saved) {
+        try {
+          setCustomizedBlocks(JSON.parse(saved));
+        } catch (error) {
+          console.warn('載入自定義板塊設置失敗:', error);
+        }
+      }
+    }
+  }, [memberId]);
+
+  // 當原始數據變化時，更新自定義設置
+  useEffect(() => {
+    if (cardData?.content_blocks && customizedBlocks.length === 0) {
+      setCustomizedBlocks(cardData.content_blocks.map((block, index) => ({
+        ...block,
+        id: block.id || `block-${index}`,
+        visible: true,
+        order: index
+      })));
+    }
+  }, [cardData?.content_blocks]);
 
   // 分析追蹤（保持輕量，錯誤忽略）
   const trackEvent = async (eventType, extra = {}) => {
@@ -857,23 +908,26 @@ const MemberCard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-primary-900 flex items-center justify-center">
-        <LoadingSpinner />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="large" />
+          <p className="mt-4 text-gray-400">載入名片中...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-primary-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gold-100 mb-2">載入失敗</h2>
-          <p className="text-gold-300 mb-4">{error}</p>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white rounded-lg transition-colors"
+          <div className="text-red-400 text-lg mb-4">載入失敗</div>
+          <p className="text-gray-400 mb-6">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
           >
-            返回
+            重新載入
           </button>
         </div>
       </div>
@@ -882,14 +936,15 @@ const MemberCard = () => {
 
   if (!cardData) {
     return (
-      <div className="min-h-screen bg-primary-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gold-100 mb-2">找不到名片</h2>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white rounded-lg transition-colors"
+          <div className="text-gray-400 text-lg mb-4">找不到名片</div>
+          <p className="text-gray-500 mb-6">請檢查連結是否正確</p>
+          <button 
+            onClick={() => navigate('/')} 
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
           >
-            返回
+            返回首頁
           </button>
         </div>
       </div>
@@ -982,6 +1037,13 @@ const MemberCard = () => {
                   下載聯絡人
                 </button>
                 <button
+                  className="action-btn customize-btn"
+                  onClick={() => setShowBlockCustomizer(true)}
+                >
+                  <Cog6ToothIcon className="h-5 w-5" />
+                  自定義板塊
+                </button>
+                <button
                   className="action-btn bookmark-btn"
                   onClick={openQrModal}
                 >
@@ -993,7 +1055,11 @@ const MemberCard = () => {
 
             {/* 版型渲染：四宮格 / 滿版滑動 / 標準 */}
             {layoutType === 'four_grid' ? (
-              <FourGridLayout cardData={cardData} renderContentBlock={renderContentBlock} />
+              <FourGridLayout 
+                cardData={cardData} 
+                renderContentBlock={renderContentBlock}
+                displayBlocks={getDisplayBlocks()}
+              />
             ) : layoutType === 'full_slider' ? (
               <FullSliderLayout
                 cardData={cardData}
@@ -1002,6 +1068,7 @@ const MemberCard = () => {
                 currentMediaIndex={currentMediaIndex}
                 setCurrentMediaIndex={setCurrentMediaIndex}
                 swipeHandlers={swipeHandlers}
+                displayBlocks={getDisplayBlocks()}
               />
             ) : (
               <StandardLayout
@@ -1011,11 +1078,21 @@ const MemberCard = () => {
                 onOpenPreview={(url) => { setPreviewImageUrl(url); setImagePreviewOpen(true); }}
                 onDownload={(url, username) => downloadImage(url, username)}
                 renderContactInfo={renderContactInfo}
+                displayBlocks={getDisplayBlocks()}
               />
             )}
       </div>
     </div>
       </div>
+
+      {/* 板塊自定義模態窗口 */}
+      <BlockCustomizer
+        blocks={cardData?.content_blocks || []}
+        onBlocksChange={handleBlocksChange}
+        isOpen={showBlockCustomizer}
+        onClose={() => setShowBlockCustomizer(false)}
+        onSave={handleBlocksChange}
+      />
 
       {/* 成功提示 */}
       <AnimatePresence>
@@ -1047,45 +1124,44 @@ const MemberCard = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-primary-800 rounded-lg p-6 max-w-sm w-full"
+              className="bg-slate-800 rounded-2xl p-6 max-w-md w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gold-100">分享名片</h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white">分享名片</h3>
                 <button
                   onClick={() => setShowShareModal(false)}
-                  className="text-gold-300 hover:text-gold-100"
+                  className="text-gray-400 hover:text-white transition-colors"
                 >
-                  <XMarkIcon className="h-6 w-6" />
+                  <XMarkIcon className="w-6 h-6" />
                 </button>
               </div>
-              <div className="space-y-3">
-                <div className="p-3 bg-primary-700 rounded border text-gold-200 text-sm break-all">
-                  {shareShortUrl || `${window.location.origin}/member-card/${memberId}?v=${(new URLSearchParams(window.location.search).get('v')) || Date.now()}`}
-                </div>
+
+              <div className="space-y-4">
                 <button
                   onClick={() => {
-                    const params = new URLSearchParams(window.location.search);
-                    const currentV = params.get('v') || `${Date.now()}`;
-                    const fullUrl = `${window.location.origin}/member-card/${memberId}?v=${currentV}`;
-                    const target = shareShortUrl || fullUrl;
-                    navigator.clipboard.writeText(target);
-                    showSuccess('連結已複製！');
+                    navigator.clipboard.writeText(window.location.href);
+                    setShowSuccessToast(true);
+                    setShowShareModal(false);
                     trackEvent('share', { source: 'copy_link_modal' });
-                    setShowShareModal(false);
                   }}
-                  className="w-full px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white rounded-lg transition-colors"
+                  className="w-full flex items-center space-x-3 p-4 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
                 >
-                  複製短連結
+                  <LinkIcon className="w-5 h-5 text-blue-400" />
+                  <span className="text-white">複製連結</span>
                 </button>
+
                 <button
                   onClick={() => {
+                    const text = `查看 ${cardData.user_name} 的數位名片：${window.location.href}`;
+                    const url = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
+                    window.open(url, '_blank');
                     setShowShareModal(false);
-                    openQrModal();
                   }}
-                  className="w-full px-4 py-2 bg-primary-700 hover:bg-primary-600 text-gold-100 rounded-lg transition-colors"
+                  className="w-full flex items-center space-x-3 p-4 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
                 >
-                  顯示 QR Code
+                  <FaLine className="w-5 h-5 text-green-400" />
+                  <span className="text-white">透過 LINE 分享</span>
                 </button>
               </div>
             </motion.div>
@@ -1145,33 +1221,39 @@ const MemberCard = () => {
 
 export default MemberCard;
 
-const FourGridLayout = ({ cardData, renderContentBlock }) => (
-  <div className="px-3 grid grid-cols-2 gap-4">
-    {(cardData?.content?.content_blocks || []).map((block, i) => (
-      <div key={block?.id || i} className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
-        {renderContentBlock(block, i)}
-      </div>
-    ))}
-  </div>
-);
+const FourGridLayout = ({ cardData, renderContentBlock, displayBlocks }) => {
+  return (
+    <div className="px-3 grid grid-cols-2 gap-4">
+      {displayBlocks.slice(0, 4).map((block, i) => (
+        <div key={block?.id || i} className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
+          {renderContentBlock(block, i)}
+        </div>
+      ))}
+    </div>
+  );
+};
 
-const FullSliderLayout = ({ cardData, renderContentBlock, borderTopCss, currentMediaIndex, setCurrentMediaIndex, swipeHandlers }) => (
-  <div className="px-3" {...(swipeHandlers || {})}>
-    {(cardData?.content?.content_blocks || []).map((block, i) => (
-      <div key={block?.id || i} className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10" style={borderTopCss}>
-        {renderContentBlock(block, i)}
-      </div>
-    ))}
-  </div>
-);
+const FullSliderLayout = ({ cardData, renderContentBlock, borderTopCss, currentMediaIndex, setCurrentMediaIndex, swipeHandlers, displayBlocks }) => {
+  return (
+    <div className="px-3" {...(swipeHandlers || {})}>
+      {displayBlocks.map((block, i) => (
+        <div key={block?.id || i} className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10" style={{ borderTop: borderTopCss }}>
+          {renderContentBlock(block, i)}
+        </div>
+      ))}
+    </div>
+  );
+};
 
-const StandardLayout = ({ cardData, renderContentBlock, borderTopCss, onOpenPreview, onDownload, renderContactInfo }) => (
-  <div className="px-3">
-    {typeof renderContactInfo === 'function' ? renderContactInfo(cardData) : null}
-    {(cardData?.content?.content_blocks || []).map((block, i) => (
-      <div key={block?.id || i} className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10" style={borderTopCss}>
-        {renderContentBlock(block, i)}
-      </div>
-    ))}
-  </div>
-);
+const StandardLayout = ({ cardData, renderContentBlock, borderTopCss, onOpenPreview, onDownload, renderContactInfo, displayBlocks }) => {
+  return (
+    <div className="px-3">
+      {typeof renderContactInfo === 'function' ? renderContactInfo(cardData) : null}
+      {displayBlocks.map((block, i) => (
+        <div key={block?.id || i} className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10" style={{ borderTop: borderTopCss }}>
+          {renderContentBlock(block, i)}
+        </div>
+      ))}
+    </div>
+  );
+};
