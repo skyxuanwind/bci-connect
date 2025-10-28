@@ -331,8 +331,6 @@ export default function CardStudioPro() {
   const [buttonStyleId, setButtonStyleId] = useState('solid-blue');
   const [bgStyle, setBgStyle] = useState('');
   const [dragIndex, setDragIndex] = useState(null);
-  const [singleExpandMode, setSingleExpandMode] = useState(false);
-  const [openBlockId, setOpenBlockId] = useState(null);
   const skipNextAutoSaveRef = useRef(false);
 
   // 行業資料（側邊欄常駐）
@@ -503,7 +501,6 @@ export default function CardStudioPro() {
         // removed shareUrl(data.shareUrl)
         setButtonStyleId(data.design?.buttonStyleId || 'solid-blue');
         setBgStyle(data.design?.bgStyle || '');
-        setSingleExpandMode(Boolean(data.ui?.singleExpandMode));
       } else {
         const rawDraft = (() => { try { return localStorage.getItem(`card_editor_${user.id}`); } catch { return null; } })();
         if (rawDraft) {
@@ -516,7 +513,6 @@ export default function CardStudioPro() {
             // removed shareUrl(draft.shareUrl)
             setButtonStyleId(draft.design?.buttonStyleId || 'solid-blue');
             setBgStyle(draft.design?.bgStyle || '');
-            setSingleExpandMode(Boolean(draft.ui?.singleExpandMode));
           } catch {}
         } else {
           const tpl = new URLSearchParams(location.search).get('template');
@@ -537,7 +533,6 @@ export default function CardStudioPro() {
       // removed shareUrl(data.shareUrl)
       setButtonStyleId(data.design?.buttonStyleId || 'solid-blue');
       setBgStyle(data.design?.bgStyle || '');
-      setSingleExpandMode(Boolean(data.ui?.singleExpandMode));
     });
     return () => unsub();
   }, [user?.id, location.search]);
@@ -550,14 +545,14 @@ export default function CardStudioPro() {
       skipNextAutoSaveRef.current = false;
       return;
     }
-    const draft = { themeId, blocks, info, avatarUrl, design: { buttonStyleId, bgStyle }, ui: { singleExpandMode } };
+    const draft = { themeId, blocks, info, avatarUrl, design: { buttonStyleId, bgStyle } };
     try { localStorage.setItem(`card_editor_${user.id}`, JSON.stringify(draft)); } catch {}
     if (!navigator.onLine) return;
     const t = setTimeout(async () => {
       try { await dbSet(`cards/${user.id}/editor`, draft); } catch {}
     }, 800);
     return () => clearTimeout(t);
-  }, [themeId, blocks, info, avatarUrl, buttonStyleId, bgStyle, singleExpandMode, user?.id]);
+  }, [themeId, blocks, info, avatarUrl, buttonStyleId, bgStyle, user?.id]);
 
   // 上線後同步離線草稿
   useEffect(() => {
@@ -575,7 +570,6 @@ export default function CardStudioPro() {
   const addBlock = (b) => { setBlocks(prev => [...prev, b]); setShowAdd(false); };
   const removeBlock = (id) => {
     setBlocks(prev => prev.filter(b => b.id !== id));
-    setOpenBlockId(prev => (prev === id ? null : prev));
   };
   const updateBlock = (index, next) => setBlocks(prev => prev.map((b, i) => (i === index ? next : b)));
   const persistSnapshot = async (override = {}) => {
@@ -585,8 +579,7 @@ export default function CardStudioPro() {
       blocks: Array.isArray(override.blocks) ? override.blocks : blocks,
       info,
       avatarUrl,
-      design: { buttonStyleId, bgStyle },
-      ui: { singleExpandMode }
+      design: { buttonStyleId, bgStyle }
     };
     try { localStorage.setItem(`card_editor_${user.id}`, JSON.stringify(payload)); } catch {}
     if (!navigator.onLine) return;
@@ -625,7 +618,7 @@ export default function CardStudioPro() {
         const up = await uploadImage(avatarFile);
         avatar = up?.url || avatarUrl;
       }
-      const payload = { themeId, blocks, info, avatarUrl: avatar, design: { buttonStyleId, bgStyle }, ui: { singleExpandMode } };
+      const payload = { themeId, blocks, info, avatarUrl: avatar, design: { buttonStyleId, bgStyle } };
       await dbSet(`cards/${user.id}/editor`, payload);
       setAvatarUrl(avatar);
       toast.success('已儲存');
@@ -654,14 +647,8 @@ export default function CardStudioPro() {
              </div>
              <div className="mt-3">
                <AvatarUpload currentAvatar={avatarUrl} onAvatarChange={setAvatarFile} />
-               {/* 關鍵欄位 */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                 <label className="text-sm">姓名<input aria-label="姓名" value={info.name} onChange={(e)=>setInfo({...info, name:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-                 <label className="text-sm">公司名稱<input aria-label="公司名稱" value={info.company} onChange={(e)=>setInfo({...info, company:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-                 <label className="text-sm">職稱<input aria-label="職稱" value={info.title} onChange={(e)=>setInfo({...info, title:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-                 <label className="text-sm">手機（含國碼）<input aria-label="手機" placeholder="+886912345678" value={info.phone} onChange={(e)=>setInfo({...info, phone:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-                 <label className="text-sm">電子郵件<input aria-label="電子郵件" value={info.email} onChange={(e)=>setInfo({...info, email:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-               </div>
+               {/* 名片基本欄位（整體可收合） */}
+               <MainInfoFields info={info} setInfo={setInfo} />
 
                {/* 進階欄位（可收合） */}
                <AdvancedInfoFields info={info} setInfo={setInfo} />
@@ -670,22 +657,7 @@ export default function CardStudioPro() {
             <div className="mt-6 border-t border-white/10 pt-4">
                <h3 className="text-sm font-semibold mb-2 flex items-center justify-between">
                  <span>行業模板</span>
-                 <button
-                   onClick={async () => {
-                     try {
-                       setIndustriesLoading(true);
-                       setIndustriesError('');
-                       const resp = await axios.get('/api/nfc-cards/industries');
-                       const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
-                       setIndustries(list);
-                     } catch (e) {
-                       setIndustriesError('行業資料載入失敗');
-                     } finally {
-                       setIndustriesLoading(false);
-                     }
-                   }}
-                   className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs"
-                 >重載</button>
+                {/* 重載按鈕移除：依需求簡化 UI */}
                </h3>
 
                {industriesLoading ? (
@@ -722,19 +694,6 @@ export default function CardStudioPro() {
                    items={industries}
                    loading={industriesLoading}
                    error={industriesError}
-                   onReload={async () => {
-                     try {
-                       setIndustriesLoading(true);
-                       setIndustriesError('');
-                       const resp = await axios.get('/api/nfc-cards/industries');
-                       const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
-                       setIndustries(list);
-                     } catch (e) {
-                       setIndustriesError('行業資料載入失敗');
-                     } finally {
-                       setIndustriesLoading(false);
-                     }
-                   }}
                    onSelect={(key) => applyIndustry(key)}
                  />
                )}
@@ -744,24 +703,6 @@ export default function CardStudioPro() {
                <div className="flex items-center justify-between">
                  <h3 className="text-sm font-semibold">內容模塊</h3>
                  <div className="flex items-center gap-3">
-                   <label className="flex items-center gap-2 text-xs select-none">
-                     <span className="opacity-80">單一展開</span>
-                     <button
-                       type="button"
-                       aria-pressed={singleExpandMode}
-                       onClick={() => {
-                         setSingleExpandMode(v => {
-                           const next = !v;
-                           if (!next) setOpenBlockId(null);
-                           else if (!openBlockId && blocks.length) setOpenBlockId(blocks[0].id);
-                           return next;
-                         });
-                       }}
-                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${singleExpandMode ? 'bg-emerald-600' : 'bg-white/10 border border-white/20'}`}
-                     >
-                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${singleExpandMode ? 'translate-x-6' : 'translate-x-1'}`} />
-                     </button>
-                   </label>
                    <button onClick={()=>setShowAdd(true)} className="px-3 py-2 rounded bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-700 transition-colors" aria-label="新增模塊">新增</button>
                  </div>
                </div>
@@ -770,14 +711,11 @@ export default function CardStudioPro() {
                   <div key={b.id} draggable onDragStart={()=>onDragStart(i)} onDragOver={onDragOver} onDrop={()=>onDrop(i)}>
                     <div className="mb-2 text-[11px] opacity-70 flex items-center gap-2">
                       <span className="cursor-grab select-none">≡</span>
-                      <span>拖曳以排序</span>
                     </div>
                     <BlockEditor
                       block={b}
                       onChange={(next)=>updateBlock(i, next)}
                       onRemove={()=>removeBlock(b.id)}
-                      isOpen={singleExpandMode ? openBlockId === b.id : undefined}
-                      onToggle={singleExpandMode ? (() => setOpenBlockId(prev => (prev === b.id ? null : b.id))) : undefined}
                       onMoveUp={() => i > 0 && moveBlock(i, i - 1)}
                       onMoveDown={() => i < blocks.length - 1 && moveBlock(i, i + 1)}
                       canMoveUp={i > 0}
@@ -817,10 +755,10 @@ export default function CardStudioPro() {
 // 顯示更多/收合切換按鈕（放在標題右側）
 function InfoExpandToggle() {
   const [expanded, setExpanded] = React.useState(() => {
-    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'false'); } catch { return false; }
+    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'true'); } catch { return true; }
   });
   useEffect(() => { try { localStorage.setItem('card_info_expanded', JSON.stringify(expanded)); } catch {} }, [expanded]);
-  // 透過事件派發讓 AdvancedInfoFields 知道狀態變更
+  // 派發事件，讓資訊欄位與進階欄位同步收合
   useEffect(() => {
     const ev = new CustomEvent('card-info-toggle', { detail: { expanded } });
     window.dispatchEvent(ev);
@@ -831,14 +769,14 @@ function InfoExpandToggle() {
       onClick={() => setExpanded(v => !v)}
       aria-pressed={expanded}
       className={`px-3 py-2 rounded ${expanded ? 'bg-white/20' : 'bg-white/10'} hover:bg-white/20 text-white text-sm border border-white/20`}
-    >{expanded ? '收合進階' : '顯示更多'}</button>
+    >{expanded ? '收合欄位' : '展開欄位'}</button>
   );
 }
 
 // 進階欄位容器：帶平滑動畫的可收合
 function AdvancedInfoFields({ info, setInfo }) {
   const [expanded, setExpanded] = React.useState(() => {
-    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'false'); } catch { return false; }
+    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'true'); } catch { return true; }
   });
   const ref = React.useRef(null);
   useEffect(() => {
@@ -863,3 +801,32 @@ function AdvancedInfoFields({ info, setInfo }) {
 }
 
 // removed: duplicate hooks and helpers (already inside CardStudioPro)
+
+// 名片基本欄位：同步 InfoExpandToggle 的收合狀態（整體可收合）
+function MainInfoFields({ info, setInfo }) {
+  const [expanded, setExpanded] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'true'); } catch { return true; }
+  });
+  const ref = React.useRef(null);
+  useEffect(() => {
+    const onToggle = (e) => setExpanded(Boolean(e.detail?.expanded));
+    window.addEventListener('card-info-toggle', onToggle);
+    return () => window.removeEventListener('card-info-toggle', onToggle);
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`overflow-hidden transition-[max-height] duration-300 ${expanded ? 'mt-3' : ''}`}
+      style={{ maxHeight: expanded ? (ref.current?.scrollHeight || 0) : 0 }}
+      aria-hidden={!expanded}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="text-sm">姓名<input aria-label="姓名" value={info.name} onChange={(e)=>setInfo({...info, name:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
+        <label className="text-sm">公司名稱<input aria-label="公司名稱" value={info.company} onChange={(e)=>setInfo({...info, company:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
+        <label className="text-sm">職稱<input aria-label="職稱" value={info.title} onChange={(e)=>setInfo({...info, title:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
+        <label className="text-sm">手機（含國碼）<input aria-label="手機" placeholder="+886912345678" value={info.phone} onChange={(e)=>setInfo({...info, phone:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+        <label className="text-sm">電子郵件<input aria-label="電子郵件" value={info.email} onChange={(e)=>setInfo({...info, email:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+      </div>
+    </div>
+  );
+}
