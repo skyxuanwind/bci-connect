@@ -339,7 +339,7 @@ export default function CardStudioPro() {
     reloadSyncData,
     ConflictModal
   } = useRealtimeSync({
-    path: user ? `cards/${user.uid}` : null,
+    path: user ? `cards/${user.id || user.user_id || user.uid}` : null,
     initialData: null,
     autoSave: true,
     saveDelay: 800,

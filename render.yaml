@@ -16,5 +16,20 @@ services:
         value: https://www.gbc-connect.com
       - key: BACKEND_URL
         value: https://www.gbc-connect.com
+      # Firebase (frontend) configuration — fill these in Render dashboard or convert to secrets
+      - key: REACT_APP_FIREBASE_API_KEY
+        value: ""
+      - key: REACT_APP_FIREBASE_AUTH_DOMAIN
+        value: ""
+      - key: REACT_APP_FIREBASE_DB_URL
+        value: ""
+      - key: REACT_APP_FIREBASE_PROJECT_ID
+        value: ""
+      - key: REACT_APP_FIREBASE_STORAGE_BUCKET
+        value: ""
+      - key: REACT_APP_FIREBASE_SENDER_ID
+        value: ""
+      - key: REACT_APP_FIREBASE_APP_ID
+        value: ""
     autoDeploy: true
     branch: main
