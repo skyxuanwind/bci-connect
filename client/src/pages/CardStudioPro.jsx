@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
@@ -333,6 +333,7 @@ export default function CardStudioPro() {
   const [dragIndex, setDragIndex] = useState(null);
   const [singleExpandMode, setSingleExpandMode] = useState(false);
   const [openBlockId, setOpenBlockId] = useState(null);
+  const skipNextAutoSaveRef = useRef(false);
 
   // 行業資料（側邊欄常駐）
   const [industries, setIndustries] = useState([]);
@@ -544,6 +545,11 @@ export default function CardStudioPro() {
   // 自動儲存與離線快取
   useEffect(() => {
     if (!user?.id) return;
+    if (skipNextAutoSaveRef.current) {
+      // 已在操作中手動保存，跳過這次自動儲存循環以避免重複寫入
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
     const draft = { themeId, blocks, info, avatarUrl, design: { buttonStyleId, bgStyle }, ui: { singleExpandMode } };
     try { localStorage.setItem(`card_editor_${user.id}`, JSON.stringify(draft)); } catch {}
     if (!navigator.onLine) return;
@@ -572,14 +578,31 @@ export default function CardStudioPro() {
     setOpenBlockId(prev => (prev === id ? null : prev));
   };
   const updateBlock = (index, next) => setBlocks(prev => prev.map((b, i) => (i === index ? next : b)));
-
+  const persistSnapshot = async (override = {}) => {
+    if (!user?.id) return;
+    const payload = {
+      themeId,
+      blocks: Array.isArray(override.blocks) ? override.blocks : blocks,
+      info,
+      avatarUrl,
+      design: { buttonStyleId, bgStyle },
+      ui: { singleExpandMode }
+    };
+    try { localStorage.setItem(`card_editor_${user.id}`, JSON.stringify(payload)); } catch {}
+    if (!navigator.onLine) return;
+    try { await dbSet(`cards/${user.id}/editor`, payload); } catch {}
+  };
   const moveBlock = (from, to) => {
-    setBlocks(prev => {
-      const copy = [...prev];
+    // 使用當前 blocks 計算新排序，並立即持久化
+    const next = (() => {
+      const copy = [...blocks];
       const [m] = copy.splice(from, 1);
       copy.splice(to, 0, m);
       return copy;
-    });
+    })();
+    setBlocks(next);
+    skipNextAutoSaveRef.current = true;
+    persistSnapshot({ blocks: next });
   };
   const onDragStart = (i) => setDragIndex(i);
   const onDragOver = (e) => e.preventDefault();
@@ -624,20 +647,24 @@ export default function CardStudioPro() {
           <div className="bg-white/10 backdrop-blur-xl backdrop-saturate-150 rounded-2xl p-4 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200 ease-out active:scale-[0.997] touch-manipulation">
              <div className="flex items-center justify-between">
                <h2 className="text-lg font-semibold">名片資訊</h2>
-               <button onClick={handleSave} className="px-3 py-2 rounded bg-blue-600 text-white" aria-label="儲存" disabled={saving}>{saving ? '儲存中…' : '儲存'}</button>
+               <div className="flex items-center gap-2">
+                 <InfoExpandToggle />
+                 <button onClick={handleSave} className="px-3 py-2 rounded bg-blue-600 text-white" aria-label="儲存" disabled={saving}>{saving ? '儲存中…' : '儲存'}</button>
+               </div>
              </div>
              <div className="mt-3">
                <AvatarUpload currentAvatar={avatarUrl} onAvatarChange={setAvatarFile} />
+               {/* 關鍵欄位 */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                  <label className="text-sm">姓名<input aria-label="姓名" value={info.name} onChange={(e)=>setInfo({...info, name:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
                  <label className="text-sm">公司名稱<input aria-label="公司名稱" value={info.company} onChange={(e)=>setInfo({...info, company:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
                  <label className="text-sm">職稱<input aria-label="職稱" value={info.title} onChange={(e)=>setInfo({...info, title:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
                  <label className="text-sm">手機（含國碼）<input aria-label="手機" placeholder="+886912345678" value={info.phone} onChange={(e)=>setInfo({...info, phone:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-                 <label className="text-sm">LINE ID<input aria-label="LINE ID" value={info.line} onChange={(e)=>setInfo({...info, line:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
                  <label className="text-sm">電子郵件<input aria-label="電子郵件" value={info.email} onChange={(e)=>setInfo({...info, email:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-                 <label className="text-sm">Facebook 連結<input aria-label="Facebook" value={info.facebook} onChange={(e)=>setInfo({...info, facebook:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-                 <label className="text-sm">LinkedIn 連結<input aria-label="LinkedIn" value={info.linkedin} onChange={(e)=>setInfo({...info, linkedin:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
                </div>
+
+               {/* 進階欄位（可收合） */}
+               <AdvancedInfoFields info={info} setInfo={setInfo} />
              </div>
 
             <div className="mt-6 border-t border-white/10 pt-4">
@@ -751,6 +778,10 @@ export default function CardStudioPro() {
                       onRemove={()=>removeBlock(b.id)}
                       isOpen={singleExpandMode ? openBlockId === b.id : undefined}
                       onToggle={singleExpandMode ? (() => setOpenBlockId(prev => (prev === b.id ? null : b.id))) : undefined}
+                      onMoveUp={() => i > 0 && moveBlock(i, i - 1)}
+                      onMoveDown={() => i < blocks.length - 1 && moveBlock(i, i + 1)}
+                      canMoveUp={i > 0}
+                      canMoveDown={i < blocks.length - 1}
                     />
                   </div>
                 ))}
@@ -779,6 +810,54 @@ export default function CardStudioPro() {
       </div>
 
       {showAdd && (<BlockAddModal onAdd={addBlock} onClose={()=>setShowAdd(false)} />)}
+    </div>
+  );
+}
+
+// 顯示更多/收合切換按鈕（放在標題右側）
+function InfoExpandToggle() {
+  const [expanded, setExpanded] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'false'); } catch { return false; }
+  });
+  useEffect(() => { try { localStorage.setItem('card_info_expanded', JSON.stringify(expanded)); } catch {} }, [expanded]);
+  // 透過事件派發讓 AdvancedInfoFields 知道狀態變更
+  useEffect(() => {
+    const ev = new CustomEvent('card-info-toggle', { detail: { expanded } });
+    window.dispatchEvent(ev);
+  }, [expanded]);
+  return (
+    <button
+      type="button"
+      onClick={() => setExpanded(v => !v)}
+      aria-pressed={expanded}
+      className={`px-3 py-2 rounded ${expanded ? 'bg-white/20' : 'bg-white/10'} hover:bg-white/20 text-white text-sm border border-white/20`}
+    >{expanded ? '收合進階' : '顯示更多'}</button>
+  );
+}
+
+// 進階欄位容器：帶平滑動畫的可收合
+function AdvancedInfoFields({ info, setInfo }) {
+  const [expanded, setExpanded] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'false'); } catch { return false; }
+  });
+  const ref = React.useRef(null);
+  useEffect(() => {
+    const onToggle = (e) => setExpanded(Boolean(e.detail?.expanded));
+    window.addEventListener('card-info-toggle', onToggle);
+    return () => window.removeEventListener('card-info-toggle', onToggle);
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`overflow-hidden transition-[max-height] duration-300 ${expanded ? 'mt-3' : ''}`}
+      style={{ maxHeight: expanded ? (ref.current?.scrollHeight || 0) : 0 }}
+      aria-hidden={!expanded}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="text-sm">LINE ID<input aria-label="LINE ID" value={info.line || ''} onChange={(e)=>setInfo({...info, line:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+        <label className="text-sm">Facebook 連結<input aria-label="Facebook" value={info.facebook || ''} onChange={(e)=>setInfo({...info, facebook:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+        <label className="text-sm">LinkedIn 連結<input aria-label="LinkedIn" value={info.linkedin || ''} onChange={(e)=>setInfo({...info, linkedin:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+      </div>
     </div>
   );
 }

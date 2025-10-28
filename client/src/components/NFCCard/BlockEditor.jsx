@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ImageUploadCropper from '../ImageUploadCropper';
 
-export default function BlockEditor({ block, onChange, onRemove, isOpen, onToggle }) {
+export default function BlockEditor({ block, onChange, onRemove, isOpen, onToggle, onMoveUp, onMoveDown, canMoveUp = true, canMoveDown = true }) {
   const [local, setLocal] = useState(block);
   const [expanded, setExpanded] = useState(true);
   const contentRef = useRef(null);
@@ -27,23 +27,45 @@ export default function BlockEditor({ block, onChange, onRemove, isOpen, onToggl
 
   return (
     <div className="group border rounded-xl bg-white/5 hover:bg-white/8 transition-colors focus-within:ring-2 ring-emerald-500">
-      <div className="flex items-center justify-between p-3">
-        <div className="text-sm font-medium">{labelOf(local.type)}</div>
+      {/* 標題列：點擊切換展開/收合，箭頭視覺指示 */}
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={toggleExpand}
+        className="w-full flex items-center justify-between p-3 text-left select-none"
+      >
         <div className="flex items-center gap-2">
+          <svg className={`h-4 w-4 transition-transform ${expanded ? 'rotate-90' : 'rotate-0'} opacity-70`} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div className="text-sm font-medium">{labelOf(local.type)}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          {typeof onMoveUp === 'function' && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); if (canMoveUp) onMoveUp(local.id); }}
+              className={`text-xs rounded border border-white/10 bg-white/10 px-2 py-1 hover:bg-white/20 ${!canMoveUp ? 'opacity-40 cursor-not-allowed' : ''}`}
+              aria-label="上移"
+            >↑</button>
+          )}
+          {typeof onMoveDown === 'function' && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); if (canMoveDown) onMoveDown(local.id); }}
+              className={`text-xs rounded border border-white/10 bg-white/10 px-2 py-1 hover:bg-white/20 ${!canMoveDown ? 'opacity-40 cursor-not-allowed' : ''}`}
+              aria-label="下移"
+            >↓</button>
+          )}
           <button
             type="button"
-            onClick={toggleExpand}
-            className="text-xs rounded border border-white/10 bg-white/10 px-2 py-1 hover:bg-white/20"
-          >
-            {expanded ? '收合' : '展開'}
-          </button>
-          <button onClick={() => onRemove && onRemove(local.id)} className="text-xs text-red-500 hover:text-red-400">刪除</button>
+            onClick={(e) => { e.stopPropagation(); onRemove && onRemove(local.id); }}
+            className="text-xs text-red-500 hover:text-red-400"
+          >刪除</button>
         </div>
-      </div>
+      </button>
 
       <div
         ref={contentRef}
-        className="overflow-hidden transition-all duration-300 px-3 pb-3"
+        className={`overflow-hidden transition-all duration-300 px-3 ${expanded ? 'pb-3' : 'pb-0'}`}
         style={{ maxHeight: expanded ? contentRef.current?.scrollHeight : 0 }}
       >
       {local.type === 'link' && (
