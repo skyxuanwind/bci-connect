@@ -3,6 +3,7 @@ const router = express.Router();
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const geminiService = require('../services/geminiService');
+const { addClient, removeClient, broadcastTo } = require('../utils/sse');
 
 // 從備註文字中抽取標籤（與前端邏輯對齊的簡易規則）
 function extractTagsFromText(text) {
@@ -204,6 +205,45 @@ router.get('/cards', authenticateToken, async (req, res) => {
   }
 });
 
+// SSE 事件串流：僅向該使用者廣播數位名片夾的更新事件
+router.get('/events', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    // 禁用 Nginx/Heroku 等反向代理的緩衝，避免事件延遲
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders && res.flushHeaders();
+
+    // 初始重試間隔
+    try { res.write('retry: 10000\n\n'); } catch (_) {}
+
+    // 註冊客戶端，將 userId 與 topic 作為 meta 方便過濾
+    addClient(res, { userId, topic: 'digital-wallet' });
+
+    // 心跳保活，避免連線被 idle timeout 斷開
+    const keepAlive = setInterval(() => {
+      try {
+        res.write('event: ping\n');
+        res.write('data: {}\n\n');
+      } catch (e) {
+        clearInterval(keepAlive);
+        removeClient(res);
+      }
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      removeClient(res);
+    });
+  } catch (e) {
+    console.error('[DigitalWallet] SSE 初始化失敗:', e);
+    try { res.status(500).end(); } catch (_){ }
+  }
+});
+
 // 添加名片到數位名片夾
 router.post('/cards', authenticateToken, async (req, res) => {
   try {
@@ -246,6 +286,16 @@ router.post('/cards', authenticateToken, async (req, res) => {
       collection_id: result.rows[0].id,
       collected_at: result.rows[0].collected_at
     });
+
+    // 廣播新增事件給該使用者
+    try {
+      const userId = req.user.id;
+      broadcastTo(({ meta }) => meta && meta.topic === 'digital-wallet' && meta.userId === userId, 'wallet:changed', {
+        type: 'add',
+        userId,
+        ts: Date.now(),
+      });
+    } catch (_) {}
   } catch (error) {
     console.error('添加名片到數位名片夾失敗:', error);
     res.status(500).json({ success: false, message: '添加名片失敗' });
@@ -274,6 +324,16 @@ router.put('/cards/:collectionId', authenticateToken, async (req, res) => {
     }
 
     res.json({ success: true, message: '名片信息已更新' });
+
+    // 廣播更新事件給該使用者
+    try {
+      const userId = req.user.id;
+      broadcastTo(({ meta }) => meta && meta.topic === 'digital-wallet' && meta.userId === userId, 'wallet:changed', {
+        type: 'update',
+        userId,
+        ts: Date.now(),
+      });
+    } catch (_) {}
   } catch (error) {
     console.error('更新名片收藏信息失敗:', error);
     res.status(500).json({ success: false, message: '更新名片信息失敗' });
@@ -296,6 +356,16 @@ router.delete('/cards/:collectionId', authenticateToken, async (req, res) => {
     }
     
     res.json({ success: true, message: '名片已從數位名片夾移除' });
+
+    // 廣播刪除事件
+    try {
+      const userId = req.user.id;
+      broadcastTo(({ meta }) => meta && meta.topic === 'digital-wallet' && meta.userId === userId, 'wallet:changed', {
+        type: 'remove',
+        userId,
+        ts: Date.now(),
+      });
+    } catch (_) {}
   } catch (error) {
     console.error('移除名片失敗:', error);
     res.status(500).json({ success: false, message: '移除名片失敗' });
@@ -546,6 +616,23 @@ router.post('/sync', authenticateToken, async (req, res) => {
             ]);
             existingCardIds.add(parsedId);
           } else {
+            // 讀取現有值以做衝突解決（以 last_viewed 為準），同時合併 tags
+            const current = await client.query(`
+              SELECT notes, tags, folder_name, is_favorite, last_viewed
+              FROM nfc_card_collections
+              WHERE user_id = $1 AND card_id = $2
+              FOR UPDATE
+            `, [userId, parsedId]);
+
+            const row = current.rows[0] || {};
+            const dbLastViewed = new Date(row.last_viewed || 0);
+            const incomingLast = new Date(lastViewed || 0);
+            const shouldApplyIncoming = !row.last_viewed || (incomingLast > dbLastViewed);
+
+            const mergedTags = mergeTags(row.tags || [], tags || []);
+            const finalNotes = shouldApplyIncoming ? notes : (row.notes || notes);
+            const finalFolder = shouldApplyIncoming ? folderName : (row.folder_name || folderName);
+
             await client.query(`
               UPDATE nfc_card_collections 
               SET notes = $3, tags = $4, folder_name = $5, last_viewed = $6
@@ -553,10 +640,10 @@ router.post('/sync', authenticateToken, async (req, res) => {
             `, [
               userId, 
               parsedId, 
-              notes, 
-              tags, 
-              folderName,
-              lastViewed
+              finalNotes, 
+              mergedTags, 
+              finalFolder,
+              shouldApplyIncoming ? incomingLast : dbLastViewed
             ]);
           }
         } catch (err) {
@@ -620,6 +707,15 @@ router.post('/sync', authenticateToken, async (req, res) => {
     } catch {}
     
     res.json({ success: true, message: '數位名片夾同步成功' });
+
+    // 廣播同步完成事件
+    try {
+      broadcastTo(({ meta }) => meta && meta.topic === 'digital-wallet' && meta.userId === req.user.id, 'wallet:changed', {
+        type: 'sync',
+        userId: req.user.id,
+        ts: Date.now(),
+      });
+    } catch (_) {}
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('同步數位名片夾失敗:', error);
@@ -687,6 +783,16 @@ router.delete('/clear', authenticateToken, async (req, res) => {
       message: `已清空數位名片夾，共移除 ${deletedCount} 張名片`,
       deleted_count: deletedCount
     });
+
+    // 廣播清空事件
+    try {
+      const userId = req.user.id;
+      broadcastTo(({ meta }) => meta && meta.topic === 'digital-wallet' && meta.userId === userId, 'wallet:changed', {
+        type: 'clear',
+        userId,
+        ts: Date.now(),
+      });
+    } catch (_) {}
   } catch (error) {
     console.error('清空數位名片夾失敗:', error);
     res.status(500).json({ success: false, message: '清空數位名片夾失敗' });

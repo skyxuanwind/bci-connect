@@ -26,6 +26,7 @@ import { useNavigate } from 'react-router-dom';
 
 const DigitalWallet = () => {
   const [savedCards, setSavedCards] = useState([]);
+  const [syncStatus, setSyncStatus] = useState({ connected: false, lastSync: null, pending: false });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTag, setFilterTag] = useState('');
   const [sortBy, setSortBy] = useState('date_added');
@@ -201,6 +202,7 @@ const DigitalWallet = () => {
     try {
       const token = Cookies.get('token');
       if (!token) return;
+      setSyncStatus((s) => ({ ...s, pending: true }));
       
       const resp = await axios.post('/api/digital-wallet/sync', 
         { cards },
@@ -210,13 +212,80 @@ const DigitalWallet = () => {
       if (resp?.data?.success) {
         // 通知同步面板刷新雲端資料
         window.dispatchEvent(new CustomEvent('digitalWallet:syncCompleted'));
+        setSyncStatus((s) => ({ ...s, pending: false, lastSync: Date.now() }));
       } else {
         console.warn('同步到雲端回應非成功:', resp?.data);
+        setSyncStatus((s) => ({ ...s, pending: false }));
       }
     } catch (error) {
       console.warn('同步到雲端失敗:', error);
+      setSyncStatus((s) => ({ ...s, pending: false }));
     }
   };
+
+  const refreshFromCloud = async () => {
+    try {
+      const token = Cookies.get('token');
+      if (!token) return;
+      const response = await axios.get('/api/digital-wallet/cards', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data?.success) {
+        const cards = response.data.cards || [];
+        setSavedCards(cards);
+        saveToLocalStorage(cards);
+      }
+    } catch (e) {
+      console.warn('刷新雲端資料失敗:', e);
+    }
+  };
+
+  // 建立 SSE 連線以接收雲端更新事件
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (!token) return;
+    let es;
+    try {
+      es = new EventSource('/api/digital-wallet/events');
+      es.onopen = () => setSyncStatus((s) => ({ ...s, connected: true }));
+      es.onerror = () => setSyncStatus((s) => ({ ...s, connected: false }));
+      es.addEventListener('wallet:changed', async (ev) => {
+        try {
+          const data = ev && ev.data ? JSON.parse(ev.data) : {};
+          // 只要收到事件就刷新一次（後端已按 userId 過濾）
+          await refreshFromCloud();
+        } catch (_) {}
+      });
+    } catch (e) {
+      console.warn('SSE 連線失敗:', e);
+    }
+    return () => { try { es && es.close(); } catch (_) {} };
+  }, []);
+
+  // 自動同步觸發：網路恢復時將本地資料同步到雲端
+  useEffect(() => {
+    const onOnline = () => {
+      try { syncToCloud(savedCards); } catch (_) {}
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [savedCards]);
+
+  // 自動同步觸發：本地資料變更後延遲同步（節流避免過於頻繁）
+  useEffect(() => {
+    let timer;
+    const onLocalUpdated = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        try { syncToCloud(savedCards); } catch (_) {}
+      }, 8000); // 8 秒後嘗試同步
+    };
+    window.addEventListener('digitalWallet:localUpdated', onLocalUpdated);
+    return () => {
+      window.removeEventListener('digitalWallet:localUpdated', onLocalUpdated);
+      if (timer) clearTimeout(timer);
+    };
+  }, [savedCards]);
 
   // 取得可用於 /member/:memberId 的參數：
   // 掃描名片 -> 使用 card.id (scanned_*)；常規名片 -> 使用持有者的 userId
@@ -913,6 +982,26 @@ const DigitalWallet = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 同步狀態與操作 */}
+        <div className="mb-4 flex items-center gap-3 text-xs">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded ${syncStatus.connected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+            {syncStatus.connected ? 'SSE 已連線' : 'SSE 未連線'}
+          </span>
+          <span className="text-gray-500">最後同步：{syncStatus.lastSync ? new Date(syncStatus.lastSync).toLocaleString('zh-TW') : '—'}</span>
+          <button
+            onClick={() => syncToCloud(savedCards)}
+            disabled={syncStatus.pending}
+            className={`px-2 py-1 rounded ${syncStatus.pending ? 'bg-gray-200 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+          >
+            {syncStatus.pending ? '同步中…' : '立即同步'}
+          </button>
+          <button
+            onClick={refreshFromCloud}
+            className="px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+          >
+            重新載入雲端
+          </button>
+        </div>
         {/* 搜尋和篩選區 */}
         <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
