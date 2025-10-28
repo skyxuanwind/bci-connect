@@ -337,6 +337,13 @@ export default function CardStudioPro() {
   const [industries, setIndustries] = useState([]);
   const [industriesLoading, setIndustriesLoading] = useState(true);
   const [industriesError, setIndustriesError] = useState('');
+  // 行業板塊收合狀態（預設收起，記憶使用者操作）
+  const [industryCollapsed, setIndustryCollapsed] = useState(() => {
+    try {
+      const v = localStorage.getItem('card_industry_collapsed');
+      return v ? v === '1' : true;
+    } catch { return true; }
+  });
 
   const [info, setInfo] = useState({ name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', linkedin: '' });
   const [avatarFile, setAvatarFile] = useState(null);
@@ -360,6 +367,11 @@ export default function CardStudioPro() {
     })();
     return () => { alive = false; };
   }, []);
+
+  // 記憶行業板塊收合狀態
+  useEffect(() => {
+    try { localStorage.setItem('card_industry_collapsed', industryCollapsed ? '1' : '0'); } catch {}
+  }, [industryCollapsed]);
 
   const applyIndustry = (key) => {
     const sample = getTemplateSample(key);
@@ -657,49 +669,60 @@ export default function CardStudioPro() {
             <div className="mt-6 border-t border-white/10 pt-4">
                <h3 className="text-sm font-semibold mb-2 flex items-center justify-between">
                  <span>行業模板</span>
-                {/* 重載按鈕移除：依需求簡化 UI */}
+                 <button
+                   onClick={() => setIndustryCollapsed(v => !v)}
+                   className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/10 text-xs"
+                   aria-expanded={!industryCollapsed}
+                   aria-controls="industry-section"
+                 >{industryCollapsed ? '展開' : '收起'}</button>
                </h3>
 
-               {industriesLoading ? (
-                 <div className="grid grid-cols-1 gap-2">
-                   {Array.from({ length: 6 }).map((_, i) => (
-                     <div key={i} className="rounded-lg p-3 bg-white/5 border border-white/10 animate-pulse">
-                       <div className="h-4 w-24 bg-white/10 rounded mb-1" />
-                       <div className="h-3 w-40 bg-white/10 rounded" />
-                     </div>
-                   ))}
-                 </div>
-               ) : industriesError ? (
-                 <div className="text-xs opacity-80">
-                   {industriesError}
-                   <button
-                     onClick={async () => {
-                       try {
-                         setIndustriesLoading(true);
-                         setIndustriesError('');
-                         const resp = await axios.get('/api/nfc-cards/industries');
-                         const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
-                         setIndustries(list);
-                       } catch (e) {
-                         setIndustriesError('行業資料載入失敗');
-                       } finally {
-                         setIndustriesLoading(false);
-                       }
-                     }}
-                     className="ml-2 px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500"
-                   >重試</button>
-                 </div>
-               ) : (
-                 <IndustrySelect
-                   items={industries}
-                   loading={industriesLoading}
-                   error={industriesError}
-                   onSelect={(key) => applyIndustry(key)}
-                 />
-               )}
+               <div
+                 id="industry-section"
+                 className={`transition-all duration-300 ease-out overflow-hidden ${industryCollapsed ? 'max-h-0 opacity-0 pointer-events-none -mt-2' : 'max-h-[1200px] opacity-100'}`}
+                 aria-hidden={industryCollapsed}
+               >
+                 {industriesLoading ? (
+                   <div className="grid grid-cols-1 gap-2">
+                     {Array.from({ length: 6 }).map((_, i) => (
+                       <div key={i} className="rounded-lg p-3 bg-white/5 border border-white/10 animate-pulse">
+                         <div className="h-4 w-24 bg-white/10 rounded mb-1" />
+                         <div className="h-3 w-40 bg-white/10 rounded" />
+                       </div>
+                     ))}
+                   </div>
+                 ) : industriesError ? (
+                   <div className="text-xs opacity-80">
+                     {industriesError}
+                     <button
+                       onClick={async () => {
+                         try {
+                           setIndustriesLoading(true);
+                           setIndustriesError('');
+                           const resp = await axios.get('/api/nfc-cards/industries');
+                           const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
+                           setIndustries(list);
+                         } catch (e) {
+                           setIndustriesError('行業資料載入失敗');
+                         } finally {
+                           setIndustriesLoading(false);
+                         }
+                       }}
+                       className="ml-2 px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500"
+                     >重試</button>
+                   </div>
+                 ) : (
+                   <IndustrySelect
+                     items={industries}
+                     loading={industriesLoading}
+                     error={industriesError}
+                     onSelect={(key) => applyIndustry(key)}
+                   />
+                 )}
+               </div>
              </div>
 
-            <div className="mt-6 border-t border-white/10 pt-4">
+              <div className="mt-6 border-t border-white/10 pt-4">
                <div className="flex items-center justify-between">
                  <h3 className="text-sm font-semibold">內容模塊</h3>
                  <div className="flex items-center gap-3">
@@ -709,9 +732,6 @@ export default function CardStudioPro() {
               <div className="mt-3 space-y-3">
                 {blocks.map((b, i) => (
                   <div key={b.id} draggable onDragStart={()=>onDragStart(i)} onDragOver={onDragOver} onDrop={()=>onDrop(i)}>
-                    <div className="mb-2 text-[11px] opacity-70 flex items-center gap-2">
-                      <span className="cursor-grab select-none">≡</span>
-                    </div>
                     <BlockEditor
                       block={b}
                       onChange={(next)=>updateBlock(i, next)}
