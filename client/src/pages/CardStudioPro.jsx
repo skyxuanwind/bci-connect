@@ -326,6 +326,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
 export default function CardStudioPro() {
   const { user } = useAuth();
   const location = useLocation();
+  const userId = user?.id || user?.user_id || user?.uid;
   
   // 使用即時同步 Hook
   const {
@@ -339,7 +340,7 @@ export default function CardStudioPro() {
     reloadSyncData,
     ConflictModal
   } = useRealtimeSync({
-    path: user ? `cards/${user.id || user.user_id || user.uid}` : null,
+    path: userId ? `cards/${userId}` : null,
     initialData: null,
     autoSave: true,
     saveDelay: 800,
