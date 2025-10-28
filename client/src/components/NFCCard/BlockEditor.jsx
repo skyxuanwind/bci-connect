@@ -3,7 +3,7 @@ import ImageUploadCropper from '../ImageUploadCropper';
 
 export default function BlockEditor({ block, onChange, onRemove, isOpen, onToggle, onMoveUp, onMoveDown, canMoveUp = true, canMoveDown = true }) {
   const [local, setLocal] = useState(block);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const contentRef = useRef(null);
 
   const update = (next) => {

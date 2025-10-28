@@ -775,7 +775,7 @@ export default function CardStudioPro() {
 // 顯示更多/收合切換按鈕（放在標題右側）
 function InfoExpandToggle() {
   const [expanded, setExpanded] = React.useState(() => {
-    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'true'); } catch { return true; }
+    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'false'); } catch { return false; }
   });
   useEffect(() => { try { localStorage.setItem('card_info_expanded', JSON.stringify(expanded)); } catch {} }, [expanded]);
   // 派發事件，讓資訊欄位與進階欄位同步收合
@@ -796,7 +796,7 @@ function InfoExpandToggle() {
 // 進階欄位容器：帶平滑動畫的可收合
 function AdvancedInfoFields({ info, setInfo }) {
   const [expanded, setExpanded] = React.useState(() => {
-    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'true'); } catch { return true; }
+    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'false'); } catch { return false; }
   });
   const ref = React.useRef(null);
   useEffect(() => {
@@ -825,7 +825,7 @@ function AdvancedInfoFields({ info, setInfo }) {
 // 名片基本欄位：同步 InfoExpandToggle 的收合狀態（整體可收合）
 function MainInfoFields({ info, setInfo }) {
   const [expanded, setExpanded] = React.useState(() => {
-    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'true'); } catch { return true; }
+    try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'false'); } catch { return false; }
   });
   const ref = React.useRef(null);
   useEffect(() => {
