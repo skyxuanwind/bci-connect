@@ -90,6 +90,14 @@ class SyncManager {
   }
 
   /**
+   * 兼容舊代碼的別名方法
+   * @deprecated 請改用 onStatusChange
+   */
+  onSyncStatusChange(callback) {
+    return this.onStatusChange(callback);
+  }
+
+  /**
    * 訂閱資料變化
    * @param {string} path - Firebase 路徑
    * @param {Function} callback - 回調函數

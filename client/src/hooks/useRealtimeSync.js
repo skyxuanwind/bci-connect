@@ -95,7 +95,7 @@ export const useRealtimeSync = (options = {}) => {
 
   // 監聽同步狀態
   useEffect(() => {
-    const unsubscribe = syncManager.onSyncStatusChange((status) => {
+    const unsubscribe = syncManager.onStatusChange((status) => {
       setSyncStatus(status);
       setIsSaving(status === 'syncing');
     });
@@ -250,7 +250,7 @@ export function useSyncStatus() {
   const [status, setStatus] = useState(syncManager.getSyncStatus());
 
   useEffect(() => {
-    const unsubscribe = syncManager.onSyncStatusChange(() => {
+    const unsubscribe = syncManager.onStatusChange(() => {
       setStatus(syncManager.getSyncStatus());
     });
     return unsubscribe;
