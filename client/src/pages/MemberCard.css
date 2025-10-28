@@ -1,7 +1,8 @@
 /* 會員名片頁面樣式 */
 .member-card-page {
   min-height: 100vh;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* 統一中英文字型堆疊，確保桌機與手機字型一致 */
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC','PingFang TC','Noto Sans CJK','Microsoft YaHei','Segoe UI','Helvetica Neue', Arial, sans-serif;
   position: relative;
   overflow-x: hidden;
 }

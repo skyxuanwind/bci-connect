@@ -30,6 +30,7 @@ import {
 } from 'react-icons/fa';
 
 const PublicNFCCard = () => {
+  const chineseFontStack = "-apple-system, BlinkMacSystemFont, 'PingFang SC','PingFang TC','Noto Sans CJK','Microsoft YaHei','Segoe UI','Helvetica Neue', Arial, sans-serif";
   const { memberId } = useParams();
   const [cardData, setCardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -557,9 +558,12 @@ const PublicNFCCard = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      darkMode ? 'dark bg-gray-900' : 'bg-gray-50'
-    }`}>
+    <div
+      className={`min-h-screen transition-colors duration-300 ${
+        darkMode ? 'dark bg-gray-900' : 'bg-gray-50'
+      }`}
+      style={{ fontFamily: chineseFontStack }}
+    >
       {/* 頂部操作欄 */}
       <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-sm border-b border-yellow-500/30">
         <div className="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center">

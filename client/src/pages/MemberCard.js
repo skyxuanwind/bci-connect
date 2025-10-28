@@ -1049,8 +1049,8 @@ const MemberCard = () => {
       transition={{ duration: 0.28, ease: 'easeOut' }}
     >
 
-      {/* 名片內容 */}
-      <div className="max-w-md mx-auto">
+      {/* 名片內容：統一容器寬度與內距，與 PublicNFCCard 保持一致 */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className={`nfc-card-preview nfc-card-base premium-card ${templateClass}`}>
           <div className="card-content">
             {/* 頂部：頭像 + 基本資訊（新版樣式） */}
