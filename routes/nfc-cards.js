@@ -7,6 +7,40 @@ const path = require('path');
 const fs = require('fs');
 const { storage } = require('../config/cloudinary');
 
+// --- Realtime sync (SSE) ---
+// Maintain SSE clients keyed by memberId
+const sseClients = new Map(); // memberId -> Set(res)
+
+function addSseClient(memberId, res) {
+  const key = String(memberId);
+  if (!sseClients.has(key)) sseClients.set(key, new Set());
+  sseClients.get(key).add(res);
+}
+
+function removeSseClient(memberId, res) {
+  const key = String(memberId);
+  const set = sseClients.get(key);
+  if (!set) return;
+  set.delete(res);
+  if (set.size === 0) sseClients.delete(key);
+}
+
+function broadcastCardUpdate(memberId, payload = {}) {
+  const key = String(memberId);
+  const set = sseClients.get(key);
+  if (!set || set.size === 0) return;
+  const data = JSON.stringify({ type: 'card:update', memberId: key, timestamp: Date.now(), ...payload });
+  for (const client of set) {
+    try {
+      client.write(`event: card:update\n`);
+      client.write(`data: ${data}\n\n`);
+    } catch (e) {
+      // If writing fails, drop the client
+      try { removeSseClient(key, client); } catch {}
+    }
+  }
+}
+
 // 動態確保 nfc_cards 具備自動帶入偏好欄位（Postgres）
 async function ensureAutoPopulateColumn() {
   try {
@@ -35,6 +69,18 @@ async function ensureUiFlagsColumns() {
   }
 }
 
+// 動態確保版本欄位存在（用於跨裝置同步與快取破壞）
+async function ensureVersionColumn() {
+  try {
+    await pool.query(`
+      ALTER TABLE nfc_cards
+      ADD COLUMN IF NOT EXISTS version BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
+    `);
+  } catch (e) {
+    console.warn('確保 version 欄位存在時發生非致命錯誤：', e?.message || String(e));
+  }
+}
+
 // 使用 Cloudinary 作為上傳儲存，僅允許圖片
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
@@ -48,6 +94,38 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+// SSE 事件端點：前端可透過 /api/nfc-cards/events?memberId=xxx 建立訂閱
+router.get('/events', async (req, res) => {
+  const { memberId } = req.query;
+  if (!memberId) {
+    return res.status(400).json({ message: '缺少 memberId 參數' });
+  }
+
+  // SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  // CORS 交由全域中介層處理；這裡仍可提供初始事件
+
+  // Send initial open event
+  res.write(`event: open\n`);
+  res.write(`data: ${JSON.stringify({ ok: true, ts: Date.now() })}\n\n`);
+
+  addSseClient(memberId, res);
+
+  // Heartbeat to keep connection alive
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`: h\n\n`); // comment line as heartbeat
+    } catch (_) {}
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    removeSseClient(memberId, res);
+  });
 });
 
 // 獲取會員的電子名片
@@ -109,6 +187,12 @@ router.get('/member/:memberId', async (req, res) => {
       } catch (analyticsError) {
         console.warn('記錄瀏覽分析失敗:', analyticsError);
       }
+    }
+
+    // 提供版本欄位（若不存在則以 updated_at 代替）
+    if (cardConfig && (cardConfig.version == null)) {
+      const ts = new Date(cardConfig.updated_at || Date.now()).getTime();
+      cardConfig.version = Number.isFinite(ts) ? ts : Date.now();
     }
 
     res.json({
@@ -219,6 +303,7 @@ router.put('/my-card', authenticateToken, async (req, res) => {
     // 確保欄位存在
     await ensureAutoPopulateColumn();
     await ensureUiFlagsColumns();
+    await ensureVersionColumn();
     
     // 檢查是否已有名片
     const existingCard = await pool.query(
@@ -233,11 +318,12 @@ router.put('/my-card', authenticateToken, async (req, res) => {
       const newCardResult = await pool.query(
         `INSERT INTO nfc_cards (
            user_id, template_id, card_title, card_subtitle, custom_css, is_active, auto_populate_on_create,
-           ui_show_avatar, ui_show_name, ui_show_company, ui_show_contacts, avatar_url
+           ui_show_avatar, ui_show_name, ui_show_company, ui_show_contacts, avatar_url, version, updated_at
          )
          VALUES (
            $1, $2, $3, $4, $5, true, COALESCE($6, false),
-           COALESCE($7, true), COALESCE($8, true), COALESCE($9, true), COALESCE($10, true), $11
+           COALESCE($7, true), COALESCE($8, true), COALESCE($9, true), COALESCE($10, true), $11,
+           (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT, NOW()
          )
          RETURNING id`,
         [
@@ -267,7 +353,8 @@ router.put('/my-card', authenticateToken, async (req, res) => {
            ui_show_company  = COALESCE($8, ui_show_company),
            ui_show_contacts = COALESCE($9, ui_show_contacts),
            avatar_url       = COALESCE($10, avatar_url),
-           updated_at = CURRENT_TIMESTAMP
+           version          = (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
+           updated_at       = CURRENT_TIMESTAMP
          WHERE id = $11`,
         [
           template_id, card_title, card_subtitle, custom_css, auto_populate_on_create,
@@ -276,7 +363,11 @@ router.put('/my-card', authenticateToken, async (req, res) => {
         ]
       );
     }
-    
+    // 廣播更新事件（基本資訊）
+    try {
+      broadcastCardUpdate(userId, { cardId });
+    } catch (_) {}
+
     res.json({ message: '電子名片更新成功', cardId });
   } catch (error) {
     console.error('更新電子名片錯誤:', error);
@@ -523,6 +614,22 @@ router.post('/my-card/content', authenticateToken, async (req, res) => {
       );
     }
     
+    // 更新卡片版本並時間戳
+    try {
+      await ensureVersionColumn();
+      await pool.query(
+        `UPDATE nfc_cards SET version = (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT, updated_at = NOW() WHERE id = $1`,
+        [cardId]
+      );
+    } catch (e) {
+      console.warn('更新版本標識失敗（非致命）：', e?.message || String(e));
+    }
+
+    // 廣播更新事件（內容區塊）
+    try {
+      broadcastCardUpdate(userId, { cardId });
+    } catch (_) {}
+
     res.json({ message: '內容區塊更新成功' });
   } catch (error) {
     console.error('更新內容區塊錯誤:', error);

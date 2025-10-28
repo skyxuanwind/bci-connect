@@ -46,6 +46,36 @@ const PublicNFCCard = () => {
     checkIfCollected();
   }, [memberId]);
 
+  // SSE 訂閱：當後端廣播 card:update 時自動刷新
+  useEffect(() => {
+    let es;
+    const url = `/api/nfc-cards/events?memberId=${memberId}`;
+    try {
+      es = new EventSource(url);
+      const onUpdate = (e) => {
+        try {
+          const payload = JSON.parse(e.data || '{}');
+          // 僅當事件目標為目前頁的 memberId 時刷新
+          if (!payload.memberId || String(payload.memberId) === String(memberId)) {
+            fetchCardData();
+          }
+        } catch {
+          // 忽略解析錯誤
+        }
+      };
+      es.addEventListener('card:update', onUpdate);
+      es.onerror = () => {
+        // 瀏覽器會自動重連，這裡只做日誌
+        console.warn('PublicNFCCard SSE 連線錯誤，將自動重試');
+      };
+    } catch (e) {
+      console.warn('建立 PublicNFCCard SSE 失敗:', e);
+    }
+    return () => {
+      try { es && es.close(); } catch {}
+    };
+  }, [memberId]);
+
   const fetchCardData = async () => {
     try {
       setLoading(true);

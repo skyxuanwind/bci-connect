@@ -190,6 +190,46 @@ const MemberCard = () => {
     } catch {}
   };
 
+  // 供 SSE 觸發的伺服器端刷新（簡化版，使用既有 API）
+  const refreshFromServer = async () => {
+    try {
+      const vParam = (() => { try { return new URLSearchParams(window.location.search).get('v'); } catch { return null; } })();
+      const resp = await axios.get(`/api/nfc-cards/member/${memberId}${vParam ? `?v=${vParam}` : ''}`);
+      const data = resp.data || {};
+      const member = data.member || {};
+      const card = data.cardConfig || {};
+      const rows = Array.isArray(card.content_blocks) ? card.content_blocks : [];
+      const transformed = {
+        id: card.id,
+        user_name: member?.name || card.card_title || '',
+        user_title: card.card_subtitle || '',
+        user_company: member?.company || card.user_company || '',
+        template_name: card.template_name,
+        ui_show_name: true,
+        ui_show_company: true,
+        ui_show_avatar: !!card.avatar_url,
+        avatar_style: 'circle',
+        avatar_url: card.avatar_url || '',
+        contact_info: {
+          phone: member?.contact_number || card.user_phone || '',
+          email: member?.email || card.user_email || '',
+          website: member?.website || card.user_website || '',
+          company: member?.company || card.user_company || '',
+          address: member?.address || card.user_address || '',
+          line_id: member?.line_id || card.line_id || ''
+        },
+        layout_type: card.layout_type || 'standard',
+        ui_divider_style: card.ui_divider_style || 'solid-thin',
+        ui_divider_opacity: typeof card.ui_divider_opacity === 'number' ? card.ui_divider_opacity : 0.6,
+        content_blocks: rows.map(mapRowToBlock)
+      };
+      setCardData(transformed);
+      setTemplate({ name: transformed.template_name });
+    } catch (e) {
+      console.warn('SSE 觸發刷新失敗:', e);
+    }
+  };
+
   // 從資料列轉換為內容區塊
   const mapRowToBlock = (row) => {
     const type = row.content_type || row.block_type;
@@ -450,6 +490,34 @@ const MemberCard = () => {
     };
     load();
     return () => { alive = false; };
+  }, [memberId]);
+
+  // SSE 訂閱：當後端廣播 card:update 時自動刷新
+  useEffect(() => {
+    let es;
+    const url = `/api/nfc-cards/events?memberId=${memberId}`;
+    try {
+      es = new EventSource(url);
+      const onUpdate = (e) => {
+        try {
+          const payload = JSON.parse(e.data || '{}');
+          if (!payload.memberId || String(payload.memberId) === String(memberId)) {
+            refreshFromServer();
+          }
+        } catch {
+          // 忽略解析錯誤
+        }
+      };
+      es.addEventListener('card:update', onUpdate);
+      es.onerror = () => {
+        console.warn('MemberCard SSE 連線錯誤，將自動重試');
+      };
+    } catch (e) {
+      console.warn('建立 MemberCard SSE 失敗:', e);
+    }
+    return () => {
+      try { es && es.close(); } catch {}
+    };
   }, [memberId]);
 
   // 啟用各內容區塊的輪播自動播放（僅針對 carousel 型別）

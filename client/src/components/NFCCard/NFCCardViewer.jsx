@@ -35,6 +35,27 @@ const NFCCardViewer = () => {
     checkBookmarkStatus();
   }, [userId]);
 
+  // 訂閱後端 SSE：當名片更新時，自動重新抓取資料
+  useEffect(() => {
+    if (!userId) return;
+    let es;
+    try {
+      const url = `/api/nfc-cards/events?memberId=${encodeURIComponent(userId)}`;
+      es = new EventSource(url);
+      const refresh = () => {
+        // 重新拉取資料，確保跨裝置 3 秒內更新
+        fetchCardData();
+      };
+      es.addEventListener('card:update', refresh);
+      es.addEventListener('open', () => {});
+      es.addEventListener('heartbeat', () => {});
+      es.onerror = (err) => { console.warn('名片 SSE 連線錯誤:', err); };
+    } catch (e) {
+      console.warn('建立名片 SSE 失敗:', e);
+    }
+    return () => { try { es && es.close(); } catch (_) {} };
+  }, [userId]);
+
   const fetchCardData = async () => {
     try {
       setLoading(true);
