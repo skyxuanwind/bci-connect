@@ -43,6 +43,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:sync": "react-scripts test --testPathPattern=services/__tests__ --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -64,10 +66,31 @@
     ]
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
     "autoprefixer": "^10.4.15",
+    "babel-jest": "^30.2.0",
     "http-proxy-middleware": "^3.0.5",
+    "identity-obj-proxy": "^3.0.0",
     "postcss": "^8.4.29",
     "serve": "^14.2.5",
     "tailwindcss": "^3.3.3"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+    },
+    "transform": {
+      "^.+\\.(js|jsx)$": "babel-jest"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(pako)/)"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/index.js",
+      "!src/reportWebVitals.js",
+      "!src/setupTests.js"
+    ]
   }
 }

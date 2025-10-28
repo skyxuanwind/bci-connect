@@ -8,6 +8,8 @@ import IndustrySelect from '../components/NFCCard/IndustrySelect';
 import BlockEditor from '../components/NFCCard/BlockEditor';
 import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
+import { SyncStatusToolbar } from '../components/SyncStatusIndicator';
 // framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
@@ -324,12 +326,40 @@ const BlockAddModal = ({ onAdd, onClose }) => {
 export default function CardStudioPro() {
   const { user } = useAuth();
   const location = useLocation();
-  const [themeId, setThemeId] = useState('simple');
-  const [blocks, setBlocks] = useState([]);
+  
+  // 使用即時同步 Hook
+  const {
+    syncData,
+    isLoading,
+    isSaving,
+    syncStatus,
+    lastSyncTime,
+    updateSyncData,
+    saveSyncData,
+    reloadSyncData,
+    ConflictModal
+  } = useRealtimeSync({
+    path: user ? `cards/${user.uid}` : null,
+    initialData: null,
+    autoSave: true,
+    saveDelay: 800,
+    onSyncError: (error) => {
+      console.error('Sync error:', error);
+      toast.error('同步失敗，請檢查網路連線');
+    }
+  });
+
+  // 從同步資料中提取狀態
+  const themeId = syncData?.themeId || 'simple';
+  const blocks = syncData?.blocks || [];
+  const info = syncData?.info || { name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', linkedin: '' };
+  const avatarUrl = syncData?.avatarUrl || '';
+  const buttonStyleId = syncData?.design?.buttonStyleId || 'solid-blue';
+  const bgStyle = syncData?.design?.bgStyle || '';
+
+  // 本地狀態（不需要同步的）
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [buttonStyleId, setButtonStyleId] = useState('solid-blue');
-  const [bgStyle, setBgStyle] = useState('');
   const [dragIndex, setDragIndex] = useState(null);
   const skipNextAutoSaveRef = useRef(false);
 
@@ -345,9 +375,40 @@ export default function CardStudioPro() {
     } catch { return true; }
   });
 
-  const [info, setInfo] = useState({ name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', linkedin: '' });
   const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarUrl, setAvatarUrl] = useState('');
+
+  // 更新函數 - 使用新的同步系統
+  const setThemeId = (newThemeId) => {
+    updateSyncData({ ...syncData, themeId: newThemeId });
+  };
+
+  const setBlocks = (newBlocks) => {
+    const blocks = typeof newBlocks === 'function' ? newBlocks(syncData?.blocks || []) : newBlocks;
+    updateSyncData({ ...syncData, blocks });
+  };
+
+  const setInfo = (newInfo) => {
+    const info = typeof newInfo === 'function' ? newInfo(syncData?.info || {}) : newInfo;
+    updateSyncData({ ...syncData, info });
+  };
+
+  const setAvatarUrl = (newAvatarUrl) => {
+    updateSyncData({ ...syncData, avatarUrl: newAvatarUrl });
+  };
+
+  const setButtonStyleId = (newButtonStyleId) => {
+    updateSyncData({ 
+      ...syncData, 
+      design: { ...syncData?.design, buttonStyleId: newButtonStyleId }
+    });
+  };
+
+  const setBgStyle = (newBgStyle) => {
+    updateSyncData({ 
+      ...syncData, 
+      design: { ...syncData?.design, bgStyle: newBgStyle }
+    });
+  };
 
   const theme = useMemo(() => THEMES.find(t => t.id === themeId) || THEMES[0], [themeId]);
 
@@ -499,115 +560,40 @@ export default function CardStudioPro() {
     }
   };
 
-  // 載入與訂閱資料（多設備同步 & 離線草稿）
+  // 處理模板初始化
   useEffect(() => {
-    if (!user?.id) return;
-    const path = `cards/${user.id}/editor`;
-    (async () => {
-      const data = await dbGet(path);
-      if (data) {
-        setThemeId(data.themeId || 'simple');
-        setBlocks(Array.isArray(data.blocks) ? data.blocks : []);
-        setInfo(data.info || {});
-        setAvatarUrl(data.avatarUrl || '');
-        // removed shareUrl(data.shareUrl)
-        setButtonStyleId(data.design?.buttonStyleId || 'solid-blue');
-        setBgStyle(data.design?.bgStyle || '');
-      } else {
-        const rawDraft = (() => { try { return localStorage.getItem(`card_editor_${user.id}`); } catch { return null; } })();
-        if (rawDraft) {
-          try {
-            const draft = JSON.parse(rawDraft);
-            setThemeId(draft.themeId || 'simple');
-            setBlocks(Array.isArray(draft.blocks) ? draft.blocks : []);
-            setInfo(draft.info || {});
-            setAvatarUrl(draft.avatarUrl || '');
-            // removed shareUrl(draft.shareUrl)
-            setButtonStyleId(draft.design?.buttonStyleId || 'solid-blue');
-            setBgStyle(draft.design?.bgStyle || '');
-          } catch {}
-        } else {
-          const tpl = new URLSearchParams(location.search).get('template');
-          if (tpl) {
-            const sample = getTemplateSample(tpl);
-            setBlocks(sample.blocks);
-            setInfo(sample.info);
-          }
-        }
-      }
-    })();
-    const unsub = dbSubscribe(path, (data) => {
-      if (!data) return;
-      setThemeId(data.themeId || 'simple');
-      setBlocks(Array.isArray(data.blocks) ? data.blocks : []);
-      setInfo(data.info || {});
-      setAvatarUrl(data.avatarUrl || '');
-      // removed shareUrl(data.shareUrl)
-      setButtonStyleId(data.design?.buttonStyleId || 'solid-blue');
-      setBgStyle(data.design?.bgStyle || '');
-    });
-    return () => unsub();
-  }, [user?.id, location.search]);
-
-  // 自動儲存與離線快取
-  useEffect(() => {
-    if (!user?.id) return;
-    if (skipNextAutoSaveRef.current) {
-      // 已在操作中手動保存，跳過這次自動儲存循環以避免重複寫入
-      skipNextAutoSaveRef.current = false;
-      return;
+    if (!user?.id || syncData) return;
+    const tpl = new URLSearchParams(location.search).get('template');
+    if (tpl) {
+      const sample = getTemplateSample(tpl);
+      updateSyncData({
+        blocks: sample.blocks,
+        info: sample.info
+      });
     }
-    const draft = { themeId, blocks, info, avatarUrl, design: { buttonStyleId, bgStyle } };
-    try { localStorage.setItem(`card_editor_${user.id}`, JSON.stringify(draft)); } catch {}
-    if (!navigator.onLine) return;
-    const t = setTimeout(async () => {
-      try { await dbSet(`cards/${user.id}/editor`, draft); } catch {}
-    }, 800);
-    return () => clearTimeout(t);
-  }, [themeId, blocks, info, avatarUrl, buttonStyleId, bgStyle, user?.id]);
+  }, [user?.id, location.search, syncData, updateSyncData]);
 
-  // 上線後同步離線草稿
-  useEffect(() => {
-    const handler = async () => {
-      if (!user?.id) return;
-      try {
-        const raw = localStorage.getItem(`card_editor_${user.id}`);
-        if (raw) { await dbSet(`cards/${user.id}/editor`, JSON.parse(raw)); toast.success('已同步離線草稿'); }
-      } catch {}
-    };
-    window.addEventListener('online', handler);
-    return () => window.removeEventListener('online', handler);
-  }, [user?.id]);
-
-  const addBlock = (b) => { setBlocks(prev => [...prev, b]); setShowAdd(false); };
+  const addBlock = (b) => { 
+    const newBlocks = [...blocks, b];
+    updateSyncData({ blocks: newBlocks });
+    setShowAdd(false); 
+  };
+  
   const removeBlock = (id) => {
-    setBlocks(prev => prev.filter(b => b.id !== id));
+    const newBlocks = blocks.filter(b => b.id !== id);
+    updateSyncData({ blocks: newBlocks });
   };
-  const updateBlock = (index, next) => setBlocks(prev => prev.map((b, i) => (i === index ? next : b)));
-  const persistSnapshot = async (override = {}) => {
-    if (!user?.id) return;
-    const payload = {
-      themeId,
-      blocks: Array.isArray(override.blocks) ? override.blocks : blocks,
-      info,
-      avatarUrl,
-      design: { buttonStyleId, bgStyle }
-    };
-    try { localStorage.setItem(`card_editor_${user.id}`, JSON.stringify(payload)); } catch {}
-    if (!navigator.onLine) return;
-    try { await dbSet(`cards/${user.id}/editor`, payload); } catch {}
+  
+  const updateBlock = (index, next) => {
+    const newBlocks = blocks.map((b, i) => (i === index ? next : b));
+    updateSyncData({ blocks: newBlocks });
   };
+  
   const moveBlock = (from, to) => {
-    // 使用當前 blocks 計算新排序，並立即持久化
-    const next = (() => {
-      const copy = [...blocks];
-      const [m] = copy.splice(from, 1);
-      copy.splice(to, 0, m);
-      return copy;
-    })();
-    setBlocks(next);
-    skipNextAutoSaveRef.current = true;
-    persistSnapshot({ blocks: next });
+    const copy = [...blocks];
+    const [m] = copy.splice(from, 1);
+    copy.splice(to, 0, m);
+    updateSyncData({ blocks: copy });
   };
   const onDragStart = (i) => setDragIndex(i);
   const onDragOver = (e) => e.preventDefault();
@@ -629,15 +615,29 @@ export default function CardStudioPro() {
       if (avatarFile) {
         const up = await uploadImage(avatarFile);
         avatar = up?.url || avatarUrl;
+        setAvatarUrl(avatar);
       }
-      const payload = { themeId, blocks, info, avatarUrl: avatar, design: { buttonStyleId, bgStyle } };
-      await dbSet(`cards/${user.id}/editor`, payload);
-      setAvatarUrl(avatar);
+      
+      // 使用新的同步機制保存
+      await saveSyncData({ avatarUrl: avatar });
+      
+      // 同步到後端 API
+      await axios.put('/api/nfc-cards/my-card', {
+        info,
+        themeId,
+        blocks,
+        avatarUrl: avatar,
+        design: { buttonStyleId, bgStyle }
+      });
+      
+      setAvatarFile(null);
       toast.success('已儲存');
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error('Save error:', err);
       toast.error('儲存失敗');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   // removed: 生成分享連結功能（generateShare）
@@ -768,9 +768,10 @@ export default function CardStudioPro() {
       </div>
 
       {showAdd && (<BlockAddModal onAdd={addBlock} onClose={()=>setShowAdd(false)} />)}
-    </div>
-  );
-}
+        <ConflictModal />
+      </div>
+    );
+  }
 
 // 顯示更多/收合切換按鈕（放在標題右側）
 function InfoExpandToggle() {

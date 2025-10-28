@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, get, onValue } from 'firebase/database';
+import { getDatabase, ref, set, get, onValue, onDisconnect, connectDatabaseEmulator } from 'firebase/database';
 
 const config = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -63,4 +63,64 @@ export const dbSubscribe = (path, callback) => {
   if (!r) return () => {};
   const unsub = onValue(r, (snap) => callback(snap.val()));
   return () => unsub();
+};
+
+// Firebase Client 物件 - 提供統一的介面給 SyncManager 使用
+export const firebaseClient = {
+  /**
+   * 檢查 Firebase 是否已配置
+   */
+  isConfigured() {
+    return !!(config.apiKey && config.databaseURL);
+  },
+
+  /**
+   * 設定資料到 Firebase
+   */
+  async setData(path, data) {
+    return await dbSet(path, data);
+  },
+
+  /**
+   * 從 Firebase 獲取資料
+   */
+  async getData(path) {
+    return await dbGet(path);
+  },
+
+  /**
+   * 訂閱 Firebase 資料變化
+   */
+  subscribe(path, callback) {
+    return dbSubscribe(path, callback);
+  },
+
+  /**
+   * 監聽 Firebase 連線狀態變化
+   */
+  onConnectionStateChange(callback) {
+    if (!this.isConfigured()) {
+      return () => {};
+    }
+
+    const database = initFirebase();
+    if (!database) {
+      return () => {};
+    }
+
+    const connectedRef = ref(database, '.info/connected');
+    const unsubscribe = onValue(connectedRef, (snapshot) => {
+      const connected = snapshot.val() === true;
+      callback(connected);
+    });
+
+    return unsubscribe;
+  },
+
+  /**
+   * 初始化 Firebase
+   */
+  init() {
+    return initFirebase();
+  }
 };
