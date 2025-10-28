@@ -37,7 +37,7 @@ export const saveMyCard = async (cardData) => {
 };
 
 // 上传图片
-export const uploadImage = async (file) => {
+export const uploadImage = async (file, options = {}) => {
   try {
     const formData = new FormData();
     formData.append('file', file);
@@ -45,6 +45,19 @@ export const uploadImage = async (file) => {
     const response = await api.post('/api/nfc-cards/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+      },
+      // 進度回調（供前端顯示上傳進度條）
+      onUploadProgress: (event) => {
+        try {
+          const total = event.total || 0;
+          const loaded = event.loaded || 0;
+          const percent = total > 0 ? Math.round((loaded / total) * 100) : 0;
+          if (typeof options.onProgress === 'function') {
+            options.onProgress({ loaded, total, percent });
+          }
+        } catch (_) {
+          // 忽略進度計算錯誤以避免中斷上傳
+        }
       },
     });
     

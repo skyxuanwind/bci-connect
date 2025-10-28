@@ -331,6 +331,8 @@ export default function CardStudioPro() {
   const [buttonStyleId, setButtonStyleId] = useState('solid-blue');
   const [bgStyle, setBgStyle] = useState('');
   const [dragIndex, setDragIndex] = useState(null);
+  const [singleExpandMode, setSingleExpandMode] = useState(false);
+  const [openBlockId, setOpenBlockId] = useState(null);
 
   // 行業資料（側邊欄常駐）
   const [industries, setIndustries] = useState([]);
@@ -500,6 +502,7 @@ export default function CardStudioPro() {
         // removed shareUrl(data.shareUrl)
         setButtonStyleId(data.design?.buttonStyleId || 'solid-blue');
         setBgStyle(data.design?.bgStyle || '');
+        setSingleExpandMode(Boolean(data.ui?.singleExpandMode));
       } else {
         const rawDraft = (() => { try { return localStorage.getItem(`card_editor_${user.id}`); } catch { return null; } })();
         if (rawDraft) {
@@ -512,6 +515,7 @@ export default function CardStudioPro() {
             // removed shareUrl(draft.shareUrl)
             setButtonStyleId(draft.design?.buttonStyleId || 'solid-blue');
             setBgStyle(draft.design?.bgStyle || '');
+            setSingleExpandMode(Boolean(draft.ui?.singleExpandMode));
           } catch {}
         } else {
           const tpl = new URLSearchParams(location.search).get('template');
@@ -532,6 +536,7 @@ export default function CardStudioPro() {
       // removed shareUrl(data.shareUrl)
       setButtonStyleId(data.design?.buttonStyleId || 'solid-blue');
       setBgStyle(data.design?.bgStyle || '');
+      setSingleExpandMode(Boolean(data.ui?.singleExpandMode));
     });
     return () => unsub();
   }, [user?.id, location.search]);
@@ -539,14 +544,14 @@ export default function CardStudioPro() {
   // 自動儲存與離線快取
   useEffect(() => {
     if (!user?.id) return;
-    const draft = { themeId, blocks, info, avatarUrl, design: { buttonStyleId, bgStyle } };
+    const draft = { themeId, blocks, info, avatarUrl, design: { buttonStyleId, bgStyle }, ui: { singleExpandMode } };
     try { localStorage.setItem(`card_editor_${user.id}`, JSON.stringify(draft)); } catch {}
     if (!navigator.onLine) return;
     const t = setTimeout(async () => {
       try { await dbSet(`cards/${user.id}/editor`, draft); } catch {}
     }, 800);
     return () => clearTimeout(t);
-  }, [themeId, blocks, info, avatarUrl, buttonStyleId, bgStyle, user?.id]);
+  }, [themeId, blocks, info, avatarUrl, buttonStyleId, bgStyle, singleExpandMode, user?.id]);
 
   // 上線後同步離線草稿
   useEffect(() => {
@@ -562,7 +567,10 @@ export default function CardStudioPro() {
   }, [user?.id]);
 
   const addBlock = (b) => { setBlocks(prev => [...prev, b]); setShowAdd(false); };
-  const removeBlock = (id) => setBlocks(prev => prev.filter(b => b.id !== id));
+  const removeBlock = (id) => {
+    setBlocks(prev => prev.filter(b => b.id !== id));
+    setOpenBlockId(prev => (prev === id ? null : prev));
+  };
   const updateBlock = (index, next) => setBlocks(prev => prev.map((b, i) => (i === index ? next : b)));
 
   const moveBlock = (from, to) => {
@@ -594,7 +602,7 @@ export default function CardStudioPro() {
         const up = await uploadImage(avatarFile);
         avatar = up?.url || avatarUrl;
       }
-      const payload = { themeId, blocks, info, avatarUrl: avatar, design: { buttonStyleId, bgStyle } };
+      const payload = { themeId, blocks, info, avatarUrl: avatar, design: { buttonStyleId, bgStyle }, ui: { singleExpandMode } };
       await dbSet(`cards/${user.id}/editor`, payload);
       setAvatarUrl(avatar);
       toast.success('已儲存');
@@ -708,7 +716,27 @@ export default function CardStudioPro() {
             <div className="mt-6 border-t border-white/10 pt-4">
                <div className="flex items-center justify-between">
                  <h3 className="text-sm font-semibold">內容模塊</h3>
-                 <button onClick={()=>setShowAdd(true)} className="px-3 py-2 rounded bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-700 transition-colors" aria-label="新增模塊">新增</button>
+                 <div className="flex items-center gap-3">
+                   <label className="flex items-center gap-2 text-xs select-none">
+                     <span className="opacity-80">單一展開</span>
+                     <button
+                       type="button"
+                       aria-pressed={singleExpandMode}
+                       onClick={() => {
+                         setSingleExpandMode(v => {
+                           const next = !v;
+                           if (!next) setOpenBlockId(null);
+                           else if (!openBlockId && blocks.length) setOpenBlockId(blocks[0].id);
+                           return next;
+                         });
+                       }}
+                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${singleExpandMode ? 'bg-emerald-600' : 'bg-white/10 border border-white/20'}`}
+                     >
+                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${singleExpandMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                     </button>
+                   </label>
+                   <button onClick={()=>setShowAdd(true)} className="px-3 py-2 rounded bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-700 transition-colors" aria-label="新增模塊">新增</button>
+                 </div>
                </div>
               <div className="mt-3 space-y-3">
                 {blocks.map((b, i) => (
@@ -721,6 +749,8 @@ export default function CardStudioPro() {
                       block={b}
                       onChange={(next)=>updateBlock(i, next)}
                       onRemove={()=>removeBlock(b.id)}
+                      isOpen={singleExpandMode ? openBlockId === b.id : undefined}
+                      onToggle={singleExpandMode ? (() => setOpenBlockId(prev => (prev === b.id ? null : b.id))) : undefined}
                     />
                   </div>
                 ))}

@@ -17,6 +17,7 @@ import {
   SpeakerWaveIcon,
   SpeakerXMarkIcon,
   ArrowTopRightOnSquareIcon,
+  DocumentArrowDownIcon,
   PhoneIcon,
   EnvelopeIcon,
   BuildingOfficeIcon,

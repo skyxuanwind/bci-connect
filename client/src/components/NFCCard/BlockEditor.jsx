@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import ImageUploadCropper from '../ImageUploadCropper';
 
-export default function BlockEditor({ block, onChange, onRemove }) {
+export default function BlockEditor({ block, onChange, onRemove, isOpen, onToggle }) {
   const [local, setLocal] = useState(block);
+  const [expanded, setExpanded] = useState(true);
+  const contentRef = useRef(null);
 
   const update = (next) => {
     const newBlock = { ...local, ...next };
@@ -9,13 +12,40 @@ export default function BlockEditor({ block, onChange, onRemove }) {
     onChange && onChange(newBlock);
   };
 
+  useEffect(() => {
+    if (typeof isOpen === 'boolean') {
+      setExpanded(isOpen);
+    }
+  }, [isOpen]);
+
+  const toggleExpand = () => {
+    if (onToggle) onToggle();
+    if (typeof isOpen !== 'boolean') {
+      setExpanded((v) => !v);
+    }
+  };
+
   return (
-    <div className="group border rounded-xl p-3 bg-white/5 hover:bg-white/8 transition-colors focus-within:ring-2 ring-emerald-500">
-      <div className="flex items-center justify-between mb-2">
+    <div className="group border rounded-xl bg-white/5 hover:bg-white/8 transition-colors focus-within:ring-2 ring-emerald-500">
+      <div className="flex items-center justify-between p-3">
         <div className="text-sm font-medium">{labelOf(local.type)}</div>
-        <button onClick={() => onRemove && onRemove(local.id)} className="text-xs text-red-500 hover:text-red-400">刪除</button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleExpand}
+            className="text-xs rounded border border-white/10 bg-white/10 px-2 py-1 hover:bg-white/20"
+          >
+            {expanded ? '收合' : '展開'}
+          </button>
+          <button onClick={() => onRemove && onRemove(local.id)} className="text-xs text-red-500 hover:text-red-400">刪除</button>
+        </div>
       </div>
 
+      <div
+        ref={contentRef}
+        className="overflow-hidden transition-all duration-300 px-3 pb-3"
+        style={{ maxHeight: expanded ? contentRef.current?.scrollHeight : 0 }}
+      >
       {local.type === 'link' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <label className="text-xs">連結標題
@@ -55,7 +85,16 @@ export default function BlockEditor({ block, onChange, onRemove }) {
 
       {local.type === 'carousel' && (
         <div className="space-y-2">
-          <div className="text-xs opacity-80">圖片清單</div>
+          <div className="text-xs opacity-80">上傳輪播圖片</div>
+          <ImageUploadCropper
+            multiple
+            aspectRatio={16/9}
+            label="上傳圖片（支援多選）"
+            onUploaded={(urls) => {
+              update({ images: [...(local.images || []), ...urls] });
+            }}
+          />
+          <div className="text-xs opacity-80">圖片清單（URL）</div>
           {(local.images || []).map((src, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <input
@@ -104,6 +143,7 @@ export default function BlockEditor({ block, onChange, onRemove }) {
       {local.type === 'contact' && (
         <div className="text-xs opacity-80">此模塊會顯示「立即聯絡」按鈕，並使用名片中的電話號碼。</div>
       )}
+      </div>
     </div>
   );
 }

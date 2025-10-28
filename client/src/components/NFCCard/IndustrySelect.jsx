@@ -1,58 +1,77 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 import IndustryIcons from './IndustryIcons';
 
+// 行業 -> 模板類別映射，用於分類篩選
+const INDUSTRY_CATEGORY_MAP = {
+  photographer: ['creative-marketing', 'japanese-minimal'],
+  store: ['creative-marketing', 'premium-business'],
+  business: ['premium-business'],
+  designer: ['creative-marketing', 'japanese-minimal', 'cute-graffiti'],
+  fitness: ['creative-marketing', 'premium-business'],
+  restaurant: ['creative-marketing', 'japanese-minimal', 'cute-graffiti'],
+  education: ['japanese-minimal', 'premium-business'],
+  legal: ['premium-business', 'japanese-minimal'],
+  musician: ['cyberpunk', 'creative-marketing']
+};
+
+const CATEGORY_LABELS = {
+  all: '全部類別',
+  'creative-marketing': '創意行銷',
+  'japanese-minimal': '日式極簡',
+  'premium-business': '質感商務',
+  'cute-graffiti': '可愛塗鴉',
+  cyberpunk: '賽博朋克',
+  other: '其他'
+};
+
 /**
- * 可搜索下拉選單（行業模板選擇）
- * - 以一致SVG圖標替代 emoji
- * - 支援即時搜尋、鍵盤導覽、響應式
+ * 分類下拉選單（行業選擇）
+ * - 以固定類別進行篩選，不提供搜尋輸入
+ * - 使用一致的 SVG 圖標顯示行業
  */
-export default function IndustrySelect({ items = [], loading, error, onReload, onSelect, placeholder = '搜尋行業…' }) {
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-  const inputRef = useRef(null);
+export default function IndustrySelect({ items = [], loading, error, onReload, onSelect }) {
+  const [selectedCat, setSelectedCat] = useState('all');
+
+  const categories = useMemo(() => {
+    const cats = new Set(['all']);
+    items.forEach((i) => {
+      const c = INDUSTRY_CATEGORY_MAP[i.key];
+      if (Array.isArray(c)) c.forEach((v) => cats.add(v));
+      else cats.add('other');
+    });
+    return Array.from(cats);
+  }, [items]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(i =>
-      (i.name || '').toLowerCase().includes(q) ||
-      (i.key || '').toLowerCase().includes(q)
-    );
-  }, [items, query]);
-
-  useEffect(() => {
-    const onDocClick = (e) => {
-      if (!inputRef.current) return;
-      if (!inputRef.current.parentElement.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
-  }, []);
+    if (selectedCat === 'all') return items;
+    return items.filter((i) => {
+      const cats = INDUSTRY_CATEGORY_MAP[i.key] || ['other'];
+      return cats.includes(selectedCat);
+    });
+  }, [items, selectedCat]);
 
   return (
-    <div className="relative">
+    <div>
       <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-            onFocus={() => setOpen(true)}
-            placeholder={placeholder}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 outline-none text-sm"
-            aria-label="搜尋行業"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => setOpen(v => !v)}
-          className="px-2 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
-          aria-label="開關下拉選單"
-        >
-          <svg className="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </button>
+        <label className="text-xs">分類
+          <select
+            value={selectedCat}
+            onChange={(e) => setSelectedCat(e.target.value)}
+            className="mt-1 w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 outline-none text-sm"
+            aria-label="選擇分類"
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{CATEGORY_LABELS[cat] || cat}</option>
+            ))}
+          </select>
+        </label>
+        {onReload && (
+          <button
+            type="button"
+            onClick={onReload}
+            className="mt-5 px-2 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs"
+          >重載</button>
+        )}
       </div>
 
       {loading && (
@@ -67,38 +86,30 @@ export default function IndustrySelect({ items = [], loading, error, onReload, o
         </div>
       )}
 
-      {/* 下拉清單 */}
-      {open && !loading && !error && (
-        <div className="absolute z-20 mt-2 w-full max-h-64 overflow-auto rounded-xl bg-slate-800/95 backdrop-blur border border-white/10 shadow-xl">
-          {filtered.length === 0 ? (
-            <div className="p-3 text-xs opacity-70">找不到符合的行業</div>
-          ) : (
-            <ul className="py-1">
-              {filtered.map((it) => {
-                const Icon = IndustryIcons[it.key];
-                return (
-                  <li key={it.key}>
-                    <button
-                      className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-white/10"
-                      onClick={() => { setOpen(false); setQuery(it.name); onSelect && onSelect(it.key); }}
-                    >
-                      {Icon ? (
-                        <Icon className="w-5 h-5" isDark={true} />
-                      ) : (
-                        <div className="w-5 h-5 rounded bg-white/20" />
-                      )}
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">{it.name}</div>
-                        {it.description && (
-                          <div className="text-xs opacity-70">{it.description}</div>
-                        )}
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+      {!loading && !error && (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {filtered.map((it) => {
+            const Icon = IndustryIcons[it.key];
+            return (
+              <button
+                key={it.key}
+                className="text-left px-3 py-2 flex items-center gap-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+                onClick={() => onSelect && onSelect(it.key)}
+              >
+                {Icon ? (
+                  <Icon className="w-5 h-5" isDark={true} />
+                ) : (
+                  <div className="w-5 h-5 rounded bg-white/20" />
+                )}
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{it.name}</div>
+                  {it.description && (
+                    <div className="text-xs opacity-70">{it.description}</div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
