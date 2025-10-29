@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // 生產環境測試帳號創建腳本
 // 此腳本設計為在 Render 生產環境中運行
