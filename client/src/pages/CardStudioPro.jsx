@@ -452,8 +452,6 @@ export default function CardStudioPro() {
         toast.error('未支援的行業模板，請稍後再試');
         return;
       }
-      if (sample?.blocks) setBlocks(sample.blocks);
-      if (sample?.info) setInfo(sample.info);
 
       // 為不同行業套用建議主題與背景/按鈕樣式，讓預覽更貼近行業風格
       const recommended = {
@@ -468,11 +466,22 @@ export default function CardStudioPro() {
         musician:     { themeId: 'ocean',    buttonStyleId: 'glass-blue',     bgStyle: BG_PRESETS[8].css },
       };
       const rec = recommended[key];
+
+      // 批量更新所有狀態，避免多次重渲染導致閃現
+      const updateData = {};
+      if (sample?.blocks) updateData.blocks = sample.blocks;
+      if (sample?.info) updateData.info = sample.info;
       if (rec) {
-        setThemeId(rec.themeId);
-        setButtonStyleId(rec.buttonStyleId);
-        setBgStyle(rec.bgStyle);
+        updateData.themeId = rec.themeId;
+        updateData.design = {
+          ...(syncData?.design || {}),
+          buttonStyleId: rec.buttonStyleId,
+          bgStyle: rec.bgStyle
+        };
       }
+
+      // 單次批量更新，避免閃現
+      updateSyncData(updateData);
 
       toast.success('已套用行業模板');
     } catch (err) {
