@@ -67,14 +67,26 @@ class SyncManager {
   setupFirebaseListeners() {
     // Firebase 連線狀態監聽
     if (firebaseClient.isConfigured()) {
-      firebaseClient.onConnectionStateChange((connected) => {
-        if (connected) {
-          console.log('Firebase connected');
-          this.syncOfflineChanges();
-        } else {
-          console.log('Firebase disconnected');
-        }
-      });
+      try {
+        firebaseClient.onConnectionStateChange((connected) => {
+          if (connected) {
+            console.log('Firebase connected');
+            this.updateSyncStatus('connected');
+            this.syncOfflineChanges();
+          } else {
+            console.log('Firebase disconnected');
+            this.updateSyncStatus('disconnected');
+          }
+        });
+      } catch (error) {
+        console.warn('Firebase listener setup failed:', error.message);
+        this.updateSyncStatus('error');
+        this.warnFirebaseNotConfigured('Firebase連接設置失敗');
+      }
+    } else {
+      console.warn('Firebase not configured, using local storage only');
+      this.updateSyncStatus('local_only');
+      this.warnFirebaseNotConfigured('Firebase未配置');
     }
   }
 
@@ -173,10 +185,25 @@ class SyncManager {
       // 添加時間戳
       const timestampedData = this.addTimestamp(data);
       
+      // 總是先保存到本地存儲
+      try {
+        localStorage.setItem(`sync_${path}`, JSON.stringify(timestampedData));
+        console.info('Data saved to local storage');
+      } catch (localError) {
+        console.warn('Failed to save to local storage:', localError);
+      }
+      
       if (!this.isOnline) {
         // 離線時儲存到待處理變更
         this.offlineChanges.set(path, timestampedData);
         this.updateSyncStatus('offline');
+        return;
+      }
+
+      // Firebase未配置時，只使用本地存儲
+      if (!firebaseClient.isConfigured()) {
+        this.warnFirebaseNotConfigured('Firebase not configured, using local storage only');
+        this.updateSyncStatus('local_only');
         return;
       }
 
@@ -196,33 +223,43 @@ class SyncManager {
 
       // 衝突檢查
       if (!skipConflictCheck) {
-        const currentData = await this.getData(path);
-        if (this.hasConflict(timestampedData, currentData)) {
-          const resolver = this.subscribers.get(path)?.conflictResolver;
-          if (resolver) {
-            const resolvedData = await resolver(timestampedData, currentData);
-            await this.setDataToFirebase(path, resolvedData);
-            this.lastSyncData.set(path, resolvedData);
-            this.updateSyncStatus('idle');
-            return;
-          } else {
-            // 使用預設衝突解決
-            const resolvedData = this.useDefaultConflictResolution(timestampedData, currentData);
-            await this.setDataToFirebase(path, resolvedData);
-            this.lastSyncData.set(path, resolvedData);
-            this.updateSyncStatus('idle');
-            return;
+        try {
+          const currentData = await this.getData(path);
+          if (this.hasConflict(timestampedData, currentData)) {
+            const resolver = this.subscribers.get(path)?.conflictResolver;
+            if (resolver) {
+              const resolvedData = await resolver(timestampedData, currentData);
+              await this.setDataToFirebase(path, resolvedData);
+              this.lastSyncData.set(path, resolvedData);
+              this.updateSyncStatus('idle');
+              return;
+            } else {
+              // 使用預設衝突解決
+              const resolvedData = this.useDefaultConflictResolution(timestampedData, currentData);
+              await this.setDataToFirebase(path, resolvedData);
+              this.lastSyncData.set(path, resolvedData);
+              this.updateSyncStatus('idle');
+              return;
+            }
           }
+        } catch (conflictError) {
+          console.warn('Conflict check failed, proceeding with save:', conflictError);
         }
       }
 
       // 使用批次處理優化
-      this.syncOptimizer.batchUpdate(path, timestampedData, async (batchPath, batchData) => {
-        await this.setDataToFirebase(batchPath, batchData);
-        this.lastSyncData.set(batchPath, batchData);
-      });
+      try {
+        this.syncOptimizer.batchUpdate(path, timestampedData, async (batchPath, batchData) => {
+          await this.setDataToFirebase(batchPath, batchData);
+          this.lastSyncData.set(batchPath, batchData);
+        });
+        this.updateSyncStatus('idle');
+      } catch (firebaseError) {
+        console.warn('Firebase sync failed, data saved locally:', firebaseError);
+        this.updateSyncStatus('error');
+        // 不拋出錯誤，因為數據已保存到本地存儲
+      }
       
-      this.updateSyncStatus('idle');
     } catch (error) {
       console.error('setData error:', error);
       this.updateSyncStatus('error');
@@ -242,13 +279,47 @@ class SyncManager {
         return null;
       }
       
-      const data = await firebaseClient.getData(path);
-      if (data) {
-        this.lastSyncData.set(path, data);
+      // 添加超時機制
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Firebase getData timeout')), 8000); // 8秒超時
+      });
+      
+      const dataPromise = firebaseClient.getData(path);
+      
+      try {
+        const data = await Promise.race([dataPromise, timeoutPromise]);
+        if (data) {
+          this.lastSyncData.set(path, data);
+        }
+        return data;
+      } catch (timeoutError) {
+        console.warn('Firebase getData timeout, falling back to local storage');
+        // 嘗試從本地存儲獲取數據
+        try {
+          const localData = localStorage.getItem(`sync_${path}`);
+          if (localData) {
+            const parsed = JSON.parse(localData);
+            console.info('Using local storage fallback data');
+            return parsed;
+          }
+        } catch (localError) {
+          console.warn('Local storage fallback failed:', localError);
+        }
+        return null;
       }
-      return data;
     } catch (error) {
       console.error('getData error:', error);
+      // 嘗試從本地存儲獲取數據作為回退
+      try {
+        const localData = localStorage.getItem(`sync_${path}`);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          console.info('Using local storage fallback due to error');
+          return parsed;
+        }
+      } catch (localError) {
+        console.warn('Local storage fallback failed:', localError);
+      }
       throw error;
     }
   }

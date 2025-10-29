@@ -116,25 +116,42 @@ export const firebaseClient = {
   },
 
   /**
-   * 監聽 Firebase 連線狀態變化
+   * 監聽連接狀態變化
+   * @param {Function} callback - 連接狀態變化回調函數
+   * @returns {Function} 取消監聽的函數
    */
   onConnectionStateChange(callback) {
     if (!this.isConfigured()) {
+      // 如果Firebase未配置，模擬斷開狀態
+      setTimeout(() => callback(false), 100);
       return () => {};
     }
 
     const database = initFirebase();
     if (!database) {
+      // 如果數據庫初始化失敗，模擬斷開狀態
+      setTimeout(() => callback(false), 100);
       return () => {};
     }
 
-    const connectedRef = ref(database, '.info/connected');
-    const unsubscribe = onValue(connectedRef, (snapshot) => {
-      const connected = snapshot.val() === true;
-      callback(connected);
-    });
+    try {
+      const connectedRef = ref(database, '.info/connected');
+      const unsubscribe = onValue(connectedRef, (snapshot) => {
+        const connected = snapshot.val() === true;
+        callback(connected);
+      }, (error) => {
+        console.warn('[Firebase] Connection state listener error:', error.message);
+        // 發生錯誤時，報告為斷開狀態
+        callback(false);
+      });
 
-    return unsubscribe;
+      return unsubscribe;
+    } catch (error) {
+      console.warn('[Firebase] Failed to setup connection listener:', error.message);
+      // 設置監聽器失敗時，模擬斷開狀態
+      setTimeout(() => callback(false), 100);
+      return () => {};
+    }
   },
 
   /**

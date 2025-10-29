@@ -22,6 +22,10 @@ export const useRealtimeSync = (options = {}) => {
     onSyncError = null
   } = options;
 
+  // 當未提供 path（例如尚未登入或使用者資料未載入）時，使用本地模式
+  // 本地模式只讀寫 localStorage，不依賴 Firebase，以避免載入卡住
+  const LOCAL_STORAGE_KEY = 'sync_cards_guest';
+
   const [syncData, setSyncData] = useState(initialData);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,23 +57,86 @@ export const useRealtimeSync = (options = {}) => {
 
   // 載入初始資料
   useEffect(() => {
-    if (!path) return;
+    // 無路徑：啟用本地模式，直接從 localStorage/initialData 載入
+    if (!path) {
+      try {
+        setIsLoading(true);
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setSyncData(parsed || {});
+          localVersionRef.current = parsed?._lastModified || Date.now();
+          setLastSyncTime(parsed?._lastModified || Date.now());
+        } else if (initialData) {
+          setSyncData(initialData);
+          localVersionRef.current = initialData._lastModified || Date.now();
+          setLastSyncTime(initialData._lastModified || Date.now());
+        } else {
+          setSyncData({});
+          localVersionRef.current = Date.now();
+          setLastSyncTime(Date.now());
+        }
+      } catch (e) {
+        console.warn('[RealtimeSync] Local mode load failed:', e);
+        setSyncData({});
+        localVersionRef.current = Date.now();
+        setLastSyncTime(Date.now());
+      } finally {
+        setIsLoading(false);
+        isInitialLoadRef.current = false;
+      }
+      return; // 本地模式已處理完成
+    }
 
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const data = await syncManager.getData(path);
-        if (data) {
-          setSyncData(data);
-          setLastSyncTime(data._lastModified || Date.now());
-          localVersionRef.current = data._lastModified || 0;
-        } else if (initialData) {
-          setSyncData(initialData);
-          localVersionRef.current = initialData._lastModified || 0;
+        
+        // 添加超時機制，避免Firebase連接問題導致無限載入
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Load timeout')), 10000); // 10秒超時
+        });
+        
+        const dataPromise = syncManager.getData(path);
+        
+        try {
+          const data = await Promise.race([dataPromise, timeoutPromise]);
+          if (data) {
+            setSyncData(data);
+            setLastSyncTime(data._lastModified || Date.now());
+            localVersionRef.current = data._lastModified || 0;
+          } else if (initialData) {
+            setSyncData(initialData);
+            localVersionRef.current = initialData._lastModified || 0;
+          } else {
+            // 如果沒有數據且沒有初始數據，設置空對象避免卡住
+            setSyncData({});
+            localVersionRef.current = Date.now();
+          }
+        } catch (timeoutError) {
+          console.warn('Data loading timeout, falling back to local storage or initial data');
+          if (initialData) {
+            setSyncData(initialData);
+            localVersionRef.current = initialData._lastModified || 0;
+          } else {
+            // 回退到空對象，讓用戶可以開始編輯
+            setSyncData({});
+            localVersionRef.current = Date.now();
+          }
+          toast.error('連接超時，已切換到離線模式', { duration: 3000 });
         }
       } catch (error) {
         console.error('Failed to load initial data:', error);
+        // 即使發生錯誤，也要設置基本數據避免卡住
+        if (initialData) {
+          setSyncData(initialData);
+          localVersionRef.current = initialData._lastModified || 0;
+        } else {
+          setSyncData({});
+          localVersionRef.current = Date.now();
+        }
         if (onSyncError) onSyncError(error);
+        toast.error('載入失敗，已切換到離線模式', { duration: 3000 });
       } finally {
         setIsLoading(false);
         isInitialLoadRef.current = false;
@@ -118,7 +185,29 @@ export const useRealtimeSync = (options = {}) => {
 
   // 自動儲存
   useEffect(() => {
-    if (!autoSave || !path || !syncData || isInitialLoadRef.current) return;
+    if (!autoSave || !syncData || isInitialLoadRef.current) return;
+
+    // 無路徑：在本地模式下自動儲存到 localStorage
+    if (!path) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = setTimeout(() => {
+        try {
+          const dataToSave = syncData || {};
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+            ...dataToSave,
+            _lastModified: Date.now()
+          }));
+          setLastSyncTime(Date.now());
+        } catch (e) {
+          console.warn('[RealtimeSync] Local mode auto-save failed:', e);
+        }
+      }, saveDelay);
+      return () => {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      };
+    }
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -143,7 +232,30 @@ export const useRealtimeSync = (options = {}) => {
 
   // 手動儲存
   const saveSyncData = useCallback(async (dataOverride = null) => {
-    if (!path) return;
+    // 無路徑：在本地模式下直接寫入 localStorage
+    if (!path) {
+      try {
+        setIsSaving(true);
+        const dataToSave = dataOverride
+          ? syncManager.syncOptimizer.smartMerge(syncData || {}, dataOverride)
+          : (syncData || {});
+        const now = Date.now();
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+          ...dataToSave,
+          _lastModified: now
+        }));
+        setLastSyncTime(now);
+        toast.success('儲存成功（本地模式）');
+      } catch (e) {
+        console.error('Manual save (local) failed:', e);
+        toast.error('儲存失敗');
+        if (onSyncError) onSyncError(e);
+        throw e;
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
 
     try {
       setIsSaving(true);
@@ -179,7 +291,29 @@ export const useRealtimeSync = (options = {}) => {
 
   // 重新載入資料
   const reloadSyncData = useCallback(async () => {
-    if (!path) return;
+    // 無路徑：在本地模式下重新載入 localStorage
+    if (!path) {
+      try {
+        setIsLoading(true);
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setSyncData(parsed || {});
+          localVersionRef.current = parsed?._lastModified || Date.now();
+          setLastSyncTime(parsed?._lastModified || Date.now());
+          toast.success('資料已重新載入（本地模式）');
+        } else {
+          setSyncData(syncData || {});
+        }
+      } catch (e) {
+        console.error('Reload (local) failed:', e);
+        toast.error('重新載入失敗');
+        if (onSyncError) onSyncError(e);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     try {
       setIsLoading(true);
