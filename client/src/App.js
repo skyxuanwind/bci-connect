@@ -76,7 +76,6 @@ import FloatingBackButton from './components/FloatingBackButton';
 import IndustryTemplates from './pages/IndustryTemplates';
 import LinksPage from './pages/LinksPage';
 import ShopPage from './pages/ShopPage';
-import FirebaseDebug from './components/FirebaseDebug';
 
 
 function App() {
@@ -487,7 +486,6 @@ function App() {
           )}
         </AnimatePresence>
         <ToastContainer />
-          {process.env.NODE_ENV === 'development' && <FirebaseDebug />}
         </div>
     </AuthProvider>
   );
