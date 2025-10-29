@@ -151,8 +151,8 @@ export const useRealtimeSync = (options = {}) => {
   // 更新同步資料
   const updateSyncData = useCallback((updates) => {
     setSyncData(prevData => ({
-      ...prevData,
-      ...updates,
+      ...(prevData || {}),
+      ...(updates || {}),
       _lastModified: Date.now()
     }));
   }, []);
