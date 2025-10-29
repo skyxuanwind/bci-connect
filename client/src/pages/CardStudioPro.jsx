@@ -658,8 +658,9 @@ export default function CardStudioPro() {
         setAvatarUrl(avatar);
       }
       
-      // 使用新的同步機制保存
-      await saveSyncData({ avatarUrl: avatar });
+      // 使用新的同步機制保存：先更新本地同步資料，再完整儲存
+      updateSyncData({ avatarUrl: avatar });
+      await saveSyncData();
       
       // 同步到後端 API
       await axios.put('/api/nfc-cards/my-card', {

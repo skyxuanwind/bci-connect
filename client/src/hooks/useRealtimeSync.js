@@ -93,7 +93,9 @@ export const useRealtimeSync = (options = {}) => {
           console.info('[RealtimeSync] Ignore older remote data', { remoteTs, localTs });
           return;
         }
-        setSyncData(data);
+        // 使用智能合併：遠端快照可能僅包含部分鍵（例如僅 avatarUrl），
+        // 直接覆寫會造成本地其他欄位清空，這裡改為合併保留未提供的本地鍵。
+        setSyncData(prev => syncManager.syncOptimizer.smartMerge(prev || {}, data || {}));
         localVersionRef.current = remoteTs;
         setLastSyncTime(remoteTs || Date.now());
         toast.success('資料已同步', { duration: 2000 });
@@ -145,7 +147,10 @@ export const useRealtimeSync = (options = {}) => {
 
     try {
       setIsSaving(true);
-      const dataToSave = dataOverride || syncData;
+      // 若提供部分覆寫（例如僅 avatarUrl），與現有資料做智能合併，避免清空其他欄位。
+      const dataToSave = dataOverride
+        ? syncManager.syncOptimizer.smartMerge(syncData || {}, dataOverride)
+        : syncData;
       await syncManager.setData(path, dataToSave);
       setLastSyncTime(Date.now());
       toast.success('儲存成功');
