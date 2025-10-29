@@ -31,13 +31,13 @@ class SyncManager {
    */
   warnFirebaseNotConfigured(message) {
     const isProd = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
-    if (isProd) {
-      if (!this._warnedFirebaseNotConfigured) {
+    if (!this._warnedFirebaseNotConfigured) {
+      if (isProd) {
         console.info('[Sync] Firebase 未配置，已啟用離線模式');
-        this._warnedFirebaseNotConfigured = true;
+      } else {
+        console.warn(message || 'Firebase not configured');
       }
-    } else {
-      console.warn(message || 'Firebase not configured');
+      this._warnedFirebaseNotConfigured = true;
     }
   }
 
