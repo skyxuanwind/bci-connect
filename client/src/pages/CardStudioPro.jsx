@@ -363,6 +363,7 @@ export default function CardStudioPro() {
   const [saving, setSaving] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
   const skipNextAutoSaveRef = useRef(false);
+  const applyingIndustryRef = useRef(false);
 
   // 行業資料（側邊欄常駐）
   const [industries, setIndustries] = useState([]);
@@ -440,6 +441,11 @@ export default function CardStudioPro() {
 
   const applyIndustry = (key) => {
     try {
+      // 防止快速雙擊導致重複套用與狀態抖動
+      if (applyingIndustryRef.current) return;
+      applyingIndustryRef.current = true;
+      setTimeout(() => { applyingIndustryRef.current = false; }, 500);
+
       const sample = getTemplateSample(key);
       console.log('[ApplyIndustry] key:', key, '\nSample:', sample);
       if (!sample) {

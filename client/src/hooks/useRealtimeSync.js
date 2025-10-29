@@ -36,6 +36,7 @@ export const useRealtimeSync = (options = {}) => {
 
   const saveTimeoutRef = useRef(null);
   const isInitialLoadRef = useRef(true);
+  const localVersionRef = useRef(0);
 
   // 自定義衝突解決器，顯示模態框讓使用者選擇
   const customConflictResolver = useCallback(async (localData, remoteData) => {
@@ -61,8 +62,10 @@ export const useRealtimeSync = (options = {}) => {
         if (data) {
           setSyncData(data);
           setLastSyncTime(data._lastModified || Date.now());
+          localVersionRef.current = data._lastModified || 0;
         } else if (initialData) {
           setSyncData(initialData);
+          localVersionRef.current = initialData._lastModified || 0;
         }
       } catch (error) {
         console.error('Failed to load initial data:', error);
@@ -83,8 +86,16 @@ export const useRealtimeSync = (options = {}) => {
     const unsubscribe = syncManager.subscribe(
       path,
       (data) => {
+        // 避免遠端較舊版本覆寫本地較新修改（例如使用者剛套用行業模板）
+        const remoteTs = data?._lastModified || 0;
+        const localTs = localVersionRef.current || 0;
+        if (remoteTs < localTs) {
+          console.info('[RealtimeSync] Ignore older remote data', { remoteTs, localTs });
+          return;
+        }
         setSyncData(data);
-        setLastSyncTime(data._lastModified || Date.now());
+        localVersionRef.current = remoteTs;
+        setLastSyncTime(remoteTs || Date.now());
         toast.success('資料已同步', { duration: 2000 });
       },
       conflictResolver || customConflictResolver
@@ -150,11 +161,15 @@ export const useRealtimeSync = (options = {}) => {
 
   // 更新同步資料
   const updateSyncData = useCallback((updates) => {
-    setSyncData(prevData => ({
-      ...(prevData || {}),
-      ...(updates || {}),
-      _lastModified: Date.now()
-    }));
+    setSyncData(prevData => {
+      const now = Date.now();
+      localVersionRef.current = now;
+      return {
+        ...(prevData || {}),
+        ...(updates || {}),
+        _lastModified: now
+      };
+    });
   }, []);
 
   // 重新載入資料
@@ -166,6 +181,7 @@ export const useRealtimeSync = (options = {}) => {
       const data = await syncManager.getData(path);
       if (data) {
         setSyncData(data);
+        localVersionRef.current = data._lastModified || 0;
         setLastSyncTime(data._lastModified || Date.now());
         toast.success('資料已重新載入');
       }
