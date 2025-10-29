@@ -69,8 +69,8 @@ app.use(helmet({
       ],
       imgSrc: ["'self'", "data:", "http://localhost:3000", "http://localhost:3001", "https:", "https://res.cloudinary.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "https://www.instagram.com", "https://static.cloudflareinsights.com"],
-      scriptSrcElem: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "https://www.instagram.com", "https://static.cloudflareinsights.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "https://www.instagram.com", "https://static.cloudflareinsights.com", "https://*.firebaseio.com", "https://*.firebasedatabase.app"],
+      scriptSrcElem: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "https://www.instagram.com", "https://static.cloudflareinsights.com", "https://*.firebaseio.com", "https://*.firebasedatabase.app"],
       frameSrc: ["'self'", "https://www.youtube.com", "https://player.vimeo.com", "https://www.tiktok.com", "https://www.instagram.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
@@ -84,8 +84,8 @@ app.use((req, res, next) => {
     "Content-Security-Policy",
     "default-src 'self'; " +
     "connect-src 'self' http://localhost:* https://*.onrender.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cloudflareinsights.com; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.instagram.com https://static.cloudflareinsights.com; " +
-    "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.instagram.com https://static.cloudflareinsights.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.instagram.com https://static.cloudflareinsights.com https://*.firebaseio.com https://*.firebasedatabase.app; " +
+    "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.instagram.com https://static.cloudflareinsights.com https://*.firebaseio.com https://*.firebasedatabase.app; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
