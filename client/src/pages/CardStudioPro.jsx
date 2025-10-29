@@ -380,34 +380,33 @@ export default function CardStudioPro() {
 
   // 更新函數 - 使用新的同步系統
   const setThemeId = (newThemeId) => {
-    updateSyncData({ ...syncData, themeId: newThemeId });
+    // 僅傳遞更新片段，避免在 syncData 為 null 時展開失敗
+    updateSyncData({ themeId: newThemeId });
   };
 
   const setBlocks = (newBlocks) => {
     const blocks = typeof newBlocks === 'function' ? newBlocks(syncData?.blocks || []) : newBlocks;
-    updateSyncData({ ...syncData, blocks });
+    updateSyncData({ blocks });
   };
 
   const setInfo = (newInfo) => {
     const info = typeof newInfo === 'function' ? newInfo(syncData?.info || {}) : newInfo;
-    updateSyncData({ ...syncData, info });
+    updateSyncData({ info });
   };
 
   const setAvatarUrl = (newAvatarUrl) => {
-    updateSyncData({ ...syncData, avatarUrl: newAvatarUrl });
+    updateSyncData({ avatarUrl: newAvatarUrl });
   };
 
   const setButtonStyleId = (newButtonStyleId) => {
     updateSyncData({ 
-      ...syncData, 
-      design: { ...syncData?.design, buttonStyleId: newButtonStyleId }
+      design: { ...(syncData?.design || {}), buttonStyleId: newButtonStyleId }
     });
   };
 
   const setBgStyle = (newBgStyle) => {
     updateSyncData({ 
-      ...syncData, 
-      design: { ...syncData?.design, bgStyle: newBgStyle }
+      design: { ...(syncData?.design || {}), bgStyle: newBgStyle }
     });
   };
 
@@ -419,8 +418,12 @@ export default function CardStudioPro() {
     (async () => {
       try {
         const resp = await axios.get('/api/nfc-cards/industries');
+        console.log('[Industry API] /api/nfc-cards/industries response:', resp.data);
         const list = Array.isArray(resp.data?.items) ? resp.data.items : [];
-        if (alive) setIndustries(list);
+        // 容錯：若返回的 key 未包含於預設樣本，保留已知 key 的項目
+        const knownKeys = new Set(['photographer','store','business','designer','fitness','restaurant','education','legal','musician']);
+        const filtered = list.filter(i => knownKeys.has(i?.key));
+        if (alive) setIndustries(filtered);
       } catch (e) {
         if (alive) setIndustriesError('資料載入失敗');
       } finally {
@@ -436,10 +439,40 @@ export default function CardStudioPro() {
   }, [industryCollapsed]);
 
   const applyIndustry = (key) => {
-    const sample = getTemplateSample(key);
-    if (sample?.blocks) setBlocks(sample.blocks);
-    if (sample?.info) setInfo(sample.info);
-    toast.success('已套用行業模板');
+    try {
+      const sample = getTemplateSample(key);
+      console.log('[ApplyIndustry] key:', key, '\nSample:', sample);
+      if (!sample) {
+        toast.error('未支援的行業模板，請稍後再試');
+        return;
+      }
+      if (sample?.blocks) setBlocks(sample.blocks);
+      if (sample?.info) setInfo(sample.info);
+
+      // 為不同行業套用建議主題與背景/按鈕樣式，讓預覽更貼近行業風格
+      const recommended = {
+        photographer: { themeId: 'lavender', buttonStyleId: 'glass-indigo', bgStyle: BG_PRESETS[4].css },
+        store:        { themeId: 'mint',     buttonStyleId: 'solid-emerald', bgStyle: BG_PRESETS[3].css },
+        business:     { themeId: 'classic',  buttonStyleId: 'outline-indigo', bgStyle: BG_PRESETS[2].css },
+        designer:     { themeId: 'neon',     buttonStyleId: 'gradient-ocean', bgStyle: BG_PRESETS[6].css },
+        fitness:      { themeId: 'warm',     buttonStyleId: 'pill-rose',      bgStyle: BG_PRESETS[2].css },
+        restaurant:   { themeId: 'sunset',   buttonStyleId: 'gradient-sunset', bgStyle: BG_PRESETS[2].css },
+        education:    { themeId: 'forest',   buttonStyleId: 'outline-emerald', bgStyle: BG_PRESETS[3].css },
+        legal:        { themeId: 'simple',   buttonStyleId: 'minimal',        bgStyle: BG_PRESETS[0].css },
+        musician:     { themeId: 'ocean',    buttonStyleId: 'glass-blue',     bgStyle: BG_PRESETS[8].css },
+      };
+      const rec = recommended[key];
+      if (rec) {
+        setThemeId(rec.themeId);
+        setButtonStyleId(rec.buttonStyleId);
+        setBgStyle(rec.bgStyle);
+      }
+
+      toast.success('已套用行業模板');
+    } catch (err) {
+      console.error('[ApplyIndustry] error:', err);
+      toast.error('套用模板時發生錯誤');
+    }
   };
 
   const getCardUrl = () => `${window.location.origin}/member-card/${user?.id || 'me'}?v=${Date.now()}`;
