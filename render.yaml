@@ -16,20 +16,20 @@ services:
         value: https://www.gbc-connect.com
       - key: BACKEND_URL
         value: https://www.gbc-connect.com
-      # Firebase (frontend) configuration via secrets
+      # Firebase (frontend) configuration - direct values for production
       - key: REACT_APP_FIREBASE_API_KEY
-        fromSecret: firebase_api_key
+        value: AIzaSyDe0dh5pAXKFqYqZ5-aYjd976L-vNf5uFI
       - key: REACT_APP_FIREBASE_AUTH_DOMAIN
-        fromSecret: firebase_auth_domain
+        value: gbc-connect-9ac56.firebaseapp.com
       - key: REACT_APP_FIREBASE_DB_URL
-        fromSecret: firebase_db_url
+        value: https://gbc-connect-9ac56-default-rtdb.firebaseio.com
       - key: REACT_APP_FIREBASE_PROJECT_ID
-        fromSecret: firebase_project_id
+        value: gbc-connect-9ac56
       - key: REACT_APP_FIREBASE_STORAGE_BUCKET
-        fromSecret: firebase_storage_bucket
+        value: gbc-connect-9ac56.appspot.com
       - key: REACT_APP_FIREBASE_SENDER_ID
-        fromSecret: firebase_sender_id
+        value: 242600155527
       - key: REACT_APP_FIREBASE_APP_ID
-        fromSecret: firebase_app_id
+        value: 1:242600155527:web:e771975170e28f96e69b22
     autoDeploy: true
     branch: main
