@@ -694,6 +694,18 @@ export default function CardStudioPro() {
 
   // removed: NFC 寫入功能（startNfcWrite）
 
+  // 處理載入狀態，防止 PreviewCard 在數據未完全載入時渲染
+  if (isLoading || !syncData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B0F1A' }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white/70">載入中...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen" style={{ background: theme.colors.bg, backgroundImage: bgStyle || undefined }}>
       <div className="max-w-6xl mx-auto p-4">
