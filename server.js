@@ -57,10 +57,18 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "http://localhost:3002", "https://*.onrender.com"],
+      connectSrc: [
+        "'self'",
+        "http://localhost:3002",
+        "https://*.onrender.com",
+        "https://*.firebaseio.com",
+        "wss://*.firebaseio.com",
+        "https://*.firebasedatabase.app",
+        "wss://*.firebasedatabase.app"
+      ],
       imgSrc: ["'self'", "data:", "http://localhost:3000", "http://localhost:3001", "https:", "https://res.cloudinary.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
       frameSrc: ["'self'", "https://www.youtube.com", "https://player.vimeo.com", "https://www.tiktok.com", "https://www.instagram.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
@@ -72,7 +80,14 @@ app.use(helmet({
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; connect-src 'self' http://localhost:* https://*.onrender.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; frame-src 'self' https://www.youtube.com https://player.vimeo.com https://www.tiktok.com https://www.instagram.com; media-src 'self' data: blob:;"
+    "default-src 'self'; " +
+    "connect-src 'self' http://localhost:* https://*.onrender.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src 'self' data: https:; " +
+    "frame-src 'self' https://www.youtube.com https://player.vimeo.com https://www.tiktok.com https://www.instagram.com; " +
+    "media-src 'self' data: blob:;"
   );
   next();
 });
