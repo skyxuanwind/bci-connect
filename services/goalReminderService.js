@@ -12,15 +12,15 @@ async function computeActualsForUser(userId, startDate, endDate) {
     [userId, startDate, endDate]
   );
   const referralsReceivedRes = await pool.query(
-    `SELECT COUNT(*) AS cnt FROM referrals WHERE referred_user_id = $1 AND created_at >= $2 AND created_at <= $3`,
+    `SELECT COUNT(*) AS cnt FROM referrals WHERE referred_to_id = $1 AND created_at >= $2 AND created_at <= $3`,
     [userId, startDate, endDate]
   );
   const referralsConfirmedRes = await pool.query(
-    `SELECT COUNT(*) AS cnt FROM referrals WHERE (referrer_id = $1 OR referred_user_id = $1) AND status = 'confirmed' AND updated_at >= $2 AND updated_at <= $3`,
+    `SELECT COUNT(*) AS cnt FROM referrals WHERE (referrer_id = $1 OR referred_to_id = $1) AND status = 'confirmed' AND updated_at >= $2 AND updated_at <= $3`,
     [userId, startDate, endDate]
   );
   const exchangesConfirmedRes = await pool.query(
-    `SELECT COUNT(*) AS cnt FROM meetings WHERE status = 'confirmed' AND (host_user_id = $1 OR participant_user_id = $1) AND meeting_time_start >= $2 AND meeting_time_start <= $3`,
+    `SELECT COUNT(*) AS cnt FROM meetings WHERE status = 'confirmed' AND (requester_id = $1 OR attendee_id = $1) AND meeting_time_start >= $2 AND meeting_time_start <= $3`,
     [userId, startDate, endDate]
   );
   return {
