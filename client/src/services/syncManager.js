@@ -17,12 +17,28 @@ class SyncManager {
     this.lastSyncData = new Map(); // 儲存最後同步的資料以進行差異比較
     this.lastSyncTime = null;
     this.conflictResolvers = new Map(); // 衝突解決器
+    this._warnedFirebaseNotConfigured = false; // 生產環境僅提示一次
     
     // 初始化同步優化器
     this.syncOptimizer = new SyncOptimizer();
     
     this.setupNetworkListeners();
     this.setupFirebaseListeners();
+  }
+
+  /**
+   * 生產環境降低噪音：Firebase 未配置的提示僅顯示一次；開發環境維持原警告。
+   */
+  warnFirebaseNotConfigured(message) {
+    const isProd = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+    if (isProd) {
+      if (!this._warnedFirebaseNotConfigured) {
+        console.info('[Sync] Firebase 未配置，已啟用離線模式');
+        this._warnedFirebaseNotConfigured = true;
+      }
+    } else {
+      console.warn(message || 'Firebase not configured');
+    }
   }
 
   /**
@@ -107,7 +123,7 @@ class SyncManager {
   subscribe(path, callback, conflictResolver = null) {
     try {
       if (!firebaseClient.isConfigured()) {
-        console.warn('Firebase not configured, subscription will not work');
+        this.warnFirebaseNotConfigured('Firebase not configured, subscription will not work');
         return () => {};
       }
 
@@ -222,7 +238,7 @@ class SyncManager {
   async getData(path) {
     try {
       if (!firebaseClient.isConfigured()) {
-        console.warn('Firebase not configured, returning null');
+        this.warnFirebaseNotConfigured('Firebase not configured, returning null');
         return null;
       }
       
@@ -244,7 +260,7 @@ class SyncManager {
    */
   async setDataToFirebase(path, data) {
     if (!firebaseClient.isConfigured()) {
-      console.warn('Firebase not configured, skipping sync');
+      this.warnFirebaseNotConfigured('Firebase not configured, skipping sync');
       return;
     }
     

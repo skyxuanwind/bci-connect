@@ -1,6 +1,7 @@
 const { pool } = require('../config/database');
 const { sendAINotification } = require('./emailService');
 const { AINotificationService } = require('./aiNotificationService');
+const aiNotificationService = new AINotificationService();
 
 // 門檻低於 threshold 才發送提醒
 const THRESHOLD_DEFAULT = 0.5;
@@ -98,17 +99,18 @@ async function notifyIfBelowThreshold(user, range = 'monthly', threshold = THRES
   const content = `您好！以下為${range === 'monthly' ? '月度' : range === 'semiannual' ? '半年度' : '年度'}目標達成率提醒：\n\n${lines.join('\n')}\n\n低於 ${Math.round(threshold*100)}% 的項目建議立即採取行動。`;
 
   try {
-    await sendAINotification(user.email, 'goal_achievement_reminder', {
-      title: '目標達成率提醒',
-      content,
-      linkUrl: process.env.FRONTEND_URL || 'http://localhost:3000/'
+    await sendAINotification({
+      email: user.email,
+      name: user.name || '會員',
+      notificationType: 'goal_achievement_reminder',
+      content
     });
   } catch (e) {
     console.error('寄送 Email 失敗:', e?.message || e);
   }
 
   try {
-    await AINotificationService.createNotification(user.id, 'goal_reminder', {
+    await aiNotificationService.createNotification(user.id, 'goal_reminder', {
       title: '目標達成率提醒',
       content,
       priority: 'high'

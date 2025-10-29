@@ -13,10 +13,16 @@ const config = {
 
 let app;
 let db;
+let hasWarnedMissingEnv = false;
 
 export const initFirebase = () => {
   if (!config.apiKey || !config.databaseURL) {
     if (process.env.NODE_ENV === 'production') {
+      if (!hasWarnedMissingEnv) {
+        console.info('[Firebase] 未配置環境變數，使用本機儲存替代');
+        hasWarnedMissingEnv = true;
+      }
+    } else {
       console.warn('[Firebase] Missing env, falling back to local storage.');
     }
     return null;
