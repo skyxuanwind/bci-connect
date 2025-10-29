@@ -648,6 +648,14 @@ export default function CardStudioPro() {
   return (
     <div className="min-h-screen" style={{ background: theme.colors.bg, backgroundImage: bgStyle || undefined }}>
       <div className="max-w-6xl mx-auto p-4">
+        {/* 同步狀態工具列 */}
+        <SyncStatusToolbar 
+          syncStatus={syncStatus}
+          isSaving={isSaving}
+          lastSyncTime={lastSyncTime}
+          onReload={reloadSyncData}
+        />
+        
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
           {/* 左：設定面板 */}
           <div className="bg-white/10 backdrop-blur-xl backdrop-saturate-150 rounded-2xl p-4 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200 ease-out active:scale-[0.997] touch-manipulation">
