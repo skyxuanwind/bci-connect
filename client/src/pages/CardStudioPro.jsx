@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
 import { uploadImage } from '../services/nfcCards';
-import AvatarUpload from '../components/AvatarUpload';
+import AvatarEditor from '../components/AvatarEditor';
 import IndustrySelect from '../components/NFCCard/IndustrySelect';
 import BlockEditor from '../components/NFCCard/BlockEditor';
 import { toast } from 'react-hot-toast';
@@ -112,7 +112,7 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
             <span className="text-xs opacity-70">Pro</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-full overflow-hidden ring-2" style={{ borderColor: colors.accent }}>
+            <div className="w-16 h-16 overflow-hidden ring-2" style={{ borderColor: colors.accent, borderRadius: '12px' }}>
               {avatarUrl ? (
                 <img src={avatarUrl} alt="頭像" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
@@ -123,9 +123,24 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
               <div className="text-lg font-semibold leading-tight">{info.name || '姓名'}</div>
               <div className="text-xs opacity-80">{info.title || '職稱'}</div>
               <div className="text-xs opacity-70">{info.company || '公司名稱'}</div>
-              <div className="flex gap-2 mt-1">
-                {info.phone && (<span className="text-xs px-2 py-1 rounded" style={{ background: colors.accent + '33' }}>📞</span>)}
-                {info.email && (<span className="text-xs px-2 py-1 rounded" style={{ background: colors.accent + '33' }}>✉️</span>)}
+              
+              {/* 聯絡方式 ICON 按鈕 */}
+              <div className="flex gap-2 mt-2">
+                {info.phone && (
+                  <a href={`tel:${info.phone}`} className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: colors.accent + '33' }}>
+                    <span className="text-xs">📞</span>
+                  </a>
+                )}
+                {info.email && (
+                  <a href={`mailto:${info.email}`} className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: colors.accent + '33' }}>
+                    <span className="text-xs">✉️</span>
+                  </a>
+                )}
+                {info.website && (
+                  <a href={info.website?.startsWith('http') ? info.website : `https://${info.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: colors.accent + '33' }}>
+                    <span className="text-xs">🌐</span>
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -175,27 +190,12 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
                 );
               }
               if (b.type === 'contact') {
-                const buttons = [];
-                if (info.phone) buttons.push({ label: '電話', href: `tel:${info.phone}` });
-                if (info.email) buttons.push({ label: '電子郵件', href: `mailto:${info.email}` });
-                if (info.website) buttons.push({ label: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}` });
-                
-                if (buttons.length === 0) return null;
-                
+                // 聯絡按鈕區塊已整合到頭部，這裡不再顯示基本聯絡資訊
+                // 可以用於顯示其他聯絡方式或社群媒體
                 return (
                   <div key={b.id} className="rounded-xl p-3" style={{ background: colors.card, color: colors.text }}>
-                    <div className="flex flex-wrap gap-2">
-                      {buttons.map((btn, idx) => (
-                        <a
-                          key={idx}
-                          href={btn.href}
-                          className={getButtonClass(buttonStyleId)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {btn.label}
-                        </a>
-                      ))}
+                    <div className="text-center text-sm opacity-70">
+                      聯絡資訊已整合至頭部區域
                     </div>
                   </div>
                 );
@@ -945,7 +945,7 @@ export default function CardStudioPro() {
                </div>
              </div>
              <div className="mt-3">
-               <AvatarUpload currentAvatar={avatarUrl} onAvatarChange={setAvatarFile} />
+               <AvatarEditor currentAvatar={avatarUrl} onAvatarChange={setAvatarFile} />
                {/* 名片基本欄位（整體可收合） */}
                <MainInfoFields info={info} setInfo={setInfo} />
 

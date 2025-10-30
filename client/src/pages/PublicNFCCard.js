@@ -544,36 +544,6 @@ const PublicNFCCard = () => {
     if (layoutType === 'full_slider') return renderFullSliderSection(cardConfig);
     return (
       <>
-        {/* 聯絡信息 */}
-        <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">聯絡方式</h2>
-          <div className="space-y-3">
-            {member.contact_number && (
-              <a 
-                href={`tel:${member.contact_number}`}
-                className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
-              >
-                <PhoneIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
-                <span className="text-gray-900 dark:text-white">{member.contact_number}</span>
-              </a>
-            )}
-            {member.email && (
-              <a 
-                href={`mailto:${member.email}`}
-                className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors"
-              >
-                <EnvelopeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" />
-                <span className="text-gray-900 dark:text-white">{member.email}</span>
-              </a>
-            )}
-            {member.company && (
-              <div className="flex items-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                <BuildingOfficeIcon className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3" />
-                <span className="text-gray-900 dark:text-white">{member.company}</span>
-              </div>
-            )}
-          </div>
-        </div>
         {/* 動態內容區塊 */}
         {cardConfig?.content_blocks && cardConfig.content_blocks.length > 0 && (
           <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
@@ -643,12 +613,12 @@ const PublicNFCCard = () => {
              }}>
           <div className="p-8 text-center">
             {/* 頭像 */}
-            <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+            <div className="w-24 h-24 mx-auto mb-4 overflow-hidden bg-gray-200 dark:bg-gray-700" style={{ borderRadius: '12px' }}>
               {member.profile_picture_url ? (
                 <img 
                   src={member.profile_picture_url} 
                   alt={member.name}
-                  className="w-full h-full object-contain object-center"
+                  className="w-full h-full object-cover object-center"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -669,25 +639,56 @@ const PublicNFCCard = () => {
                 </span>
               )}
             </div>
-            {/* LINE 直接加好友（來自內容區塊的 LINE ID） */}
-            {(() => {
-              const lineBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'text' && (b?.content_data?.title || '').trim() === 'LINE ID');
-              const lineId = (lineBlock?.content_data?.content || '').trim();
-              if (!lineId) return null;
-              const deeplink = buildLineDeepLink(lineId);
-              return (
-                <div className="mt-2">
+
+            {/* 聯絡方式 ICON 按鈕 */}
+            <div className="flex justify-center gap-4 mb-4">
+              {member.contact_number && (
+                <a 
+                  href={`tel:${member.contact_number}`}
+                  className="flex items-center justify-center w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 hover:scale-110"
+                  title={`電話: ${member.contact_number}`}
+                >
+                  <PhoneIcon className="h-6 w-6 text-white" />
+                </a>
+              )}
+              {member.email && (
+                <a 
+                  href={`mailto:${member.email}`}
+                  className="flex items-center justify-center w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 hover:scale-110"
+                  title={`Email: ${member.email}`}
+                >
+                  <EnvelopeIcon className="h-6 w-6 text-white" />
+                </a>
+              )}
+              {(() => {
+                const lineBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'text' && (b?.content_data?.title || '').trim() === 'LINE ID');
+                const lineId = (lineBlock?.content_data?.content || '').trim();
+                if (!lineId) return null;
+                const deeplink = buildLineDeepLink(lineId);
+                return (
                   <a
                     href={deeplink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center px-3 py-1 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm"
+                    className="flex items-center justify-center w-12 h-12 bg-green-600/80 hover:bg-green-600 rounded-full transition-all duration-200 hover:scale-110"
+                    title={`LINE: ${lineId}`}
                   >
-                    加 LINE：{lineId}
+                    <ChatBubbleLeftRightIcon className="h-6 w-6 text-white" />
                   </a>
-                </div>
-              );
-            })()}
+                );
+              })()}
+              {member.website && (
+                <a 
+                  href={member.website?.startsWith('http') ? member.website : `https://${member.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 hover:scale-110"
+                  title={`網站: ${member.website}`}
+                >
+                  <LinkIcon className="h-6 w-6 text-white" />
+                </a>
+              )}
+            </div>
             
             {/* 會員等級 */}
             <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 text-white text-sm">
