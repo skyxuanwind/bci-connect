@@ -11,7 +11,7 @@ import axios from '../config/axios';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { SyncStatusToolbar } from '../components/SyncStatusIndicator';
 import dataSyncManager from '../utils/dataSyncManager';
-import { DataConsistencyChecker } from '../utils/dataConsistencyChecker';
+import DataConsistencyChecker from '../utils/dataConsistencyChecker';
 // framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
