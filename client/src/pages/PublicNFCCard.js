@@ -15,7 +15,8 @@ import {
   ShareIcon,
   BuildingOfficeIcon,
   UserIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  QrCodeIcon
 } from '@heroicons/react/24/outline';
 import {
   HeartIcon as HeartSolidIcon
@@ -40,6 +41,7 @@ const PublicNFCCard = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareShortUrl, setShareShortUrl] = useState('');
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showQRCode, setShowQRCode] = useState(false);
 
   useEffect(() => {
     fetchCardData();
@@ -564,41 +566,7 @@ const PublicNFCCard = () => {
       }`}
       style={{ fontFamily: chineseFontStack }}
     >
-      {/* 頂部操作欄 */}
-      <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-sm border-b border-yellow-500/30">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              {darkMode ? '🌞' : '🌙'}
-            </button>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleCollectCard}
-              className={`p-2 rounded-lg transition-colors ${
-                isCollected 
-                  ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              {isCollected ? <HeartSolidIcon className="h-5 w-5" /> : <HeartIcon className="h-5 w-5" />}
-            </button>
-            
-            <button
-              onClick={handleShare}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <ShareIcon className="h-5 w-5" />
-            </button>
-            
-            {/* 下載聯絡人按鈕已移除 */}
-          </div>
-        </div>
-      </div>
+
 
       {/* 主要內容 */}
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -612,52 +580,60 @@ const PublicNFCCard = () => {
                boxShadow: cssConfig.cardShadow || '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
              }}>
           <div className="p-8 text-center">
-            {/* 頭像 */}
-            <div className="w-24 h-24 mx-auto mb-4 overflow-hidden bg-gray-200 dark:bg-gray-700" style={{ borderRadius: '12px' }}>
+            {/* 頭像 - 大人物效果，保持原始尺寸 */}
+            <div className="w-40 h-40 mx-auto mb-6 overflow-hidden bg-transparent">
               {member.profile_picture_url ? (
                 <img 
                   src={member.profile_picture_url} 
                   alt={member.name}
-                  className="w-full h-full object-cover object-center"
+                  className="w-full h-full object-contain"
+                  style={{ 
+                    borderRadius: '20px',
+                    filter: 'drop-shadow(0 10px 25px rgba(0, 0, 0, 0.3))'
+                  }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <UserIcon className="h-12 w-12 text-gray-400" />
+                <div className="w-full h-full flex items-center justify-center bg-gray-200/20 rounded-3xl">
+                  <UserIcon className="h-20 w-20 text-white/60" />
                 </div>
               )}
             </div>
             
-            {/* 基本信息：姓名＋職稱＋公司橫向排列 */}
-            <div className="flex flex-wrap items-baseline justify-center gap-2 text-white mb-4">
-              <h1 className="text-2xl font-bold">
+            {/* 基本信息：姓名＋職稱統一排列在頭像下方 */}
+            <div className="text-center text-white mb-6">
+              <h1 className="text-3xl font-bold mb-2">
                 {cardConfig?.card_title || member.name}
               </h1>
               {(cardConfig?.card_subtitle || member.title || member.company) && (
-                <span className="text-white/80">
+                <div className="text-xl text-white/90 font-medium">
                   {(cardConfig?.card_subtitle || member.title || '')}
-                  {member.company ? ` @ ${member.company}` : ''}
-                </span>
+                  {member.company && (
+                    <div className="text-lg text-white/80 mt-1">
+                      @ {member.company}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
-            {/* 聯絡方式 ICON 按鈕 */}
-            <div className="flex justify-center gap-4 mb-4">
+            {/* 聯絡方式 ICON 按鈕 - 行業標準圖標 */}
+            <div className="flex justify-center gap-4 mb-6">
               {member.contact_number && (
                 <a 
                   href={`tel:${member.contact_number}`}
-                  className="flex items-center justify-center w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 hover:scale-110"
+                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
                   title={`電話: ${member.contact_number}`}
                 >
-                  <PhoneIcon className="h-6 w-6 text-white" />
+                  <PhoneIcon className="h-7 w-7 text-white" />
                 </a>
               )}
               {member.email && (
                 <a 
                   href={`mailto:${member.email}`}
-                  className="flex items-center justify-center w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 hover:scale-110"
+                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
                   title={`Email: ${member.email}`}
                 >
-                  <EnvelopeIcon className="h-6 w-6 text-white" />
+                  <EnvelopeIcon className="h-7 w-7 text-white" />
                 </a>
               )}
               {(() => {
@@ -670,10 +646,10 @@ const PublicNFCCard = () => {
                     href={deeplink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center w-12 h-12 bg-green-600/80 hover:bg-green-600 rounded-full transition-all duration-200 hover:scale-110"
+                    className="flex items-center justify-center w-14 h-14 bg-green-600/80 hover:bg-green-600 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
                     title={`LINE: ${lineId}`}
                   >
-                    <ChatBubbleLeftRightIcon className="h-6 w-6 text-white" />
+                    <ChatBubbleLeftRightIcon className="h-7 w-7 text-white" />
                   </a>
                 );
               })()}
@@ -682,16 +658,16 @@ const PublicNFCCard = () => {
                   href={member.website?.startsWith('http') ? member.website : `https://${member.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 hover:scale-110"
+                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
                   title={`網站: ${member.website}`}
                 >
-                  <LinkIcon className="h-6 w-6 text-white" />
+                  <LinkIcon className="h-7 w-7 text-white" />
                 </a>
               )}
             </div>
             
             {/* 會員等級 */}
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 text-white text-sm">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm backdrop-blur-sm border border-white/10">
               {member.membership_level === 1 && '🥇 金級會員'}
               {member.membership_level === 2 && '🥈 銀級會員'}
               {member.membership_level === 3 && '🥉 銅級會員'}
@@ -700,6 +676,62 @@ const PublicNFCCard = () => {
         </div>
 
         {renderByLayout()}
+
+        {/* QR Code 和分享功能移至底部 */}
+        <div className="mt-8 bg-gradient-to-br from-black/90 to-gray-900/90 border border-yellow-500/30 rounded-2xl shadow-xl p-6">
+          <div className="text-center">
+            <h3 className="text-white text-lg font-semibold mb-4">分享名片</h3>
+            <div className="flex justify-center items-center gap-6">
+              {/* 收藏按鈕 */}
+              <button
+                onClick={handleCollectCard}
+                className={`flex flex-col items-center justify-center w-16 h-16 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10 ${
+                  isCollected 
+                    ? 'bg-red-500/80 hover:bg-red-500'
+                    : 'bg-white/20 hover:bg-white/30'
+                }`}
+                title={isCollected ? "取消收藏" : "收藏名片"}
+              >
+                {isCollected ? <HeartSolidIcon className="h-7 w-7 text-white mb-1" /> : <HeartIcon className="h-7 w-7 text-white mb-1" />}
+                <span className="text-xs text-white/80">{isCollected ? "已收藏" : "收藏"}</span>
+              </button>
+              
+              {/* 分享按鈕 */}
+              <button
+                onClick={handleShare}
+                className="flex flex-col items-center justify-center w-16 h-16 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
+                title="分享名片"
+              >
+                <ShareIcon className="h-7 w-7 text-white mb-1" />
+                <span className="text-xs text-white/80">分享</span>
+              </button>
+              
+              {/* QR Code 按鈕 */}
+              <button
+                onClick={() => setShowQRCode(!showQRCode)}
+                className="flex flex-col items-center justify-center w-16 h-16 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
+                title="顯示 QR Code"
+              >
+                <QrCodeIcon className="h-7 w-7 text-white mb-1" />
+                <span className="text-xs text-white/80">QR Code</span>
+              </button>
+            </div>
+            
+            {/* QR Code 顯示區域 */}
+            {showQRCode && (
+              <div className="mt-6 p-4 bg-white rounded-xl">
+                <div className="w-48 h-48 mx-auto bg-white p-4 rounded-lg">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href)}`}
+                    alt="QR Code"
+                    className="w-full h-full"
+                  />
+                </div>
+                <p className="text-gray-600 text-sm mt-2">掃描 QR Code 查看名片</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 底部社群按鈕式固定列 */}

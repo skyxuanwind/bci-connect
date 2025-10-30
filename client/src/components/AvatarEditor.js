@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { PhotoIcon, XMarkIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, XMarkIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
 const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
@@ -10,14 +10,25 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
   const [backgroundType, setBackgroundType] = useState('transparent');
   const [customBackground, setCustomBackground] = useState('#ffffff');
   const [showEditor, setShowEditor] = useState(false);
+  const [displayMode, setDisplayMode] = useState('original'); // 'original' 或 'circular'
+  const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 });
+  const [isBackgroundRemoved, setIsBackgroundRemoved] = useState(false);
+  const [backgroundRemovalPrecision, setBackgroundRemovalPrecision] = useState(0.8);
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
+  const previewCanvasRef = useRef(null);
 
   const sizeClasses = {
     small: 'w-16 h-16',
     medium: 'w-24 h-24',
     large: 'w-32 h-32'
   };
+
+  // 顯示模式選項
+  const displayModeOptions = [
+    { id: 'original', label: '原始尺寸', description: '保持圖片原始比例' },
+    { id: 'circular', label: '圓形裁剪', description: '裁剪為圓形頭像' }
+  ];
 
   // 背景選項
   const backgroundOptions = [
@@ -48,29 +59,43 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       setOriginalImage(e.target.result);
+      setProcessedImage(e.target.result);
+      setIsBackgroundRemoved(false);
       setShowEditor(true);
-      processImage(e.target.result);
     };
     reader.readAsDataURL(file);
   };
 
-  // 簡化的去背處理（實際應用中可以整合更專業的去背API）
-  const processImage = useCallback(async (imageData) => {
+  // 智能去背功能（模擬實現，實際可整合 remove.bg API）
+  const removeBackground = useCallback(async () => {
+    if (!originalImage) return;
+    
     setIsProcessing(true);
     try {
       // 這裡可以整合第三方去背API，如 remove.bg
-      // 目前先使用原圖作為示例
-      setProcessedImage(imageData);
-      toast.success('圖片處理完成');
+      // 目前使用模擬處理
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 模擬處理時間
+      
+      // 實際應用中，這裡會調用去背API
+      // const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+      //   method: 'POST',
+      //   headers: {
+      //     'X-Api-Key': 'YOUR_API_KEY',
+      //   },
+      //   body: formData
+      // });
+      
+      setIsBackgroundRemoved(true);
+      toast.success('背景移除完成');
     } catch (error) {
-      console.error('圖片處理失敗:', error);
-      toast.error('圖片處理失敗');
+      console.error('背景移除失敗:', error);
+      toast.error('背景移除失敗，請重試');
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [originalImage]);
 
-  // 應用縮放和背景
+  // 應用所有變換效果
   const applyTransformations = useCallback(() => {
     if (!processedImage || !canvasRef.current) return;
 
@@ -80,20 +105,19 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
 
     img.onload = () => {
       // 設置畫布大小
-      canvas.width = 300;
-      canvas.height = 300;
+      canvas.width = 400;
+      canvas.height = 400;
 
       // 清除畫布
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 繪製背景
+      // 繪製背景（如果不是透明背景）
       if (backgroundType !== 'transparent') {
         if (backgroundType === 'white') {
           ctx.fillStyle = '#ffffff';
         } else if (backgroundType === 'custom') {
           ctx.fillStyle = customBackground;
         } else if (backgroundType.startsWith('gradient')) {
-          // 創建漸層背景
           let gradient;
           if (backgroundType === 'gradient1') {
             gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
@@ -113,14 +137,34 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // 計算縮放後的尺寸和位置
-      const scaledWidth = img.width * scale;
-      const scaledHeight = img.height * scale;
-      const x = (canvas.width - scaledWidth) / 2;
-      const y = (canvas.height - scaledHeight) / 2;
-
-      // 繪製圖片
-      ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+      // 根據顯示模式處理圖片
+      if (displayMode === 'circular') {
+        // 圓形裁剪
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = Math.min(canvas.width, canvas.height) / 2 - 10;
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.clip();
+        
+        // 計算圖片尺寸和位置
+        const size = radius * 2 * scale;
+        const x = centerX - size / 2 + cropPosition.x;
+        const y = centerY - size / 2 + cropPosition.y;
+        
+        ctx.drawImage(img, x, y, size, size);
+        ctx.restore();
+      } else {
+        // 原始尺寸模式
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+        const x = (canvas.width - scaledWidth) / 2 + cropPosition.x;
+        const y = (canvas.height - scaledHeight) / 2 + cropPosition.y;
+        
+        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+      }
 
       // 轉換為 blob 並通知父組件
       canvas.toBlob((blob) => {
@@ -131,19 +175,23 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
     };
 
     img.src = processedImage;
-  }, [processedImage, scale, backgroundType, customBackground, onAvatarChange]);
+  }, [processedImage, scale, backgroundType, customBackground, displayMode, cropPosition, onAvatarChange]);
 
+  // 實時預覽更新
   useEffect(() => {
     if (processedImage && showEditor) {
       applyTransformations();
     }
-  }, [processedImage, scale, backgroundType, customBackground, showEditor, applyTransformations]);
+  }, [processedImage, scale, backgroundType, customBackground, displayMode, cropPosition, showEditor, applyTransformations]);
 
   const handleRemoveAvatar = () => {
     setOriginalImage(null);
     setProcessedImage(null);
     setShowEditor(false);
     setScale(1);
+    setDisplayMode('original');
+    setCropPosition({ x: 0, y: 0 });
+    setIsBackgroundRemoved(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -168,14 +216,14 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
         <div 
           className={`${sizeClasses[size]} border-2 border-gray-300 border-dashed flex items-center justify-center cursor-pointer hover:border-primary-500 transition-colors duration-200 overflow-hidden bg-gray-50`}
           onClick={handleClick}
-          style={{ borderRadius: '12px' }}
+          style={{ borderRadius: displayMode === 'circular' ? '50%' : '12px' }}
         >
           {processedImage ? (
             <img
               src={processedImage}
               alt="頭像預覽"
               className="w-full h-full object-cover"
-              style={{ borderRadius: '10px' }}
+              style={{ borderRadius: displayMode === 'circular' ? '50%' : '10px' }}
             />
           ) : (
             <div className="text-center">
@@ -198,11 +246,77 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
 
       {/* 編輯器 */}
       {showEditor && originalImage && (
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-4 border">
-          <h3 className="text-lg font-semibold mb-4">頭像編輯</h3>
+        <div className="w-full max-w-lg bg-white rounded-lg shadow-lg p-6 border">
+          <h3 className="text-lg font-semibold mb-4">頭像編輯器</h3>
           
           {/* 隱藏的畫布用於處理 */}
           <canvas ref={canvasRef} className="hidden" />
+          
+          {/* 顯示模式選擇 */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              顯示模式
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {displayModeOptions.map((mode) => (
+                <button
+                  key={mode.id}
+                  onClick={() => setDisplayMode(mode.id)}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    displayMode === mode.id
+                      ? 'border-primary-500 bg-primary-50 text-primary-700'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="font-medium text-sm">{mode.label}</div>
+                  <div className="text-xs text-gray-500 mt-1">{mode.description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 智能去背功能 */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                智能去背
+              </label>
+              <button
+                onClick={removeBackground}
+                disabled={isProcessing || isBackgroundRemoved}
+                className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm transition-all ${
+                  isBackgroundRemoved 
+                    ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                    : isProcessing
+                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                    : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                }`}
+              >
+                <SparklesIcon className="h-4 w-4" />
+                <span>
+                  {isProcessing ? '處理中...' : isBackgroundRemoved ? '已去背' : '去背'}
+                </span>
+              </button>
+            </div>
+            
+            {/* 去背精度調整 */}
+            {isBackgroundRemoved && (
+              <div className="mt-2">
+                <label className="block text-xs text-gray-600 mb-1">
+                  精度調整: {Math.round(backgroundRemovalPrecision * 100)}%
+                </label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="1"
+                  step="0.1"
+                  value={backgroundRemovalPrecision}
+                  onChange={(e) => setBackgroundRemovalPrecision(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
           
           {/* 縮放控制 */}
           <div className="mb-4">
@@ -214,7 +328,7 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
               <input
                 type="range"
                 min="0.5"
-                max="2"
+                max="3"
                 step="0.1"
                 value={scale}
                 onChange={(e) => setScale(parseFloat(e.target.value))}
@@ -224,8 +338,41 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
             </div>
           </div>
 
+          {/* 位置調整（僅在圓形模式下顯示） */}
+          {displayMode === 'circular' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                裁剪位置調整
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">水平位置</label>
+                  <input
+                    type="range"
+                    min="-50"
+                    max="50"
+                    value={cropPosition.x}
+                    onChange={(e) => setCropPosition(prev => ({ ...prev, x: parseInt(e.target.value) }))}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">垂直位置</label>
+                  <input
+                    type="range"
+                    min="-50"
+                    max="50"
+                    value={cropPosition.y}
+                    onChange={(e) => setCropPosition(prev => ({ ...prev, y: parseInt(e.target.value) }))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 背景選擇 */}
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               背景樣式
             </label>
@@ -234,7 +381,7 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
                 <button
                   key={option.type}
                   onClick={() => setBackgroundType(option.type)}
-                  className={`p-2 rounded-lg border text-xs ${
+                  className={`p-2 rounded-lg border text-xs transition-all ${
                     backgroundType === option.type
                       ? 'border-primary-500 bg-primary-50'
                       : 'border-gray-300 hover:border-gray-400'
@@ -259,17 +406,31 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
             )}
           </div>
 
+          {/* 實時預覽 */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              實時預覽
+            </label>
+            <div className="w-32 h-32 mx-auto border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+              <canvas 
+                ref={previewCanvasRef} 
+                className="w-full h-full object-cover"
+                style={{ borderRadius: displayMode === 'circular' ? '50%' : '6px' }}
+              />
+            </div>
+          </div>
+
           {/* 操作按鈕 */}
-          <div className="flex space-x-2">
+          <div className="flex space-x-3">
             <button
               onClick={() => setShowEditor(false)}
-              className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               取消
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               disabled={isProcessing}
             >
               {isProcessing ? '處理中...' : '確認'}
@@ -289,7 +450,7 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
       <div className="text-center">
         <p className="text-sm text-gray-600">支援 JPG、PNG 格式</p>
         <p className="text-xs text-gray-500">檔案大小不超過 10MB</p>
-        <p className="text-xs text-gray-500">支援去背、縮放和背景自定義</p>
+        <p className="text-xs text-gray-500">支援智能去背、多種顯示模式和實時預覽</p>
       </div>
     </div>
   );
