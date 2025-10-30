@@ -71,7 +71,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "https://www.instagram.com", "https://static.cloudflareinsights.com", "https://*.firebaseio.com", "https://*.firebasedatabase.app"],
       scriptSrcElem: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "https://www.instagram.com", "https://static.cloudflareinsights.com", "https://*.firebaseio.com", "https://*.firebasedatabase.app"],
-      frameSrc: ["'self'", "https://www.youtube.com", "https://player.vimeo.com", "https://www.tiktok.com", "https://www.instagram.com"],
+      frameSrc: ["'self'", "https://www.youtube.com", "https://player.vimeo.com", "https://www.tiktok.com", "https://www.instagram.com", "https://*.firebaseio.com", "https://*.firebasedatabase.app"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
     }
@@ -89,7 +89,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "frame-src 'self' https://www.youtube.com https://player.vimeo.com https://www.tiktok.com https://www.instagram.com; " +
+    "frame-src 'self' https://www.youtube.com https://player.vimeo.com https://www.tiktok.com https://www.instagram.com https://*.firebaseio.com https://*.firebasedatabase.app; " +
     "media-src 'self' data: blob:;"
   );
   next();

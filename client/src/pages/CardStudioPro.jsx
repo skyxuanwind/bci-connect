@@ -347,6 +347,9 @@ export default function CardStudioPro() {
   const { user } = useAuth();
   const location = useLocation();
   
+  // 添加 ref 來解決循環依賴問題
+  const runConsistencyCheckRef = useRef();
+  
   // 使用 useMemo 穩定 userId 和 path，避免不必要的重新計算
   // 修正：優先使用 memberId，確保與 MemberCard 頁面路徑一致
   const userId = useMemo(() => {
@@ -489,8 +492,11 @@ export default function CardStudioPro() {
         toast.success('數據同步完成');
         
         // 重新檢查一致性
-        setTimeout(async () => {
-          await runConsistencyCheck();
+        setTimeout(() => {
+          // 使用 ref 來避免循環依賴
+          if (runConsistencyCheckRef.current) {
+            runConsistencyCheckRef.current();
+          }
         }, 1000);
       } else {
         toast.error('數據同步失敗');
@@ -499,7 +505,7 @@ export default function CardStudioPro() {
       console.error('數據同步錯誤:', error);
       toast.error(`同步失敗: ${error.message}`);
     }
-  }, [user, info, themeId, blocks, avatarUrl, buttonStyleId, bgStyle, updateSyncData, saveSyncData, runConsistencyCheck]);
+  }, [user, info, themeId, blocks, avatarUrl, buttonStyleId, bgStyle, updateSyncData, saveSyncData]);
 
   // 數據一致性檢查功能
   const runConsistencyCheck = useCallback(async () => {
@@ -560,6 +566,9 @@ export default function CardStudioPro() {
       toast.error('數據一致性檢查失敗');
     }
   }, [themeId, blocks, info, avatarUrl, buttonStyleId, bgStyle, syncData, syncPath, userId, isLoading, isSaving, syncStatus, lastSyncTime]);
+
+  // 將函數賦值給 ref
+  runConsistencyCheckRef.current = runConsistencyCheck;
 
   const theme = useMemo(() => THEMES.find(t => t.id === themeId) || THEMES[0], [themeId]);
 
