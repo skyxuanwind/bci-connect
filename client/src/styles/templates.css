@@ -99,15 +99,13 @@
 .user-info {
   flex: 1;
   min-width: 0;
-  /* 個人公司色塊（膠囊）依模板自動切換 */
-  background: var(--pill-bg);
-  color: var(--pill-text);
-  border: 1px solid var(--pill-border);
-  padding: 0.6rem 0.9rem;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
+  /* 移除膠囊背景，改為透明設計 */
+  background: transparent;
+  color: inherit;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  display: block;
   box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
@@ -138,33 +136,116 @@
   color: var(--desc-color, var(--text-secondary, #4B5563));
 }
 
-/* 各模板的膠囊與說明文字顏色覆寫 */
-.template-black-gold-prestige {
-  --pill-bg: linear-gradient(135deg, #121212, #0b0b0b);
-  --pill-text: #D4AF37; /* 金色文字提升在黑色上的可讀性 */
-  --pill-border: rgba(212,175,55,0.35);
-  --desc-color: #E5E7EB; /* 使用淺灰避免黃色，提高易讀性 */
+/* 各模板的個人資訊樣式覆寫 */
+.template-black-gold-prestige .user-info {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(255, 215, 0, 0.1));
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  backdrop-filter: blur(5px);
 }
 
-.template-handdrawn-cute {
-  --pill-bg: linear-gradient(45deg, #FF8FAB, #6BCB77);
-  --pill-text: #ffffff;
-  --pill-border: rgba(255,143,171,0.45);
-  --desc-color: #374151; /* 深灰文本更穩定易讀 */
+.template-black-gold-prestige .user-name {
+  color: #D4AF37;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.template-glassmorphism {
-  --pill-bg: rgba(59,130,246,0.18);
-  --pill-text: #0f172a;
-  --pill-border: rgba(59,130,246,0.25);
-  --desc-color: #334155;
+.template-black-gold-prestige .user-position,
+.template-black-gold-prestige .user-company {
+  color: #E5E7EB;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-.template-creative-brand {
-  --pill-bg: linear-gradient(45deg, #ff6b35, #4ecdc4);
-  --pill-text: #0b0b0b;
-  --pill-border: rgba(255,107,53,0.35);
-  --desc-color: #1F2937;
+.template-handdrawn-cute .user-info {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #FF8FAB;
+  border-radius: 20px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(255, 143, 171, 0.3);
+}
+
+.template-handdrawn-cute .user-name {
+  color: #FF6B9D;
+  font-weight: 600;
+}
+
+.template-handdrawn-cute .user-position,
+.template-handdrawn-cute .user-company {
+  color: #374151;
+}
+
+.template-glassmorphism .user-info {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1rem;
+  backdrop-filter: blur(20px);
+}
+
+.template-glassmorphism .user-name {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.template-glassmorphism .user-position,
+.template-glassmorphism .user-company {
+  color: #334155;
+}
+
+.template-creative-brand .user-info {
+  background: linear-gradient(45deg, rgba(255, 107, 53, 0.1), rgba(78, 205, 196, 0.1));
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  border-radius: 15px;
+  padding: 1rem;
+}
+
+.template-creative-brand .user-name {
+  color: #ff6b35;
+  font-weight: 700;
+}
+
+.template-creative-brand .user-position,
+.template-creative-brand .user-company {
+  color: #1F2937;
+}
+
+.template-professional-business .user-info {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.template-professional-business .user-name {
+  color: #1E3A8A;
+  font-weight: 600;
+}
+
+.template-professional-business .user-position,
+.template-professional-business .user-company {
+  color: #6B7280;
+}
+
+.template-dynamic-interactive .user-info {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 20px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.template-dynamic-interactive .user-name {
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.template-dynamic-interactive .user-position,
+.template-dynamic-interactive .user-company {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .contact-list li {
