@@ -1083,7 +1083,33 @@ const MemberCard = () => {
   }
 
   const templateClass = getTemplateClassName();
-  const accentColor = (cardData?.design ? '#3B82F6' : (template?.css_config?.accentColor || template?.css_config?.secondaryColor || '#cccccc'));
+  
+  // 主題顏色映射：與編輯器保持一致
+  const getThemeAccentColor = (themeId) => {
+    const themeMap = {
+      'simple': '#3B82F6',
+      'youth': '#F59E0B', 
+      'coolblack': '#22D3EE',
+      'classic': '#2563EB',
+      'forest': '#10b981',
+      'sunset': '#fb7185',
+      'ocean': '#60a5fa',
+      'mint': '#34d399',
+      'lavender': '#a78bfa',
+      'warm': '#f59e0b',
+      'neon': '#22c55e'
+    };
+    return themeMap[themeId] || '#3B82F6';
+  };
+  
+  const accentColor = (() => {
+    if (cardData?.design) {
+      // 如果有編輯器設計資料，優先使用對應主題的 accent 顏色
+      const themeId = cardData.template_name;
+      return getThemeAccentColor(themeId);
+    }
+    return template?.css_config?.accentColor || template?.css_config?.secondaryColor || '#cccccc';
+  })();
   const dividerStyle = cardData?.ui_divider_style || template?.css_config?.dividerOptions?.[0] || 'solid-thin';
   const dividerOpacity = typeof cardData?.ui_divider_opacity === 'number' ? cardData.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);

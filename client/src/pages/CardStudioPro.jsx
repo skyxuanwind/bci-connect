@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { SyncStatusToolbar } from '../components/SyncStatusIndicator';
+import { dataConsistencyChecker } from '../utils/dataConsistencyChecker';
 // framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
@@ -173,10 +174,28 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
                 );
               }
               if (b.type === 'contact') {
+                const buttons = [];
+                if (info.phone) buttons.push({ label: '電話', href: `tel:${info.phone}` });
+                if (info.email) buttons.push({ label: '電子郵件', href: `mailto:${info.email}` });
+                if (info.website) buttons.push({ label: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}` });
+                
+                if (buttons.length === 0) return null;
+                
                 return (
-                  <div key={b.id} className="rounded-xl p-3 flex items-center gap-2" style={{ background: colors.card, color: colors.text }}>
-                    <a href={info.phone ? `tel:${info.phone}` : '#'} className={getButtonClass(buttonStyleId)}>立即聯絡</a>
-                    {info.phone && (<span className="text-xs opacity-60">{info.phone}</span>)}
+                  <div key={b.id} className="rounded-xl p-3" style={{ background: colors.card, color: colors.text }}>
+                    <div className="flex flex-wrap gap-2">
+                      {buttons.map((btn, idx) => (
+                        <a
+                          key={idx}
+                          href={btn.href}
+                          className={getButtonClass(buttonStyleId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {btn.label}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 );
               }
@@ -371,6 +390,10 @@ export default function CardStudioPro() {
   const skipNextAutoSaveRef = useRef(false);
   const applyingIndustryRef = useRef(false);
 
+  // 數據一致性檢查狀態
+  const [consistencyReport, setConsistencyReport] = useState(null);
+  const [showConsistencyReport, setShowConsistencyReport] = useState(false);
+
   // 行業資料（側邊欄常駐）
   const [industries, setIndustries] = useState([]);
   const [industriesLoading, setIndustriesLoading] = useState(true);
@@ -416,6 +439,65 @@ export default function CardStudioPro() {
       design: { ...(syncData?.design || {}), bgStyle: newBgStyle }
     });
   };
+
+  // 數據一致性檢查功能
+  const runConsistencyCheck = useCallback(async () => {
+    try {
+      const currentData = {
+        themeId,
+        blocks,
+        info,
+        avatarUrl,
+        design: {
+          buttonStyleId,
+          bgStyle
+        },
+        _lastModified: syncData?._lastModified
+      };
+
+      // 檢查數據完整性
+      const integrityReport = dataConsistencyChecker.checkDataIntegrity(currentData);
+      
+      // 如果有同步路徑，比較本地和遠端數據
+      let comparisonReport = null;
+      if (syncPath && userId) {
+        try {
+          const remoteData = await dbGet(syncPath);
+          if (remoteData) {
+            comparisonReport = dataConsistencyChecker.compareDataSources(currentData, remoteData);
+          }
+        } catch (error) {
+          console.warn('無法獲取遠端數據進行比較:', error);
+        }
+      }
+
+      const report = {
+        timestamp: new Date().toISOString(),
+        integrity: integrityReport,
+        comparison: comparisonReport,
+        syncStatus: {
+          isLoading,
+          isSaving,
+          syncStatus,
+          lastSyncTime
+        }
+      };
+
+      setConsistencyReport(report);
+      setShowConsistencyReport(true);
+
+      // 如果發現問題，顯示警告
+      if (!integrityReport.isValid || (comparisonReport && comparisonReport.hasInconsistencies)) {
+        toast.error('發現數據一致性問題，請查看詳細報告');
+      } else {
+        toast.success('數據一致性檢查通過');
+      }
+
+    } catch (error) {
+      console.error('數據一致性檢查失敗:', error);
+      toast.error('數據一致性檢查失敗');
+    }
+  }, [themeId, blocks, info, avatarUrl, buttonStyleId, bgStyle, syncData, syncPath, userId, isLoading, isSaving, syncStatus, lastSyncTime]);
 
   const theme = useMemo(() => THEMES.find(t => t.id === themeId) || THEMES[0], [themeId]);
 
@@ -723,6 +805,39 @@ export default function CardStudioPro() {
           onReload={reloadSyncData}
         />
         
+        {/* 數據一致性檢查工具列 */}
+        <div className="mb-4 flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10">
+          <div className="flex items-center gap-3">
+            <span className="text-white/70 text-sm">數據一致性檢查</span>
+            {consistencyReport && (
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                consistencyReport.integrity.isValid && (!consistencyReport.comparison || !consistencyReport.comparison.hasInconsistencies)
+                  ? 'bg-green-500/20 text-green-300'
+                  : 'bg-red-500/20 text-red-300'
+              }`}>
+                {consistencyReport.integrity.isValid && (!consistencyReport.comparison || !consistencyReport.comparison.hasInconsistencies)
+                  ? '通過' : '發現問題'}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={runConsistencyCheck}
+              className="px-3 py-1.5 text-sm bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
+            >
+              檢查數據一致性
+            </button>
+            {consistencyReport && (
+              <button
+                onClick={() => setShowConsistencyReport(true)}
+                className="px-3 py-1.5 text-sm bg-gray-600/80 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                查看報告
+              </button>
+            )}
+          </div>
+        </div>
+        
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
           {/* 左：設定面板 */}
           <div className="bg-white/10 backdrop-blur-xl backdrop-saturate-150 rounded-2xl p-4 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200 ease-out active:scale-[0.997] touch-manipulation">
@@ -845,6 +960,91 @@ export default function CardStudioPro() {
 
       {showAdd && (<BlockAddModal onAdd={addBlock} onClose={()=>setShowAdd(false)} />)}
         <ConflictModal />
+        
+        {/* 數據一致性報告模態框 */}
+        {showConsistencyReport && consistencyReport && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">數據一致性檢查報告</h3>
+                  <button
+                    onClick={() => setShowConsistencyReport(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  {/* 整體狀態 */}
+                  <div className={`p-3 rounded-lg ${consistencyReport.isConsistent ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                    <div className="flex items-center">
+                      <span className={`text-sm font-medium ${consistencyReport.isConsistent ? 'text-green-800' : 'text-red-800'}`}>
+                        {consistencyReport.isConsistent ? '✓ 數據一致性良好' : '⚠ 發現數據不一致問題'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* 完整性檢查結果 */}
+                  {consistencyReport.integrityCheck && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">數據完整性檢查</h4>
+                      <div className="space-y-2">
+                        {consistencyReport.integrityCheck.issues.map((issue, index) => (
+                          <div key={index} className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                            {issue}
+                          </div>
+                        ))}
+                        {consistencyReport.integrityCheck.issues.length === 0 && (
+                          <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                            ✓ 數據結構完整
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 數據源比較結果 */}
+                  {consistencyReport.comparison && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">數據源一致性比較</h4>
+                      <div className="space-y-2">
+                        {consistencyReport.comparison.differences.map((diff, index) => (
+                          <div key={index} className="text-sm bg-yellow-50 border border-yellow-200 p-2 rounded">
+                            <div className="font-medium text-yellow-800">{diff.path}</div>
+                            <div className="text-yellow-700 mt-1">
+                              本地: {JSON.stringify(diff.local)} → 遠端: {JSON.stringify(diff.remote)}
+                            </div>
+                          </div>
+                        ))}
+                        {consistencyReport.comparison.differences.length === 0 && (
+                          <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                            ✓ 本地與遠端數據一致
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 檢查時間 */}
+                  <div className="text-xs text-gray-500 pt-2 border-t">
+                    檢查時間: {new Date(consistencyReport.timestamp).toLocaleString()}
+                  </div>
+                </div>
+                
+                <div className="flex justify-end mt-6">
+                  <button
+                    onClick={() => setShowConsistencyReport(false)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                  >
+                    關閉
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

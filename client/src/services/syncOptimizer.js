@@ -262,13 +262,36 @@ class SyncOptimizer {
     const localTimestamp = localData._lastModified || 0;
     const remoteTimestamp = remoteData._lastModified || 0;
 
+    // 檢查是否為部分更新（遠端數據欄位數量明顯少於本地）
+    const localKeys = Object.keys(localData).filter(k => !k.startsWith('_'));
+    const remoteKeys = Object.keys(remoteData).filter(k => !k.startsWith('_'));
+    const isPartialUpdate = remoteKeys.length < localKeys.length * 0.5;
+
+    // 如果是部分更新，總是進行合併以保留本地數據
+    if (isPartialUpdate) {
+      console.log('[SyncOptimizer] Detected partial update, merging to preserve local data');
+      return this.mergeObjects(localData, remoteData);
+    }
+
     // 如果時間戳相同，進行智能合併
     if (Math.abs(localTimestamp - remoteTimestamp) < 1000) {
       return this.mergeObjects(localData, remoteData);
     }
 
-    // 否則使用較新的版本
-    return localTimestamp > remoteTimestamp ? localData : remoteData;
+    // 否則使用較新的版本，但仍需檢查是否為部分更新
+    const newerData = localTimestamp > remoteTimestamp ? localData : remoteData;
+    const olderData = localTimestamp > remoteTimestamp ? remoteData : localData;
+    
+    // 如果較新的數據欄位明顯較少，可能是部分更新，進行合併
+    const newerKeys = Object.keys(newerData).filter(k => !k.startsWith('_'));
+    const olderKeys = Object.keys(olderData).filter(k => !k.startsWith('_'));
+    
+    if (newerKeys.length < olderKeys.length * 0.7) {
+      console.log('[SyncOptimizer] Newer data appears to be partial, merging with older complete data');
+      return this.mergeObjects(olderData, newerData);
+    }
+
+    return newerData;
   }
 
   /**
@@ -285,20 +308,68 @@ class SyncOptimizer {
         if (key === '_lastModified') {
           // 使用較新的時間戳
           result[key] = Math.max(target[key] || 0, source[key] || 0);
+        } else if (Array.isArray(source[key])) {
+          // 陣列處理：如果來源陣列為空或只有一個元素，可能是部分更新，保留目標陣列
+          if (source[key].length === 0) {
+            // 空陣列：保留目標陣列
+            result[key] = target[key] || [];
+          } else if (Array.isArray(target[key]) && target[key].length > source[key].length) {
+            // 來源陣列較短，可能是部分更新，進行智能合併
+            console.log(`[SyncOptimizer] Array merge for ${key}: target(${target[key].length}) vs source(${source[key].length})`);
+            
+            // 對於 blocks 陣列，使用 ID 進行合併
+            if (key === 'blocks') {
+              result[key] = this.mergeBlocksArray(target[key], source[key]);
+            } else {
+              // 其他陣列：如果來源明顯較短，保留目標陣列
+              result[key] = target[key];
+            }
+          } else {
+            // 來源陣列較長或相等，使用來源陣列
+            result[key] = source[key];
+          }
         } else if (
           typeof target[key] === 'object' && 
           typeof source[key] === 'object' && 
-          !Array.isArray(target[key]) && 
-          !Array.isArray(source[key])
+          target[key] !== null &&
+          source[key] !== null
         ) {
           // 遞迴合併物件
           result[key] = this.mergeObjects(target[key] || {}, source[key]);
-        } else {
-          // 使用來源值（假設來源較新）
+        } else if (source[key] !== undefined && source[key] !== null) {
+          // 只有當來源值不是 undefined 或 null 時才覆寫
           result[key] = source[key];
         }
+        // 如果來源值是 undefined 或 null，保留目標值
       }
     }
+
+    return result;
+  }
+
+  /**
+   * 智能合併 blocks 陣列
+   * @param {Array} targetBlocks - 目標區塊陣列
+   * @param {Array} sourceBlocks - 來源區塊陣列
+   * @returns {Array} 合併後的區塊陣列
+   */
+  mergeBlocksArray(targetBlocks, sourceBlocks) {
+    if (!Array.isArray(targetBlocks)) return sourceBlocks;
+    if (!Array.isArray(sourceBlocks)) return targetBlocks;
+
+    const result = [...targetBlocks];
+    
+    // 根據 ID 更新或新增區塊
+    sourceBlocks.forEach(sourceBlock => {
+      const existingIndex = result.findIndex(block => block.id === sourceBlock.id);
+      if (existingIndex >= 0) {
+        // 更新現有區塊
+        result[existingIndex] = { ...result[existingIndex], ...sourceBlock };
+      } else {
+        // 新增區塊
+        result.push(sourceBlock);
+      }
+    });
 
     return result;
   }
