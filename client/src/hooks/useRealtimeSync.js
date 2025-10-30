@@ -194,12 +194,14 @@ export const useRealtimeSync = (options = {}) => {
       }
       saveTimeoutRef.current = setTimeout(() => {
         try {
+          const now = Date.now();
           const dataToSave = syncData || {};
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
             ...dataToSave,
-            _lastModified: Date.now()
+            _lastModified: now
           }));
-          setLastSyncTime(Date.now());
+          // 使用 ref 避免觸發狀態更新循環
+          localVersionRef.current = now;
         } catch (e) {
           console.warn('[RealtimeSync] Local mode auto-save failed:', e);
         }
@@ -216,7 +218,11 @@ export const useRealtimeSync = (options = {}) => {
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         await syncManager.setData(path, syncData);
-        setLastSyncTime(Date.now());
+        // 使用 ref 避免觸發狀態更新循環
+        const now = Date.now();
+        localVersionRef.current = now;
+        // 不要在這裡調用 setLastSyncTime，避免觸發無限循環
+        // setLastSyncTime(now);
       } catch (error) {
         console.error('Auto-save failed:', error);
         if (onSyncError) onSyncError(error);
@@ -244,6 +250,7 @@ export const useRealtimeSync = (options = {}) => {
           ...dataToSave,
           _lastModified: now
         }));
+        localVersionRef.current = now;
         setLastSyncTime(now);
         toast.success('儲存成功（本地模式）');
       } catch (e) {
@@ -264,7 +271,9 @@ export const useRealtimeSync = (options = {}) => {
         ? syncManager.syncOptimizer.smartMerge(syncData || {}, dataOverride)
         : syncData;
       await syncManager.setData(path, dataToSave);
-      setLastSyncTime(Date.now());
+      const now = Date.now();
+      localVersionRef.current = now;
+      setLastSyncTime(now);
       toast.success('儲存成功');
     } catch (error) {
       console.error('Manual save failed:', error);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
@@ -326,7 +326,16 @@ const BlockAddModal = ({ onAdd, onClose }) => {
 export default function CardStudioPro() {
   const { user } = useAuth();
   const location = useLocation();
-  const userId = user?.id || user?.user_id || user?.uid;
+  
+  // 使用 useMemo 穩定 userId 和 path，避免不必要的重新計算
+  const userId = useMemo(() => user?.id || user?.user_id || user?.uid, [user?.id, user?.user_id, user?.uid]);
+  const syncPath = useMemo(() => userId ? `cards/${userId}` : null, [userId]);
+  
+  // 穩定的錯誤處理回調
+  const handleSyncError = useCallback((error) => {
+    console.error('Sync error:', error);
+    toast.error('同步失敗，請檢查網路連線');
+  }, []);
   
   // 使用即時同步 Hook
   const {
@@ -340,23 +349,20 @@ export default function CardStudioPro() {
     reloadSyncData,
     ConflictModal
   } = useRealtimeSync({
-    path: userId ? `cards/${userId}` : null,
+    path: syncPath,
     initialData: null,
     autoSave: true,
     saveDelay: 800,
-    onSyncError: (error) => {
-      console.error('Sync error:', error);
-      toast.error('同步失敗，請檢查網路連線');
-    }
+    onSyncError: handleSyncError
   });
 
-  // 從同步資料中提取狀態
-  const themeId = syncData?.themeId || 'simple';
-  const blocks = syncData?.blocks || [];
-  const info = syncData?.info || { name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', linkedin: '' };
-  const avatarUrl = syncData?.avatarUrl || '';
-  const buttonStyleId = syncData?.design?.buttonStyleId || 'solid-blue';
-  const bgStyle = syncData?.design?.bgStyle || '';
+  // 從同步資料中提取狀態 - 使用 useMemo 避免不必要的重新計算
+  const themeId = useMemo(() => syncData?.themeId || 'simple', [syncData?.themeId]);
+  const blocks = useMemo(() => syncData?.blocks || [], [syncData?.blocks]);
+  const info = useMemo(() => syncData?.info || { name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', linkedin: '' }, [syncData?.info]);
+  const avatarUrl = useMemo(() => syncData?.avatarUrl || '', [syncData?.avatarUrl]);
+  const buttonStyleId = useMemo(() => syncData?.design?.buttonStyleId || 'solid-blue', [syncData?.design?.buttonStyleId]);
+  const bgStyle = useMemo(() => syncData?.design?.bgStyle || '', [syncData?.design?.bgStyle]);
 
   // 本地狀態（不需要同步的）
   const [showAdd, setShowAdd] = useState(false);
