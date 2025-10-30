@@ -16,7 +16,9 @@ import {
   BuildingOfficeIcon,
   UserIcon,
   ChatBubbleLeftRightIcon,
-  QrCodeIcon
+  QrCodeIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import {
   HeartIcon as HeartSolidIcon
@@ -441,12 +443,12 @@ const PublicNFCCard = () => {
     );
   };
 
-  // 滿版滑動專用渲染
-  const renderFullSliderSection = (cardConfig) => {
+  // 滿版滑動專用渲染（修正 hooks 規則：改為函式元件，並確保 hooks 不在條件中呼叫）
+  const FullSliderSection = ({ cardConfig }) => {
     const blocks = cardConfig?.content_blocks || [];
-    if (blocks.length === 0) return null;
+    const len = blocks.length;
     const clampIndex = (i) => {
-      const len = blocks.length;
+      if (len === 0) return 0;
       return ((i % len) + len) % len;
     };
     const activeIndex = clampIndex(currentSlide);
@@ -456,6 +458,7 @@ const PublicNFCCard = () => {
       preventDefaultTouchmoveEvent: true,
       trackTouch: true
     });
+    if (len === 0) return null;
     return (
       <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-0 overflow-hidden">
         <div className="relative">
@@ -469,7 +472,7 @@ const PublicNFCCard = () => {
                 transition={{ duration: 0.25 }}
                 {...swipeHandlers}
               >
-                {renderContentBlock(blocks[activeIndex])}
+                {renderContentBlock(blocks[activeIndex], activeIndex)}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -543,7 +546,7 @@ const PublicNFCCard = () => {
   // 根據版型渲染不同的內容區段
   const renderByLayout = () => {
     if (layoutType === 'four_grid') return renderFourGridSection(cardConfig);
-    if (layoutType === 'full_slider') return renderFullSliderSection(cardConfig);
+    if (layoutType === 'full_slider') return <FullSliderSection cardConfig={cardConfig} />;
     return (
       <>
         {/* 動態內容區塊 */}
