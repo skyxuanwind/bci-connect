@@ -336,8 +336,9 @@ const MemberCard = () => {
 
         const vParam = (() => { try { return new URLSearchParams(window.location.search).get('v'); } catch { return null; } })();
 
-        // 1) 嘗試讀取編輯器保存的最新版本（Firebase 或本地快取）
-        const editorData = await dbGet(`cards/${memberId}/editor`).catch(() => null);
+        // 1) 嘗試讀取編輯器保存的最新版本（Firebase）
+        // 修正：統一使用相同的路徑格式，不再使用 /editor 子路徑
+        const editorData = await dbGet(`cards/${memberId}`).catch(() => null);
         if (editorData && Array.isArray(editorData.blocks)) {
           const info = editorData.info || {};
           const blocks = Array.isArray(editorData.blocks) ? editorData.blocks : [];

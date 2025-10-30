@@ -10,7 +10,8 @@ import { toast } from 'react-hot-toast';
 import axios from '../config/axios';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { SyncStatusToolbar } from '../components/SyncStatusIndicator';
-import { dataConsistencyChecker } from '../utils/dataConsistencyChecker';
+import dataSyncManager from '../utils/dataSyncManager';
+import { DataConsistencyChecker } from '../utils/dataConsistencyChecker';
 // framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
@@ -347,8 +348,17 @@ export default function CardStudioPro() {
   const location = useLocation();
   
   // 使用 useMemo 穩定 userId 和 path，避免不必要的重新計算
-  const userId = useMemo(() => user?.id || user?.user_id || user?.uid, [user?.id, user?.user_id, user?.uid]);
-  const syncPath = useMemo(() => userId ? `cards/${userId}` : null, [userId]);
+  // 修正：優先使用 memberId，確保與 MemberCard 頁面路徑一致
+  const userId = useMemo(() => {
+    // 優先使用 memberId（如果存在），否則使用用戶 ID
+    return user?.memberId || user?.id || user?.user_id || user?.uid;
+  }, [user?.memberId, user?.id, user?.user_id, user?.uid]);
+  
+  const syncPath = useMemo(() => {
+    if (!userId) return null;
+    // 統一使用與 MemberCard 相同的路徑格式
+    return `cards/${userId}`;
+  }, [userId]);
   
   // 穩定的錯誤處理回調
   const handleSyncError = useCallback((error) => {
@@ -440,6 +450,57 @@ export default function CardStudioPro() {
     });
   };
 
+  // 數據同步功能
+  const runDataSync = useCallback(async () => {
+    try {
+      const memberId = user?.memberId || user?.id || user?.user_id || user?.uid;
+      if (!memberId) {
+        toast.error('無法獲取用戶 ID');
+        return;
+      }
+
+      // 驗證數據一致性
+      const validationResult = await dataSyncManager.validateDataConsistency(memberId);
+      
+      if (validationResult.isConsistent) {
+        toast.success('數據已同步，無需額外操作');
+        return;
+      }
+
+      // 準備當前編輯器數據
+      const currentData = {
+        info,
+        themeId,
+        blocks,
+        avatarUrl,
+        design: { buttonStyleId, bgStyle },
+        lastUpdated: new Date().toISOString(),
+        version: '2.0'
+      };
+
+      // 執行同步
+      const syncSuccess = await dataSyncManager.syncEditorToDisplay(memberId, currentData);
+      
+      if (syncSuccess) {
+        // 更新本地同步資料
+        updateSyncData(currentData);
+        await saveSyncData();
+        
+        toast.success('數據同步完成');
+        
+        // 重新檢查一致性
+        setTimeout(async () => {
+          await runConsistencyCheck();
+        }, 1000);
+      } else {
+        toast.error('數據同步失敗');
+      }
+    } catch (error) {
+      console.error('數據同步錯誤:', error);
+      toast.error(`同步失敗: ${error.message}`);
+    }
+  }, [user, info, themeId, blocks, avatarUrl, buttonStyleId, bgStyle, updateSyncData, saveSyncData, runConsistencyCheck]);
+
   // 數據一致性檢查功能
   const runConsistencyCheck = useCallback(async () => {
     try {
@@ -456,7 +517,8 @@ export default function CardStudioPro() {
       };
 
       // 檢查數據完整性
-      const integrityReport = dataConsistencyChecker.checkDataIntegrity(currentData);
+      const checker = new DataConsistencyChecker();
+      const integrityReport = checker.checkDataIntegrity(currentData);
       
       // 如果有同步路徑，比較本地和遠端數據
       let comparisonReport = null;
@@ -464,7 +526,7 @@ export default function CardStudioPro() {
         try {
           const remoteData = await dbGet(syncPath);
           if (remoteData) {
-            comparisonReport = dataConsistencyChecker.compareDataSources(currentData, remoteData);
+            comparisonReport = checker.compareDataSources(currentData, remoteData);
           }
         } catch (error) {
           console.warn('無法獲取遠端數據進行比較:', error);
@@ -755,8 +817,27 @@ export default function CardStudioPro() {
         setAvatarUrl(avatar);
       }
       
-      // 使用新的同步機制保存：先更新本地同步資料，再完整儲存
-      updateSyncData({ avatarUrl: avatar });
+      // 準備完整的同步數據
+      const completeData = {
+        info,
+        themeId,
+        blocks,
+        avatarUrl: avatar,
+        design: { buttonStyleId, bgStyle },
+        lastUpdated: new Date().toISOString(),
+        version: '2.0'
+      };
+      
+      // 使用數據同步管理器確保一致性
+      const memberId = user?.memberId || user?.id || user?.user_id || user?.uid;
+      const syncSuccess = await dataSyncManager.syncEditorToDisplay(memberId, completeData);
+      
+      if (!syncSuccess) {
+        throw new Error('數據同步失敗');
+      }
+      
+      // 更新本地同步資料
+      updateSyncData(completeData);
       await saveSyncData();
       
       // 同步到後端 API
@@ -769,10 +850,10 @@ export default function CardStudioPro() {
       });
       
       setAvatarFile(null);
-      toast.success('已儲存');
+      toast.success('已儲存並同步');
     } catch (err) {
       console.error('Save error:', err);
-      toast.error('儲存失敗');
+      toast.error(`儲存失敗: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -826,6 +907,12 @@ export default function CardStudioPro() {
               className="px-3 py-1.5 text-sm bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
             >
               檢查數據一致性
+            </button>
+            <button
+              onClick={runDataSync}
+              className="px-3 py-1.5 text-sm bg-green-600/80 hover:bg-green-600 text-white rounded-lg transition-colors"
+            >
+              同步數據
             </button>
             {consistencyReport && (
               <button
