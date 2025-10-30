@@ -571,91 +571,36 @@ const MemberCard = () => {
     if (!cardData?.ui_show_contacts || !cardData?.contact_info) return null;
 
     const info = cardData.contact_info;
-    const contacts = [];
+    const buttons = [];
 
     if (info.phone) {
-      contacts.push({
-        icon: <PhoneIcon className="h-5 w-5" />,
-        label: '電話',
-        value: info.phone,
-        href: `tel:${info.phone}`
-      });
+      buttons.push({ key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-8 w-8" />, title: '電話' });
     }
-
     if (info.email) {
-      contacts.push({
-        icon: <EnvelopeIcon className="h-5 w-5" />,
-        label: '電子郵件',
-        value: info.email,
-        href: `mailto:${info.email}`
-      });
+      buttons.push({ key: 'email', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-8 w-8" />, title: '電子郵件' });
     }
-
-    if (info.website) {
-      contacts.push({
-        icon: <GlobeAltIcon className="h-5 w-5" />,
-        label: '網站',
-        value: info.website,
-        href: info.website.startsWith('http') ? info.website : `https://${info.website}`
-      });
-    }
-
     if (info.line_id) {
-      contacts.push({
-        icon: <FaLine className="h-5 w-5" />,
-        label: 'LINE ID',
-        value: info.line_id,
-        href: `https://line.me/ti/p/~${info.line_id}`
-      });
+      buttons.push({ key: 'line', href: `https://line.me/ti/p/~${info.line_id}`, icon: <FaLine className="h-8 w-8" />, title: 'LINE' });
     }
 
-    if (info.company) {
-      contacts.push({
-        icon: <BuildingOfficeIcon className="h-5 w-5" />,
-        label: '公司',
-        value: info.company,
-        href: null
-      });
-    }
-
-    if (info.address) {
-      contacts.push({
-        icon: <MapPinIcon className="h-5 w-5" />,
-        label: '地址',
-        value: info.address,
-        href: `https://maps.google.com/?q=${encodeURIComponent(info.address)}`
-      });
-    }
-
-    if (contacts.length === 0) return null;
+    if (buttons.length === 0) return null;
 
     return (
       <div className="content-block">
         <h3 className="block-title">聯絡資訊</h3>
-        <div className="grid grid-cols-1 gap-3">
-          {contacts.map((contact, index) => (
-            <div key={index} className="flex items-center gap-3">
-              <div className="text-gold-400 flex-shrink-0">
-                {contact.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-gold-300 mb-1">{contact.label}</div>
-                {contact.href ? (
-                  <a
-                    href={contact.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gold-100 hover:text-gold-200 transition-colors break-all"
-                    onClick={() => trackEvent('contact_click', { contentType: contact.label, contentId: contact.value })}
-                  >
-                    {contact.value}
-                    <ArrowTopRightOnSquareIcon className="h-3 w-3 inline ml-1" />
-                  </a>
-                ) : (
-                  <span className="text-gold-100 break-all">{contact.value}</span>
-                )}
-              </div>
-            </div>
+        <div className="flex justify-center items-center gap-[20px]">
+          {buttons.map((btn) => (
+            <a
+              key={btn.key}
+              href={btn.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={btn.title}
+              className="transition-transform active:scale-90"
+              onClick={() => trackEvent('contact_click', { contentType: btn.key })}
+            >
+              {btn.icon}
+            </a>
           ))}
         </div>
       </div>
@@ -1165,15 +1110,15 @@ const MemberCard = () => {
                 )}
               </div>
               {(cardData?.ui_show_name || cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
-                <div className="mx-auto text-center text-white mb-6" style={{ maxWidth: '420px' }}>
+                <div className="mx-auto text-center text-white mt-[15px] mb-6" style={{ maxWidth: '420px' }}>
                   {cardData?.ui_show_name && (
-                    <h1 className="text-3xl font-bold mb-2">{cardData?.user_name || '—'}</h1>
+                    <h1 className="text-base font-semibold mb-1">{cardData?.user_name || '—'}</h1>
                   )}
                   {(cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
-                    <div className="text-xl text-white/90 font-medium">
+                    <div className="text-sm text-white/90">
                       {cardData?.user_title || ''}
                       {(cardData?.ui_show_company && cardData?.user_company) && (
-                        <div className="text-lg text-white/80 mt-1">@ {cardData?.user_company}</div>
+                        <div className="text-base text-white/80 mt-1">@ {cardData?.user_company}</div>
                       )}
                     </div>
                   )}
@@ -1181,30 +1126,7 @@ const MemberCard = () => {
               )}
             </div>
 
-            {/* 底部分享區（僅ICON） */}
-            <div className="px-3 mt-4">
-              <motion.div
-                className="flex justify-center items-center gap-6"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-              >
-                <button
-                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
-                  title="分享名片"
-                  onClick={handleShare}
-                >
-                  <ShareIcon className="h-7 w-7 text-white" />
-                </button>
-                <button
-                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
-                  title="QR Code"
-                  onClick={openQrModal}
-                >
-                  <QrCodeIcon className="h-7 w-7 text-white" />
-                </button>
-              </motion.div>
-            </div>
+            {/* 分享 / QR 移至頁面最底部，於此不再顯示 */}
 
             {/* 版型渲染：四宮格 / 滿版滑動 / 標準 */}
             {layoutType === 'four_grid' ? (
@@ -1234,6 +1156,31 @@ const MemberCard = () => {
                 displayBlocks={getDisplayBlocks()}
               />
             )}
+
+            {/* 頁面底部：分享與 QR Code 功能（居中，間距 40px） */}
+            <div className="px-3 mt-6">
+              <motion.div
+                className="flex justify-center items-center gap-[40px]"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+              >
+                <button
+                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-transform duration-200 active:scale-90 backdrop-blur-sm border border-white/10"
+                  title="分享名片"
+                  onClick={handleShare}
+                >
+                  <ShareIcon className="h-7 w-7 text-white" />
+                </button>
+                <button
+                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-transform duration-200 active:scale-90 backdrop-blur-sm border border-white/10"
+                  title="QR Code"
+                  onClick={openQrModal}
+                >
+                  <QrCodeIcon className="h-7 w-7 text-white" />
+                </button>
+              </motion.div>
+            </div>
       </div>
     </div>
       </div>
@@ -1348,16 +1295,20 @@ const MemberCard = () => {
         )}
       </AnimatePresence>
 
-      {/* QR Code 彈窗 */}
+      {/* QR Code 模態：300x300，居中，半透明遮罩 */}
       {showQrModal && (
-        <div className="qr-overlay" onClick={() => setShowQrModal(false)}>
-          <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>掃描 QR Code 分享名片</h3>
-            <div className="qr-code-container">
-              <QRCodeSVG value={shareShortUrl || `${window.location.origin}/member-card/${memberId}?v=${(new URLSearchParams(window.location.search).get('v')) || Date.now()}`} size={200} />
-            </div>
-            <p>可長按儲存或直接掃描</p>
-            <button className="close-qr-btn" onClick={() => setShowQrModal(false)}>關閉</button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]" onClick={() => setShowQrModal(false)}>
+          <div className="w-[300px] h-[300px] bg-white rounded-xl shadow-lg p-4 flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <QRCodeSVG
+              value={shareShortUrl || `${window.location.origin}/member-card/${memberId}?v=${(new URLSearchParams(window.location.search).get('v')) || Date.now()}`}
+              size={260}
+            />
+            <button
+              className="mt-3 px-3 py-1 rounded-md bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+              onClick={() => setShowQrModal(false)}
+            >
+              關閉
+            </button>
           </div>
         </div>
       )}
