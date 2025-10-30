@@ -101,40 +101,72 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const previewCanvas = previewCanvasRef.current;
+    const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
     const img = new Image();
 
     img.onload = () => {
       // 設置畫布大小
       canvas.width = 400;
       canvas.height = 400;
+      if (previewCanvas) {
+        previewCanvas.width = 256;
+        previewCanvas.height = 256;
+      }
 
       // 清除畫布
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (previewCtx && previewCanvas) {
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      }
 
       // 繪製背景（如果不是透明背景）
       if (backgroundType !== 'transparent') {
         if (backgroundType === 'white') {
           ctx.fillStyle = '#ffffff';
+          if (previewCtx) previewCtx.fillStyle = '#ffffff';
         } else if (backgroundType === 'custom') {
           ctx.fillStyle = customBackground;
+          if (previewCtx) previewCtx.fillStyle = customBackground;
         } else if (backgroundType.startsWith('gradient')) {
           let gradient;
           if (backgroundType === 'gradient1') {
             gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
             gradient.addColorStop(0, '#60a5fa');
             gradient.addColorStop(1, '#a855f7');
+            if (previewCtx && previewCanvas) {
+              const g2 = previewCtx.createLinearGradient(0, 0, previewCanvas.width, previewCanvas.height);
+              g2.addColorStop(0, '#60a5fa');
+              g2.addColorStop(1, '#a855f7');
+              previewCtx.fillStyle = g2;
+            }
           } else if (backgroundType === 'gradient2') {
             gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
             gradient.addColorStop(0, '#f472b6');
             gradient.addColorStop(1, '#ef4444');
+            if (previewCtx && previewCanvas) {
+              const g2 = previewCtx.createLinearGradient(0, 0, previewCanvas.width, previewCanvas.height);
+              g2.addColorStop(0, '#f472b6');
+              g2.addColorStop(1, '#ef4444');
+              previewCtx.fillStyle = g2;
+            }
           } else if (backgroundType === 'gradient3') {
             gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
             gradient.addColorStop(0, '#4ade80');
             gradient.addColorStop(1, '#2563eb');
+            if (previewCtx && previewCanvas) {
+              const g2 = previewCtx.createLinearGradient(0, 0, previewCanvas.width, previewCanvas.height);
+              g2.addColorStop(0, '#4ade80');
+              g2.addColorStop(1, '#2563eb');
+              previewCtx.fillStyle = g2;
+            }
           }
           ctx.fillStyle = gradient;
         }
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (previewCtx && previewCanvas) {
+          previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+        }
       }
 
       // 根據顯示模式處理圖片
@@ -156,6 +188,23 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
         
         ctx.drawImage(img, x, y, size, size);
         ctx.restore();
+
+        if (previewCtx && previewCanvas) {
+          const pCenterX = previewCanvas.width / 2;
+          const pCenterY = previewCanvas.height / 2;
+          const pRadius = Math.min(previewCanvas.width, previewCanvas.height) / 2 - 6;
+
+          previewCtx.save();
+          previewCtx.beginPath();
+          previewCtx.arc(pCenterX, pCenterY, pRadius, 0, 2 * Math.PI);
+          previewCtx.clip();
+
+          const pSize = pRadius * 2 * scale;
+          const px = pCenterX - pSize / 2 + cropPosition.x;
+          const py = pCenterY - pSize / 2 + cropPosition.y;
+          previewCtx.drawImage(img, px, py, pSize, pSize);
+          previewCtx.restore();
+        }
       } else {
         // 原始尺寸模式
         const scaledWidth = img.width * scale;
@@ -164,6 +213,14 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
         const y = (canvas.height - scaledHeight) / 2 + cropPosition.y;
         
         ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+
+        if (previewCtx && previewCanvas) {
+          const pScaledWidth = img.width * scale * (previewCanvas.width / canvas.width);
+          const pScaledHeight = img.height * scale * (previewCanvas.height / canvas.height);
+          const px = (previewCanvas.width - pScaledWidth) / 2 + cropPosition.x;
+          const py = (previewCanvas.height - pScaledHeight) / 2 + cropPosition.y;
+          previewCtx.drawImage(img, px, py, pScaledWidth, pScaledHeight);
+        }
       }
 
       // 轉換為 blob 並通知父組件
@@ -258,20 +315,23 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
               顯示模式
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {displayModeOptions.map((mode) => (
-                <button
-                  key={mode.id}
-                  onClick={() => setDisplayMode(mode.id)}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    displayMode === mode.id
-                      ? 'border-primary-500 bg-primary-50 text-primary-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium text-sm">{mode.label}</div>
-                  <div className="text-xs text-gray-500 mt-1">{mode.description}</div>
-                </button>
-              ))}
+              {displayModeOptions.map((mode) => {
+                const selected = displayMode === mode.id;
+                return (
+                  <button
+                    key={mode.id}
+                    onClick={() => setDisplayMode(mode.id)}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      selected
+                        ? 'border-primary-500 bg-primary-50 text-gray-900'
+                        : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                    }`}
+                  >
+                    <div className={`font-medium text-sm ${selected ? 'text-gray-900' : ''}`}>{mode.label}</div>
+                    <div className={`text-xs mt-1 ${selected ? 'text-gray-700' : 'text-gray-500'}`}>{mode.description}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -377,20 +437,23 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
               背景樣式
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {backgroundOptions.map((option) => (
-                <button
-                  key={option.type}
-                  onClick={() => setBackgroundType(option.type)}
-                  className={`p-2 rounded-lg border text-xs transition-all ${
-                    backgroundType === option.type
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className={`w-full h-8 rounded mb-1 ${option.preview}`}></div>
-                  {option.label}
-                </button>
-              ))}
+              {backgroundOptions.map((option) => {
+                const selected = backgroundType === option.type;
+                return (
+                  <button
+                    key={option.type}
+                    onClick={() => setBackgroundType(option.type)}
+                    className={`p-2 rounded-lg border text-xs transition-all ${
+                      selected
+                        ? 'border-primary-500 bg-primary-50 text-gray-900'
+                        : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                    }`}
+                  >
+                    <div className={`w-full h-8 rounded mb-1 ${option.preview}`}></div>
+                    <span className={`${selected ? 'font-medium' : ''}`}>{option.label}</span>
+                  </button>
+                );
+              })}
             </div>
             
             {/* 自定義顏色選擇器 */}

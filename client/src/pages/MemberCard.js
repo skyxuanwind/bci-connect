@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import {
   ShareIcon,
-  PhotoIcon,
+  QrCodeIcon,
   XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -23,8 +23,7 @@ import {
   BuildingOfficeIcon,
   MapPinIcon,
   LinkIcon,
-  GlobeAltIcon,
-  Cog6ToothIcon
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
 import {
   FaLinkedin,
@@ -1148,67 +1147,60 @@ const MemberCard = () => {
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className={`nfc-card-preview nfc-card-base premium-card ${templateClass}`}>
           <div className="card-content">
-            {/* 頂部：頭像 + 基本資訊（新版樣式） */}
-            <div className="personal-info-section">
-              <div className="avatar-container">
+            {/* 頂部：大頭像＋姓名職稱（居中顯示） */}
+            <div className="personal-info-section text-center" style={{ display: 'block' }}>
+              <div className="w-40 h-40 mx-auto mb-6 overflow-hidden bg-transparent">
                 {cardData?.ui_show_avatar && cardData?.avatar_url ? (
                   <img
                     src={cardData?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
                     alt="頭像"
-                    className="user-avatar"
+                    className="w-full h-full object-contain"
+                    style={{ borderRadius: '20px', filter: 'drop-shadow(0 10px 25px rgba(0,0,0,0.3))' }}
                   />
                 ) : (
-                  <div className="avatar-placeholder">
+                  <div className="w-full h-full flex items-center justify-center bg-gray-200/20 rounded-3xl">
                     {(cardData?.user_name || 'N').slice(0,1).toUpperCase()}
                   </div>
                 )}
               </div>
-              <div className="user-info">
-                {(cardData?.ui_show_name || cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
-                  <div className="name-title-row">
-                    {cardData?.ui_show_name && (
-                      <span className="user-name">{cardData?.user_name || '—'}</span>
-                    )}
-                    {cardData?.user_title && (
-                      <span className="user-position">{cardData?.user_title}</span>
-                    )}
-                    {(cardData?.ui_show_company && cardData?.user_company) && (
-                      <span className="user-company">@ {cardData?.user_company}</span>
-                    )}
-                  </div>
-                )}
-              </div>
+              {(cardData?.ui_show_name || cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
+                <div className="text-center text-white mb-6">
+                  {cardData?.ui_show_name && (
+                    <h1 className="text-3xl font-bold mb-2">{cardData?.user_name || '—'}</h1>
+                  )}
+                  {(cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
+                    <div className="text-xl text-white/90 font-medium">
+                      {cardData?.user_title || ''}
+                      {(cardData?.ui_show_company && cardData?.user_company) && (
+                        <div className="text-lg text-white/80 mt-1">@ {cardData?.user_company}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* 操作按鈕列 */}
-            <div className="px-3">
+            {/* 底部分享區（僅ICON） */}
+            <div className="px-3 mt-4">
               <motion.div
-                className="action-buttons"
+                className="flex justify-center items-center gap-6"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, ease: 'easeOut' }}
               >
                 <button
-                  className="action-btn share-btn"
+                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
+                  title="分享名片"
                   onClick={handleShare}
                 >
-                  <ShareIcon className="h-5 w-5" />
-                  分享名片
-                </button>
-                {/* 移除下載聯絡人按鈕 */}
-                <button
-                  className="action-btn customize-btn"
-                  onClick={() => navigate('/nfc-card-editor')}
-                >
-                  <Cog6ToothIcon className="h-5 w-5" />
-                  自定義板塊
+                  <ShareIcon className="h-7 w-7 text-white" />
                 </button>
                 <button
-                  className="action-btn bookmark-btn"
+                  className="flex items-center justify-center w-14 h-14 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/10"
+                  title="QR Code"
                   onClick={openQrModal}
                 >
-                  <PhotoIcon className="h-5 w-5" />
-                  顯示 QR Code
+                  <QrCodeIcon className="h-7 w-7 text-white" />
                 </button>
               </motion.div>
             </div>

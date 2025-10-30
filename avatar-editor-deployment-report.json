@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-10-30T13:57:46.882Z",
+  "deploymentStatus": "partial",
+  "endpoints": {
+    "/": {
+      "status": "success",
+      "statusCode": 200,
+      "responseTime": 1761832667202,
+      "contentLength": 1277,
+      "hasNewFeatures": false,
+      "detectedFeatures": []
+    },
+    "/card-studio": {
+      "status": "success",
+      "statusCode": 200,
+      "responseTime": 1761832667562,
+      "contentLength": 1277,
+      "hasNewFeatures": false,
+      "detectedFeatures": []
+    },
+    "/member-card/1": {
+      "status": "success",
+      "statusCode": 200,
+      "responseTime": 1761832667727,
+      "contentLength": 1277,
+      "hasNewFeatures": false,
+      "detectedFeatures": []
+    }
+  },
+  "newFeatures": {
+    "detected": [],
+    "missing": [
+      "AvatarEditor",
+      "SparklesIcon",
+      "displayMode",
+      "removeBackground",
+      "backgroundRemovalPrecision",
+      "cropPosition",
+      "displayModeOptions",
+      "智能去背",
+      "顯示模式",
+      "圓形裁剪",
+      "原始尺寸"
+    ]
+  },
+  "summary": {
+    "totalEndpoints": 3,
+    "successfulEndpoints": 3,
+    "failedEndpoints": 0,
+    "newFeaturesDetected": 0
+  }
+}
