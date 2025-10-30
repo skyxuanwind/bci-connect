@@ -579,28 +579,25 @@ const PublicNFCCard = () => {
                borderRadius: cssConfig.borderRadius || '16px',
                boxShadow: cssConfig.cardShadow || '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
              }}>
-          <div className="p-8 text-center">
-            {/* 頭像 - 大人物效果，保持原始尺寸 */}
-            <div className="w-40 h-40 mx-auto mb-6 overflow-hidden bg-transparent">
+          <div className="p-8">
+            {/* 頭像 - 大尺寸完整顯示（原始比例），移除固定方框與裁切 */}
+            <div className="mx-auto mb-4" style={{ maxWidth: '420px' }}>
               {member.profile_picture_url ? (
                 <img 
                   src={member.profile_picture_url} 
                   alt={member.name}
-                  className="w-full h-full object-contain"
-                  style={{ 
-                    borderRadius: '20px',
-                    filter: 'drop-shadow(0 10px 25px rgba(0, 0, 0, 0.3))'
-                  }}
+                  className="w-full h-auto object-contain"
+                  style={{ display: 'block' }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-200/20 rounded-3xl">
+                <div className="w-full min-h-[160px] flex items-center justify-center bg-gray-200/20">
                   <UserIcon className="h-20 w-20 text-white/60" />
                 </div>
               )}
             </div>
             
-            {/* 基本信息：姓名＋職稱統一排列在頭像下方 */}
-            <div className="text-center text-white mb-6">
+            {/* 基本信息：姓名＋職稱統一排列在頭像下方，與頭像寬度對齊 */}
+            <div className="mx-auto text-center text-white mb-6" style={{ maxWidth: '420px' }}>
               <h1 className="text-3xl font-bold mb-2">
                 {cardConfig?.card_title || member.name}
               </h1>

@@ -19,15 +19,14 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
   const previewCanvasRef = useRef(null);
 
   const sizeClasses = {
-    small: 'w-16 h-16',
-    medium: 'w-24 h-24',
-    large: 'w-32 h-32'
+    small: 'w-full max-w-[96px]',
+    medium: 'w-full max-w-[128px]',
+    large: 'w-full max-w-[256px]'
   };
 
   // 顯示模式選項
   const displayModeOptions = [
-    { id: 'original', label: '原始尺寸', description: '保持圖片原始比例' },
-    { id: 'circular', label: '圓形裁剪', description: '裁剪為圓形頭像' }
+    { id: 'original', label: '原始尺寸', description: '保持圖片原始比例與完整顯示' }
   ];
 
   // 背景選項
@@ -106,12 +105,24 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
     const img = new Image();
 
     img.onload = () => {
-      // 設置畫布大小
-      canvas.width = 400;
-      canvas.height = 400;
+      // 依圖片原始比例設定畫布大小（不裁切）
+      const maxCanvasDim = 1024; // 性能考量的最大邊長
+      const imgMax = Math.max(img.width, img.height);
+      const baseScale = imgMax > maxCanvasDim ? (maxCanvasDim / imgMax) : 1;
+      const finalScale = Math.max(0.5, Math.min(3, scale)) * baseScale; // 保留縮放但不裁切
+
+      const destWidth = Math.round(img.width * finalScale);
+      const destHeight = Math.round(img.height * finalScale);
+
+      canvas.width = destWidth;
+      canvas.height = destHeight;
+
       if (previewCanvas) {
-        previewCanvas.width = 256;
-        previewCanvas.height = 256;
+        const previewMax = 256; // UI 預覽最大邊長
+        const canvasMax = Math.max(canvas.width, canvas.height);
+        const previewScale = canvasMax > previewMax ? (previewMax / canvasMax) : 1;
+        previewCanvas.width = Math.round(canvas.width * previewScale);
+        previewCanvas.height = Math.round(canvas.height * previewScale);
       }
 
       // 清除畫布
@@ -182,9 +193,9 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
         ctx.clip();
         
         // 計算圖片尺寸和位置
-        const size = radius * 2 * scale;
-        const x = centerX - size / 2 + cropPosition.x;
-        const y = centerY - size / 2 + cropPosition.y;
+        const size = radius * 2; // 保持完整顯示，取消基於 scale 的裁切
+        const x = centerX - size / 2;
+        const y = centerY - size / 2;
         
         ctx.drawImage(img, x, y, size, size);
         ctx.restore();
@@ -199,27 +210,20 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
           previewCtx.arc(pCenterX, pCenterY, pRadius, 0, 2 * Math.PI);
           previewCtx.clip();
 
-          const pSize = pRadius * 2 * scale;
-          const px = pCenterX - pSize / 2 + cropPosition.x;
-          const py = pCenterY - pSize / 2 + cropPosition.y;
+          const pSize = pRadius * 2;
+          const px = pCenterX - pSize / 2;
+          const py = pCenterY - pSize / 2;
           previewCtx.drawImage(img, px, py, pSize, pSize);
           previewCtx.restore();
         }
       } else {
-        // 原始尺寸模式
-        const scaledWidth = img.width * scale;
-        const scaledHeight = img.height * scale;
-        const x = (canvas.width - scaledWidth) / 2 + cropPosition.x;
-        const y = (canvas.height - scaledHeight) / 2 + cropPosition.y;
-        
-        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+        // 原始尺寸模式：完整顯示（contain），畫布與圖片等比
+        ctx.drawImage(img, 0, 0, destWidth, destHeight);
 
         if (previewCtx && previewCanvas) {
-          const pScaledWidth = img.width * scale * (previewCanvas.width / canvas.width);
-          const pScaledHeight = img.height * scale * (previewCanvas.height / canvas.height);
-          const px = (previewCanvas.width - pScaledWidth) / 2 + cropPosition.x;
-          const py = (previewCanvas.height - pScaledHeight) / 2 + cropPosition.y;
-          previewCtx.drawImage(img, px, py, pScaledWidth, pScaledHeight);
+          const pScaledWidth = Math.round(destWidth * (previewCanvas.width / canvas.width));
+          const pScaledHeight = Math.round(destHeight * (previewCanvas.height / canvas.height));
+          previewCtx.drawImage(img, 0, 0, pScaledWidth, pScaledHeight);
         }
       }
 
@@ -268,10 +272,10 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      {/* 頭像預覽 */}
+      {/* 頭像預覽（維持原始比例，不裁切） */}
       <div className="relative">
         <div 
-          className={`${sizeClasses[size]} border-2 border-gray-300 border-dashed flex items-center justify-center cursor-pointer hover:border-primary-500 transition-colors duration-200 overflow-hidden bg-gray-50`}
+          className={`${sizeClasses[size]} border-2 border-gray-300 border-dashed flex items-center justify-center cursor-pointer hover:border-primary-500 transition-colors duration-200 bg-gray-50`}
           onClick={handleClick}
           style={{ borderRadius: displayMode === 'circular' ? '50%' : '12px' }}
         >
@@ -279,7 +283,7 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
             <img
               src={processedImage}
               alt="頭像預覽"
-              className="w-full h-full object-cover"
+              className="w-full h-auto object-contain"
               style={{ borderRadius: displayMode === 'circular' ? '50%' : '10px' }}
             />
           ) : (
@@ -469,15 +473,15 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
             )}
           </div>
 
-          {/* 實時預覽 */}
+          {/* 實時預覽（等比縮放） */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               實時預覽
             </label>
-            <div className="w-32 h-32 mx-auto border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+            <div className="w-full max-w-[256px] mx-auto border border-gray-300 rounded-lg bg-gray-50">
               <canvas 
                 ref={previewCanvasRef} 
-                className="w-full h-full object-cover"
+                className="w-full h-auto object-contain"
                 style={{ borderRadius: displayMode === 'circular' ? '50%' : '6px' }}
               />
             </div>

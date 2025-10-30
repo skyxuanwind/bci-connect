@@ -1147,24 +1147,25 @@ const MemberCard = () => {
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className={`nfc-card-preview nfc-card-base premium-card ${templateClass}`}>
           <div className="card-content">
-            {/* 頂部：大頭像＋姓名職稱（居中顯示） */}
-            <div className="personal-info-section text-center" style={{ display: 'block' }}>
-              <div className="w-40 h-40 mx-auto mb-6 overflow-hidden bg-transparent">
+            {/* 頂部：大尺寸完整頭像（原始比例）＋姓名職稱（與頭像寬度對齊） */}
+            <div className="personal-info-section" style={{ display: 'block' }}>
+              {/* 統一寬度容器，讓文字與頭像寬度對齊，移除任何裁切框 */}
+              <div className="mx-auto mb-4" style={{ maxWidth: '420px' }}>
                 {cardData?.ui_show_avatar && cardData?.avatar_url ? (
                   <img
                     src={cardData?.avatar_url || '/nfc-templates/avatar-placeholder.png'}
                     alt="頭像"
-                    className="w-full h-full object-contain"
-                    style={{ borderRadius: '20px', filter: 'drop-shadow(0 10px 25px rgba(0,0,0,0.3))' }}
+                    className="w-full h-auto object-contain"
+                    style={{ display: 'block' }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200/20 rounded-3xl">
+                  <div className="w-full min-h-[160px] flex items-center justify-center bg-gray-200/20">
                     {(cardData?.user_name || 'N').slice(0,1).toUpperCase()}
                   </div>
                 )}
               </div>
               {(cardData?.ui_show_name || cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
-                <div className="text-center text-white mb-6">
+                <div className="mx-auto text-center text-white mb-6" style={{ maxWidth: '420px' }}>
                   {cardData?.ui_show_name && (
                     <h1 className="text-3xl font-bold mb-2">{cardData?.user_name || '—'}</h1>
                   )}
