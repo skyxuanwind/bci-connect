@@ -18,6 +18,14 @@ export const mapTemplateNameToClass = (name) => {
     '黑金質感・商務尊榮風': 'template-black-gold-prestige',
     '質感黑金版': 'template-black-gold-prestige',
 
+    // 新增的六種模板樣式
+    'black-gold-prestige': 'template-black-gold-prestige',
+    'handdrawn-cute': 'template-handdrawn-cute', 
+    'glassmorphism': 'template-glassmorphism',
+    'creative-brand': 'template-creative-brand',
+    'professional-business': 'template-professional-business',
+    'dynamic-interactive': 'template-dynamic-interactive',
+
     // 行業模板
     'photographer': 'template-photographer',
     '攝影師': 'template-photographer',

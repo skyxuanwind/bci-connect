@@ -19,8 +19,8 @@
   position: relative;
   color: var(--text-primary, #1F2937);
   /* 依模板切換之個人公司色塊與描述文字顏色變數 */
-  --pill-bg: linear-gradient(135deg, #667eea, #764ba2);
-  --pill-text: #ffffff;
+  --pill-bg: transparent;
+  --pill-text: inherit;
   --pill-border: transparent;
   --desc-color: var(--text-secondary, #4B5563);
 }
@@ -1738,3 +1738,432 @@
 .template-black-gold-prestige .btn-primary { background: linear-gradient(135deg,#0b0b0b,#121212); color:#D4AF37; border:1px solid rgba(212,175,55,0.45); box-shadow:0 6px 18px rgba(212,175,55,0.25); text-transform:uppercase; letter-spacing:0.06em; }
 .template-black-gold-prestige .btn-primary:hover { box-shadow:0 10px 28px rgba(212,175,55,0.35); }
 .template-black-gold-prestige .btn-secondary { background: rgba(212,175,55,0.08); color:#E5E7EB; border:1px solid rgba(212,175,55,0.3); }
+
+/* ==============================================
+   律師/法律專業模板
+   設計：專業、權威、信賴感
+   配色：深藍金色，象徵專業與權威
+   ============================================== */
+
+.template-legal {
+  --text-primary: #1F2937;
+  --text-secondary: #374151;
+  --accent: #1E40AF;
+  --gold-accent: #D4AF37;
+  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.template-legal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 15% 25%, rgba(30, 64, 175, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 85% 75%, rgba(212, 175, 55, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.template-legal .personal-info-section {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(30, 64, 175, 0.15);
+  backdrop-filter: blur(12px);
+}
+
+.template-legal .user-info {
+  background: rgba(30, 64, 175, 0.05);
+  border: 1px solid rgba(30, 64, 175, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+}
+
+.template-legal .user-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-shadow: none;
+  letter-spacing: 0.02em;
+}
+
+.template-legal .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-shadow: none;
+}
+
+.template-legal .user-company {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+  text-shadow: none;
+}
+
+.template-legal .content-block {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(30, 64, 175, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.template-legal .btn-primary {
+  background: linear-gradient(135deg, var(--accent), #1E3A8A);
+  color: white;
+  border: 1px solid rgba(30, 64, 175, 0.3);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+}
+
+.template-legal .btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(30, 64, 175, 0.35);
+  transform: translateY(-1px);
+}
+
+.template-legal .btn-secondary {
+  background: rgba(30, 64, 175, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(30, 64, 175, 0.25);
+}
+
+/* ==============================================
+   攝影師專業模板
+   設計：藝術感、創意、視覺衝擊
+   配色：黑白灰配金色點綴
+   ============================================== */
+
+.template-photographer {
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --accent: #F59E0B;
+  background: linear-gradient(135deg, #111827 0%, #374151 100%);
+  color: #F9FAFB;
+  position: relative;
+  overflow: hidden;
+}
+
+.template-photographer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.template-photographer .personal-info-section {
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.template-photographer .user-info {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+}
+
+.template-photographer .user-name {
+  color: #F9FAFB;
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.template-photographer .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-shadow: none;
+}
+
+.template-photographer .user-company {
+  color: #D1D5DB;
+  font-weight: 500;
+  font-size: 1rem;
+  text-shadow: none;
+}
+
+/* ==============================================
+   商店/零售模板
+   設計：溫馨、親和、商業感
+   配色：暖色調配綠色點綴
+   ============================================== */
+
+.template-store {
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --accent: #10B981;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.template-store .user-info {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.template-store .user-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.template-store .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.template-store .user-company {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* ==============================================
+   商務人士模板
+   設計：專業、簡潔、現代
+   配色：藍色系專業配色
+   ============================================== */
+
+.template-business {
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --accent: #3B82F6;
+  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+  color: var(--text-primary);
+}
+
+.template-business .user-info {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.template-business .user-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.template-business .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.template-business .user-company {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* ==============================================
+   設計師模板
+   設計：創意、現代、藝術感
+   配色：紫色漸層配粉色點綴
+   ============================================== */
+
+.template-designer {
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --accent: #8B5CF6;
+  background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%);
+  color: var(--text-primary);
+}
+
+.template-designer .user-info {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.template-designer .user-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.template-designer .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.template-designer .user-company {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* ==============================================
+   健身教練模板
+   設計：活力、運動、健康
+   配色：橙色配綠色，充滿活力
+   ============================================== */
+
+.template-fitness {
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --accent: #F97316;
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  color: var(--text-primary);
+}
+
+.template-fitness .user-info {
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.template-fitness .user-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.template-fitness .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.template-fitness .user-company {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* ==============================================
+   餐飲模板
+   設計：溫暖、美食、誘人
+   配色：暖紅色配金色點綴
+   ============================================== */
+
+.template-restaurant {
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --accent: #DC2626;
+  background: linear-gradient(135deg, #FEF2F2 0%, #FECACA 100%);
+  color: var(--text-primary);
+}
+
+.template-restaurant .user-info {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.template-restaurant .user-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.template-restaurant .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.template-restaurant .user-company {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* ==============================================
+   教育顧問模板
+   設計：知識、專業、信賴
+   配色：深綠色配藍色，象徵成長與智慧
+   ============================================== */
+
+.template-education {
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --accent: #059669;
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  color: var(--text-primary);
+}
+
+.template-education .user-info {
+  background: rgba(5, 150, 105, 0.08);
+  border: 1px solid rgba(5, 150, 105, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.template-education .user-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.template-education .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.template-education .user-company {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* ==============================================
+   音樂人模板
+   設計：藝術、創意、節奏感
+   配色：紫色漸層配粉色，充滿藝術感
+   ============================================== */
+
+.template-musician {
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --accent: #A855F7;
+  background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%);
+  color: var(--text-primary);
+}
+
+.template-musician .user-info {
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.template-musician .user-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.template-musician .user-position {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.template-musician .user-company {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+}
