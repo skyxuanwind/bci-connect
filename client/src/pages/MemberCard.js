@@ -573,6 +573,12 @@ const MemberCard = () => {
     const info = cardData.contact_info;
     const buttons = [];
 
+    // 從社群區塊補齊 Facebook / Instagram 連結
+    const socialBlock = Array.isArray(cardData?.blocks)
+      ? cardData.blocks.find(b => b?.content_type === 'social')
+      : null;
+    const social = socialBlock?.content_data || {};
+
     if (info.phone) {
       buttons.push({ key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-8 w-8" />, title: '電話' });
     }
@@ -581,6 +587,12 @@ const MemberCard = () => {
     }
     if (info.line_id) {
       buttons.push({ key: 'line', href: `https://line.me/ti/p/~${info.line_id}`, icon: <FaLine className="h-8 w-8" />, title: 'LINE' });
+    }
+    if (social.facebook) {
+      buttons.push({ key: 'facebook', href: social.facebook, icon: <FaFacebook className="h-8 w-8" />, title: 'Facebook' });
+    }
+    if (social.instagram) {
+      buttons.push({ key: 'instagram', href: social.instagram, icon: <FaInstagram className="h-8 w-8" />, title: 'Instagram' });
     }
 
     if (buttons.length === 0) return null;
@@ -596,7 +608,7 @@ const MemberCard = () => {
               target="_blank"
               rel="noopener noreferrer"
               title={btn.title}
-              className="transition-transform active:scale-90"
+              className="transition-transform active:scale-90 text-white hover:text-white/80"
               onClick={() => trackEvent('contact_click', { contentType: btn.key })}
             >
               {btn.icon}
@@ -1109,21 +1121,7 @@ const MemberCard = () => {
                   </div>
                 )}
               </div>
-              {(cardData?.ui_show_name || cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
-                <div className="mx-auto text-center text-white mt-[15px] mb-6" style={{ maxWidth: '420px' }}>
-                  {cardData?.ui_show_name && (
-                    <h1 className="text-base font-semibold mb-1">{cardData?.user_name || '—'}</h1>
-                  )}
-                  {(cardData?.user_title || (cardData?.ui_show_company && cardData?.user_company)) && (
-                    <div className="text-sm text-white/90">
-                      {cardData?.user_title || ''}
-                      {(cardData?.ui_show_company && cardData?.user_company) && (
-                        <div className="text-base text-white/80 mt-1">@ {cardData?.user_company}</div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* 移除頭像旁文字：姓名、職稱、公司完全不顯示 */}
             </div>
 
             {/* 分享 / QR 移至頁面最底部，於此不再顯示 */}

@@ -12,6 +12,8 @@ import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { SyncStatusToolbar } from '../components/SyncStatusIndicator';
 import dataSyncManager from '../utils/dataSyncManager';
 import DataConsistencyChecker from '../utils/dataConsistencyChecker';
+import { UserIcon, BuildingOfficeIcon, BriefcaseIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { FaFacebook, FaInstagram, FaTiktok, FaYoutube, FaLine } from 'react-icons/fa';
 // framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
@@ -82,6 +84,17 @@ const BG_PRESETS = [
 // 基本驗證
 const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v || '');
 const isE164 = (v) => /^\+\d{6,15}$/.test(v || '');
+// 台灣本地手機（10 位數字，09 開頭）驗證
+const isTWLocalMobile = (v) => {
+  const digits = String(v || '').replace(/\D/g, '');
+  return /^09\d{8}$/.test(digits);
+};
+// 轉換台灣本地手機為 E.164（+886xxxxxxxx）
+const toE164TW = (v) => {
+  const digits = String(v || '').replace(/\D/g, '');
+  if (!/^09\d{8}$/.test(digits)) return '';
+  return `+886${digits.slice(1)}`;
+};
 const isUrl = (v) => /^(https?:\/\/)[^\s]+$/i.test(v || '');
 const youTubeId = (url) => {
   try {
@@ -809,7 +822,7 @@ export default function CardStudioPro() {
 
   const validateInfo = () => {
     if (!info.name?.trim() || !info.title?.trim() || !info.company?.trim()) { toast.error('姓名、職稱、公司為必填'); return false; }
-    if (info.phone && !isE164(info.phone)) { toast.error('手機需為含國碼格式（例 +886912345678）'); return false; }
+    if (info.phone_local && !isTWLocalMobile(info.phone_local)) { toast.error('手機需為 09 開頭的 10 位數字'); return false; }
     if (info.email && !isEmail(info.email)) { toast.error('Email 格式不正確'); return false; }
     return true;
   };
@@ -827,8 +840,11 @@ export default function CardStudioPro() {
       }
       
       // 準備完整的同步數據
+      // 規整 info：將本地手機轉為 E.164
+      const normalizedPhone = info.phone_local ? toE164TW(info.phone_local) : (info.phone || '');
+      const infoNormalized = { ...info, phone: normalizedPhone };
       const completeData = {
-        info,
+        info: infoNormalized,
         themeId,
         blocks,
         avatarUrl: avatar,
@@ -1185,11 +1201,26 @@ function AdvancedInfoFields({ info, setInfo }) {
       aria-hidden={!expanded}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <label className="text-sm">LINE ID<input aria-label="LINE ID" value={info.line || ''} onChange={(e)=>setInfo({...info, line:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-        <label className="text-sm">Facebook 連結<input aria-label="Facebook" value={info.facebook || ''} onChange={(e)=>setInfo({...info, facebook:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-        <label className="text-sm">Instagram 連結<input aria-label="Instagram" value={info.instagram || ''} onChange={(e)=>setInfo({...info, instagram:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-        <label className="text-sm">TikTok 連結<input aria-label="TikTok" value={info.tiktok || ''} onChange={(e)=>setInfo({...info, tiktok:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-        <label className="text-sm">YouTube 連結<input aria-label="YouTube" value={info.youtube || ''} onChange={(e)=>setInfo({...info, youtube:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><FaLine className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> LINE ID</span>
+          <input aria-label="LINE ID" value={info.line || ''} onChange={(e)=>setInfo({...info, line:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" />
+        </label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><FaFacebook className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> Facebook 連結</span>
+          <input aria-label="Facebook" value={info.facebook || ''} onChange={(e)=>setInfo({...info, facebook:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" />
+        </label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><FaInstagram className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> Instagram 連結</span>
+          <input aria-label="Instagram" value={info.instagram || ''} onChange={(e)=>setInfo({...info, instagram:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" />
+        </label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><FaTiktok className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> TikTok 連結</span>
+          <input aria-label="TikTok" value={info.tiktok || ''} onChange={(e)=>setInfo({...info, tiktok:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" />
+        </label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><FaYoutube className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> YouTube 連結</span>
+          <input aria-label="YouTube" value={info.youtube || ''} onChange={(e)=>setInfo({...info, youtube:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" />
+        </label>
       </div>
     </div>
   );
@@ -1198,7 +1229,7 @@ function AdvancedInfoFields({ info, setInfo }) {
 // removed: duplicate hooks and helpers (already inside CardStudioPro)
 
 // 名片基本欄位：同步 InfoExpandToggle 的收合狀態（整體可收合）
-function MainInfoFields({ info, setInfo }) {
+  function MainInfoFields({ info, setInfo }) {
   const [expanded, setExpanded] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem('card_info_expanded') || 'false'); } catch { return false; }
   });
@@ -1216,11 +1247,39 @@ function MainInfoFields({ info, setInfo }) {
       aria-hidden={!expanded}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <label className="text-sm">姓名<input aria-label="姓名" value={info.name} onChange={(e)=>setInfo({...info, name:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-        <label className="text-sm">公司名稱<input aria-label="公司名稱" value={info.company} onChange={(e)=>setInfo({...info, company:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-        <label className="text-sm">職稱<input aria-label="職稱" value={info.title} onChange={(e)=>setInfo({...info, title:e.target.value})} className="mt-1 w-full border rounded p-2" required /></label>
-        <label className="text-sm">手機（含國碼）<input aria-label="手機" placeholder="+886912345678" value={info.phone} onChange={(e)=>setInfo({...info, phone:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-        <label className="text-sm">電子郵件<input aria-label="電子郵件" value={info.email} onChange={(e)=>setInfo({...info, email:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><UserIcon className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> 姓名</span>
+          <input aria-label="姓名" value={info.name} onChange={(e)=>setInfo({...info, name:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" required />
+        </label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><BuildingOfficeIcon className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> 公司名稱</span>
+          <input aria-label="公司名稱" value={info.company} onChange={(e)=>setInfo({...info, company:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" required />
+        </label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><BriefcaseIcon className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> 職稱</span>
+          <input aria-label="職稱" value={info.title} onChange={(e)=>setInfo({...info, title:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" required />
+        </label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><PhoneIcon className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> 手機</span>
+          <input
+            aria-label="手機"
+            placeholder="0912345678"
+            value={info.phone_local || ''}
+            onChange={(e)=>{
+              const digits = e.target.value.replace(/\D/g,'');
+              setInfo({ ...info, phone_local: digits });
+            }}
+            onBlur={() => {
+              const e164 = toE164TW(info.phone_local || '');
+              setInfo({ ...info, phone: e164 });
+            }}
+            className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors"
+          />
+        </label>
+        <label className="text-sm group">
+          <span className="flex items-center gap-2 text-white/80"><EnvelopeIcon className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" /> 電子郵件</span>
+          <input aria-label="電子郵件" value={info.email} onChange={(e)=>setInfo({...info, email:e.target.value})} className="mt-1 w-full border rounded p-2 hover:border-white/50 focus:border-white/70 transition-colors" />
+        </label>
       </div>
     </div>
   );
