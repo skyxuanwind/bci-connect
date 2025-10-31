@@ -391,7 +391,7 @@ export default function CardStudioPro() {
   // 從同步資料中提取狀態 - 使用 useMemo 避免不必要的重新計算
   const themeId = useMemo(() => syncData?.themeId || 'simple', [syncData?.themeId]);
   const blocks = useMemo(() => syncData?.blocks || [], [syncData?.blocks]);
-  const info = useMemo(() => syncData?.info || { name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', linkedin: '' }, [syncData?.info]);
+  const info = useMemo(() => syncData?.info || { name: '', title: '', company: '', phone: '', line: '', email: '', facebook: '', instagram: '', tiktok: '', youtube: '' }, [syncData?.info]);
   const avatarUrl = useMemo(() => syncData?.avatarUrl || '', [syncData?.avatarUrl]);
   const buttonStyleId = useMemo(() => syncData?.design?.buttonStyleId || 'solid-blue', [syncData?.design?.buttonStyleId]);
   const bgStyle = useMemo(() => syncData?.design?.bgStyle || '', [syncData?.design?.bgStyle]);
@@ -696,7 +696,7 @@ export default function CardStudioPro() {
         };
       case 'business':
         return {
-          info: { name: 'Alex Chen', title: '商務開發', company: 'GBC Connect', phone: '+886988888888', email: 'alex@gbc-connect.com', linkedin: 'https://linkedin.com/in/alex' },
+          info: { name: 'Alex Chen', title: '商務開發', company: 'GBC Connect', phone: '+886988888888', email: 'alex@gbc-connect.com', tiktok: 'https://www.tiktok.com/@alex' },
           blocks: [
             { id: 'x1', type: 'richtext', html: '<strong>經歷時間軸</strong><br/>2015-2018 業務專員<br/>2019-2022 事業部協理' },
             { id: 'x2', type: 'link', title: '公司網站', url: 'https://gbc-connect.com' },
@@ -1187,7 +1187,9 @@ function AdvancedInfoFields({ info, setInfo }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <label className="text-sm">LINE ID<input aria-label="LINE ID" value={info.line || ''} onChange={(e)=>setInfo({...info, line:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
         <label className="text-sm">Facebook 連結<input aria-label="Facebook" value={info.facebook || ''} onChange={(e)=>setInfo({...info, facebook:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
-        <label className="text-sm">LinkedIn 連結<input aria-label="LinkedIn" value={info.linkedin || ''} onChange={(e)=>setInfo({...info, linkedin:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+        <label className="text-sm">Instagram 連結<input aria-label="Instagram" value={info.instagram || ''} onChange={(e)=>setInfo({...info, instagram:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+        <label className="text-sm">TikTok 連結<input aria-label="TikTok" value={info.tiktok || ''} onChange={(e)=>setInfo({...info, tiktok:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
+        <label className="text-sm">YouTube 連結<input aria-label="YouTube" value={info.youtube || ''} onChange={(e)=>setInfo({...info, youtube:e.target.value})} className="mt-1 w-full border rounded p-2" /></label>
       </div>
     </div>
   );
