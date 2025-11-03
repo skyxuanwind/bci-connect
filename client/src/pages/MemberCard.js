@@ -575,6 +575,10 @@ const MemberCard = () => {
     const info = cardData.contact_info;
     const buttons = [];
 
+    const isValidHttpUrl = (v) => {
+      try { const u = new URL(v); return ['http:', 'https:'].includes(u.protocol); } catch { return false; }
+    };
+
     // 從社群區塊補齊 Facebook / Instagram 連結（修正：使用 content_blocks）
     const socialBlock = Array.isArray(cardData?.content_blocks)
       ? cardData.content_blocks.find(b => b?.content_type === 'social')
@@ -582,6 +586,8 @@ const MemberCard = () => {
     const social = socialBlock?.content_data || {};
     const facebookUrl = social.facebook || info.facebook || '';
     const instagramUrl = social.instagram || info.instagram || '';
+    const youtubeUrl = social.youtube || info.youtube || '';
+    const tiktokUrl = social.tiktok || info.tiktok || '';
 
     if (info.phone) {
       buttons.push({ key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-8 w-8" />, title: '電話' });
@@ -597,6 +603,12 @@ const MemberCard = () => {
     }
     if (instagramUrl) {
       buttons.push({ key: 'instagram', href: instagramUrl, icon: <FaInstagram className="h-8 w-8" />, title: 'Instagram' });
+    }
+    if (isValidHttpUrl(youtubeUrl)) {
+      buttons.push({ key: 'youtube', href: youtubeUrl, icon: <FaYoutube className="h-8 w-8" style={{ color: '#FF0000' }} />, title: 'YouTube' });
+    }
+    if (isValidHttpUrl(tiktokUrl)) {
+      buttons.push({ key: 'tiktok', href: tiktokUrl, icon: <FaTiktok className="h-8 w-8" style={{ color: '#000000' }} />, title: 'TikTok' });
     }
 
     if (buttons.length === 0) return null;
@@ -1125,6 +1137,27 @@ const MemberCard = () => {
                   </div>
                 )}
               </div>
+              {/* 使用者姓名與職業：置於頭像下方、聯絡資訊上方，保持一致間距比例 */}
+              {(cardData?.user_name || cardData?.user_title) && (
+                <div className="mx-auto text-center" style={{ maxWidth: '420px' }}>
+                  {cardData?.user_name && (
+                    <div
+                      className="text-white font-bold tracking-wide"
+                      style={{ fontSize: 'clamp(18px, 2.2vw, 20px)', marginTop: '12px' }}
+                    >
+                      {cardData.user_name}
+                    </div>
+                  )}
+                  {cardData?.user_title && (
+                    <div
+                      className="text-white/80"
+                      style={{ fontSize: 'clamp(14px, 1.8vw, 16px)', marginTop: '6px' }}
+                    >
+                      {cardData.user_title}
+                    </div>
+                  )}
+                </div>
+              )}
               {/* 移除頭像旁文字：姓名、職稱、公司完全不顯示 */}
             </div>
 
@@ -1182,21 +1215,7 @@ const MemberCard = () => {
                   <QrCodeIcon className="h-7 w-7 text-white" />
                 </button>
               </motion.div>
-              {/* 使用者姓名與職業（置底顯示） */}
-              {(cardData?.user_name || cardData?.user_title) && (
-                <div className="mt-5 text-center">
-                  {cardData?.user_name && (
-                    <div className="text-white text-xl font-bold tracking-wide">
-                      {cardData.user_name}
-                    </div>
-                  )}
-                  {cardData?.user_title && (
-                    <div className="text-white/80 text-sm mt-1">
-                      {cardData.user_title}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* 底部不再顯示姓名職稱，已移至頭像下方 */}
             </div>
       </div>
     </div>

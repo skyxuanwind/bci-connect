@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
@@ -113,9 +114,25 @@ const vimeoId = (url) => {
 
 const getButtonClass = (id) => (BUTTON_STYLES.find(s => s.id === id)?.className || BUTTON_STYLES[0].className);
 
-// 預覽卡片（套用按鈕樣式與背景預設）
+// 預覽卡片（與最終名片頁一致：頭像居中、姓名職稱在下方、聯絡資訊分區）
 const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle }) => {
   const colors = theme.colors;
+  const lineId = (info.line || '').trim();
+  const facebookUrl = (info.facebook || '').trim();
+  const instagramUrl = (info.instagram || '').trim();
+  const youtubeUrl = (info.youtube || '').trim();
+  const tiktokUrl = (info.tiktok || '').trim();
+
+  const socialButtons = [
+    info.phone ? { key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-7 w-7" />, title: '電話' } : null,
+    info.email ? { key: 'email', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-7 w-7" />, title: '電子郵件' } : null,
+    lineId ? { key: 'line', href: `https://line.me/ti/p/~${lineId}`, icon: <FaLine className="h-7 w-7" style={{ color: '#00B900' }} />, title: 'LINE' } : null,
+    isUrl(facebookUrl) ? { key: 'facebook', href: facebookUrl, icon: <FaFacebook className="h-7 w-7" style={{ color: '#1877F2' }} />, title: 'Facebook' } : null,
+    isUrl(instagramUrl) ? { key: 'instagram', href: instagramUrl, icon: <FaInstagram className="h-7 w-7" style={{ color: '#E4405F' }} />, title: 'Instagram' } : null,
+    isUrl(youtubeUrl) ? { key: 'youtube', href: youtubeUrl, icon: <FaYoutube className="h-7 w-7" style={{ color: '#FF0000' }} />, title: 'YouTube' } : null,
+    isUrl(tiktokUrl) ? { key: 'tiktok', href: tiktokUrl, icon: <FaTiktok className="h-7 w-7" style={{ color: '#000000' }} />, title: 'TikTok' } : null,
+  ].filter(Boolean);
+
   return (
     <div style={{ fontFamily: theme.font, minHeight: '100vh', background: colors.bg, backgroundImage: bgStyle || undefined }} className="p-4">
       <div className="max-w-md mx-auto">
@@ -124,41 +141,45 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
             <div className="text-sm opacity-80">預覽名片</div>
             <span className="text-xs opacity-70">Pro</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 overflow-hidden ring-2" style={{ borderColor: colors.accent, borderRadius: '12px' }}>
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="頭像" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-              ) : (
-                <div className="w-full h-full bg-black/20" />
-              )}
-            </div>
-            <div className="flex-1">
-              <div className="text-lg font-semibold leading-tight">{info.name || '姓名'}</div>
-              <div className="text-xs opacity-80">{info.title || '職稱'}</div>
-              <div className="text-xs opacity-70">{info.company || '公司名稱'}</div>
-              
-              {/* 聯絡方式 ICON 按鈕 */}
-              <div className="flex gap-2 mt-2">
-                {info.phone && (
-                  <a href={`tel:${info.phone}`} className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: colors.accent + '33' }}>
-                    <span className="text-xs">📞</span>
-                  </a>
-                )}
-                {info.email && (
-                  <a href={`mailto:${info.email}`} className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: colors.accent + '33' }}>
-                    <span className="text-xs">✉️</span>
-                  </a>
-                )}
-                {info.website && (
-                  <a href={info.website?.startsWith('http') ? info.website : `https://${info.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: colors.accent + '33' }}>
-                    <span className="text-xs">🌐</span>
-                  </a>
-                )}
+
+          {/* 頭像全寬置中顯示 */}
+          <div className="w-full mb-3">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="頭像" className="w-full h-auto object-contain rounded-xl ring-2" style={{ borderColor: colors.accent }} loading="lazy" decoding="async" />
+            ) : (
+              <div className="w-full min-h-[160px] flex items-center justify-center rounded-xl bg-black/20">
+                {(info.name || 'N').slice(0,1).toUpperCase()}
               </div>
-            </div>
+            )}
           </div>
 
-          <div className="mt-4 space-y-3">
+          {/* 使用者姓名與職業：置於頭像下方、聯絡資訊上方，保持一致間距比例 */}
+          {(info.name || info.title) && (
+            <div className="text-center mb-3">
+              {info.name && (
+                <div className="text-xl font-semibold tracking-wide">{info.name}</div>
+              )}
+              {info.title && (
+                <div className="text-sm opacity-80">{info.title}</div>
+              )}
+            </div>
+          )}
+
+          {/* 聯絡資訊分區：僅在有有效資料時顯示 */}
+          {socialButtons.length > 0 && (
+            <div className="mt-2 mb-4">
+              <div className="text-sm opacity-70">聯絡資訊</div>
+              <div className="flex justify-center items-center gap-4 mt-2">
+                {socialButtons.map(btn => (
+                  <a key={btn.key} href={btn.href} target="_blank" rel="noopener noreferrer" title={btn.title} className="transition-transform active:scale-90 text-white hover:text-white/80">
+                    {btn.icon}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3">
             {blocks.map((b) => {
               if (b.type === 'link') {
                 return (
@@ -272,6 +293,13 @@ const BlockAddModal = ({ onAdd, onClose }) => {
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
 
+  // 鎖定背景滾動
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const handleImages = async (files) => {
     const arr = Array.from(files).slice(0, 5);
     setUploading(true);
@@ -296,9 +324,24 @@ const BlockAddModal = ({ onAdd, onClose }) => {
     if (type === 'contact') return onAdd({ id, type });
   };
 
+  const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-end justify-center" role="dialog" aria-label="新增模塊">
-      <div className="bg-white w-full max-w-md rounded-t-2xl p-4">
+    <motion.div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="新增模塊"
+      onKeyDown={onKeyDown}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.div
+        className="bg-white w-full max-w-md rounded-2xl p-4 shadow-xl"
+        initial={{ scale: 0.95, opacity: 0, y: 10 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+      >
         <div className="flex items-center justify-between">
           <div className="font-semibold">新增模塊</div>
           <button className="text-sm" onClick={onClose} aria-label="關閉">✕</button>
@@ -349,8 +392,8 @@ const BlockAddModal = ({ onAdd, onClose }) => {
           <button onClick={onClose} className="px-3 py-2 rounded border">取消</button>
           <button onClick={confirm} className="px-3 py-2 rounded bg-blue-600 text-white">新增</button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
@@ -639,10 +682,8 @@ export default function CardStudioPro() {
       };
       const rec = recommended[key];
 
-      // 批量更新所有狀態，避免多次重渲染導致閃現
+      // 僅更新樣式相關設定，保留個人資訊（姓名、職稱、頭像、聯絡方式）與內容模塊
       const updateData = {};
-      if (sample?.blocks) updateData.blocks = sample.blocks;
-      if (sample?.info) updateData.info = sample.info;
       if (rec) {
         updateData.themeId = rec.themeId;
         updateData.design = {
