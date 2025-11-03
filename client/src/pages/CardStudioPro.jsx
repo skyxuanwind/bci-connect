@@ -15,6 +15,7 @@ import dataSyncManager from '../utils/dataSyncManager';
 import DataConsistencyChecker from '../utils/dataConsistencyChecker';
 import { UserIcon, BuildingOfficeIcon, BriefcaseIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaTiktok, FaYoutube, FaLine } from 'react-icons/fa';
+import sharedRenderContentBlock, { normalizeBlock } from '../components/CardRenderer';
 // framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
@@ -135,6 +136,42 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
 
   const isStandard = layoutId === 'standard';
 
+  // 預覽頁輪播索引與滑動手勢（與 MemberCard 行為對齊，增強預覽交互）
+  const [blockCarouselIndexMap, setBlockCarouselIndexMap] = useState({});
+  const swipeRef = useRef({});
+  const normalizedBlocks = useMemo(() => (blocks || []).map(b => normalizeBlock(b)), [blocks]);
+  const carouselCountsMap = useMemo(() => {
+    const m = new Map();
+    normalizedBlocks.forEach((nb, idx) => {
+      const count = nb?.content_type === 'carousel' ? (nb?.content_data?.images?.length || 0) : 0;
+      m.set(idx, count);
+    });
+    return m;
+  }, [normalizedBlocks]);
+  const getCarouselSwipeHandlers = useCallback((idx) => {
+    const count = carouselCountsMap.get(idx) || 0;
+    if (count <= 1) return {};
+    return {
+      onTouchStart: (e) => {
+        const t = e.touches?.[0];
+        if (!t) return;
+        swipeRef.current[idx] = { x: t.clientX, time: Date.now() };
+      },
+      onTouchEnd: (e) => {
+        const s = swipeRef.current[idx];
+        const t = e.changedTouches?.[0];
+        if (!s || !t) return;
+        const dx = t.clientX - s.x;
+        const dt = Date.now() - s.time;
+        delete swipeRef.current[idx];
+        if (Math.abs(dx) < 40 || dt > 1000) return;
+        const cur = blockCarouselIndexMap[idx] || 0;
+        const next = dx < 0 ? (cur + 1) % count : (cur - 1 + count) % count;
+        setBlockCarouselIndexMap(prev => ({ ...prev, [idx]: next }));
+      }
+    };
+  }, [carouselCountsMap, blockCarouselIndexMap]);
+
   return (
     <div style={{ fontFamily: theme.font, minHeight: '100vh', background: colors.bg, backgroundImage: bgStyle || undefined }} className="p-4">
       <div className="max-w-md mx-auto">
@@ -197,68 +234,28 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
           )}
 
           <div className={isStandard ? '' : 'space-y-3'}>
-            {blocks.map((b) => {
-              if (b.type === 'link') {
-                return (
-                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-3'} style={isStandard ? {} : { background: colors.card, color: colors.text }}>
-                    <div className={isStandard ? 'p-3' : ''} style={isStandard ? { color: colors.text } : {}}>
-                      <div className="text-sm opacity-90 mb-2">{b.title || '連結'}</div>
-                      <a href={b.url || '#'} target="_blank" rel="noreferrer" className={getButtonClass(buttonStyleId)}>
-                        {b.title || '連結'}
-                      </a>
-                      {b.url && (<div className="text-xs mt-1 opacity-70 break-all">{b.url}</div>)}
-                    </div>
+            {normalizedBlocks.map((nb, idx) => {
+              const inner = sharedRenderContentBlock({
+                block: nb,
+                index: idx,
+                options: {
+                  layoutType: layoutId || 'standard',
+                  contactInfo: { phone: info.phone, email: info.email, website: info.website },
+                  accentColor: colors.accent,
+                  blockCarouselIndexMap,
+                  setBlockCarouselIndexMap,
+                  trackEvent: () => {},
+                  getCarouselSwipeHandlers
+                }
+              });
+              if (!inner) return null;
+              return (
+                <div key={blocks[idx]?.id || idx} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-3'} style={isStandard ? {} : { background: colors.card, color: colors.text }}>
+                  <div className={isStandard ? 'p-3' : ''} style={isStandard ? { color: colors.text } : {}}>
+                    {inner}
                   </div>
-                );
-              }
-              if (b.type === 'video') {
-                const yt = youTubeId(b.url);
-                const vi = vimeoId(b.url);
-                const src = yt ? `https://www.youtube.com/embed/${yt}` : vi ? `https://player.vimeo.com/video/${vi}` : '';
-                return (
-                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl overflow-hidden'} style={isStandard ? {} : { background: colors.card }}>
-                    {src ? (
-                      <iframe title="影片" src={src} className="w-full h-48" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
-                    ) : (
-                      <div className="p-4 text-center text-sm" style={{ color: colors.text }}>請輸入 YouTube/Vimeo 連結</div>
-                    )}
-                  </div>
-                );
-              }
-              if (b.type === 'carousel') {
-                return (
-                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-2'} style={isStandard ? {} : { background: colors.card }}>
-                    <div className={isStandard ? 'p-2' : ''}>
-                      <div className="flex gap-2 overflow-x-auto">
-                        {(b.images || []).map((src, idx) => (
-                          <img key={idx} src={src} alt="作品" className="w-40 h-28 object-cover rounded" loading="lazy" decoding="async" />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              if (b.type === 'richtext') {
-                return (
-                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-3'} style={isStandard ? {} : { background: colors.card, color: colors.text }}>
-                    <div className={isStandard ? 'p-3' : ''} style={isStandard ? { color: colors.text } : {}}>
-                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: b.html || '' }} />
-                    </div>
-                  </div>
-                );
-              }
-              if (b.type === 'contact') {
-                // 聯絡按鈕區塊已整合到頭部，這裡不再顯示基本聯絡資訊
-                // 可以用於顯示其他聯絡方式或社群媒體
-                return (
-                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-3'} style={isStandard ? {} : { background: colors.card, color: colors.text }}>
-                    <div className={isStandard ? 'p-3 text-center text-sm opacity-70' : 'text-center text-sm opacity-70'} style={isStandard ? { color: colors.text } : {}}>
-                      聯絡資訊已整合至頭部區域
-                    </div>
-                  </div>
-                );
-              }
-              return null;
+                </div>
+              );
             })}
           </div>
         </div>
@@ -317,11 +314,11 @@ const BlockAddModal = ({ onAdd, onClose }) => {
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
 
-  // 鎖定背景滾動
+  // 保持背景可滾動但不可操作：不鎖 body 滾動，僅以遮罩攔截互動
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    const prev = document.body.style.pointerEvents;
+    document.body.style.pointerEvents = 'auto';
+    return () => { document.body.style.pointerEvents = prev; };
   }, []);
 
   const handleImages = async (files) => {
@@ -341,6 +338,12 @@ const BlockAddModal = ({ onAdd, onClose }) => {
 
   const confirm = () => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    // 模板型別：直接套用預設內容與樣式
+    if (String(type).startsWith('tpl:')) {
+      const key = String(type).slice(4);
+      addTemplate(key);
+      return;
+    }
     if (type === 'link') return onAdd({ id, type, title, url });
     if (type === 'video') return onAdd({ id, type, url });
     if (type === 'carousel') return onAdd({ id, type, images });
@@ -352,28 +355,33 @@ const BlockAddModal = ({ onAdd, onClose }) => {
     const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
     switch (tpl) {
       case 'skills': {
-        const html = '<strong>專業技能</strong><ul><li>攝影調色（★★★★★）</li><li>品牌設計（★★★★☆）</li><li>社群運營（★★★★☆）</li></ul>';
-        onAdd({ id: makeId(), type: 'richtext', html });
+        const title = '專業技能';
+        const html = '<ul><li>攝影調色（★★★★★）</li><li>品牌設計（★★★★☆）</li><li>社群運營（★★★★☆）</li></ul>';
+        onAdd({ id: makeId(), type: 'richtext', title, html });
         break;
       }
       case 'testimonials': {
-        const html = '<strong>客戶評價</strong><blockquote>「非常專業，合作順暢。」— 客戶A</blockquote><blockquote>「成果超乎預期！」— 客戶B</blockquote>';
-        onAdd({ id: makeId(), type: 'richtext', html });
+        const title = '客戶評價';
+        const html = '<blockquote>「非常專業，合作順暢。」— 客戶A</blockquote><blockquote>「成果超乎預期！」— 客戶B</blockquote>';
+        onAdd({ id: makeId(), type: 'richtext', title, html });
         break;
       }
       case 'portfolio': {
+        const title = '作品集展示';
         const images = Array.from({ length: 5 }, (_, i) => `https://picsum.photos/seed/portfolio${i}/640/480`);
-        onAdd({ id: makeId(), type: 'carousel', images });
+        onAdd({ id: makeId(), type: 'carousel', title, images });
         break;
       }
       case 'pricing': {
-        const html = '<strong>服務與價格</strong><ul><li>方案 A — NT$ 3,000</li><li>方案 B — NT$ 6,000</li><li>客製專案 — 面議</li></ul>';
-        onAdd({ id: makeId(), type: 'richtext', html });
+        const title = '服務與價格';
+        const html = '<ul><li>方案 A — NT$ 3,000</li><li>方案 B — NT$ 6,000</li><li>客製專案 — 面議</li></ul>';
+        onAdd({ id: makeId(), type: 'richtext', title, html });
         break;
       }
       case 'timeline': {
-        const html = '<strong>里程碑時間軸</strong><ul><li>2022/05 — 成立工作室</li><li>2023/02 — 完成百件商案</li><li>2024/08 — 推出新服務線</li></ul>';
-        onAdd({ id: makeId(), type: 'richtext', html });
+        const title = '成就時間軸';
+        const html = '<ul><li>2022/05 — 成立工作室</li><li>2023/02 — 完成百件商案</li><li>2024/08 — 推出新服務線</li></ul>';
+        onAdd({ id: makeId(), type: 'richtext', title, html });
         break;
       }
       case 'chat': {
@@ -381,7 +389,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
         break;
       }
       case 'download': {
-        onAdd({ id: makeId(), type: 'link', title: '下載履歷 PDF', url: 'https://example.com/resume.pdf' });
+        onAdd({ id: makeId(), type: 'link', title: '文件下載', url: 'https://example.com/resume.pdf' });
         break;
       }
       default:
@@ -400,6 +408,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
       aria-modal="true"
       aria-label="新增模塊"
       onKeyDown={onKeyDown}
+      onWheel={(e) => { try { window.scrollBy({ top: e.deltaY, behavior: 'auto' }); } catch {} }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -417,6 +426,14 @@ const BlockAddModal = ({ onAdd, onClose }) => {
           <label className="text-sm">類型</label>
           <select value={type} onChange={(e) => setType(e.target.value)} className="mt-1 w-full border rounded p-2">
             {BLOCK_TYPES.map(b => (<option key={b.id} value={b.id}>{b.label}</option>))}
+            <option disabled>—— 預設模板 ——</option>
+            <option value="tpl:skills">專業技能模塊</option>
+            <option value="tpl:testimonials">客戶評價模塊</option>
+            <option value="tpl:portfolio">作品集展示模塊</option>
+            <option value="tpl:pricing">服務與價格模塊</option>
+            <option value="tpl:timeline">成就時間軸模塊</option>
+            <option value="tpl:chat">即時諮詢模塊</option>
+            <option value="tpl:download">文件下載模塊</option>
           </select>
         </div>
 
@@ -788,37 +805,31 @@ export default function CardStudioPro() {
         };
       }
 
-      // 行業常用模塊自動顯示：僅在目前未包含相同類型時追加，避免覆蓋與重複
+      // 行業模板內容模塊：完整替換目前的顯示內容，保留名片資訊文字
       try {
-        const existingBlocks = Array.isArray(blocks) ? blocks : [];
-        const existingTypes = new Set(existingBlocks.map(b => b?.type));
         const recommendedBlocks = Array.isArray(sample.blocks) ? sample.blocks : [];
         const generateId = (prefix = 'tpl') => `${prefix}-${key}-${Math.random().toString(36).slice(2,8)}`;
 
-        // 允許的追加規則：若該類型尚不存在則追加一個行業推薦樣例
-        const typesPreferSingle = new Set(['carousel', 'video', 'richtext', 'contact', 'link']);
-        const toAppend = [];
-        for (const rb of recommendedBlocks) {
-          const t = rb?.type;
-          if (!t) continue;
-          // 若已存在同類型，跳過（避免產生重複模塊）
-          if (typesPreferSingle.has(t) && existingTypes.has(t)) continue;
-          // 重新生成唯一 ID 並淺拷貝數據
-          const next = { ...rb, id: generateId('b') };
-          toAppend.push(next);
-        }
+        const normalized = recommendedBlocks.map(rb => {
+          const t = rb?.type || 'richtext';
+          const base = { id: generateId('b'), type: t };
+          if (t === 'richtext') return { ...base, title: rb.title || '文字介紹', html: rb.html || '' };
+          if (t === 'link') return { ...base, title: rb.title || '連結', url: rb.url || '' };
+          if (t === 'carousel') return { ...base, title: rb.title || '圖片輪播', images: Array.isArray(rb.images) ? rb.images : [] };
+          if (t === 'video') return { ...base, title: rb.title || '影片', url: rb.url || '' };
+          if (t === 'contact') return { ...base };
+          return { ...base };
+        });
 
-        if (toAppend.length > 0) {
-          updateData.blocks = [...existingBlocks, ...toAppend];
-        }
+        updateData.blocks = normalized;
       } catch (mergeErr) {
-        console.warn('[ApplyIndustry] blocks merge warn:', mergeErr);
+        console.warn('[ApplyIndustry] blocks replace warn:', mergeErr);
       }
 
       // 單次批量更新，避免閃現
       updateSyncData(updateData);
 
-      toast.success('已套用行業模板');
+      toast.success('已套用行業模板，內容模塊已替換');
     } catch (err) {
       console.error('[ApplyIndustry] error:', err);
       toast.error('套用模板時發生錯誤');

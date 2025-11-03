@@ -158,7 +158,7 @@ export const FloatingSyncIndicator = ({ position = 'bottom-right' }) => {
  * 同步狀態工具列
  * 適合放在編輯器頂部的工具列
  */
-export const SyncStatusToolbar = ({ onManualSync, className = '' }) => {
+export const SyncStatusToolbar = ({ onManualSync, onReload, onReset, resetDisabled = false, className = '' }) => {
   const { status, isOnline, lastSyncTime, pendingChanges } = useSyncStatus();
 
   const handleManualSync = () => {
@@ -176,6 +176,24 @@ export const SyncStatusToolbar = ({ onManualSync, className = '' }) => {
           <span className="text-xs text-gray-500">
             最後同步: {new Date(lastSyncTime).toLocaleTimeString()}
           </span>
+        )}
+        {onReload && (
+          <button
+            onClick={onReload}
+            className="px-3 py-1 text-xs bg-gray-700 text-white rounded hover:bg-gray-800"
+          >
+            重新載入
+          </button>
+        )}
+        {onReset && (
+          <button
+            onClick={onReset}
+            disabled={resetDisabled || status === 'syncing'}
+            className="px-3 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="重置名片"
+          >
+            重置名片
+          </button>
         )}
         
         {isOnline && onManualSync && (

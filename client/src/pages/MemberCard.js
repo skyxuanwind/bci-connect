@@ -39,6 +39,7 @@ import '../styles/premium-card.css';
 import '../styles/premium-effects.css';
 import { mapTemplateNameToClass } from '../utils/templateClass';
 import { QRCodeSVG } from 'qrcode.react';
+import sharedRenderContentBlock from '../components/CardRenderer';
 
 // 將十六進位色碼轉換為 RGB 字串
 const hexToRgb = (hex) => {
@@ -638,6 +639,25 @@ const MemberCard = () => {
   // 渲染內容區塊（加入 LINE ID 隱藏與 carousel 支援）
   const renderContentBlock = (block, index) => {
     if (!block || !block.content_data) return null;
+
+    // 使用共享渲染器統一內容區塊邏輯
+    return sharedRenderContentBlock({
+      block,
+      index,
+      options: {
+        layoutType: cardData?.layout_type || 'standard',
+        contactInfo: cardData?.contact_info || {},
+        accentColor,
+        blockCarouselIndexMap,
+        setBlockCarouselIndexMap,
+        trackEvent,
+        onOpenImagePreview: (url) => {
+          setPreviewImageUrl(url);
+          setImagePreviewOpen(true);
+        },
+        getCarouselSwipeHandlers: null
+      }
+    });
 
     const { content_data } = block;
     const titleText = (content_data?.title || '').trim();
