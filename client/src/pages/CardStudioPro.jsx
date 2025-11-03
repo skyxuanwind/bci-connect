@@ -324,6 +324,49 @@ const BlockAddModal = ({ onAdd, onClose }) => {
     if (type === 'contact') return onAdd({ id, type });
   };
 
+  const addTemplate = (tpl) => {
+    const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    switch (tpl) {
+      case 'skills': {
+        const html = '<strong>專業技能</strong><ul><li>攝影調色（★★★★★）</li><li>品牌設計（★★★★☆）</li><li>社群運營（★★★★☆）</li></ul>';
+        onAdd({ id: makeId(), type: 'richtext', html });
+        break;
+      }
+      case 'testimonials': {
+        const html = '<strong>客戶評價</strong><blockquote>「非常專業，合作順暢。」— 客戶A</blockquote><blockquote>「成果超乎預期！」— 客戶B</blockquote>';
+        onAdd({ id: makeId(), type: 'richtext', html });
+        break;
+      }
+      case 'portfolio': {
+        const images = Array.from({ length: 5 }, (_, i) => `https://picsum.photos/seed/portfolio${i}/640/480`);
+        onAdd({ id: makeId(), type: 'carousel', images });
+        break;
+      }
+      case 'pricing': {
+        const html = '<strong>服務與價格</strong><ul><li>方案 A — NT$ 3,000</li><li>方案 B — NT$ 6,000</li><li>客製專案 — 面議</li></ul>';
+        onAdd({ id: makeId(), type: 'richtext', html });
+        break;
+      }
+      case 'timeline': {
+        const html = '<strong>里程碑時間軸</strong><ul><li>2022/05 — 成立工作室</li><li>2023/02 — 完成百件商案</li><li>2024/08 — 推出新服務線</li></ul>';
+        onAdd({ id: makeId(), type: 'richtext', html });
+        break;
+      }
+      case 'chat': {
+        onAdd({ id: makeId(), type: 'link', title: 'LINE 線上諮詢', url: 'https://line.me/ti/p/~yourlineid' });
+        break;
+      }
+      case 'download': {
+        onAdd({ id: makeId(), type: 'link', title: '下載履歷 PDF', url: 'https://example.com/resume.pdf' });
+        break;
+      }
+      default:
+        break;
+    }
+    // 添加後自動關閉以提升效率
+    onClose();
+  };
+
   const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
 
   return (
@@ -387,6 +430,20 @@ const BlockAddModal = ({ onAdd, onClose }) => {
             <textarea value={html} onChange={(e)=>setHtml(e.target.value)} rows={4} className="mt-1 w-full border rounded p-2" />
           </div>
         )}
+
+        {/* 快速添加推薦模塊 */}
+        <div className="mt-4 border-t border-gray-200 pt-3">
+          <div className="text-sm font-semibold">快速添加推薦模塊</div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button onClick={() => addTemplate('skills')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">專業技能</button>
+            <button onClick={() => addTemplate('testimonials')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">客戶評價</button>
+            <button onClick={() => addTemplate('portfolio')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">作品集</button>
+            <button onClick={() => addTemplate('pricing')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">服務與價格</button>
+            <button onClick={() => addTemplate('timeline')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">成就時間軸</button>
+            <button onClick={() => addTemplate('chat')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">即時諮詢</button>
+            <button onClick={() => addTemplate('download')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">文件下載</button>
+          </div>
+        </div>
 
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="px-3 py-2 rounded border">取消</button>
@@ -682,7 +739,7 @@ export default function CardStudioPro() {
       };
       const rec = recommended[key];
 
-      // 僅更新樣式相關設定，保留個人資訊（姓名、職稱、頭像、聯絡方式）與內容模塊
+      // 僅更新樣式相關設定，保留個人資訊（姓名、職稱、公司、手機、Email、社群連結）
       const updateData = {};
       if (rec) {
         updateData.themeId = rec.themeId;
@@ -691,6 +748,33 @@ export default function CardStudioPro() {
           buttonStyleId: rec.buttonStyleId,
           bgStyle: rec.bgStyle
         };
+      }
+
+      // 行業常用模塊自動顯示：僅在目前未包含相同類型時追加，避免覆蓋與重複
+      try {
+        const existingBlocks = Array.isArray(blocks) ? blocks : [];
+        const existingTypes = new Set(existingBlocks.map(b => b?.type));
+        const recommendedBlocks = Array.isArray(sample.blocks) ? sample.blocks : [];
+        const generateId = (prefix = 'tpl') => `${prefix}-${key}-${Math.random().toString(36).slice(2,8)}`;
+
+        // 允許的追加規則：若該類型尚不存在則追加一個行業推薦樣例
+        const typesPreferSingle = new Set(['carousel', 'video', 'richtext', 'contact', 'link']);
+        const toAppend = [];
+        for (const rb of recommendedBlocks) {
+          const t = rb?.type;
+          if (!t) continue;
+          // 若已存在同類型，跳過（避免產生重複模塊）
+          if (typesPreferSingle.has(t) && existingTypes.has(t)) continue;
+          // 重新生成唯一 ID 並淺拷貝數據
+          const next = { ...rb, id: generateId('b') };
+          toAppend.push(next);
+        }
+
+        if (toAppend.length > 0) {
+          updateData.blocks = [...existingBlocks, ...toAppend];
+        }
+      } catch (mergeErr) {
+        console.warn('[ApplyIndustry] blocks merge warn:', mergeErr);
       }
 
       // 單次批量更新，避免閃現
