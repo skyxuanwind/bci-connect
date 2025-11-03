@@ -115,7 +115,7 @@ const vimeoId = (url) => {
 const getButtonClass = (id) => (BUTTON_STYLES.find(s => s.id === id)?.className || BUTTON_STYLES[0].className);
 
 // 預覽卡片（與最終名片頁一致：頭像居中、姓名職稱在下方、聯絡資訊分區）
-const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle }) => {
+const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, layoutId = 'standard' }) => {
   const colors = theme.colors;
   const lineId = (info.line || '').trim();
   const facebookUrl = (info.facebook || '').trim();
@@ -132,6 +132,8 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
     isUrl(youtubeUrl) ? { key: 'youtube', href: youtubeUrl, icon: <FaYoutube className="h-7 w-7" style={{ color: '#FF0000' }} />, title: 'YouTube' } : null,
     isUrl(tiktokUrl) ? { key: 'tiktok', href: tiktokUrl, icon: <FaTiktok className="h-7 w-7" style={{ color: '#000000' }} />, title: 'TikTok' } : null,
   ].filter(Boolean);
+
+  const isStandard = layoutId === 'standard';
 
   return (
     <div style={{ fontFamily: theme.font, minHeight: '100vh', background: colors.bg, backgroundImage: bgStyle || undefined }} className="p-4">
@@ -165,29 +167,47 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
             </div>
           )}
 
-          {/* 聯絡資訊分區：僅在有有效資料時顯示 */}
+          {/* 聯絡資訊：標準版型以獨立卡片呈現；簡潔版型以標題＋ICON列呈現 */}
           {socialButtons.length > 0 && (
-            <div className="mt-2 mb-4">
-              <div className="text-sm opacity-70">聯絡資訊</div>
-              <div className="flex justify-center items-center gap-4 mt-2">
-                {socialButtons.map(btn => (
-                  <a key={btn.key} href={btn.href} target="_blank" rel="noopener noreferrer" title={btn.title} className="transition-transform active:scale-90 text-white hover:text-white/80">
-                    {btn.icon}
-                  </a>
-                ))}
+            isStandard ? (
+              <div className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10">
+                <div className="p-3">
+                  <div className="text-sm opacity-90">聯絡資訊</div>
+                  <div className="flex justify-center items-center gap-4 mt-2">
+                    {socialButtons.map(btn => (
+                      <a key={btn.key} href={btn.href} target="_blank" rel="noopener noreferrer" title={btn.title} className="transition-transform active:scale-90 text-white hover:text-white/80">
+                        {btn.icon}
+                      </a>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-2 mb-4">
+                <div className="text-sm opacity-70">聯絡資訊</div>
+                <div className="flex justify-center items-center gap-4 mt-2">
+                  {socialButtons.map(btn => (
+                    <a key={btn.key} href={btn.href} target="_blank" rel="noopener noreferrer" title={btn.title} className="transition-transform active:scale-90 text-white hover:text-white/80">
+                      {btn.icon}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )
           )}
 
-          <div className="space-y-3">
+          <div className={isStandard ? '' : 'space-y-3'}>
             {blocks.map((b) => {
               if (b.type === 'link') {
                 return (
-                  <div key={b.id} className="rounded-xl p-3" style={{ background: colors.card, color: colors.text }}>
-                    <a href={b.url || '#'} target="_blank" rel="noreferrer" className={getButtonClass(buttonStyleId)}>
-                      {b.title || '連結'}
-                    </a>
-                    {b.url && (<div className="text-xs mt-1 opacity-70 break-all">{b.url}</div>)}
+                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-3'} style={isStandard ? {} : { background: colors.card, color: colors.text }}>
+                    <div className={isStandard ? 'p-3' : ''} style={isStandard ? { color: colors.text } : {}}>
+                      <div className="text-sm opacity-90 mb-2">{b.title || '連結'}</div>
+                      <a href={b.url || '#'} target="_blank" rel="noreferrer" className={getButtonClass(buttonStyleId)}>
+                        {b.title || '連結'}
+                      </a>
+                      {b.url && (<div className="text-xs mt-1 opacity-70 break-all">{b.url}</div>)}
+                    </div>
                   </div>
                 );
               }
@@ -196,7 +216,7 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
                 const vi = vimeoId(b.url);
                 const src = yt ? `https://www.youtube.com/embed/${yt}` : vi ? `https://player.vimeo.com/video/${vi}` : '';
                 return (
-                  <div key={b.id} className="rounded-xl overflow-hidden" style={{ background: colors.card }}>
+                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl overflow-hidden'} style={isStandard ? {} : { background: colors.card }}>
                     {src ? (
                       <iframe title="影片" src={src} className="w-full h-48" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
                     ) : (
@@ -207,19 +227,23 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
               }
               if (b.type === 'carousel') {
                 return (
-                  <div key={b.id} className="rounded-xl p-2" style={{ background: colors.card }}>
-                    <div className="flex gap-2 overflow-x-auto">
-                      {(b.images || []).map((src, idx) => (
-                        <img key={idx} src={src} alt="作品" className="w-40 h-28 object-cover rounded" loading="lazy" decoding="async" />
-                      ))}
+                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-2'} style={isStandard ? {} : { background: colors.card }}>
+                    <div className={isStandard ? 'p-2' : ''}>
+                      <div className="flex gap-2 overflow-x-auto">
+                        {(b.images || []).map((src, idx) => (
+                          <img key={idx} src={src} alt="作品" className="w-40 h-28 object-cover rounded" loading="lazy" decoding="async" />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 );
               }
               if (b.type === 'richtext') {
                 return (
-                  <div key={b.id} className="rounded-xl p-3" style={{ background: colors.card, color: colors.text }}>
-                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: b.html || '' }} />
+                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-3'} style={isStandard ? {} : { background: colors.card, color: colors.text }}>
+                    <div className={isStandard ? 'p-3' : ''} style={isStandard ? { color: colors.text } : {}}>
+                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: b.html || '' }} />
+                    </div>
                   </div>
                 );
               }
@@ -227,8 +251,8 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle })
                 // 聯絡按鈕區塊已整合到頭部，這裡不再顯示基本聯絡資訊
                 // 可以用於顯示其他聯絡方式或社群媒體
                 return (
-                  <div key={b.id} className="rounded-xl p-3" style={{ background: colors.card, color: colors.text }}>
-                    <div className="text-center text-sm opacity-70">
+                  <div key={b.id} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-3'} style={isStandard ? {} : { background: colors.card, color: colors.text }}>
+                    <div className={isStandard ? 'p-3 text-center text-sm opacity-70' : 'text-center text-sm opacity-70'} style={isStandard ? { color: colors.text } : {}}>
                       聯絡資訊已整合至頭部區域
                     </div>
                   </div>
@@ -508,6 +532,7 @@ export default function CardStudioPro() {
   const avatarUrl = useMemo(() => syncData?.avatarUrl || '', [syncData?.avatarUrl]);
   const buttonStyleId = useMemo(() => syncData?.design?.buttonStyleId || 'solid-blue', [syncData?.design?.buttonStyleId]);
   const bgStyle = useMemo(() => syncData?.design?.bgStyle || '', [syncData?.design?.bgStyle]);
+  const layoutId = useMemo(() => syncData?.design?.layoutId || 'standard', [syncData?.design?.layoutId]);
 
   // 本地狀態（不需要同步的）
   const [showAdd, setShowAdd] = useState(false);
@@ -533,6 +558,13 @@ export default function CardStudioPro() {
   });
 
   const [avatarFile, setAvatarFile] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const userPreset = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('card_user_preset_template');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }, []);
 
   // 更新函數 - 使用新的同步系統
   const setThemeId = (newThemeId) => {
@@ -563,6 +595,12 @@ export default function CardStudioPro() {
   const setBgStyle = (newBgStyle) => {
     updateSyncData({ 
       design: { ...(syncData?.design || {}), bgStyle: newBgStyle }
+    });
+  };
+
+  const setLayoutId = (newLayoutId) => {
+    updateSyncData({
+      design: { ...(syncData?.design || {}), layoutId: newLayoutId }
     });
   };
 
@@ -1034,6 +1072,8 @@ export default function CardStudioPro() {
           isSaving={isSaving}
           lastSyncTime={lastSyncTime}
           onReload={reloadSyncData}
+          onReset={() => setShowResetConfirm(true)}
+          resetDisabled={isSaving || isLoading}
         />
         
         {/* 數據一致性檢查工具列（已按需求隱藏） */}
@@ -1092,9 +1132,25 @@ export default function CardStudioPro() {
                {/* 名片基本欄位（整體可收合） */}
                <MainInfoFields info={info} setInfo={setInfo} />
 
-               {/* 進階欄位（可收合） */}
-               <AdvancedInfoFields info={info} setInfo={setInfo} />
-             </div>
+             {/* 進階欄位（可收合） */}
+             <AdvancedInfoFields info={info} setInfo={setInfo} />
+            </div>
+
+            {/* 版型選擇 */}
+            <div className="mt-6 border-t border-white/10 pt-4">
+              <h3 className="text-sm font-semibold mb-2">版型</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setLayoutId('standard')}
+                  className={`px-3 py-1.5 rounded border text-xs ${layoutId === 'standard' ? 'bg-white/20 border-white/30' : 'bg-white/10 hover:bg-white/20 border-white/10'}`}
+                >標準</button>
+                <button
+                  onClick={() => setLayoutId('simple')}
+                  className={`px-3 py-1.5 rounded border text-xs ${layoutId === 'simple' ? 'bg-white/20 border-white/30' : 'bg-white/10 hover:bg-white/20 border-white/10'}`}
+                >簡潔</button>
+              </div>
+              <p className="text-xs opacity-70 mt-2">預覽將以選定版型渲染內容與區塊樣式。</p>
+            </div>
 
             <div className="mt-6 border-t border-white/10 pt-4">
                <h3 className="text-sm font-semibold mb-2 flex items-center justify-between">
@@ -1192,13 +1248,85 @@ export default function CardStudioPro() {
 
           {/* 右：即時預覽 */}
           <div className="rounded-2xl overflow-hidden">
-            <PreviewCard info={info} avatarUrl={avatarUrl} theme={theme} blocks={blocks} buttonStyleId={buttonStyleId} bgStyle={bgStyle} />
+            <PreviewCard info={info} avatarUrl={avatarUrl} theme={theme} blocks={blocks} buttonStyleId={buttonStyleId} bgStyle={bgStyle} layoutId={layoutId} />
           </div>
         </div>
       </div>
 
       {showAdd && (<BlockAddModal onAdd={addBlock} onClose={()=>setShowAdd(false)} />)}
         <ConflictModal />
+        {/* 重置名片確認框 */}
+        {showResetConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="重置名片確認">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900">重置名片</h3>
+                <p className="mt-2 text-sm text-gray-600">此操作將清除目前所有編輯內容。您可以選擇重置為空白模板{userPreset ? '或您的預設模板' : ''}。</p>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button onClick={() => setShowResetConfirm(false)} className="px-4 py-2 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-50">取消</button>
+                  {userPreset && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const preset = userPreset || {};
+                          const presetInfo = preset.info || {};
+                          const presetBlocks = Array.isArray(preset.blocks) ? preset.blocks : [];
+                          const nextData = {
+                            info: presetInfo,
+                            blocks: presetBlocks,
+                            avatarUrl: preset.avatarUrl || '',
+                            themeId: preset.themeId || 'simple',
+                            design: { buttonStyleId: preset.design?.buttonStyleId || 'solid-blue', bgStyle: preset.design?.bgStyle || '', layoutId: preset.design?.layoutId || 'standard' },
+                            lastUpdated: new Date().toISOString(),
+                            version: '2.0'
+                          };
+                          updateSyncData(nextData);
+                          await saveSyncData();
+                          toast.success('已重置為我的預設模板');
+                        } catch (e) {
+                          console.error('Reset to preset failed:', e);
+                          toast.error('重置失敗');
+                        } finally {
+                          setShowResetConfirm(false);
+                        }
+                      }}
+                      className="px-4 py-2 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700"
+                    >
+                      套用我的預設
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      try {
+                        const emptyInfo = { name: '', title: '', company: '', phone: '', phone_local: '', line: '', email: '', facebook: '', instagram: '', tiktok: '', youtube: '' };
+                        const nextData = {
+                          info: emptyInfo,
+                          blocks: [],
+                          avatarUrl: '',
+                          themeId: 'simple',
+                          design: { buttonStyleId: 'solid-blue', bgStyle: '', layoutId: 'standard' },
+                          lastUpdated: new Date().toISOString(),
+                          version: '2.0'
+                        };
+                        updateSyncData(nextData);
+                        await saveSyncData();
+                        toast.success('已重置為空白模板');
+                      } catch (e) {
+                        console.error('Reset to blank failed:', e);
+                        toast.error('重置失敗');
+                      } finally {
+                        setShowResetConfirm(false);
+                      }
+                    }}
+                    className="px-4 py-2 text-sm rounded bg-rose-600 text-white hover:bg-rose-700"
+                  >
+                    重置為空白
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* 數據一致性報告模態框 */}
         {showConsistencyReport && consistencyReport && (
