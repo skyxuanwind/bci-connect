@@ -122,3 +122,31 @@
 **部署狀態**: ✅ 成功  
 **最後更新**: 2025-10-30 18:35:49  
 **下次檢查**: 建議 24 小時後進行功能驗證
+
+---
+
+## 🔔 AI 智慧通知排程變更（月度）
+
+**變更時間**: 2025-11-03 08:00 (系統設定)
+
+**變更內容**:
+- 將「AI智慧通知（目標達成率提醒）」發送機制由每日／每週改為每月一次。
+- 發送日期：每月 1 號；發送時間：上午 8:00。
+- 新增資料表 `notification_send_logs` 以記錄每次發送結果（包含總用戶、成功／失敗數量、詳細結果）。
+- 郵件模板新增「月度目標達成率摘要與建議」，提高資訊密度與可讀性。
+
+**涉及檔案**:
+- `server.js`：移除每日／每週排程，改為每月 1 號 08:00。
+- `services/goalReminderService.js`：新增 `logSendEvent`，統計並寫入發送紀錄。
+- `config/database.js`：新增 `notification_send_logs` 資料表及索引。
+- `services/emailService.js`：新增 `goal_achievement_reminder` 月度郵件模板。
+- `scripts/test-ai-monthly-notification.js`：端到端測試腳本。
+
+**現有訂閱設定**: 未更動，用戶的通知偏好保留。
+
+**驗證方式**:
+- 以 `node scripts/test-ai-monthly-notification.js` 執行測試，生成發送紀錄。
+- 查詢 `notification_send_logs` 確認每月發送與結果統計。
+
+**備註**:
+- 若需跳過郵件真實寄送，可設定環境變數或在測試環境使用備援 SMTP。

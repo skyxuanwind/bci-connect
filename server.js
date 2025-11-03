@@ -307,40 +307,38 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 
   // 啟動提醒排程（每日與每週，以近似方式）
   try {
-    const { notifyAllActiveUsers } = require('./services/goalReminderService');
+    const { notifyAllActiveUsers, logSendEvent } = require('./services/goalReminderService');
     const THRESHOLD = Number(process.env.GOAL_REMINDER_THRESHOLD || 0.5);
 
-    // 每日 9:00（每分鐘檢查一次，避免錯過時點）
+    // 每月 1 號 08:00（每分鐘檢查一次，避免錯過時點）
     setInterval(async () => {
       const now = new Date();
-      if (now.getMinutes() === 0 && now.getHours() === 9) {
-        console.log('⏰ Daily goal reminder triggered');
+      if (now.getDate() === 1 && now.getHours() === 8 && now.getMinutes() === 0) {
+        console.log('⏰ Monthly AI notification triggered (goal reminders)');
         try {
           const result = await notifyAllActiveUsers('monthly', THRESHOLD);
-          console.log('📣 Daily reminders result:', {
+          const sentCount = result.results.filter(r => r.sent).length;
+          console.log('📣 Monthly reminders result:', {
             total: result.count,
-            sent: result.results.filter(r => r.sent).length
+            sent: sentCount
           });
-        } catch (err) {
-          console.error('Daily goal reminder failed:', err);
-        }
-      }
-    }, 60 * 1000);
 
-    // 每週一 9:00（每分鐘檢查一次）
-    setInterval(async () => {
-      const now = new Date();
-      // getDay()：0=週日, 1=週一, ...
-      if (now.getDay() === 1 && now.getMinutes() === 0 && now.getHours() === 9) {
-        console.log('⏰ Weekly goal reminder triggered');
-        try {
-          const result = await notifyAllActiveUsers('monthly', THRESHOLD);
-          console.log('📣 Weekly reminders result:', {
-            total: result.count,
-            sent: result.results.filter(r => r.sent).length
-          });
+          // 寫入發送記錄以供監控與稽核
+          try {
+            await logSendEvent({
+              jobName: 'ai_goal_reminder_monthly',
+              range: 'monthly',
+              threshold: THRESHOLD,
+              totalUsers: result.count,
+              sentCount,
+              failCount: result.count - sentCount,
+              results: result.results
+            });
+          } catch (logErr) {
+            console.error('記錄發送日志失敗:', logErr);
+          }
         } catch (err) {
-          console.error('Weekly goal reminder failed:', err);
+          console.error('Monthly goal reminder failed:', err);
         }
       }
     }, 60 * 1000);

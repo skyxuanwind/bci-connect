@@ -139,7 +139,33 @@ async function notifyAllActiveUsers(range = 'monthly', threshold = THRESHOLD_DEF
   return { count: users.length, results };
 }
 
+// 寫入通知發送紀錄（監控／稽核用）
+async function logSendEvent({ jobName, range, threshold, totalUsers, sentCount, failCount, results, scheduledFor }) {
+  try {
+    const status = sentCount === totalUsers ? 'success' : (sentCount > 0 ? 'partial' : 'failed');
+    await pool.query(
+      `INSERT INTO notification_send_logs 
+       (job_name, range, threshold, scheduled_for, triggered_at, total_users, sent_count, fail_count, results, status)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5, $6, $7, $8::jsonb, $9)`,
+      [
+        jobName || 'ai_goal_reminder_monthly',
+        range || 'monthly',
+        Number(threshold || THRESHOLD_DEFAULT),
+        scheduledFor || null,
+        Number(totalUsers || 0),
+        Number(sentCount || 0),
+        Number(failCount || 0),
+        JSON.stringify(results || []),
+        status
+      ]
+    );
+  } catch (e) {
+    console.error('寫入通知發送紀錄失敗:', e?.message || e);
+  }
+}
+
 module.exports = {
   notifyIfBelowThreshold,
   notifyAllActiveUsers,
+  logSendEvent,
 };

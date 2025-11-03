@@ -899,6 +899,26 @@ const initializeDatabase = async () => {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_ai_notifications_type ON ai_notifications(notification_type)`);
     await pool.query(`DELETE FROM ai_notifications WHERE notification_type = 'wish_opportunity'`);
 
+    // Create notification_send_logs table（AI通知發送紀錄，用於監控與稽核）
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notification_send_logs (
+        id SERIAL PRIMARY KEY,
+        job_name VARCHAR(100) NOT NULL,
+        range VARCHAR(20) NOT NULL,
+        threshold DECIMAL(5,2),
+        scheduled_for TIMESTAMP,
+        triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        total_users INTEGER,
+        sent_count INTEGER,
+        fail_count INTEGER,
+        results JSONB,
+        status VARCHAR(20) DEFAULT 'success' CHECK (status IN ('success', 'partial', 'failed')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_send_logs_job ON notification_send_logs(job_name)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_send_logs_triggered ON notification_send_logs(triggered_at)`);
+
     // Create meeting_ai_analysis table (會議AI分析)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS meeting_ai_analysis (

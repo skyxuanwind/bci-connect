@@ -166,6 +166,32 @@ const sendAINotification = async ({ email, name, notificationType, content }) =>
           </div>
         `;
         break;
+      
+      case 'goal_achievement_reminder':
+        subject = 'GBC Connect - 月度目標達成率摘要與建議';
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #2c3e50; margin: 0; font-size: 22px;">📊 月度目標達成率摘要</h1>
+                <p style="color: #7f8c8d; margin: 6px 0 0 0; font-size: 14px;">AI 根據您本月的引薦與交流數據產生建議</p>
+              </div>
+
+              <div style="background-color: #f8fbff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #2c3e50; font-size: 14px; line-height: 1.7; white-space: pre-line;">${content}</div>
+              </div>
+
+              <div style="text-align: center; margin: 24px 0 6px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/business-dashboard" 
+                   style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 22px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                  前往儀表板查看月度詳情
+                </a>
+              </div>
+              <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 8px;">提示：在儀表板可設定目標值與追蹤趨勢</p>
+            </div>
+          </div>
+        `;
+        break;
         
       case 'event_recommendation':
         subject = 'GBC Connect - AI活動推薦';

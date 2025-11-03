@@ -911,44 +911,46 @@ export default function CardStudioPro() {
           onReload={reloadSyncData}
         />
         
-        {/* 數據一致性檢查工具列 */}
-        <div className="mb-4 flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10">
-          <div className="flex items-center gap-3">
-            <span className="text-white/70 text-sm">數據一致性檢查</span>
-            {consistencyReport && (
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                consistencyReport.integrity.isValid && (!consistencyReport.comparison || !consistencyReport.comparison.hasInconsistencies)
-                  ? 'bg-green-500/20 text-green-300'
-                  : 'bg-red-500/20 text-red-300'
-              }`}>
-                {consistencyReport.integrity.isValid && (!consistencyReport.comparison || !consistencyReport.comparison.hasInconsistencies)
-                  ? '通過' : '發現問題'}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={runConsistencyCheck}
-              className="px-3 py-1.5 text-sm bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
-            >
-              檢查數據一致性
-            </button>
-            <button
-              onClick={runDataSync}
-              className="px-3 py-1.5 text-sm bg-green-600/80 hover:bg-green-600 text-white rounded-lg transition-colors"
-            >
-              同步數據
-            </button>
-            {consistencyReport && (
+        {/* 數據一致性檢查工具列（已按需求隱藏） */}
+        {false && (
+          <div className="mb-4 flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10">
+            <div className="flex items-center gap-3">
+              <span className="text-white/70 text-sm">數據一致性檢查</span>
+              {consistencyReport && (
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  consistencyReport.integrity.isValid && (!consistencyReport.comparison || !consistencyReport.comparison.hasInconsistencies)
+                    ? 'bg-green-500/20 text-green-300'
+                    : 'bg-red-500/20 text-red-300'
+                }`}>
+                  {consistencyReport.integrity.isValid && (!consistencyReport.comparison || !consistencyReport.comparison.hasInconsistencies)
+                    ? '通過' : '發現問題'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowConsistencyReport(true)}
-                className="px-3 py-1.5 text-sm bg-gray-600/80 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                onClick={runConsistencyCheck}
+                className="px-3 py-1.5 text-sm bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
               >
-                查看報告
+                檢查數據一致性
               </button>
-            )}
+              <button
+                onClick={runDataSync}
+                className="px-3 py-1.5 text-sm bg-green-600/80 hover:bg-green-600 text-white rounded-lg transition-colors"
+              >
+                同步數據
+              </button>
+              {consistencyReport && (
+                <button
+                  onClick={() => setShowConsistencyReport(true)}
+                  className="px-3 py-1.5 text-sm bg-gray-600/80 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  查看報告
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
         
         <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
           {/* 左：設定面板 */}
