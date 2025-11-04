@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { PhotoIcon, XMarkIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, XMarkIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
 const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
@@ -12,8 +12,7 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
   const [showEditor, setShowEditor] = useState(false);
   const [displayMode, setDisplayMode] = useState('original'); // 'original' 或 'circular'
   const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 });
-  const [isBackgroundRemoved, setIsBackgroundRemoved] = useState(false);
-  const [backgroundRemovalPrecision, setBackgroundRemovalPrecision] = useState(0.8);
+  // 移除智能去背相關狀態
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const previewCanvasRef = useRef(null);
@@ -26,7 +25,8 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
 
   // 顯示模式選項
   const displayModeOptions = [
-    { id: 'original', label: '原始尺寸', description: '保持圖片原始比例與完整顯示' }
+    { id: 'original', label: '原始尺寸', description: '保持圖片原始比例與完整顯示' },
+    { id: 'circular', label: '圓形顯示', description: '以圓形邊緣顯示頭像' }
   ];
 
   // 背景選項
@@ -59,40 +59,12 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
     reader.onload = (e) => {
       setOriginalImage(e.target.result);
       setProcessedImage(e.target.result);
-      setIsBackgroundRemoved(false);
       setShowEditor(true);
     };
     reader.readAsDataURL(file);
   };
 
-  // 智能去背功能（模擬實現，實際可整合 remove.bg API）
-  const removeBackground = useCallback(async () => {
-    if (!originalImage) return;
-    
-    setIsProcessing(true);
-    try {
-      // 這裡可以整合第三方去背API，如 remove.bg
-      // 目前使用模擬處理
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 模擬處理時間
-      
-      // 實際應用中，這裡會調用去背API
-      // const response = await fetch('https://api.remove.bg/v1.0/removebg', {
-      //   method: 'POST',
-      //   headers: {
-      //     'X-Api-Key': 'YOUR_API_KEY',
-      //   },
-      //   body: formData
-      // });
-      
-      setIsBackgroundRemoved(true);
-      toast.success('背景移除完成');
-    } catch (error) {
-      console.error('背景移除失敗:', error);
-      toast.error('背景移除失敗，請重試');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [originalImage]);
+  // 智能去背功能已移除
 
   // 應用所有變換效果
   const applyTransformations = useCallback(() => {
@@ -252,7 +224,6 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
     setScale(1);
     setDisplayMode('original');
     setCropPosition({ x: 0, y: 0 });
-    setIsBackgroundRemoved(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -315,72 +286,31 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
           
           {/* 顯示模式選擇 */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-800 mb-3">
               顯示模式
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {displayModeOptions.map((mode) => {
                 const selected = displayMode === mode.id;
                 return (
                   <button
                     key={mode.id}
                     onClick={() => setDisplayMode(mode.id)}
-                    className={`p-3 rounded-lg border text-left transition-all ${
+                    className={`p-3 rounded-lg border text-left transition-colors ${
                       selected
-                        ? 'border-primary-500 bg-primary-50 text-gray-900'
-                        : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                        ? 'border-gray-600 bg-gray-100 text-gray-900'
+                        : 'border-gray-300 hover:border-gray-400 text-gray-800'
                     }`}
                   >
-                    <div className={`font-medium text-sm ${selected ? 'text-gray-900' : ''}`}>{mode.label}</div>
-                    <div className={`text-xs mt-1 ${selected ? 'text-gray-700' : 'text-gray-500'}`}>{mode.description}</div>
+                    <div className={`font-medium text-sm ${selected ? 'text-gray-900' : 'text-gray-800'}`}>{mode.label}</div>
+                    <div className={`text-xs mt-1 ${selected ? 'text-gray-700' : 'text-gray-600'}`}>{mode.description}</div>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* 智能去背功能 */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-gray-700">
-                智能去背
-              </label>
-              <button
-                onClick={removeBackground}
-                disabled={isProcessing || isBackgroundRemoved}
-                className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm transition-all ${
-                  isBackgroundRemoved 
-                    ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                    : isProcessing
-                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                    : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
-                }`}
-              >
-                <SparklesIcon className="h-4 w-4" />
-                <span>
-                  {isProcessing ? '處理中...' : isBackgroundRemoved ? '已去背' : '去背'}
-                </span>
-              </button>
-            </div>
-            
-            {/* 去背精度調整 */}
-            {isBackgroundRemoved && (
-              <div className="mt-2">
-                <label className="block text-xs text-gray-600 mb-1">
-                  精度調整: {Math.round(backgroundRemovalPrecision * 100)}%
-                </label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="1"
-                  step="0.1"
-                  value={backgroundRemovalPrecision}
-                  onChange={(e) => setBackgroundRemovalPrecision(parseFloat(e.target.value))}
-                  className="w-full"
-                />
-              </div>
-            )}
-          </div>
+          {/* 已移除：智能去背功能 */}
           
           {/* 縮放控制 */}
           <div className="mb-4">
@@ -437,7 +367,7 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
 
           {/* 背景選擇 */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-800 mb-2">
               背景樣式
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -447,14 +377,14 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
                   <button
                     key={option.type}
                     onClick={() => setBackgroundType(option.type)}
-                    className={`p-2 rounded-lg border text-xs transition-all ${
+                    className={`p-2 rounded-lg border text-xs transition-colors ${
                       selected
-                        ? 'border-primary-500 bg-primary-50 text-gray-900'
-                        : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                        ? 'border-gray-600 bg-gray-100 text-gray-900'
+                        : 'border-gray-300 hover:border-gray-400 text-gray-800'
                     }`}
                   >
                     <div className={`w-full h-8 rounded mb-1 ${option.preview}`}></div>
-                    <span className={`${selected ? 'font-medium' : ''}`}>{option.label}</span>
+                    <span className={`${selected ? 'font-medium text-gray-900' : 'text-gray-800'}`}>{option.label}</span>
                   </button>
                 );
               })}
@@ -475,10 +405,10 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
 
           {/* 實時預覽（等比縮放） */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-800 mb-2">
               實時預覽
             </label>
-            <div className="w-full max-w-[256px] mx-auto border border-gray-300 rounded-lg bg-gray-50">
+            <div className="w-full max-w-[256px] mx-auto border border-gray-300 rounded-lg bg-white">
               <canvas 
                 ref={previewCanvasRef} 
                 className="w-full h-auto object-contain"
@@ -497,7 +427,7 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               disabled={isProcessing}
             >
               {isProcessing ? '處理中...' : '確認'}
@@ -515,9 +445,9 @@ const AvatarEditor = ({ currentAvatar, onAvatarChange, size = 'large' }) => {
       />
       
       <div className="text-center">
-        <p className="text-sm text-gray-600">支援 JPG、PNG 格式</p>
-        <p className="text-xs text-gray-500">檔案大小不超過 10MB</p>
-        <p className="text-xs text-gray-500">支援智能去背、多種顯示模式和實時預覽</p>
+        <p className="text-sm text-gray-700">支援 JPG、PNG 格式</p>
+        <p className="text-xs text-gray-600">檔案大小不超過 10MB</p>
+        <p className="text-xs text-gray-600">提供背景樣式、縮放與即時預覽</p>
       </div>
     </div>
   );

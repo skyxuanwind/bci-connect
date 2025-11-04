@@ -472,19 +472,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
           </div>
         )}
 
-        {/* 快速添加推薦模塊 */}
-        <div className="mt-4 border-t border-gray-200 pt-3">
-          <div className="text-sm font-semibold">快速添加推薦模塊</div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <button onClick={() => addTemplate('skills')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">專業技能</button>
-            <button onClick={() => addTemplate('testimonials')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">客戶評價</button>
-            <button onClick={() => addTemplate('portfolio')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">作品集</button>
-            <button onClick={() => addTemplate('pricing')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">服務與價格</button>
-            <button onClick={() => addTemplate('timeline')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">成就時間軸</button>
-            <button onClick={() => addTemplate('chat')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">即時諮詢</button>
-            <button onClick={() => addTemplate('download')} className="px-2 py-2 rounded bg-gray-100 hover:bg-gray-200">文件下載</button>
-          </div>
-        </div>
+        {/* 已移除：快速添加推薦模塊（保留常規新增流程） */}
 
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="px-3 py-2 rounded border">取消</button>

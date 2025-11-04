@@ -400,7 +400,7 @@ const MemberCard = () => {
               facebook: info.facebook || '',
               instagram: info.instagram || ''
             },
-            layout_type: 'standard',
+            layout_type: editorData?.design?.layoutId || 'standard',
             ui_divider_style: 'solid-thin',
             ui_divider_opacity: 0.6,
             design: { buttonStyleId: editorData.design?.buttonStyleId || 'solid-blue', bgStyle: editorData.design?.bgStyle || '' },
@@ -614,10 +614,37 @@ const MemberCard = () => {
 
     if (buttons.length === 0) return null;
 
+    const isStandard = (cardData?.layout_type || 'standard') === 'standard';
+
+    if (isStandard) {
+      return (
+        <div className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10">
+          <div className="p-3">
+            <div className="text-sm opacity-90">聯絡資訊</div>
+            <div className="flex justify-center items-center gap-4 mt-2">
+              {buttons.map((btn) => (
+                <a
+                  key={btn.key}
+                  href={btn.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={btn.title}
+                  className="transition-transform active:scale-90 text-white hover:text-white/80"
+                  onClick={() => trackEvent('contact_click', { contentType: btn.key })}
+                >
+                  {btn.icon}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="content-block">
-        <h3 className="block-title">聯絡資訊</h3>
-        <div className="flex justify-center items-center gap-[20px]">
+      <div className="mt-2 mb-4">
+        <div className="text-sm opacity-70">聯絡資訊</div>
+        <div className="flex justify-center items-center gap-4 mt-2">
           {buttons.map((btn) => (
             <a
               key={btn.key}
@@ -1399,11 +1426,16 @@ const FullSliderLayout = ({ cardData, renderContentBlock, borderTopCss, currentM
 };
 
 const StandardLayout = ({ cardData, renderContentBlock, borderTopCss, onOpenPreview, onDownload, renderContactInfo, displayBlocks }) => {
+  const isStandard = (cardData?.layout_type || 'standard') === 'standard';
   return (
-    <div className="px-3">
+    <div className={isStandard ? 'px-3' : 'px-3 space-y-3'}>
       {typeof renderContactInfo === 'function' ? renderContactInfo(cardData) : null}
       {displayBlocks.map((block, i) => (
-        <div key={block?.id || i} className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10" style={{ borderTop: borderTopCss }}>
+        <div
+          key={block?.id || i}
+          className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : ''}
+          style={isStandard ? { borderTop: borderTopCss } : undefined}
+        >
           {renderContentBlock(block, i)}
         </div>
       ))}

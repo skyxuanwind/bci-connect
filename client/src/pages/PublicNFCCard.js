@@ -547,16 +547,24 @@ const PublicNFCCard = () => {
   const renderByLayout = () => {
     if (layoutType === 'four_grid') return renderFourGridSection(cardConfig);
     if (layoutType === 'full_slider') return <FullSliderSection cardConfig={cardConfig} />;
+    const isStandard = layoutType === 'standard';
     return (
       <>
-        {/* 動態內容區塊 */}
         {cardConfig?.content_blocks && cardConfig.content_blocks.length > 0 && (
-          <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">更多信息</h2>
-            {cardConfig.content_blocks.map((block, index) => (
-              <div key={index}>{renderContentBlock(block, index)}</div>
-            ))}
-          </div>
+          isStandard ? (
+            <div className="bg-gradient-to-br from-black/85 to-gray-900/85 border border-yellow-500/30 rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">更多信息</h2>
+              {cardConfig.content_blocks.map((block, index) => (
+                <div key={index}>{renderContentBlock(block, index)}</div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-2 space-y-3">
+              {cardConfig.content_blocks.map((block, index) => (
+                <div key={index}>{renderContentBlock(block, index)}</div>
+              ))}
+            </div>
+          )
         )}
       </>
     );
@@ -616,44 +624,62 @@ const PublicNFCCard = () => {
               )}
             </div>
 
-            {/* 聯絡方式 ICON 按鈕 - 行業標準圖標 */}
-            <div className="flex justify-center items-center gap-[20px] mb-6">
-              {member.contact_number && (
-                <a 
-                  href={`tel:${member.contact_number}`}
-                  className="transition-transform active:scale-90"
-                  title="電話"
-                >
-                  <PhoneIcon className="h-8 w-8 text-white" />
-                </a>
-              )}
-              {member.email && (
-                <a 
-                  href={`mailto:${member.email}`}
-                  className="transition-transform active:scale-90"
-                  title="電子郵件"
-                >
-                  <EnvelopeIcon className="h-8 w-8 text-white" />
-                </a>
-              )}
-              {(() => {
-                const lineBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'text' && (b?.content_data?.title || '').trim() === 'LINE ID');
-                const lineId = (lineBlock?.content_data?.content || '').trim();
-                if (!lineId) return null;
-                const deeplink = buildLineDeepLink(lineId);
-                return (
-                  <a
-                    href={deeplink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="transition-transform active:scale-90"
-                    title="LINE"
-                  >
-                    <ChatBubbleLeftRightIcon className="h-8 w-8 text-white" />
-                  </a>
-                );
-              })()}
-            </div>
+            {/* 聯絡方式依版型變化：standard 用卡片呈現，simple 用標題＋ICON 列 */}
+            {(() => {
+              const lineBlock = (cardConfig?.content_blocks || []).find(b => b?.content_type === 'text' && (b?.content_data?.title || '').trim() === 'LINE ID');
+              const lineId = (lineBlock?.content_data?.content || '').trim();
+              const hasAny = !!(member.contact_number || member.email || lineId);
+              if (!hasAny) return null;
+              const isStandard = layoutType === 'standard';
+
+              const iconsRow = (
+                <div className={isStandard ? 'flex justify-center items-center gap-4 mt-2' : 'flex justify-center items-center gap-[20px] mt-2'}>
+                  {member.contact_number && (
+                    <a 
+                      href={`tel:${member.contact_number}`}
+                      className="transition-transform active:scale-90"
+                      title="電話"
+                    >
+                      <PhoneIcon className="h-8 w-8 text-white" />
+                    </a>
+                  )}
+                  {member.email && (
+                    <a 
+                      href={`mailto:${member.email}`}
+                      className="transition-transform active:scale-90"
+                      title="電子郵件"
+                    >
+                      <EnvelopeIcon className="h-8 w-8 text-white" />
+                    </a>
+                  )}
+                  {lineId && (
+                    <a
+                      href={buildLineDeepLink(lineId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="transition-transform active:scale-90"
+                      title="LINE"
+                    >
+                      <ChatBubbleLeftRightIcon className="h-8 w-8 text-white" />
+                    </a>
+                  )}
+                </div>
+              );
+
+              return isStandard ? (
+                <div className="mb-6 rounded-2xl overflow-hidden bg-black/60 border border-yellow-500/20">
+                  <div className="p-3">
+                    <div className="text-sm text-white/90">聯絡資訊</div>
+                    {iconsRow}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-2 mb-6">
+                  <div className="text-sm text-white/70">聯絡資訊</div>
+                  {iconsRow}
+                </div>
+              );
+            })()}
             
             {/* 會員等級 */}
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm backdrop-blur-sm border border-white/10">
