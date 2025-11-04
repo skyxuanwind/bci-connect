@@ -580,6 +580,28 @@ const MemberCard = () => {
       try { const u = new URL(v); return ['http:', 'https:'].includes(u.protocol); } catch { return false; }
     };
 
+    // 將社群連結標準化，容許輸入 @handle 或不含協議的網址
+    const normalizeSocialUrl = (raw, platform) => {
+      if (!raw) return '';
+      let v = String(raw).trim();
+      // 若已是 http(s) 連結，直接返回
+      if (isValidHttpUrl(v)) return v;
+      // 若是以 www. 或平台網域開頭，補 https://
+      const startsWithDomain = /^((www\.)|(youtube\.com)|(youtu\.be)|(tiktok\.com))/i.test(v);
+      if (startsWithDomain) return `https://${v}`;
+      // 將 @handle 或純文字轉為對應平台的使用者頁面
+      if (platform === 'youtube') {
+        // 允許 @handle 或純文字，轉為 YouTube 頁面
+        const handle = v.startsWith('@') ? v : `@${v}`;
+        return `https://www.youtube.com/${handle}`;
+      }
+      if (platform === 'tiktok') {
+        const handle = v.startsWith('@') ? v : `@${v}`;
+        return `https://www.tiktok.com/${handle}`;
+      }
+      return v;
+    };
+
     // 從社群區塊補齊 Facebook / Instagram 連結（修正：使用 content_blocks）
     const socialBlock = Array.isArray(cardData?.content_blocks)
       ? cardData.content_blocks.find(b => b?.content_type === 'social')
@@ -587,8 +609,8 @@ const MemberCard = () => {
     const social = socialBlock?.content_data || {};
     const facebookUrl = social.facebook || info.facebook || '';
     const instagramUrl = social.instagram || info.instagram || '';
-    const youtubeUrl = social.youtube || info.youtube || '';
-    const tiktokUrl = social.tiktok || info.tiktok || '';
+    const youtubeUrl = normalizeSocialUrl(social.youtube || info.youtube || '', 'youtube');
+    const tiktokUrl = normalizeSocialUrl(social.tiktok || info.tiktok || '', 'tiktok');
 
     if (info.phone) {
       buttons.push({ key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-8 w-8" />, title: '電話' });

@@ -344,6 +344,60 @@ const PublicNFCCard = () => {
       }
       
       case 'social':
+        // URL 正規化：處理 @handle、缺少協定或僅路徑的輸入
+        const isValidHttpUrl = (v) => {
+          try { const u = new URL(v); return ['http:', 'https:'].includes(u.protocol); } catch { return false; }
+        };
+
+        const normalizeSocialUrl = (platform, raw) => {
+          const v = (raw || '').trim();
+          if (!v) return '';
+          if (/^https?:\/\//i.test(v)) return v; // 已含協定
+
+          // 移除多餘空白與前導符號
+          const cleaned = v.replace(/^@/, '').replace(/^\/+/, '');
+
+          switch (platform) {
+            case 'youtube': {
+              // 支援 handle、channel/user/c 路徑、僅域名
+              if (/^((www\.)?youtube\.com|youtu\.be)/i.test(cleaned)) {
+                return `https://${cleaned}`;
+              }
+              if (/^(channel|user|c)\//i.test(cleaned)) {
+                return `https://www.youtube.com/${cleaned}`;
+              }
+              // 預設視為 handle
+              return `https://www.youtube.com/@${cleaned}`;
+            }
+            case 'tiktok': {
+              if (/^((www\.)?tiktok\.com)/i.test(cleaned)) {
+                return `https://${cleaned}`;
+              }
+              // 預設視為用戶名
+              return `https://www.tiktok.com/@${cleaned}`;
+            }
+            case 'instagram': {
+              if (/^((www\.)?instagram\.com)/i.test(cleaned)) return `https://${cleaned}`;
+              return `https://www.instagram.com/${cleaned}`;
+            }
+            case 'facebook': {
+              if (/^((www\.)?facebook\.com)/i.test(cleaned)) return `https://${cleaned}`;
+              return `https://www.facebook.com/${cleaned}`;
+            }
+            case 'twitter': {
+              if (/^((www\.)?twitter\.com|x\.com)/i.test(cleaned)) return `https://${cleaned}`;
+              return `https://twitter.com/${cleaned}`;
+            }
+            case 'linkedin': {
+              if (/^((www\.)?linkedin\.com)/i.test(cleaned)) return `https://${cleaned}`;
+              // 默認當作個人頁
+              return `https://www.linkedin.com/in/${cleaned}`;
+            }
+            default:
+              return v;
+          }
+        };
+
         const socialPlatforms = [
           { key: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin />, color: 'bg-blue-600 hover:bg-blue-700' },
           { key: 'facebook', name: 'Facebook', icon: <FaFacebook />, color: 'bg-blue-500 hover:bg-blue-600' },
@@ -352,19 +406,26 @@ const PublicNFCCard = () => {
           { key: 'youtube', name: 'YouTube', icon: <FaYoutube />, color: 'bg-red-500 hover:bg-red-600' },
           { key: 'tiktok', name: 'TikTok', icon: <FaTiktok />, color: 'bg-black hover:bg-gray-800' }
         ];
-        
-        const activePlatforms = socialPlatforms.filter(platform => block.content_data[platform.key]);
-        
-        if (activePlatforms.length === 0) return null;
-        
+
+        const normalizedPlatforms = socialPlatforms
+          .map(p => {
+            const raw = block?.content_data?.[p.key];
+            const href = normalizeSocialUrl(p.key, raw);
+            return href ? { ...p, href } : null;
+          })
+          .filter(Boolean)
+          .filter(p => isValidHttpUrl(p.href));
+
+        if (normalizedPlatforms.length === 0) return null;
+
         return (
           <div className="mb-4">
             <h3 className="font-semibold text-lg mb-3">社群媒體</h3>
             <div className="grid grid-cols-2 gap-3">
-              {activePlatforms.map(platform => (
+              {normalizedPlatforms.map(platform => (
                 <a
                   key={platform.key}
-                  href={block.content_data[platform.key]}
+                  href={platform.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`flex items-center justify-center gap-2 p-3 rounded-lg text-white font-medium transition-colors ${platform.color}`}
