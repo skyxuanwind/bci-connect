@@ -58,6 +58,7 @@ import CoachDashboard from './pages/coach/CoachDashboard';
 import CardStudioPro from './pages/CardStudioPro';
 import MemberCard from './pages/MemberCard';
 import PublicNFCCard from './pages/PublicNFCCard';
+import CardOpen from './pages/CardOpen';
 import DigitalWallet from './pages/DigitalWallet';
 import NFCAnalytics from './pages/NFCAnalytics';
 import BusinessMediaList from './pages/BusinessMediaList';
@@ -464,6 +465,8 @@ function App() {
           <Route path="/card/:memberId" element={<MemberCard />} />
           {/* 別名路由：完整版名片頁 */}
           <Route path="/member-card/:memberId" element={<MemberCard />} />
+          {/* 正式名片展示頁（由 Pro 編輯器預覽升級而來） */}
+          <Route path="/card-open/:memberId" element={<CardOpen />} />
           {/* Public NFC Card viewer route */}
           <Route path="/public-nfc-card/:memberId" element={<PublicNFCCard />} />
           <Route path="/industry-templates" element={<IndustryTemplates />} />

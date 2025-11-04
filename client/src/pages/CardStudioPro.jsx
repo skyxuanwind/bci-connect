@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { dbGet, dbSet, dbSubscribe } from '../services/firebaseClient';
 import { uploadImage } from '../services/nfcCards';
@@ -488,6 +488,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
 export default function CardStudioPro() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   
   // 添加 ref 來解決循環依賴問題
   const runConsistencyCheckRef = useRef();
@@ -1046,6 +1047,23 @@ export default function CardStudioPro() {
     }
   };
 
+  // 開啟正式名片頁面（先嘗試資料同步，再導向）
+  const handleOpenCard = async () => {
+    const memberId = user?.memberId || user?.id || user?.user_id || user?.uid;
+    if (!memberId) {
+      toast.error('無法獲取用戶 ID');
+      return;
+    }
+    try {
+      // 嘗試執行一次同步，確保展示頁面資料最新
+      await runDataSync();
+    } catch (e) {
+      // 忽略同步錯誤，仍允許開啟名片
+      console.warn('OpenCard sync warning:', e);
+    }
+    navigate(`/card-open/${memberId}`);
+  };
+
   // removed: 生成分享連結功能（generateShare）
 
   // removed: NFC 寫入功能（startNfcWrite）
@@ -1120,12 +1138,13 @@ export default function CardStudioPro() {
           {/* 左：設定面板 */}
           <div className="bg-white/10 backdrop-blur-xl backdrop-saturate-150 rounded-2xl p-4 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200 ease-out active:scale-[0.997] touch-manipulation">
              <div className="flex items-center justify-between">
-               <h2 className="text-lg font-semibold">名片資訊</h2>
-               <div className="flex items-center gap-2">
-                 <InfoExpandToggle />
-                 <button onClick={handleSave} className="px-3 py-2 rounded bg-blue-600 text-white" aria-label="儲存" disabled={saving}>{saving ? '儲存中…' : '儲存'}</button>
-               </div>
-             </div>
+             <h2 className="text-lg font-semibold">名片資訊</h2>
+             <div className="flex items-center gap-2">
+                <InfoExpandToggle />
+                <button onClick={handleOpenCard} className="px-3 py-2 rounded bg-emerald-600 text-white" aria-label="開啟名片">開啟名片</button>
+                <button onClick={handleSave} className="px-3 py-2 rounded bg-blue-600 text-white" aria-label="儲存" disabled={saving}>{saving ? '儲存中…' : '儲存'}</button>
+              </div>
+            </div>
              <div className="mt-3">
                <AvatarEditor currentAvatar={avatarUrl} onAvatarChange={setAvatarFile} />
                {/* 名片基本欄位（整體可收合） */}

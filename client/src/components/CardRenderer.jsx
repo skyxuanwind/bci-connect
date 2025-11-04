@@ -213,7 +213,12 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
               <img
                 src={content_data.url}
                 alt={content_data.alt || content_data.title}
-                className="w-full rounded-lg cursor-zoom-in"
+                className="w-full rounded-lg cursor-zoom-in object-cover"
+                style={{ aspectRatio: '16/9' }}
+                loading="lazy"
+                decoding="async"
+                srcSet={buildResponsiveSrcSet(content_data.url)}
+                sizes="(max-width: 480px) 100vw, 480px"
                 onClick={() => onOpenImagePreview && onOpenImagePreview(content_data.url)}
               />
               {content_data.alt && (
@@ -246,6 +251,10 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
                   src={imgs[curIdx]?.url}
                   alt={imgs[curIdx]?.alt || ''}
                   className="max-h-72 w-auto object-contain rounded"
+                  loading="lazy"
+                  decoding="async"
+                  srcSet={buildResponsiveSrcSet(imgs[curIdx]?.url)}
+                  sizes="(max-width: 480px) 100vw, 480px"
                 />
               </div>
               <button
@@ -362,6 +371,8 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
                          content_data.size === 'medium' ? '20px' :
                          content_data.size === 'large' ? '24px' : '28px'
                 }}
+                loading="lazy"
+                decoding="async"
               />
             ) : (
               <span className={`${sizeMap[content_data.size] || 'text-lg'}`}>
@@ -410,3 +421,22 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
 };
 
 export default renderContentBlock;
+// 生成 Cloudinary 友好的 responsive srcSet（若非 Cloudinary，回退為 ?w= 寬度參數）
+const buildResponsiveSrcSet = (url, widths = [480, 720, 1080, 1440]) => {
+  if (!url) return '';
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('res.cloudinary.com')) {
+      const parts = u.pathname.split('/');
+      const uploadIdx = parts.findIndex(p => p === 'upload');
+      if (uploadIdx !== -1) {
+        const prefix = parts.slice(0, uploadIdx + 1).join('/');
+        const suffix = parts.slice(uploadIdx + 1).join('/');
+        return widths.map(w => `${u.origin}${prefix}/f_auto,q_auto,dpr_auto,w_${w}/${suffix} ${w}w`).join(', ');
+      }
+    }
+    return widths.map(w => `${url}${url.includes('?') ? '&' : '?'}w=${w} ${w}w`).join(', ');
+  } catch {
+    return widths.map(w => `${url}${url.includes('?') ? '&' : '?'}w=${w} ${w}w`).join(', ');
+  }
+};
