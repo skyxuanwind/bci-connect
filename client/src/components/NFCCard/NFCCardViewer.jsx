@@ -9,6 +9,7 @@ import {
   FaMapMarkerAlt, 
   FaHeart, 
   FaShare,
+  FaWallet,
   FaLinkedin,
   FaFacebook,
   FaTwitter,
@@ -209,7 +210,19 @@ const NFCCardViewer = () => {
     }
   };
 
+  const handleAddToWallet = () => {
+    console.log("Add to wallet clicked");
+    // Logic to generate and download the pass will be added here.
+  };
+
   // vCard 下載功能已移除
+
+  const getVersionedUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const currentV = params.get('v') || `${Date.now()}`;
+    params.set('v', currentV);
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  };
 
   const handleShare = async () => {
     try {
@@ -527,42 +540,6 @@ const NFCCardViewer = () => {
       {cardData?.custom_css && (
         <style dangerouslySetInnerHTML={{ __html: cardData.custom_css }} />
       )}
-      {/* 頂部操作欄 */}
-      <div className="card-actions">
-        <div className="action-buttons">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleBookmark}
-            className={`action-btn bookmark-btn ${isBookmarked ? 'bookmarked' : ''}`}
-            title={isBookmarked ? '取消收藏' : '收藏名片'}
-          >
-            <FaHeart />
-          </motion.button>
-          
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleShare}
-            className="action-btn share-btn"
-            title="分享名片"
-          >
-            <FaShare />
-          </motion.button>
-          
-          {cardData.template_css_config?.supports_dark_mode && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setDarkMode(!darkMode)}
-              className="action-btn theme-btn"
-              title={darkMode ? '切換到淺色模式' : '切換到深色模式'}
-            >
-              {darkMode ? '🌞' : '🌙'}
-            </motion.button>
-          )}
-        </div>
-      </div>
 
       {/* 名片主體 */}
       <motion.div 
@@ -607,6 +584,27 @@ const NFCCardViewer = () => {
             )}
             {/* 與即時預覽一致：移除 card_title 與 card_subtitle 顯示 */}
           </motion.div>
+        </div>
+
+        <div className="nfc-actions">
+            <button onClick={handleBookmark} className={`nfc-action-button ${isBookmarked ? 'bookmarked' : ''}`}>
+                <FaHeart /> <span>{isBookmarked ? '已收藏' : '收藏'}</span>
+            </button>
+            <button onClick={handleShare} className="nfc-action-button">
+                <FaShare /> <span>分享</span>
+            </button>
+            <button onClick={handleAddToWallet} className="nfc-action-button">
+                <FaWallet /> <span>新增至錢包</span>
+            </button>
+            {cardData.template_css_config?.supports_dark_mode && (
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="nfc-action-button"
+                title={darkMode ? '切換到淺色模式' : '切換到深色模式'}
+              >
+                {darkMode ? '🌞' : '🌙'}
+              </button>
+            )}
         </div>
 
         {/* 已依需求徹底移除完整版本聯絡資訊區塊 */}
@@ -692,11 +690,3 @@ const NFCCardViewer = () => {
 };
 
 export default NFCCardViewer;
-
-
-  const getVersionedUrl = () => {
-    const params = new URLSearchParams(window.location.search);
-    const currentV = params.get('v') || `${Date.now()}`;
-    params.set('v', currentV);
-    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-  };

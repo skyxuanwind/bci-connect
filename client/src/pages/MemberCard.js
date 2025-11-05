@@ -39,7 +39,7 @@ import '../styles/premium-card.css';
 import '../styles/premium-effects.css';
 import { mapTemplateNameToClass } from '../utils/templateClass';
 import { QRCodeSVG } from 'qrcode.react';
-import sharedRenderContentBlock, { renderContactInfoArea } from '../components/CardRenderer';
+import { renderContentBlock as sharedRenderContentBlock } from '../components/CardRenderer';
 
 // 將十六進位色碼轉換為 RGB 字串
 const hexToRgb = (hex) => {
@@ -1096,20 +1096,17 @@ const MemberCard = () => {
               {(cardData?.user_name || cardData?.user_title) && (
                 <div className="mx-auto text-center mb-3" style={{ maxWidth: '420px' }}>
                   {cardData?.user_name && (
-                    <div
-                      className="text-white font-bold tracking-wide"
-                      style={{ fontSize: 'clamp(18px, 2.2vw, 20px)', marginTop: '12px' }}
+                    <h1
+                      className="text-2xl font-semibold text-white whitespace-nowrap"
+                      style={{ fontFamily: chineseFontStack }}
                     >
                       {cardData.user_name}
-                    </div>
+                    </h1>
                   )}
                   {cardData?.user_title && (
-                    <div
-                      className="text-white/80"
-                      style={{ fontSize: 'clamp(14px, 1.8vw, 16px)', marginTop: '6px' }}
-                    >
+                    <p className="text-base text-white/80 mt-1 whitespace-nowrap">
                       {cardData.user_title}
-                    </div>
+                    </p>
                   )}
                 </div>
               )}
@@ -1142,7 +1139,7 @@ const MemberCard = () => {
                 borderTopCss={borderTopCss}
                 onOpenPreview={(url) => { setPreviewImageUrl(url); setImagePreviewOpen(true); }}
                 onDownload={(url, username) => downloadImage(url, username)}
-                renderContactInfo={(data) => renderContactInfoArea({ cardData: data, trackEvent })}
+
                 displayBlocks={getDisplayBlocks()}
               />
             )}

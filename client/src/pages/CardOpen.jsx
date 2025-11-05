@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from '../config/axios';
-import sharedRenderContentBlock, { normalizeBlock } from '../components/CardRenderer';
+import { renderContentBlock as sharedRenderContentBlock, normalizeBlock } from '../components/CardRenderer';
 import { PhoneIcon, EnvelopeIcon, SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaYoutube, FaTiktok, FaLine } from 'react-icons/fa';
 

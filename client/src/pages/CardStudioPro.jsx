@@ -15,7 +15,7 @@ import dataSyncManager from '../utils/dataSyncManager';
 import DataConsistencyChecker from '../utils/dataConsistencyChecker';
 import { UserIcon, BuildingOfficeIcon, BriefcaseIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaTiktok, FaYoutube, FaLine } from 'react-icons/fa';
-import sharedRenderContentBlock, { normalizeBlock, renderContactInfoArea } from '../components/CardRenderer';
+import { renderContentBlock as sharedRenderContentBlock, normalizeBlock } from '../components/CardRenderer';
 // framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
@@ -218,9 +218,7 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
           )}
 
           {/* 聯絡資訊區域（使用共享邏輯） */}
-          <div className="px-3">
-            {renderContactInfoArea({ cardData, trackEvent: () => {} })}
-          </div>
+
 
           <div className={isStandard ? 'px-3' : 'px-3 space-y-3'}>
             {normalizedBlocks.map((nb, idx) => {
