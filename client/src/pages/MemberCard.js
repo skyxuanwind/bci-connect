@@ -1041,7 +1041,7 @@ const MemberCard = () => {
   const dividerStyle = cardData?.ui_divider_style || template?.css_config?.dividerOptions?.[0] || 'solid-thin';
   const dividerOpacity = typeof cardData?.ui_divider_opacity === 'number' ? cardData.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
-  const layoutType = cardData?.layout_type || 'standard';
+  const layoutType = 'full_slider';
 
   // 背景樣式：優先使用編輯器設計的 bgStyle，其次使用模板配色
   const backgroundStyle = (() => {
