@@ -1076,7 +1076,7 @@ const MemberCard = () => {
         <div className={`nfc-card-preview nfc-card-base premium-card ${templateClass}`}>
           <div className="card-content">
             {/* 頂部：大尺寸完整頭像（原始比例）＋姓名職稱（與頭像寬度對齊） */}
-            <div className="personal-info-section" style={{ display: 'block' }}>
+            <div className="personal-info-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {/* 統一寬度容器，讓文字與頭像寬度對齊，移除任何裁切框 */}
               <div className="mx-auto mb-4" style={{ maxWidth: '420px' }}>
                 {cardData?.ui_show_avatar && cardData?.avatar_url ? (
