@@ -569,121 +569,7 @@ const MemberCard = () => {
 
   // vCard 下載功能已移除
 
-  // 渲染聯絡資訊（基於預覽邏輯）
-  const renderContactInfo = () => {
-    if (!cardData?.ui_show_contacts || !cardData?.contact_info) return null;
-
-    const info = cardData.contact_info;
-    const buttons = [];
-
-    const isValidHttpUrl = (v) => {
-      try { const u = new URL(v); return ['http:', 'https:'].includes(u.protocol); } catch { return false; }
-    };
-
-    // 將社群連結標準化，容許輸入 @handle 或不含協議的網址
-    const normalizeSocialUrl = (raw, platform) => {
-      if (!raw) return '';
-      let v = String(raw).trim();
-      // 若已是 http(s) 連結，直接返回
-      if (isValidHttpUrl(v)) return v;
-      // 若是以 www. 或平台網域開頭，補 https://
-      const startsWithDomain = /^((www\.)|(youtube\.com)|(youtu\.be)|(tiktok\.com))/i.test(v);
-      if (startsWithDomain) return `https://${v}`;
-      // 將 @handle 或純文字轉為對應平台的使用者頁面
-      if (platform === 'youtube') {
-        // 允許 @handle 或純文字，轉為 YouTube 頁面
-        const handle = v.startsWith('@') ? v : `@${v}`;
-        return `https://www.youtube.com/${handle}`;
-      }
-      if (platform === 'tiktok') {
-        const handle = v.startsWith('@') ? v : `@${v}`;
-        return `https://www.tiktok.com/${handle}`;
-      }
-      return v;
-    };
-
-    // 從社群區塊補齊 Facebook / Instagram 連結（修正：使用 content_blocks）
-    const socialBlock = Array.isArray(cardData?.content_blocks)
-      ? cardData.content_blocks.find(b => b?.content_type === 'social')
-      : null;
-    const social = socialBlock?.content_data || {};
-    const facebookUrl = social.facebook || info.facebook || '';
-    const instagramUrl = social.instagram || info.instagram || '';
-    const youtubeUrl = normalizeSocialUrl(social.youtube || info.youtube || '', 'youtube');
-    const tiktokUrl = normalizeSocialUrl(social.tiktok || info.tiktok || '', 'tiktok');
-
-    if (info.phone) {
-      buttons.push({ key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-8 w-8" />, title: '電話' });
-    }
-    if (info.email) {
-      buttons.push({ key: 'email', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-8 w-8" />, title: '電子郵件' });
-    }
-    if (info.line_id) {
-      buttons.push({ key: 'line', href: `https://line.me/ti/p/~${info.line_id}`, icon: <FaLine className="h-8 w-8" />, title: 'LINE' });
-    }
-    if (facebookUrl) {
-      buttons.push({ key: 'facebook', href: facebookUrl, icon: <FaFacebook className="h-8 w-8" />, title: 'Facebook' });
-    }
-    if (instagramUrl) {
-      buttons.push({ key: 'instagram', href: instagramUrl, icon: <FaInstagram className="h-8 w-8" />, title: 'Instagram' });
-    }
-    if (isValidHttpUrl(youtubeUrl)) {
-      buttons.push({ key: 'youtube', href: youtubeUrl, icon: <FaYoutube className="h-8 w-8" style={{ color: '#FF0000' }} />, title: 'YouTube' });
-    }
-    if (isValidHttpUrl(tiktokUrl)) {
-      buttons.push({ key: 'tiktok', href: tiktokUrl, icon: <FaTiktok className="h-8 w-8" style={{ color: '#000000' }} />, title: 'TikTok' });
-    }
-
-    if (buttons.length === 0) return null;
-
-    const isStandard = (cardData?.layout_type || 'standard') === 'standard';
-
-    if (isStandard) {
-      return (
-        <div className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10">
-          <div className="p-3">
-            <div className="text-sm opacity-90">聯絡資訊</div>
-            <div className="flex justify-center items-center gap-4 mt-2">
-              {buttons.map((btn) => (
-                <a
-                  key={btn.key}
-                  href={btn.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={btn.title}
-                  className="transition-transform active:scale-90 text-white hover:text-white/80"
-                  onClick={() => trackEvent('contact_click', { contentType: btn.key })}
-                >
-                  {btn.icon}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-2 mb-4">
-        <div className="text-sm opacity-70">聯絡資訊</div>
-        <div className="flex justify-center items-center gap-4 mt-2">
-          {buttons.map((btn) => (
-            <a
-              key={btn.key}
-              href={btn.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={btn.title}
-              className="transition-transform active:scale-90 text-white hover:text-white/80"
-              onClick={() => trackEvent('contact_click', { contentType: btn.key })}
-            >
-              {btn.icon}
-            </a>
-          ))}
-        </div>
-      </div>
-    );
-  };
+  // 聯絡資訊統一由共享渲染器提供（renderContactInfoArea）
 
   // 渲染內容區塊（加入 LINE ID 隱藏與 carousel 支援）
   const renderContentBlock = (block, index) => {
@@ -1208,7 +1094,7 @@ const MemberCard = () => {
               </div>
               {/* 使用者姓名與職業：置於頭像下方、聯絡資訊上方，保持一致間距比例 */}
               {(cardData?.user_name || cardData?.user_title) && (
-                <div className="mx-auto text-center" style={{ maxWidth: '420px' }}>
+                <div className="mx-auto text-center mb-3" style={{ maxWidth: '420px' }}>
                   {cardData?.user_name && (
                     <div
                       className="text-white font-bold tracking-wide"
