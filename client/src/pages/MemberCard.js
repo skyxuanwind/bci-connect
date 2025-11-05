@@ -150,6 +150,36 @@ const MemberCard = () => {
     return originalBlocks;
   };
 
+  const renderContactInfoArea = () => {
+    const info = cardData?.contact_info || {};
+    const buttons = [];
+    if (info.phone) buttons.push({ label: '電話', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-4 w-4" /> });
+    if (info.email) buttons.push({ label: '電子郵件', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-4 w-4" /> });
+    if (info.website) buttons.push({ label: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}`, icon: <GlobeAltIcon className="h-4 w-4" /> });
+
+    if (buttons.length === 0) return null;
+
+    return (
+      <div className="mt-4">
+        <div className="flex flex-wrap justify-center gap-3">
+          {buttons.map((btn, index) => (
+            <a
+              key={index}
+              href={btn.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+              onClick={() => trackEvent('contact_click', { contentType: 'main_contact', contentId: btn.label })}
+            >
+              {btn.icon}
+              <span>{btn.label}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // 載入自定義設置
   useEffect(() => {
     if (memberId) {
