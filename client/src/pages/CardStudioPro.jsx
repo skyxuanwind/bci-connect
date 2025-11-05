@@ -15,7 +15,7 @@ import dataSyncManager from '../utils/dataSyncManager';
 import DataConsistencyChecker from '../utils/dataConsistencyChecker';
 import { UserIcon, BuildingOfficeIcon, BriefcaseIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaTiktok, FaYoutube, FaLine } from 'react-icons/fa';
-import sharedRenderContentBlock, { normalizeBlock } from '../components/CardRenderer';
+import sharedRenderContentBlock, { normalizeBlock, renderContactInfoArea } from '../components/CardRenderer';
 // framer-motion 未使用，已移除覆蓋層
 
 // 簡易主題集合（≥10）
@@ -135,6 +135,23 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
   ].filter(Boolean);
 
   const isStandard = layoutId === 'standard';
+  const chineseFontStack = "-apple-system, BlinkMacSystemFont, 'PingFang SC','PingFang TC','Noto Sans CJK','Microsoft YaHei','Segoe UI','Helvetica Neue', Arial, sans-serif";
+  const cardData = useMemo(() => ({
+    ui_show_contacts: true,
+    layout_type: layoutId || 'standard',
+    contact_info: {
+      phone: info?.phone || '',
+      email: info?.email || '',
+      website: info?.website || '',
+      company: info?.company || '',
+      address: info?.address || '',
+      line_id: (info?.line || '').trim(),
+      facebook: (info?.facebook || '').trim(),
+      instagram: (info?.instagram || '').trim(),
+      youtube: (info?.youtube || '').trim(),
+      tiktok: (info?.tiktok || '').trim()
+    }
+  }), [info, layoutId]);
 
   // 預覽頁輪播索引與滑動手勢（與 MemberCard 行為對齊，增強預覽交互）
   const [blockCarouselIndexMap, setBlockCarouselIndexMap] = useState({});
@@ -173,20 +190,16 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
   }, [carouselCountsMap, blockCarouselIndexMap]);
 
   return (
-    <div style={{ fontFamily: theme.font, minHeight: '100vh', background: colors.bg, backgroundImage: bgStyle || undefined }} className="p-4">
-      <div className="max-w-md mx-auto">
-        <div className="rounded-2xl shadow-lg p-4" style={{ background: colors.card, color: colors.text }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm opacity-80">預覽名片</div>
-            <span className="text-xs opacity-70">Pro</span>
-          </div>
+    <div style={{ fontFamily: chineseFontStack, minHeight: '100vh', background: colors.bg, backgroundImage: bgStyle || undefined }} className="p-4">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6">
+        {/* 預覽標題移除，與 MemberCard 對齊 */}
 
           {/* 頭像全寬置中顯示 */}
           <div className="w-full mb-3">
             {avatarUrl ? (
               <img src={avatarUrl} alt="頭像" className="w-full h-auto object-contain rounded-xl ring-2" style={{ borderColor: colors.accent }} loading="lazy" decoding="async" />
             ) : (
-              <div className="w-full min-h-[160px] flex items-center justify-center rounded-xl bg-black/20">
+              <div className="w-full min-h-[160px] flex items-center justify-center rounded-xl bg-white/20">
                 {(info.name || 'N').slice(0,1).toUpperCase()}
               </div>
             )}
@@ -195,45 +208,21 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
           {/* 使用者姓名與職業：置於頭像下方、聯絡資訊上方，保持一致間距比例 */}
           {(info.name || info.title) && (
             <div className="text-center mb-3">
-              {info.name && (
-                <div className="text-xl font-semibold tracking-wide">{info.name}</div>
+              {info?.name && (
+                <div className="text-white font-bold tracking-wide" style={{ fontSize: 'clamp(18px, 2.2vw, 20px)', marginTop: '12px' }}>{info.name}</div>
               )}
-              {info.title && (
-                <div className="text-sm opacity-80">{info.title}</div>
+              {info?.title && (
+                <div className="text-white/80" style={{ fontSize: 'clamp(14px, 1.8vw, 16px)', marginTop: '6px' }}>{info.title}</div>
               )}
             </div>
           )}
 
-          {/* 聯絡資訊：標準版型以獨立卡片呈現；簡潔版型以標題＋ICON列呈現 */}
-          {socialButtons.length > 0 && (
-            isStandard ? (
-              <div className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10">
-                <div className="p-3">
-                  <div className="text-sm opacity-90">聯絡資訊</div>
-                  <div className="flex justify-center items-center gap-4 mt-2">
-                    {socialButtons.map(btn => (
-                      <a key={btn.key} href={btn.href} target="_blank" rel="noopener noreferrer" title={btn.title} className="transition-transform active:scale-90 text-white hover:text-white/80">
-                        {btn.icon}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-2 mb-4">
-                <div className="text-sm opacity-70">聯絡資訊</div>
-                <div className="flex justify-center items-center gap-4 mt-2">
-                  {socialButtons.map(btn => (
-                    <a key={btn.key} href={btn.href} target="_blank" rel="noopener noreferrer" title={btn.title} className="transition-transform active:scale-90 text-white hover:text-white/80">
-                      {btn.icon}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )
-          )}
+          {/* 聯絡資訊區域（使用共享邏輯） */}
+          <div className="px-3">
+            {renderContactInfoArea({ cardData, trackEvent: () => {} })}
+          </div>
 
-          <div className={isStandard ? '' : 'space-y-3'}>
+          <div className={isStandard ? 'px-3' : 'px-3 space-y-3'}>
             {normalizedBlocks.map((nb, idx) => {
               const inner = sharedRenderContentBlock({
                 block: nb,
@@ -260,7 +249,6 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

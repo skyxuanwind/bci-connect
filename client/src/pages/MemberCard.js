@@ -39,7 +39,7 @@ import '../styles/premium-card.css';
 import '../styles/premium-effects.css';
 import { mapTemplateNameToClass } from '../utils/templateClass';
 import { QRCodeSVG } from 'qrcode.react';
-import sharedRenderContentBlock from '../components/CardRenderer';
+import sharedRenderContentBlock, { renderContactInfoArea } from '../components/CardRenderer';
 
 // 將十六進位色碼轉換為 RGB 字串
 const hexToRgb = (hex) => {
@@ -1256,7 +1256,7 @@ const MemberCard = () => {
                 borderTopCss={borderTopCss}
                 onOpenPreview={(url) => { setPreviewImageUrl(url); setImagePreviewOpen(true); }}
                 onDownload={(url, username) => downloadImage(url, username)}
-                renderContactInfo={renderContactInfo}
+                renderContactInfo={(data) => renderContactInfoArea({ cardData: data, trackEvent })}
                 displayBlocks={getDisplayBlocks()}
               />
             )}

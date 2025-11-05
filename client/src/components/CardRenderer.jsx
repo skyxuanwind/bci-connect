@@ -5,9 +5,11 @@ import {
   ChevronRightIcon,
   DocumentArrowDownIcon,
   LinkIcon,
-  MapPinIcon
+  MapPinIcon,
+  PhoneIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
-import { FaLinkedin, FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaTiktok } from 'react-icons/fa';
+import { FaLinkedin, FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaTiktok, FaLine } from 'react-icons/fa';
 
 // 解析 YouTube 或 Vimeo ID（優先 YouTube，補充 Vimeo）
 const getYouTubeId = (url) => {
@@ -439,4 +441,114 @@ const buildResponsiveSrcSet = (url, widths = [480, 720, 1080, 1440]) => {
   } catch {
     return widths.map(w => `${url}${url.includes('?') ? '&' : '?'}w=${w} ${w}w`).join(', ');
   }
+};
+
+// 共享：渲染聯絡資訊區域（與 MemberCard 完全對齊）
+export const renderContactInfoArea = ({ cardData, trackEvent = () => {} }) => {
+  if (!cardData?.ui_show_contacts || !cardData?.contact_info) return null;
+
+  const info = cardData.contact_info;
+  const buttons = [];
+
+  const isValidHttpUrl = (v) => {
+    try { const u = new URL(v); return ['http:', 'https:'].includes(u.protocol); } catch { return false; }
+  };
+
+  const normalizeSocialUrl = (raw, platform) => {
+    if (!raw) return '';
+    let v = String(raw).trim();
+    if (isValidHttpUrl(v)) return v;
+    const startsWithDomain = /^((www\.)|(youtube\.com)|(youtu\.be)|(tiktok\.com))/i.test(v);
+    if (startsWithDomain) return `https://${v}`;
+    if (platform === 'youtube') {
+      const handle = v.startsWith('@') ? v : `@${v}`;
+      return `https://www.youtube.com/${handle}`;
+    }
+    if (platform === 'tiktok') {
+      const handle = v.startsWith('@') ? v : `@${v}`;
+      return `https://www.tiktok.com/${handle}`;
+    }
+    return v;
+  };
+
+  const socialBlock = Array.isArray(cardData?.content_blocks)
+    ? cardData.content_blocks.find(b => b?.content_type === 'social')
+    : null;
+  const social = socialBlock?.content_data || {};
+  const facebookUrl = social.facebook || info.facebook || '';
+  const instagramUrl = social.instagram || info.instagram || '';
+  const youtubeUrl = normalizeSocialUrl(social.youtube || info.youtube || '', 'youtube');
+  const tiktokUrl = normalizeSocialUrl(social.tiktok || info.tiktok || '', 'tiktok');
+
+  if (info.phone) {
+    buttons.push({ key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-8 w-8" />, title: '電話' });
+  }
+  if (info.email) {
+    buttons.push({ key: 'email', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-8 w-8" />, title: '電子郵件' });
+  }
+  if (info.line_id) {
+    buttons.push({ key: 'line', href: `https://line.me/ti/p/~${info.line_id}`, icon: <FaLine className="h-8 w-8" />, title: 'LINE' });
+  }
+  if (facebookUrl) {
+    buttons.push({ key: 'facebook', href: facebookUrl, icon: <FaFacebook className="h-8 w-8" />, title: 'Facebook' });
+  }
+  if (instagramUrl) {
+    buttons.push({ key: 'instagram', href: instagramUrl, icon: <FaInstagram className="h-8 w-8" />, title: 'Instagram' });
+  }
+  if (isValidHttpUrl(youtubeUrl)) {
+    buttons.push({ key: 'youtube', href: youtubeUrl, icon: <FaYoutube className="h-8 w-8" style={{ color: '#FF0000' }} />, title: 'YouTube' });
+  }
+  if (isValidHttpUrl(tiktokUrl)) {
+    buttons.push({ key: 'tiktok', href: tiktokUrl, icon: <FaTiktok className="h-8 w-8" style={{ color: '#000000' }} />, title: 'TikTok' });
+  }
+
+  if (buttons.length === 0) return null;
+
+  const isStandard = (cardData?.layout_type || 'standard') === 'standard';
+
+  if (isStandard) {
+    return (
+      <div className="mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10">
+        <div className="p-3">
+          <div className="text-sm opacity-90">聯絡資訊</div>
+          <div className="flex justify-center items-center gap-4 mt-2">
+            {buttons.map((btn) => (
+              <a
+                key={btn.key}
+                href={btn.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={btn.title}
+                className="transition-transform active:scale-90 text-white hover:text-white/80"
+                onClick={() => trackEvent('contact_click', { contentType: btn.key })}
+              >
+                {btn.icon}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 mb-4">
+      <div className="text-sm opacity-70">聯絡資訊</div>
+      <div className="flex justify-center items-center gap-4 mt-2">
+        {buttons.map((btn) => (
+          <a
+            key={btn.key}
+            href={btn.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={btn.title}
+            className="transition-transform active:scale-90 text-white hover:text-white/80"
+            onClick={() => trackEvent('contact_click', { contentType: btn.key })}
+          >
+            {btn.icon}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
 };
