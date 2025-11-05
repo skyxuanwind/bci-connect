@@ -1110,31 +1110,7 @@ const MemberCard = () => {
                   )}
                 </div>
               )}
-              {/* 移除頭像旁文字：姓名、職稱、公司完全不顯示 */}
             </div>
-
-            {/* 姓名與職稱獨立區塊 */}
-            {(cardData?.user_name || cardData?.user_title) && (
-              <div className="px-3">
-                <div className="mb-4 rounded-xl bg-white/5 border border-white/10 p-4 text-center">
-                  {cardData?.user_name && (
-                    <h1
-                      className="text-2xl font-semibold text-white"
-                      style={{ fontFamily: chineseFontStack }}
-                    >
-                      {cardData.user_name}
-                    </h1>
-                  )}
-                  {cardData?.user_title && (
-                    <p className="text-base text-white/80 mt-1">
-                      {cardData.user_title}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 分享 / QR 移至頁面最底部，於此不再顯示 */}
 
             {/* 版型渲染：四宮格 / 滿版滑動 / 標準 */}
             {layoutType === 'four_grid' ? (
@@ -1160,7 +1136,7 @@ const MemberCard = () => {
                 borderTopCss={borderTopCss}
                 onOpenPreview={(url) => { setPreviewImageUrl(url); setImagePreviewOpen(true); }}
                 onDownload={(url, username) => downloadImage(url, username)}
-
+                renderContactInfo={renderContactInfoArea}
                 displayBlocks={getDisplayBlocks()}
               />
             )}
@@ -1190,8 +1166,8 @@ const MemberCard = () => {
               </motion.div>
               {/* 底部不再顯示姓名職稱，已移至頭像下方 */}
             </div>
-      </div>
-    </div>
+          </div>
+        </div>
       </div>
 
       {/* 自定義板塊入口改為導向 Pro 編輯器 */}
