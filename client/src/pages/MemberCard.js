@@ -1041,7 +1041,7 @@ const MemberCard = () => {
   const dividerStyle = cardData?.ui_divider_style || template?.css_config?.dividerOptions?.[0] || 'solid-thin';
   const dividerOpacity = typeof cardData?.ui_divider_opacity === 'number' ? cardData.ui_divider_opacity : (template?.css_config?.dividerOpacity ?? 0.6);
   const borderTopCss = getDividerBorder(dividerStyle, accentColor, dividerOpacity);
-  const layoutType = 'full_slider';
+  const layoutType = cardData?.layout_type || 'standard';
 
   // 背景樣式：優先使用編輯器設計的 bgStyle，其次使用模板配色
   const backgroundStyle = (() => {
@@ -1097,14 +1097,14 @@ const MemberCard = () => {
                 <div className="mx-auto text-center mb-3" style={{ maxWidth: '420px' }}>
                   {cardData?.user_name && (
                     <h1
-                      className="text-2xl font-semibold text-white whitespace-nowrap"
+                      className="text-2xl font-semibold text-white"
                       style={{ fontFamily: chineseFontStack }}
                     >
                       {cardData.user_name}
                     </h1>
                   )}
                   {cardData?.user_title && (
-                    <p className="text-base text-white/80 mt-1 whitespace-nowrap">
+                    <p className="text-base text-white/80 mt-1">
                       {cardData.user_title}
                     </p>
                   )}
@@ -1112,6 +1112,27 @@ const MemberCard = () => {
               )}
               {/* 移除頭像旁文字：姓名、職稱、公司完全不顯示 */}
             </div>
+
+            {/* 姓名與職稱獨立區塊 */}
+            {(cardData?.user_name || cardData?.user_title) && (
+              <div className="px-3">
+                <div className="mb-4 rounded-xl bg-white/5 border border-white/10 p-4 text-center">
+                  {cardData?.user_name && (
+                    <h1
+                      className="text-2xl font-semibold text-white"
+                      style={{ fontFamily: chineseFontStack }}
+                    >
+                      {cardData.user_name}
+                    </h1>
+                  )}
+                  {cardData?.user_title && (
+                    <p className="text-base text-white/80 mt-1">
+                      {cardData.user_title}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* 分享 / QR 移至頁面最底部，於此不再顯示 */}
 
