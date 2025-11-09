@@ -153,9 +153,9 @@ const MemberCard = () => {
   const renderContactInfoArea = () => {
     const info = cardData?.contact_info || {};
     const buttons = [];
-    if (info.phone) buttons.push({ label: '電話', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-4 w-4" /> });
-    if (info.email) buttons.push({ label: '電子郵件', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-4 w-4" /> });
-    if (info.website) buttons.push({ label: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}`, icon: <GlobeAltIcon className="h-4 w-4" /> });
+    if (info.phone) buttons.push({ aria: '電話', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-5 w-5" /> });
+    if (info.email) buttons.push({ aria: '電子郵件', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-5 w-5" /> });
+    if (info.website) buttons.push({ aria: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}`, icon: <GlobeAltIcon className="h-5 w-5" /> });
 
     if (buttons.length === 0) return null;
 
@@ -166,13 +166,15 @@ const MemberCard = () => {
             <a
               key={index}
               href={btn.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
-              onClick={() => trackEvent('contact_click', { contentType: 'main_contact', contentId: btn.label })}
+              aria-label={btn.aria}
+              title={btn.aria}
+              target={btn.href?.startsWith('http') ? '_blank' : undefined}
+              rel={btn.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+              className="inline-flex items-center justify-center w-12 h-12 rounded-full border transition"
+              style={{ borderColor: accentColor, color: accentColor }}
+              onClick={() => trackEvent('contact_click', { contentType: 'main_contact', contentId: btn.aria })}
             >
               {btn.icon}
-              <span>{btn.label}</span>
             </a>
           ))}
         </div>
@@ -1361,6 +1363,7 @@ const StandardLayout = ({ cardData, renderContentBlock, borderTopCss, onOpenPrev
   const isStandard = (cardData?.layout_type || 'standard') === 'standard';
   return (
     <div className={isStandard ? 'px-3' : 'px-3 space-y-3'}>
+      {typeof renderContactInfo === 'function' ? renderContactInfo(cardData) : null}
       {displayBlocks.map((block, i) => (
         <div
           key={block?.id || i}
@@ -1370,7 +1373,6 @@ const StandardLayout = ({ cardData, renderContentBlock, borderTopCss, onOpenPrev
           {renderContentBlock(block, i)}
         </div>
       ))}
-      {typeof renderContactInfo === 'function' ? renderContactInfo(cardData) : null}
     </div>
   );
 };
