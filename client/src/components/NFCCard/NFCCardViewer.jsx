@@ -3,22 +3,20 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  FaPhone, 
-  FaEnvelope, 
-  FaGlobe, 
-  FaMapMarkerAlt, 
   FaHeart, 
   FaShare,
   FaWallet,
-  FaLinkedin,
-  FaFacebook,
-  FaTwitter,
-  FaInstagram,
-  FaYoutube,
-  FaPlay,
-  FaExternalLinkAlt
 } from 'react-icons/fa';
 import './NFCCardViewer.css';
+
+const TextContentBlock = React.lazy(() => import('./components/TextContentBlock'));
+const LinkContentBlock = React.lazy(() => import('./components/LinkContentBlock'));
+const VideoContentBlock = React.lazy(() => import('./components/VideoContentBlock'));
+const ImageContentBlock = React.lazy(() => import('./components/ImageContentBlock'));
+const ImageCarouselBlock = React.lazy(() => import('./components/ImageCarouselBlock'));
+const SocialMediaBlock = React.lazy(() => import('./components/SocialMediaBlock'));
+const MapBlock = React.lazy(() => import('./components/MapBlock'));
+const ShareModal = React.lazy(() => import('./components/ShareModal'));
 
 const NFCCardViewer = () => {
   const { userId } = useParams();
@@ -96,7 +94,6 @@ const NFCCardViewer = () => {
     }
   };
 
-  // 將 custom_css 解析為變數
   const parseCssVars = (cssText, accentFallback) => {
     try {
       const text = cssText || '';
@@ -163,7 +160,6 @@ const NFCCardViewer = () => {
     return '';
   };
 
-  // 為特殊分隔線樣式注入背景圖層
   const renderDividerLayer = () => {
     const styleName = (cssVars.dividerStyle || '').toLowerCase();
     const rgb = hexToRgb(cssVars.accent);
@@ -310,7 +306,7 @@ const NFCCardViewer = () => {
   const renderContentBlock = (content) => {
     const { content_type, content_data } = content;
     const usesLayer = ['wave-soft', 'curve-strong'].includes((cssVars.dividerStyle || '').toLowerCase());
-    const borderTopCss = usesLayer ? 'none' : getDividerBorder(cssVars.dividerStyle, cssVars.accent, cssVars.dividerOpacity);
+    const borderTopCss = usesLayer ? 'none' : getDividerBorder(cssVars.dividerStyle, cssVars.accent, cssVars.dividerOpacity, darkMode);
     const iconClass = getIconPackClass(cssVars.iconPack);
 
     switch (content_type) {
@@ -398,6 +394,7 @@ const NFCCardViewer = () => {
               src={content_data.url} 
               alt={content_data.alt || content_data.title}
               className="content-image"
+              loading="lazy"
             />
             {content_data.description && (
               <p className="image-description">{content_data.description}</p>
@@ -531,8 +528,6 @@ const NFCCardViewer = () => {
 
   const templateClass = cardData.template_name?.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'default';
   const themeClass = darkMode ? 'dark' : 'light';
-  const contactIconStyle = { color: cssVars.accent };
-  const iconClass = getIconPackClass(cssVars.iconPack);
 
   return (
     <div className={`nfc-card-viewer ${templateClass} ${themeClass}`}>
@@ -561,6 +556,7 @@ const NFCCardViewer = () => {
                 src={cardData.avatar_url || cardData.user_avatar} 
                 alt={cardData.user_name || 'avatar'}
                 className="user-avatar"
+                loading="lazy"
               />
             </motion.div>
           )}
@@ -617,74 +613,30 @@ const NFCCardViewer = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            {cardData.content.map((content, index) => (
-              <motion.div
-                key={content.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 + index * 0.1 }}
-              >
-                {renderContentBlock(content)}
-              </motion.div>
-            ))}
+            <Suspense fallback={<div>載入中...</div>}>
+              {cardData.content.map((content, index) => (
+                <motion.div
+                  key={content.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 + index * 0.1 }}
+                >
+                  {renderContentBlock(content)}
+                </motion.div>
+              ))}
+            </Suspense>
           </motion.div>
         )}
       </motion.div>
 
       {/* 分享模態框 */}
-      <AnimatePresence>
-        {showShareModal && (
-          <motion.div 
-            className="modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowShareModal(false)}
-          >
-            <motion.div 
-              className="share-modal"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3>分享名片</h3>
-              <div className="share-options">
-                <button 
-                  onClick={() => copyToClipboard(shareShortUrl || getVersionedUrl())}
-                  className="share-option"
-                >
-                  📋 複製連結
-                </button>
-                <button 
-                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareShortUrl || getVersionedUrl())}`, '_blank')}
-                  className="share-option facebook"
-                >
-                  📘 Facebook
-                </button>
-                <button 
-                  onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareShortUrl || getVersionedUrl())}&text=${encodeURIComponent(`查看 ${cardData.user_name} 的電子名片`)}`, '_blank')}
-                  className="share-option twitter"
-                >
-                  🐦 Twitter
-                </button>
-                <button 
-                  onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareShortUrl || getVersionedUrl())}`, '_blank')}
-                  className="share-option linkedin"
-                >
-                  💼 LinkedIn
-                </button>
-              </div>
-              <button 
-                onClick={() => setShowShareModal(false)}
-                className="close-modal"
-              >
-                關閉
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Suspense fallback={null}>
+        <ShareModal 
+          show={showShareModal} 
+          onClose={() => setShowShareModal(false)} 
+          cardData={cardData} 
+        />
+      </Suspense>
     </div>
   );
 };

@@ -1127,7 +1127,6 @@ export default function CardStudioPro() {
              <h2 className="text-lg font-semibold">名片資訊</h2>
              <div className="flex items-center gap-2">
                 <InfoExpandToggle />
-                <button onClick={handleOpenCard} className="px-3 py-2 rounded bg-emerald-600 text-white" aria-label="開啟名片">開啟名片</button>
                 <button onClick={handleSave} className="px-3 py-2 rounded bg-blue-600 text-white" aria-label="儲存" disabled={saving}>{saving ? '儲存中…' : '儲存'}</button>
               </div>
             </div>
