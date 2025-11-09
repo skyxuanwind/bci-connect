@@ -153,7 +153,40 @@ const MemberCard = () => {
   const renderContactInfoArea = () => {
     const info = cardData?.contact_info || {};
     const buttons = [];
-    if (info.website) buttons.push({ aria: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}`, icon: <GlobeAltIcon className="h-5 w-5" /> });
+    // 電話
+    if (info.phone) {
+      buttons.push({ aria: '電話', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-6 w-6" /> });
+    }
+    // 電子郵件
+    if (info.email) {
+      buttons.push({ aria: '電子郵件', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-6 w-6" /> });
+    }
+    // LINE
+    const lineRaw = info.line_id || info.line;
+    if (lineRaw) {
+      const lineHref = buildLineDeepLink(lineRaw);
+      if (lineHref) buttons.push({ aria: 'LINE', href: lineHref, icon: <FaLine className="h-6 w-6" /> });
+    }
+    // Facebook
+    if (info.facebook && /^https?:\/\//.test(info.facebook)) {
+      buttons.push({ aria: 'Facebook', href: info.facebook, icon: <FaFacebook className="h-6 w-6" /> });
+    }
+    // Instagram
+    if (info.instagram && /^https?:\/\//.test(info.instagram)) {
+      buttons.push({ aria: 'Instagram', href: info.instagram, icon: <FaInstagram className="h-6 w-6" /> });
+    }
+    // YouTube
+    if (info.youtube && /^https?:\/\//.test(info.youtube)) {
+      buttons.push({ aria: 'YouTube', href: info.youtube, icon: <FaYoutube className="h-6 w-6" /> });
+    }
+    // TikTok
+    if (info.tiktok && /^https?:\/\//.test(info.tiktok)) {
+      buttons.push({ aria: 'TikTok', href: info.tiktok, icon: <FaTiktok className="h-6 w-6" /> });
+    }
+    // 個人網站
+    if (info.website) {
+      buttons.push({ aria: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}`, icon: <GlobeAltIcon className="h-6 w-6" /> });
+    }
 
     if (buttons.length === 0) return null;
 
@@ -246,7 +279,11 @@ const MemberCard = () => {
           website: member?.website || card.user_website || '',
           company: member?.company || card.user_company || '',
           address: member?.address || card.user_address || '',
-          line_id: member?.line_id || card.line_id || ''
+          line_id: member?.line_id || card.line_id || '',
+          facebook: member?.facebook || card.facebook || '',
+          instagram: member?.instagram || card.instagram || '',
+          youtube: member?.youtube || card.youtube || '',
+          tiktok: member?.tiktok || card.tiktok || ''
         },
         layout_type: card.layout_type || 'standard',
         ui_divider_style: card.ui_divider_style || 'solid-thin',
@@ -428,7 +465,9 @@ const MemberCard = () => {
               address: info.address || '',
               line_id: info.line || '',
               facebook: info.facebook || '',
-              instagram: info.instagram || ''
+              instagram: info.instagram || '',
+              youtube: info.youtube || '',
+              tiktok: info.tiktok || ''
             },
             layout_type: editorData?.design?.layoutId || 'standard',
             ui_divider_style: 'solid-thin',
@@ -470,7 +509,11 @@ const MemberCard = () => {
               website: member?.website || '',
               company: member?.company || '',
               address: member?.address || '',
-              line_id: member?.line_id || ''
+              line_id: member?.line_id || '',
+              facebook: member?.facebook || card.facebook || '',
+              instagram: member?.instagram || card.instagram || '',
+              youtube: member?.youtube || card.youtube || '',
+              tiktok: member?.tiktok || card.tiktok || ''
             },
             layout_type: card.layout_type || 'standard',
             ui_divider_style: card.ui_divider_style || 'solid-thin',
@@ -500,7 +543,11 @@ const MemberCard = () => {
               website: member?.website || card.user_website || '',
               company: member?.company || card.user_company || '',
               address: member?.address || card.user_address || '',
-              line_id: member?.line_id || card.line_id || ''
+              line_id: member?.line_id || card.line_id || '',
+              facebook: member?.facebook || card.facebook || '',
+              instagram: member?.instagram || card.instagram || '',
+              youtube: member?.youtube || card.youtube || '',
+              tiktok: member?.tiktok || card.tiktok || ''
             },
             layout_type: card.layout_type || 'standard',
             ui_divider_style: card.ui_divider_style || 'solid-thin',
