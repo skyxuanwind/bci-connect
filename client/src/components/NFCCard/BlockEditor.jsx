@@ -162,6 +162,21 @@ export default function BlockEditor({ block, onChange, onRemove, isOpen, onToggl
         </div>
       )}
 
+      {local.type === 'profile' && (
+        <div className="grid grid-cols-1 gap-2">
+          <div className="text-xs opacity-80">此區塊會自動顯示姓名與職稱；請至上方基本資料修改。</div>
+          <label className="text-xs">區塊標題（可選）
+            <input
+              aria-label="區塊標題"
+              className="mt-1 w-full px-2 py-1 rounded border border-white/10 bg-white/5"
+              placeholder="例如：關於我"
+              value={local.title || ''}
+              onChange={(e) => update({ title: e.target.value })}
+            />
+          </label>
+        </div>
+      )}
+
       {local.type === 'contact' && (
         <div className="text-xs opacity-80">此模塊會顯示「立即聯絡」按鈕，並使用名片中的電話號碼。</div>
       )}
@@ -176,6 +191,7 @@ const labelOf = (t) => {
     case 'video': return '影片';
     case 'carousel': return '圖片輪播';
     case 'richtext': return '文字介紹';
+    case 'profile': return '個人資料';
     case 'contact': return '聯絡按鈕';
     default: return t;
   }

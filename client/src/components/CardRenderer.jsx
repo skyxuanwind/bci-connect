@@ -38,6 +38,11 @@ export const normalizeBlock = (block) => {
   if (block.content_type && block.content_data) return block; // 已是標準格式
 
   switch (block.type) {
+    case 'profile':
+      return {
+        content_type: 'profile',
+        content_data: { title: block.title || '個人資料' }
+      };
     case 'link':
       return {
         content_type: 'link',
@@ -91,6 +96,7 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
   const {
     layoutType = 'standard',
     contactInfo = {},
+    basicInfo = {},
     accentColor = '#cccccc',
     blockCarouselIndexMap = {},
     setBlockCarouselIndexMap = () => {},
@@ -103,6 +109,25 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
   const titleText = (content_data?.title || '').trim();
 
   switch (block.content_type) {
+    case 'profile': {
+      const name = (basicInfo?.name || '').trim();
+      const title = (basicInfo?.title || '').trim();
+      return (
+        <div className="content-block">
+          {(block.content_data?.title || '個人資料') && (
+            <h3 className="block-title">{block.content_data?.title || '個人資料'}</h3>
+          )}
+          {(name || title) ? (
+            <div className="text-center">
+              {name && (<div className="text-white font-semibold text-lg">{name}</div>)}
+              {title && (<div className="text-white/80 mt-1">{title}</div>)}
+            </div>
+          ) : (
+            <div className="text-gold-300 text-sm">尚未設定個人資料</div>
+          )}
+        </div>
+      );
+    }
     case 'text': {
       if (titleText === 'LINE ID') return null; // 與 MemberCard 保持：LINE ID 在完整版不重複顯示
       return (

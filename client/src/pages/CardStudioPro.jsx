@@ -35,6 +35,7 @@ const THEMES = [
 
 // 區塊類型
 const BLOCK_TYPES = [
+  { id: 'profile', label: '個人資料' },
   { id: 'link', label: '超連結' },
   { id: 'video', label: '影片' },
   { id: 'carousel', label: '圖片輪播' },
@@ -205,17 +206,7 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
             )}
           </div>
 
-          {/* 使用者姓名與職業：置於頭像下方、聯絡資訊上方，保持一致間距比例 */}
-          {(info.name || info.title) && (
-            <div className="text-center mb-3">
-              {info?.name && (
-                <div className="text-white font-bold tracking-wide" style={{ fontSize: 'clamp(18px, 2.2vw, 20px)', marginTop: '12px' }}>{info.name}</div>
-              )}
-              {info?.title && (
-                <div className="text-white/80" style={{ fontSize: 'clamp(14px, 1.8vw, 16px)', marginTop: '6px' }}>{info.title}</div>
-              )}
-            </div>
-          )}
+          {/* 移除姓名與職稱的直接顯示，改由『個人資料』區塊呈現 */}
 
           {/* 聯絡資訊區域（使用共享邏輯） */}
 
@@ -228,6 +219,7 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
                 options: {
                   layoutType: layoutId || 'standard',
                   contactInfo: { phone: info.phone, email: info.email, website: info.website },
+                  basicInfo: { name: info?.name || '', title: info?.title || '' },
                   accentColor: colors.accent,
                   blockCarouselIndexMap,
                   setBlockCarouselIndexMap,
@@ -330,6 +322,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
       addTemplate(key);
       return;
     }
+    if (type === 'profile') return onAdd({ id, type, title: title || '個人資料' });
     if (type === 'link') return onAdd({ id, type, title, url });
     if (type === 'video') return onAdd({ id, type, url });
     if (type === 'carousel') return onAdd({ id, type, images });
@@ -422,6 +415,18 @@ const BlockAddModal = ({ onAdd, onClose }) => {
             <option value="tpl:download">文件下載模塊</option>
           </select>
         </div>
+
+        {type === 'profile' && (
+          <>
+            <div className="mt-3">
+              <div className="text-xs text-gray-600">此區塊會自動同步您的「姓名」與「職稱」。如需修改，請於上方基本資訊面板調整。</div>
+            </div>
+            <div className="mt-3">
+              <label className="text-sm">區塊標題（可選）</label>
+              <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="個人資料" className="mt-1 w-full border rounded p-2" />
+            </div>
+          </>
+        )}
 
         {type === 'link' && (
           <>

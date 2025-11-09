@@ -153,8 +153,6 @@ const MemberCard = () => {
   const renderContactInfoArea = () => {
     const info = cardData?.contact_info || {};
     const buttons = [];
-    if (info.phone) buttons.push({ aria: '電話', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-5 w-5" /> });
-    if (info.email) buttons.push({ aria: '電子郵件', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-5 w-5" /> });
     if (info.website) buttons.push({ aria: '網站', href: info.website?.startsWith('http') ? info.website : `https://${info.website}`, icon: <GlobeAltIcon className="h-5 w-5" /> });
 
     if (buttons.length === 0) return null;
@@ -614,6 +612,7 @@ const MemberCard = () => {
       options: {
         layoutType: cardData?.layout_type || 'standard',
         contactInfo: cardData?.contact_info || {},
+        basicInfo: { name: cardData?.user_name || '', title: cardData?.user_title || '' },
         accentColor,
         blockCarouselIndexMap,
         setBlockCarouselIndexMap,
@@ -1124,24 +1123,7 @@ const MemberCard = () => {
                   </div>
                 )}
               </div>
-              {/* 使用者姓名與職業：置於頭像下方、聯絡資訊上方，保持一致間距比例 */}
-              {(cardData?.user_name || cardData?.user_title) && (
-                <div className="mx-auto text-center mb-3" style={{ maxWidth: '420px' }}>
-                  {cardData?.user_name && (
-                    <h1
-                      className="text-2xl font-semibold text-white"
-                      style={{ fontFamily: chineseFontStack }}
-                    >
-                      {cardData.user_name}
-                    </h1>
-                  )}
-                  {cardData?.user_title && (
-                    <p className="text-base text-white/80 mt-1">
-                      {cardData.user_title}
-                    </p>
-                  )}
-                </div>
-              )}
+              {/* 姓名與職稱改由『個人資料』區塊顯示；此處不再直接渲染 */}
             </div>
 
             {/* 版型渲染：四宮格 / 滿版滑動 / 標準 */}
