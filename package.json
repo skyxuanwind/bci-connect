@@ -11,7 +11,8 @@
     "server": "nodemon server.js",
     "build": "cd client && NODE_ENV=production npm run build",
     "heroku-postbuild": "cd client && npm install && NODE_ENV=production npm run build",
-    "render-postbuild": "cd client && npm install && NODE_ENV=production npm run build"
+    "render-postbuild": "cd client && npm install && NODE_ENV=production npm run build",
+    "postinstall": "npm run render-postbuild"
   },
   "keywords": [
     "business",
