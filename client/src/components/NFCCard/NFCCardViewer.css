@@ -66,12 +66,39 @@
 /* 名片頭部 */
 .card-header {
   display: flex;
-  flex-direction: row;
+  flex-direction: column; /* 改為縱向排列 */
   align-items: center;
   padding: 20px;
   background-color: transparent;
   border-bottom: none;
   position: relative;
+}
+
+.contact-icons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px; /* 與頭像的間距 */
+}
+
+.contact-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 50%;
+  text-decoration: none;
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.contact-icon-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
 }
 
 .avatar-container {

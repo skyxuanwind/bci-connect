@@ -569,7 +569,6 @@ const NFCCardViewer = () => {
           >
             {(cardData.ui_show_name !== false) && (
               <>
-                <h1 className="user-name">{cardData.user_name}</h1>
                 {(cardData.user_title || cardData.user_position) && (
                   <p className="user-position">{cardData.user_title || cardData.user_position}</p>
                 )}
@@ -582,25 +581,12 @@ const NFCCardViewer = () => {
           </motion.div>
         </div>
 
-        <div className="nfc-actions">
-            <button onClick={handleBookmark} className={`nfc-action-button ${isBookmarked ? 'bookmarked' : ''}`}>
-                <FaHeart /> <span>{isBookmarked ? '已收藏' : '收藏'}</span>
-            </button>
-            <button onClick={handleShare} className="nfc-action-button">
-                <FaShare /> <span>分享</span>
-            </button>
-            <button onClick={handleAddToWallet} className="nfc-action-button">
-                <FaWallet /> <span>新增至錢包</span>
-            </button>
-            {cardData.template_css_config?.supports_dark_mode && (
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="nfc-action-button"
-                title={darkMode ? '切換到淺色模式' : '切換到深色模式'}
-              >
-                {darkMode ? '🌞' : '🌙'}
-              </button>
-            )}
+        <div className="contact-icons">
+            <a href={`tel:${cardData.user_phone}`} className="contact-icon-btn"><FaPhone /></a>
+            <a href={`mailto:${cardData.user_email}`} className="contact-icon-btn"><FaEnvelope /></a>
+            {cardData.line_id && <a href={buildLineDeepLink(cardData.line_id)} className="contact-icon-btn" target="_blank" rel="noopener noreferrer"><FaLine /></a>}
+            {cardData.facebook_url && <a href={cardData.facebook_url} className="contact-icon-btn" target="_blank" rel="noopener noreferrer"><FaFacebook /></a>}
+            {cardData.instagram_url && <a href={cardData.instagram_url} className="contact-icon-btn" target="_blank" rel="noopener noreferrer"><FaInstagram /></a>}
         </div>
 
         {/* 已依需求徹底移除完整版本聯絡資訊區塊 */}
