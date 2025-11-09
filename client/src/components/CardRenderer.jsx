@@ -46,7 +46,7 @@ export const normalizeBlock = (block) => {
     case 'profile_contact':
       return {
         content_type: 'profile_contact',
-        content_data: { title: block.title || '個人資料與聯絡', style: block.style || 'default' }
+        content_data: { title: block.title || '個人資訊', style: block.style || 'default' }
       };
     case 'link':
       return {
@@ -170,8 +170,8 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
 
       return (
         <div className="content-block">
-          {(block.content_data?.title || '個人資料與聯絡') && (
-            <h3 className="block-title">{block.content_data?.title || '個人資料與聯絡'}</h3>
+          {(block.content_data?.title || '個人資訊') && (
+            <h3 className="block-title">{block.content_data?.title || '個人資訊'}</h3>
           )}
           <div className="text-center">
             {(name || title) ? (
@@ -238,7 +238,7 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
               className="text-gold-200 hover:text-gold-100 transition-colors flex items-center gap-2"
               onClick={() => trackEvent('contact_click', { contentType: 'link', contentId: content_data.url })}
             >
-              <LinkIcon className="h-4 w-4" />
+              <LinkIcon className="h-6 w-6" />
               {content_data.url}
               <ArrowTopRightOnSquareIcon className="h-3 w-3" />
             </a>
@@ -278,7 +278,7 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
               className="text-gold-200 hover:text-gold-100 transition-colors flex items-center gap-2"
               onClick={() => trackEvent('contact_click', { contentType: 'file', contentId: content_data.id })}
             >
-              <DocumentArrowDownIcon className="h-4 w-4" />
+              <DocumentArrowDownIcon className="h-6 w-6" />
               下載檔案
               <ArrowTopRightOnSquareIcon className="h-3 w-3" />
             </a>
@@ -441,7 +441,7 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
           {content_data.address && (
             <div>
               <div className="flex items-center gap-2 text-gold-200 mb-3">
-                <MapPinIcon className="h-4 w-4" />
+                <MapPinIcon className="h-6 w-6" />
                 <span>{content_data.address}</span>
               </div>
               <a
@@ -451,7 +451,7 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 hover:bg-primary-700 rounded-lg transition-colors text-gold-200"
                 onClick={() => trackEvent('contact_click', { contentType: 'map', contentId: content_data.address })}
               >
-                <MapPinIcon className="h-4 w-4" />
+                <MapPinIcon className="h-6 w-6" />
                 在 Google Maps 中查看
                 <ArrowTopRightOnSquareIcon className="h-3 w-3" />
               </a>
@@ -498,25 +498,25 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
       const info = contactInfo || {};
       const buttons = [];
       if (info.phone) {
-        buttons.push({ key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-5 w-5" />, title: '電話' });
+        buttons.push({ key: 'phone', href: `tel:${info.phone}`, icon: <PhoneIcon className="h-6 w-6" />, title: '電話' });
       }
       if (info.email) {
-        buttons.push({ key: 'email', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-5 w-5" />, title: '電子郵件' });
+        buttons.push({ key: 'email', href: `mailto:${info.email}`, icon: <EnvelopeIcon className="h-6 w-6" />, title: '電子郵件' });
       }
       if (info.line_id) {
-        buttons.push({ key: 'line', href: `https://line.me/ti/p/~${info.line_id}`, icon: <FaLine className="h-5 w-5" />, title: 'LINE' });
+        buttons.push({ key: 'line', href: `https://line.me/ti/p/~${info.line_id}`, icon: <FaLine className="h-6 w-6" />, title: 'LINE' });
       }
       if (info.facebook) {
-        buttons.push({ key: 'facebook', href: info.facebook, icon: <FaFacebook className="h-5 w-5" />, title: 'Facebook' });
+        buttons.push({ key: 'facebook', href: info.facebook, icon: <FaFacebook className="h-6 w-6" />, title: 'Facebook' });
       }
       if (info.instagram) {
-        buttons.push({ key: 'instagram', href: info.instagram, icon: <FaInstagram className="h-5 w-5" />, title: 'Instagram' });
+        buttons.push({ key: 'instagram', href: info.instagram, icon: <FaInstagram className="h-6 w-6" />, title: 'Instagram' });
       }
       if (info.youtube) {
-        buttons.push({ key: 'youtube', href: info.youtube, icon: <FaYoutube className="h-5 w-5" style={{ color: '#FF0000' }} />, title: 'YouTube' });
+        buttons.push({ key: 'youtube', href: info.youtube, icon: <FaYoutube className="h-6 w-6" style={{ color: '#FF0000' }} />, title: 'YouTube' });
       }
       if (info.tiktok) {
-        buttons.push({ key: 'tiktok', href: info.tiktok, icon: <FaTiktok className="h-5 w-5" style={{ color: '#000000' }} />, title: 'TikTok' });
+        buttons.push({ key: 'tiktok', href: info.tiktok, icon: <FaTiktok className="h-6 w-6" style={{ color: '#000000' }} />, title: 'TikTok' });
       }
 
       if (buttons.length === 0) return null;

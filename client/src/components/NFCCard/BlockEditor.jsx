@@ -221,7 +221,7 @@ const labelOf = (t) => {
     case 'carousel': return '圖片輪播';
     case 'richtext': return '文字介紹';
     case 'profile': return '個人資料';
-    case 'profile_contact': return '個人＋聯絡';
+    case 'profile_contact': return '個人資訊';
     case 'contact': return '聯絡按鈕';
     default: return t;
   }

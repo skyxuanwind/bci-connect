@@ -8,7 +8,7 @@ const MapBlock = React.memo(({ content_data, trackEvent }) => {
       {content_data.address && (
         <div>
           <div className="address">
-            <MapPinIcon className="h-4 w-4" />
+            <MapPinIcon className="h-6 w-6" />
             <span>{content_data.address}</span>
           </div>
           <a
@@ -18,7 +18,7 @@ const MapBlock = React.memo(({ content_data, trackEvent }) => {
             className="map-button"
             onClick={() => trackEvent('map_click', { address: content_data.address })}
           >
-            <MapPinIcon className="h-4 w-4" />
+            <MapPinIcon className="h-6 w-6" />
             在 Google Maps 中查看
             <ArrowTopRightOnSquareIcon className="h-3 w-3" />
           </a>

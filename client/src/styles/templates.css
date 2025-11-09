@@ -48,6 +48,10 @@
   font-weight: 600;
   margin-bottom: 1rem;
   font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .contact-list {

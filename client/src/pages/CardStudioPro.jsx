@@ -333,7 +333,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
       addTemplate(key);
       return;
     }
-    if (type === 'profile_contact') return onAdd({ id, type, title: title || '個人資料與聯絡' });
+    if (type === 'profile_contact') return onAdd({ id, type, title: title || '個人資訊' });
     if (type === 'profile') return onAdd({ id, type, title: title || '個人資料' });
     if (type === 'link') return onAdd({ id, type, title, url });
     if (type === 'video') return onAdd({ id, type, url });
@@ -420,12 +420,11 @@ const BlockAddModal = ({ onAdd, onClose }) => {
             {[
               {
                 id: 'profile_contact',
-                title: '個人＋聯絡',
+                title: '個人資訊',
                 desc: '姓名、職稱與社群／聯絡按鈕整合',
                 icon: (
-                  <span className="flex items-center gap-1">
-                    <UserIcon className="w-5 h-5" />
-                    <PhoneIcon className="w-5 h-5" />
+                  <span className="flex items-center">
+                    <UserIcon className="w-6 h-6" />
                   </span>
                 )
               },
