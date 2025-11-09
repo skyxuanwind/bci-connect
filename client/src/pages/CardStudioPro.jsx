@@ -13,7 +13,7 @@ import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { SyncStatusToolbar } from '../components/SyncStatusIndicator';
 import dataSyncManager from '../utils/dataSyncManager';
 import DataConsistencyChecker from '../utils/dataConsistencyChecker';
-import { UserIcon, BuildingOfficeIcon, BriefcaseIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { UserIcon, BuildingOfficeIcon, BriefcaseIcon, PhoneIcon, EnvelopeIcon, DocumentTextIcon, LinkIcon, VideoCameraIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { FaFacebook, FaInstagram, FaTiktok, FaYoutube, FaLine } from 'react-icons/fa';
 import { renderContentBlock as sharedRenderContentBlock, normalizeBlock } from '../components/CardRenderer';
 // framer-motion 未使用，已移除覆蓋層
@@ -213,20 +213,31 @@ const PreviewCard = ({ info, avatarUrl, theme, blocks, buttonStyleId, bgStyle, l
 
           <div className={isStandard ? 'px-3' : 'px-3 space-y-3'}>
             {normalizedBlocks.map((nb, idx) => {
-              const inner = sharedRenderContentBlock({
-                block: nb,
-                index: idx,
-                options: {
-                  layoutType: layoutId || 'standard',
-                  contactInfo: { phone: info.phone, email: info.email, website: info.website },
-                  basicInfo: { name: info?.name || '', title: info?.title || '' },
-                  accentColor: colors.accent,
-                  blockCarouselIndexMap,
-                  setBlockCarouselIndexMap,
-                  trackEvent: () => {},
-                  getCarouselSwipeHandlers
-                }
-              });
+            const inner = sharedRenderContentBlock({
+              block: nb,
+              index: idx,
+              options: {
+                layoutType: layoutId || 'standard',
+                contactInfo: {
+                  phone: info?.phone,
+                  email: info?.email,
+                  website: info?.website,
+                  line: info?.line,
+                  line_id: info?.line,
+                  facebook: info?.facebook || info?.fb,
+                  instagram: info?.instagram || info?.ig,
+                  ig: info?.ig,
+                  youtube: info?.youtube,
+                  tiktok: info?.tiktok
+                },
+                basicInfo: { name: info?.name || '', title: info?.title || '' },
+                accentColor: colors.accent,
+                blockCarouselIndexMap,
+                setBlockCarouselIndexMap,
+                trackEvent: () => {},
+                getCarouselSwipeHandlers
+              }
+            });
               if (!inner) return null;
               return (
                 <div key={blocks[idx]?.id || idx} className={isStandard ? 'mb-4 rounded-xl overflow-hidden bg-white/5 border border-white/10' : 'rounded-xl p-3'} style={isStandard ? {} : { background: colors.card, color: colors.text }}>
@@ -285,7 +296,7 @@ const ThemeSelect = ({ themeId, setThemeId }) => {
 };
 
 const BlockAddModal = ({ onAdd, onClose }) => {
-  const [type, setType] = useState('link');
+  const [type, setType] = useState('profile_contact');
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [html, setHtml] = useState('');
@@ -322,6 +333,7 @@ const BlockAddModal = ({ onAdd, onClose }) => {
       addTemplate(key);
       return;
     }
+    if (type === 'profile_contact') return onAdd({ id, type, title: title || '個人資料與聯絡' });
     if (type === 'profile') return onAdd({ id, type, title: title || '個人資料' });
     if (type === 'link') return onAdd({ id, type, title, url });
     if (type === 'video') return onAdd({ id, type, url });
@@ -401,19 +413,73 @@ const BlockAddModal = ({ onAdd, onClose }) => {
           <div className="font-semibold">新增模塊</div>
           <button className="text-sm" onClick={onClose} aria-label="關閉">✕</button>
         </div>
+        {/* 卡片式選擇 */}
         <div className="mt-3">
-          <label className="text-sm">類型</label>
-          <select value={type} onChange={(e) => setType(e.target.value)} className="mt-1 w-full border rounded p-2">
-            {BLOCK_TYPES.map(b => (<option key={b.id} value={b.id}>{b.label}</option>))}
-            <option disabled>—— 預設模板 ——</option>
-            <option value="tpl:skills">專業技能模塊</option>
-            <option value="tpl:testimonials">客戶評價模塊</option>
-            <option value="tpl:portfolio">作品集展示模塊</option>
-            <option value="tpl:pricing">服務與價格模塊</option>
-            <option value="tpl:timeline">成就時間軸模塊</option>
-            <option value="tpl:chat">即時諮詢模塊</option>
-            <option value="tpl:download">文件下載模塊</option>
-          </select>
+          <div className="text-sm font-medium">選擇模塊類型</div>
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[
+              {
+                id: 'profile_contact',
+                title: '個人＋聯絡',
+                desc: '姓名、職稱與社群／聯絡按鈕整合',
+                icon: (
+                  <span className="flex items-center gap-1">
+                    <UserIcon className="w-5 h-5" />
+                    <PhoneIcon className="w-5 h-5" />
+                  </span>
+                )
+              },
+              { id: 'richtext', title: '文字介紹', desc: '支援簡易 HTML', icon: <DocumentTextIcon className="w-6 h-6" /> },
+              { id: 'link', title: '超連結', desc: '外部網站或檔案下載', icon: <LinkIcon className="w-6 h-6" /> },
+              { id: 'video', title: '影片', desc: 'YouTube／Vimeo', icon: <VideoCameraIcon className="w-6 h-6" /> },
+              { id: 'carousel', title: '圖片輪播', desc: '最多 5 張圖片', icon: <PhotoIcon className="w-6 h-6" /> }
+            ].map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setType(c.id)}
+                className={`group flex items-start gap-3 p-3 rounded-xl border border-black/10 bg-gray-50 hover:bg-gray-100 transition-all duration-300 ease-out shadow-sm ${type === c.id ? 'ring-2 ring-blue-500' : ''}`}
+                aria-label={`選擇${c.title}`}
+              >
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-black/10 text-gray-900 group-hover:scale-105 transition">
+                  {c.icon}
+                </span>
+                <span className="text-left">
+                  <div className="text-sm font-semibold">{c.title}</div>
+                  <div className="text-xs text-gray-500">{c.desc}</div>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="text-xs text-gray-600">推薦模板</div>
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[
+              { id: 'tpl:skills', title: '技能卡', desc: '展示專業技能', icon: <BriefcaseIcon className="w-6 h-6" /> },
+              { id: 'tpl:testimonials', title: '客戶推薦', desc: '信任背書', icon: <BuildingOfficeIcon className="w-6 h-6" /> },
+              { id: 'tpl:portfolio', title: '作品集', desc: '展示成果', icon: <PhotoIcon className="w-6 h-6" /> },
+              { id: 'tpl:pricing', title: '價目表', desc: '服務與價格', icon: <DocumentTextIcon className="w-6 h-6" /> },
+              { id: 'tpl:timeline', title: '時間軸', desc: '經歷整理', icon: <DocumentTextIcon className="w-6 h-6" /> },
+              { id: 'tpl:chat', title: '客服聊天', desc: '即時溝通', icon: <EnvelopeIcon className="w-6 h-6" /> },
+              { id: 'tpl:download', title: '檔案下載', desc: '提供檔案', icon: <LinkIcon className="w-6 h-6" /> }
+            ].map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setType(c.id)}
+                className={`group flex items-start gap-3 p-3 rounded-xl border border-black/10 bg-gray-50 hover:bg-gray-100 transition-all duration-300 ease-out shadow-sm ${type === c.id ? 'ring-2 ring-blue-500' : ''}`}
+                aria-label={`選擇模板：${c.title}`}
+              >
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-black/10 text-gray-900 group-hover:scale-105 transition">
+                  {c.icon}
+                </span>
+                <span className="text-left">
+                  <div className="text-sm font-semibold">{c.title}</div>
+                  <div className="text-xs text-gray-500">{c.desc}</div>
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {type === 'profile' && (
@@ -424,6 +490,18 @@ const BlockAddModal = ({ onAdd, onClose }) => {
             <div className="mt-3">
               <label className="text-sm">區塊標題（可選）</label>
               <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="個人資料" className="mt-1 w-full border rounded p-2" />
+            </div>
+          </>
+        )}
+
+        {type === 'profile_contact' && (
+          <>
+            <div className="mt-3">
+              <div className="text-xs text-gray-600">此區塊會顯示姓名／職稱，並整合社群與聯絡按鈕（僅顯示於基本資料已填寫者）。</div>
+            </div>
+            <div className="mt-3">
+              <label className="text-sm">區塊標題（可選）</label>
+              <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="我的資訊" className="mt-1 w-full border rounded p-2" />
             </div>
           </>
         )}

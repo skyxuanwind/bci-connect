@@ -177,6 +177,35 @@ export default function BlockEditor({ block, onChange, onRemove, isOpen, onToggl
         </div>
       )}
 
+      {local.type === 'profile_contact' && (
+        <div className="grid grid-cols-1 gap-2">
+          <div className="text-xs opacity-80">此區塊會顯示「姓名／職稱」並整合社群與聯絡按鈕（僅顯示已在基本資料填寫者）。</div>
+          <label className="text-xs">區塊標題（可選）
+            <input
+              aria-label="區塊標題"
+              className="mt-1 w-full px-2 py-1 rounded border border-white/10 bg-white/5"
+              placeholder="例如：我的資訊"
+              value={local.title || ''}
+              onChange={(e) => update({ title: e.target.value })}
+            />
+          </label>
+          <label className="text-xs">按鈕樣式
+            <select
+              aria-label="按鈕樣式"
+              className="mt-1 w-full px-2 py-1 rounded border border-white/10 bg-white/5"
+              value={local.style || 'default'}
+              onChange={(e) => update({ style: e.target.value })}
+            >
+              <option value="default">標準</option>
+              <option value="glass">玻璃</option>
+              <option value="outline">外框</option>
+              <option value="pill">膠囊</option>
+              <option value="gradient">漸層</option>
+            </select>
+          </label>
+        </div>
+      )}
+
       {local.type === 'contact' && (
         <div className="text-xs opacity-80">此模塊會顯示「立即聯絡」按鈕，並使用名片中的電話號碼。</div>
       )}
@@ -192,6 +221,7 @@ const labelOf = (t) => {
     case 'carousel': return '圖片輪播';
     case 'richtext': return '文字介紹';
     case 'profile': return '個人資料';
+    case 'profile_contact': return '個人＋聯絡';
     case 'contact': return '聯絡按鈕';
     default: return t;
   }

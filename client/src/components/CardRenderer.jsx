@@ -43,6 +43,11 @@ export const normalizeBlock = (block) => {
         content_type: 'profile',
         content_data: { title: block.title || '個人資料' }
       };
+    case 'profile_contact':
+      return {
+        content_type: 'profile_contact',
+        content_data: { title: block.title || '個人資料與聯絡', style: block.style || 'default' }
+      };
     case 'link':
       return {
         content_type: 'link',
@@ -124,6 +129,77 @@ export const renderContentBlock = ({ block, index = 0, options = {} }) => {
             </div>
           ) : (
             <div className="text-gold-300 text-sm">尚未設定個人資料</div>
+          )}
+        </div>
+      );
+    }
+    case 'profile_contact': {
+      const name = (basicInfo?.name || '').trim();
+      const title = (basicInfo?.title || '').trim();
+      const ci = contactInfo || {};
+      const lineId = (ci.line || ci.line_id || '').trim();
+      const facebookUrl = (ci.facebook || ci.fb || '').trim();
+      const instagramUrl = (ci.instagram || ci.ig || '').trim();
+      const youtubeUrl = (ci.youtube || '').trim();
+      const tiktokUrl = (ci.tiktok || '').trim();
+      const phoneVal = (ci.phone || '').trim();
+      const emailVal = (ci.email || '').trim();
+      const websiteVal = (ci.website || '').trim();
+
+      const styleId = (block?.content_data?.style || 'default');
+      const baseClass = 'inline-flex items-center justify-center transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.04] active:scale-95';
+      const styleClassMap = {
+        default: `w-10 h-10 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10`,
+        glass: `w-10 h-10 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20`,
+        outline: `w-10 h-10 rounded-full bg-transparent text-white border`,
+        pill: `w-10 h-10 rounded-full text-white border`,
+        gradient: `w-10 h-10 rounded-full text-white bg-gradient-to-r from-sky-500 via-cyan-500 to-blue-600`
+      };
+      const styleClass = `${baseClass} ${styleClassMap[styleId] || styleClassMap.default}`;
+
+      const socialButtons = [
+        phoneVal ? { key: 'phone', href: `tel:${phoneVal}`, icon: <PhoneIcon className="h-6 w-6" />, title: '電話' } : null,
+        emailVal ? { key: 'email', href: `mailto:${emailVal}`, icon: <EnvelopeIcon className="h-6 w-6" />, title: '電子郵件' } : null,
+        lineId ? { key: 'line', href: `https://line.me/ti/p/~${lineId.replace(/^@/, '')}` , icon: <FaLine className="h-6 w-6" style={{ color: '#00B900' }} />, title: 'LINE' } : null,
+        facebookUrl && facebookUrl.startsWith('http') ? { key: 'facebook', href: facebookUrl, icon: <FaFacebook className="h-6 w-6" style={{ color: '#1877F2' }} />, title: 'Facebook' } : null,
+        instagramUrl && instagramUrl.startsWith('http') ? { key: 'instagram', href: instagramUrl, icon: <FaInstagram className="h-6 w-6" style={{ color: '#E4405F' }} />, title: 'Instagram' } : null,
+        youtubeUrl && youtubeUrl.startsWith('http') ? { key: 'youtube', href: youtubeUrl, icon: <FaYoutube className="h-6 w-6" style={{ color: '#FF0000' }} />, title: 'YouTube' } : null,
+        tiktokUrl && tiktokUrl.startsWith('http') ? { key: 'tiktok', href: tiktokUrl, icon: <FaTiktok className="h-6 w-6" style={{ color: '#000000' }} />, title: 'TikTok' } : null,
+        websiteVal ? { key: 'website', href: websiteVal.startsWith('http') ? websiteVal : `https://${websiteVal}`, icon: <LinkIcon className="h-6 w-6" />, title: '網站' } : null
+      ].filter(Boolean);
+
+      return (
+        <div className="content-block">
+          {(block.content_data?.title || '個人資料與聯絡') && (
+            <h3 className="block-title">{block.content_data?.title || '個人資料與聯絡'}</h3>
+          )}
+          <div className="text-center">
+            {(name || title) ? (
+              <div>
+                {name && (<div className="text-white font-semibold text-base sm:text-lg">{name}</div>)}
+                {title && (<div className="text-white/80 mt-0.5 text-sm sm:text-base">{title}</div>)}
+              </div>
+            ) : (
+              <div className="text-gold-300 text-sm">尚未設定個人資料</div>
+            )}
+          </div>
+          {socialButtons.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+              {socialButtons.map(btn => (
+              <a
+                key={btn.key}
+                href={btn.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={btn.title}
+                className={styleClass}
+                onClick={() => trackEvent('contact_click', { contentType: 'social', socialType: btn.key })}
+                style={{ borderColor: styleId === 'outline' ? accentColor : undefined, backgroundColor: styleId === 'pill' ? accentColor : undefined }}
+              >
+                {btn.icon}
+              </a>
+              ))}
+            </div>
           )}
         </div>
       );
