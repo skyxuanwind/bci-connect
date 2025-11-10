@@ -105,7 +105,10 @@ const Register = () => {
     }
     try {
       setSendingCode(true);
-      const payload = { email, name: name || '會員' };
+      const payload = { 
+        email: (email || '').trim().toLowerCase(), 
+        name: (name || '會員').trim() 
+      };
       await axios.post('/api/auth/send-verification', payload, {
         headers: { 'Content-Type': 'application/json' }
       });
@@ -121,26 +124,28 @@ const Register = () => {
   };
 
   const handleVerifyCode = async () => {
-    if (!verificationCode || verificationCode.length !== 6) {
+    const code = (verificationCode || '').trim();
+    if (!/^\d{6}$/.test(code)) {
       toast.error('請輸入6位數驗證碼');
       return;
     }
     try {
       setVerifyingCode(true);
       await axios.post('/api/auth/verify-email', {
-        email,
-        verificationCode
+        email: (email || '').trim().toLowerCase(),
+        verificationCode: code
       }, {
         headers: { 'Content-Type': 'application/json' }
       });
       setEmailVerified(true);
-      setVerifiedEmail(email);
+      setVerifiedEmail((email || '').trim().toLowerCase());
       setVerificationCode('');
       setVerificationSent(false);
       toast.success('Email 驗證成功');
     } catch (error) {
       const message = error.response?.data?.message || '驗證失敗，請確認驗證碼是否正確或已逾時';
       toast.error(message);
+      console.error('Verify error:', error.response?.data || error.message);
     } finally {
       setVerifyingCode(false);
     }

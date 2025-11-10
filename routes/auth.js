@@ -103,10 +103,14 @@ router.post('/send-verification', async (req, res) => {
   try {
     const { email, name } = req.body;
 
-    console.log('[SendVerification] Incoming request', { email, name });
+    // 標準化輸入：email 去除空白並轉小寫，name 去除前後空白
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const normalizedName = (name || '').trim();
+
+    console.log('[SendVerification] Incoming request', { email: normalizedEmail, name: normalizedName });
     
     // 驗證必要參數
-    if (!email || !name) {
+    if (!normalizedEmail || !normalizedName) {
       return res.status(400).json({ 
         success: false, 
         message: 'Email和姓名為必填項目' 
@@ -115,7 +119,7 @@ router.post('/send-verification', async (req, res) => {
     
     // 驗證Email格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       return res.status(400).json({ 
         success: false, 
         message: 'Email格式不正確' 
@@ -124,8 +128,8 @@ router.post('/send-verification', async (req, res) => {
     
     // 檢查Email是否已被註冊
     const existingUsers = await pool.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email]
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1)',
+      [normalizedEmail]
     );
     
     if (existingUsers.rows.length > 0) {
@@ -141,27 +145,27 @@ router.post('/send-verification', async (req, res) => {
     
     // 刪除舊的驗證碼記錄（如果存在）
     await pool.query(
-      'DELETE FROM email_verifications WHERE email = $1',
-      [email]
+      'DELETE FROM email_verifications WHERE LOWER(email) = LOWER($1)',
+      [normalizedEmail]
     );
     
     // 儲存驗證碼到資料庫
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10分鐘後過期
     await pool.query(
       'INSERT INTO email_verifications (email, verification_code, name, expires_at) VALUES ($1, $2, $3, $4)',
-      [email, verificationCode, name, expiresAt]
+      [normalizedEmail, verificationCode, normalizedName, expiresAt]
     );
 
-    console.log('[SendVerification] Code generated and saved', { email, code: maskedCode, expiresAt });
+    console.log('[SendVerification] Code generated and saved', { email: normalizedEmail, code: maskedCode, expiresAt });
     
     // 發送驗證碼Email
     await sendEmailVerification({
-      email,
-      name,
+      email: normalizedEmail,
+      name: normalizedName,
       verificationCode
     });
 
-    console.log('[SendVerification] Email dispatch completed', { email });
+    console.log('[SendVerification] Email dispatch completed', { email: normalizedEmail });
     
     res.json({ 
       success: true, 
@@ -186,32 +190,61 @@ router.post('/send-verification', async (req, res) => {
 router.post('/verify-email', async (req, res) => {
   try {
     const { email, verificationCode } = req.body;
+
+    // 標準化輸入：email 去除空白並轉小寫，驗證碼去除空白並限制為6位數
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const code = String(verificationCode || '').trim();
     
     // 驗證必要參數
-    if (!email || !verificationCode) {
+    if (!normalizedEmail || !code) {
       return res.status(400).json({ 
         success: false, 
         message: 'Email和驗證碼為必填項目' 
       });
     }
-    
-    // 查找驗證碼記錄
-    const verifications = await pool.query(
-      'SELECT * FROM email_verifications WHERE email = $1 AND verification_code = $2 AND expires_at > NOW() AND is_verified = FALSE',
-      [email, verificationCode]
-    );
-    
-    if (verifications.rows.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: '驗證碼無效或已過期' 
+
+    // 驗證碼基本格式檢查（後端防護）
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({
+        success: false,
+        message: '驗證碼格式不正確，請輸入6位數字'
       });
     }
     
+    // 先找出該 email + code 的最新記錄，不限制過期或是否已使用
+    const baseRecord = await pool.query(
+      'SELECT * FROM email_verifications WHERE LOWER(email) = LOWER($1) AND verification_code = $2 ORDER BY created_at DESC LIMIT 1',
+      [normalizedEmail, code]
+    );
+
+    if (baseRecord.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '驗證碼不正確'
+      });
+    }
+
+    const record = baseRecord.rows[0];
+
+    // 區分更清楚的錯誤訊息
+    if (record.is_verified) {
+      return res.status(400).json({
+        success: false,
+        message: '驗證碼已被使用，請重新寄送'
+      });
+    }
+
+    if (new Date(record.expires_at) <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: '驗證碼已過期，請重新寄送'
+      });
+    }
+
     // 標記為已驗證
     await pool.query(
-      'UPDATE email_verifications SET is_verified = TRUE WHERE email = $1 AND verification_code = $2',
-      [email, verificationCode]
+      'UPDATE email_verifications SET is_verified = TRUE, updated_at = NOW() WHERE id = $1',
+      [record.id]
     );
     
     res.json({ 
