@@ -607,7 +607,7 @@ router.put('/password', async (req, res) => {
 // @access  Private
 router.get('/members', async (req, res) => {
   try {
-    const { page = 1, limit = 20, chapterId = 'all', search = '' } = req.query;
+    const { page = 1, limit = 20, chapterId = 'all', search = '', includeTest = 'false' } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     // 基本條件：活躍用戶且排除系統管理員
@@ -618,8 +618,8 @@ router.get('/members', async (req, res) => {
     let queryParams = ['active'];
     let paramIndex = 2;
 
-    // 在正式環境中添加測試資料過濾條件
-    if (!shouldShowTestData()) {
+    // 在正式環境中添加測試資料過濾條件（允許 includeTest=true 覆蓋）
+    if (!shouldShowTestData() && includeTest !== 'true') {
       const productionFilter = getProductionWhereClause('u');
       if (productionFilter) {
         whereConditions.push(productionFilter.replace('AND ', ''));
@@ -666,7 +666,7 @@ router.get('/members', async (req, res) => {
     const membersResult = await pool.query(membersQuery, queryParams);
 
     // 記錄過濾日誌（如果有過濾的話）
-    if (!shouldShowTestData()) {
+    if (!shouldShowTestData() && includeTest !== 'true') {
       // 獲取未過濾的總數進行比較
       const unfiltered = await pool.query(`
         SELECT COUNT(*) as total
@@ -697,7 +697,7 @@ router.get('/members', async (req, res) => {
       },
       userAccessLevel: req.user.membership_level,
       isProduction: process.env.NODE_ENV === 'production',
-      showTestData: shouldShowTestData()
+      showTestData: includeTest === 'true' ? true : shouldShowTestData()
     });
 
   } catch (error) {

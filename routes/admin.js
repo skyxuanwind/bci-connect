@@ -173,13 +173,8 @@ router.get('/users', async (req, res) => {
 
     const whereConditions = [];
 
-    // 在正式環境中添加測試資料過濾條件
-    if (!shouldShowTestData()) {
-      const productionFilter = getProductionWhereClause('u');
-      if (productionFilter) {
-        whereConditions.push(productionFilter.replace('AND ', ''));
-      }
-    }
+    // 管理端不過濾測試資料：確保管理員能查看所有用戶
+    // 注意：會員目錄仍會依正式環境策略過濾測試資料
 
     if (status !== 'all') {
       whereConditions.push(`u.status = $${paramIndex}`);
