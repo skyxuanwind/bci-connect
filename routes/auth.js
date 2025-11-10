@@ -663,20 +663,21 @@ router.post('/logout', authenticateToken, (req, res) => {
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
+    const normalizedEmail = (email || '').trim().toLowerCase();
 
     // Validation
-    if (!email) {
+    if (!normalizedEmail) {
       return res.status(400).json({ message: '請輸入電子郵件地址' });
     }
 
-    if (!validator.isEmail(email)) {
+    if (!validator.isEmail(normalizedEmail)) {
       return res.status(400).json({ message: '請輸入有效的電子郵件地址' });
     }
 
     // Check if user exists
     const userResult = await pool.query(
-      'SELECT id, name, email FROM users WHERE email = $1',
-      [email.toLowerCase()]
+      'SELECT id, name, email FROM users WHERE LOWER(email) = LOWER($1)',
+      [normalizedEmail]
     );
 
     if (userResult.rows.length === 0) {
@@ -692,7 +693,7 @@ router.post('/forgot-password', async (req, res) => {
 
     // Save reset token to database
     await pool.query(
-      'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
+      'UPDATE users SET reset_token = $1, reset_token_expiry = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
       [resetToken, resetTokenExpiry, user.id]
     );
 
@@ -724,9 +725,10 @@ router.post('/forgot-password', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   try {
     const { token, password } = req.body;
+    const cleanedToken = (token || '').toString().trim();
 
     // Validation
-    if (!token || !password) {
+    if (!cleanedToken || !password) {
       return res.status(400).json({ message: '重置令牌和新密碼為必填項目' });
     }
 
@@ -734,17 +736,24 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: '密碼長度至少需要6個字符' });
     }
 
-    // Find user with valid reset token
-    const userResult = await pool.query(
-      'SELECT id, email, name FROM users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
-      [token]
+    // First, check if the token exists (even if expired) to provide clearer feedback
+    const tokenLookup = await pool.query(
+      'SELECT id, email, name, reset_token_expiry FROM users WHERE reset_token = $1',
+      [cleanedToken]
     );
 
-    if (userResult.rows.length === 0) {
-      return res.status(400).json({ message: '重置令牌無效或已過期' });
+    if (tokenLookup.rows.length === 0) {
+      return res.status(400).json({ message: '重置連結無效或已被更新，請重新申請忘記密碼' });
     }
 
-    const user = userResult.rows[0];
+    const user = tokenLookup.rows[0];
+
+    // Check expiry
+    const now = new Date();
+    const expiry = new Date(user.reset_token_expiry);
+    if (!(expiry instanceof Date) || isNaN(expiry.getTime()) || expiry <= now) {
+      return res.status(400).json({ message: '重置連結已過期，請重新申請忘記密碼' });
+    }
 
     // Hash new password
     const saltRounds = 12;
