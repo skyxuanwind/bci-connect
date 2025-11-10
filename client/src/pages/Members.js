@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../config/axios';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Avatar from '../components/Avatar';
 import GoldAvatarIcon from '../components/GoldAvatarIcon';
@@ -49,7 +49,7 @@ const Members = () => {
   const loadChapters = async () => {
     try {
       const response = await axios.get('/api/chapters');
-      setChapters(Array.isArray(response.data) ? response.data : []);
+      setChapters(Array.isArray(response.data?.chapters) ? response.data.chapters : []);
     } catch (error) {
       console.error('Failed to load chapters:', error);
       setChapters([]);
@@ -369,12 +369,12 @@ const Members = () => {
                   )}
 
                   {/* 會員等級（權限） - 只在有有效等級時顯示 */}
-                  {getMembershipLevelText(member.membership_level) && (
+                  {getMembershipLevelText(member.membershipLevel) && (
                     <div className="flex items-center justify-center mt-3">
                       <div className="relative">
-                        <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-xl border-2 ${getMembershipLevelBadge(member.membership_level)} transform hover:scale-110 transition-all duration-300 backdrop-blur-sm`}>
+                        <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-xl border-2 ${getMembershipLevelBadge(member.membershipLevel)} transform hover:scale-110 transition-all duration-300 backdrop-blur-sm`}>
                           <UserIcon className="h-4 w-4 inline mr-1.5" />
-                          {getMembershipLevelText(member.membership_level)}
+                          {getMembershipLevelText(member.membershipLevel)}
                         </span>
                         {/* 光暈效果 */}
                         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gold-400/20 to-gold-600/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
@@ -403,9 +403,9 @@ const Members = () => {
                 <div className="flex-shrink-0 p-4 sm:p-5 lg:p-6 pt-2 space-y-3 relative z-10">
                   <div className="grid grid-cols-2 gap-3">
                     {/* 聯絡按鈕 */}
-                    {member.phone && (
+                    {member.contactNumber && (
                       <a
-                        href={`tel:${member.phone}`}
+                        href={`tel:${member.contactNumber}`}
                         onClick={(e) => e.stopPropagation()}
                         className="flex items-center justify-center px-3 sm:px-4 py-2.5 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-600 hover:to-primary-500 text-gold-100 border border-gold-600/40 hover:border-gold-500/60 rounded-xl transition-all duration-300 text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl backdrop-blur-sm transform hover:scale-105"
                       >
