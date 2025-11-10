@@ -633,7 +633,7 @@ router.get('/members', async (req, res) => {
     }
 
     if (search.trim()) {
-      whereConditions.push(`(u.name ILIKE $${paramIndex} OR u.company ILIKE $${paramIndex} OR u.industry ILIKE $${paramIndex} OR u.title ILIKE $${paramIndex})`);
+      whereConditions.push(`(u.name ILIKE $${paramIndex} OR u.company ILIKE $${paramIndex} OR u.industry ILIKE $${paramIndex} OR u.title ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`);
       queryParams.push(`%${search.trim()}%`);
       paramIndex++;
     }

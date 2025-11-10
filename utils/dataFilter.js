@@ -152,14 +152,14 @@ function getProductionWhereClause(tableAlias = '') {
   }
   
   return `
-    AND ${prefix}email NOT LIKE '%test%' 
-    AND ${prefix}email NOT LIKE '%@example.com'
-    AND ${prefix}name NOT LIKE '%測試%'
-    AND ${prefix}name NOT LIKE '%test%'
-    AND ${prefix}company NOT LIKE '%測試%'
-    AND ${prefix}company NOT LIKE '%test%'
-    AND ${prefix}company NOT LIKE '%明志科技%'
-    AND ${prefix}company NOT LIKE '%Chen Tech%'
+    AND COALESCE(${prefix}email, '') NOT LIKE '%test%'
+    AND COALESCE(${prefix}email, '') NOT LIKE '%@example.com'
+    AND COALESCE(${prefix}name, '') NOT LIKE '%測試%'
+    AND COALESCE(${prefix}name, '') NOT LIKE '%test%'
+    AND COALESCE(${prefix}company, '') NOT LIKE '%測試%'
+    AND COALESCE(${prefix}company, '') NOT LIKE '%test%'
+    AND COALESCE(${prefix}company, '') NOT LIKE '%明志科技%'
+    AND COALESCE(${prefix}company, '') NOT LIKE '%Chen Tech%'
   `;
 }
 
@@ -184,14 +184,14 @@ function getProductionChapterWhereClause(tableAlias = '') {
     '高雄分會'
   ];
   
-  const conditions = testChapterNames.map(name => `${prefix}name != '${name}'`).join(' AND ');
+  const conditions = testChapterNames.map(name => `COALESCE(${prefix}name, '') != '${name}'`).join(' AND ');
   
   return `
     AND ${conditions}
-    AND ${prefix}name NOT LIKE '%測試%'
-    AND ${prefix}name NOT LIKE '%test%'
-    AND ${prefix}name NOT LIKE '%demo%'
-    AND ${prefix}name NOT LIKE '%sample%'
+    AND COALESCE(${prefix}name, '') NOT LIKE '%測試%'
+    AND COALESCE(${prefix}name, '') NOT LIKE '%test%'
+    AND COALESCE(${prefix}name, '') NOT LIKE '%demo%'
+    AND COALESCE(${prefix}name, '') NOT LIKE '%sample%'
   `;
 }
 
