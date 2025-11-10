@@ -46,8 +46,8 @@ import ComplaintBox from './pages/ComplaintBox';
 import CheckInScanner from './pages/CheckInScanner';
 import AttendanceManagement from './pages/AttendanceManagement';
 
-import FoundationInfo from './pages/FoundationInfo';
-import ContentManagement from './pages/admin/ContentManagement';
+  import FoundationInfo from './pages/FoundationInfo';
+  import ContentManagement from './pages/admin/ContentManagement';
 // 已移除：會員許願版與 AI 智慧通知頁面
 
 import AIProfilePage from './pages/AIProfilePage';
@@ -407,6 +407,15 @@ function App() {
             <AdminRoute>
               <Layout>
                 <EventManagement />
+              </Layout>
+            </AdminRoute>
+          } />
+
+          {/* Admin: 靜態內容管理 */}
+          <Route path="/admin/content" element={
+            <AdminRoute>
+              <Layout>
+                <ContentManagement />
               </Layout>
             </AdminRoute>
           } />
