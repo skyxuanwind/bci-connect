@@ -31,10 +31,28 @@ html.theme-light body {
   color: #1F2937; /* 深灰文字，提升可讀性 */
 }
 
+/* 亮白主題：文字與邊界統一變數（便於維護與一致性）*/
+html.theme-light {
+  --light-bg: #FFFFFF;
+  --light-bg-muted: #F9FAFB;
+  --light-border: #E5E7EB;
+  --light-border-strong: #D1D5DB;
+  --light-text: #111827;     /* 主文案 */
+  --light-text-2: #1F2937;   /* 次要文案 */
+  --light-text-3: #374151;   /* 輔助文案 */
+  --light-link: #0A2463;     /* 高可讀深藍 */
+}
+
 /* 亮白主題：常用 Tailwind 類的覆蓋映射（提升整站一致性） */
 html.theme-light .bg-primary-900,
 html.theme-light .bg-primary-800,
 html.theme-light .bg-primary-700 {
+  background-color: #FFFFFF !important;
+}
+/* 補充常見深色灰背景類的覆蓋，避免殘留低對比 */
+html.theme-light .bg-primary-600,
+html.theme-light .bg-primary-500,
+html.theme-light .bg-primary-400 {
   background-color: #FFFFFF !important;
 }
 
@@ -51,6 +69,14 @@ html.theme-light .text-gold-300,
 html.theme-light .text-gold-400 {
   color: #1F2937 !important;
 }
+/* 金色 500–900 在亮白主題同樣映射為深灰，以保證對比 */
+html.theme-light .text-gold-500,
+html.theme-light .text-gold-600,
+html.theme-light .text-gold-700,
+html.theme-light .text-gold-800,
+html.theme-light .text-gold-900 {
+  color: #1F2937 !important;
+}
 
 /* 導覽、卡片、表單在亮白主題的外觀 */
 html.theme-light .nav-link {
@@ -61,11 +87,26 @@ html.theme-light .nav-link:hover {
   background-color: #F3F4F6 !important;
 }
 
+/* 亮白主題：啟用狀態導覽為高對比深藍底白字 */
+html.theme-light .nav-link-active {
+  background: #0A2463 !important;
+  color: #FFFFFF !important;
+  border-color: #0A2463 !important;
+  box-shadow: 0 2px 8px rgba(10,36,99,0.25) !important;
+}
+
 html.theme-light .card {
   background: #FFFFFF !important;
   color: #1F2937 !important;
   border-color: #E5E7EB !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+/* 卡片標題與次標題在亮白主題下的字重/間距規範 */
+html.theme-light .card h1,
+html.theme-light .card h2,
+html.theme-light .card h3 {
+  color: var(--light-text) !important;
+  letter-spacing: 0.01em;
 }
 
 html.theme-light .form-input,
@@ -73,6 +114,13 @@ html.theme-light .input {
   background: #FFFFFF !important;
   color: #111827 !important;
   border-color: #D1D5DB !important;
+}
+/* 亮白主題：placeholder 與輔助文字對比提升 */
+html.theme-light .form-input::placeholder,
+html.theme-light .input::placeholder,
+html.theme-light ::placeholder {
+  color: #9CA3AF !important;
+  opacity: 1 !important;
 }
 
 /* 表格在亮白主題 */
@@ -102,6 +150,12 @@ html.theme-light .btn-outline {
   background: transparent !important;
   color: #0A2463 !important;
   border: 2px solid #0A2463 !important;
+}
+
+/* 防止通用 .text-white 在亮白主題誤用導致低對比（保留危險按鈕的白字）*/
+html.theme-light .text-white { color: #111827 !important; }
+html.theme-light .btn-danger, html.theme-light .btn-primary, html.theme-light .btn-secondary {
+  color: #FFFFFF !important;
 }
 
 /* 邊框、分隔線統一為淺灰 */
@@ -135,6 +189,17 @@ html.theme-light .text-gray-400 { color: #9CA3AF !important; }
 html.theme-light .text-gray-300 { color: #D1D5DB !important; }
 html.theme-light .text-gray-200 { color: #E5E7EB !important; }
 html.theme-light .text-gray-100 { color: #F3F4F6 !important; }
+
+/* 亮白主題：標題、正文、註解的字級與行高（與 @layer base clamp 一致）*/
+html.theme-light h1 { font-weight: 700; line-height: 1.35; }
+html.theme-light h2 { font-weight: 700; line-height: 1.4; }
+html.theme-light h3 { font-weight: 600; line-height: 1.45; }
+html.theme-light h4 { font-weight: 600; line-height: 1.5; }
+html.theme-light p, html.theme-light li { line-height: 1.7; }
+html.theme-light small { color: #6B7280; }
+
+/* 輕量文字陰影在亮白主題弱化，避免降低對比 */
+html.theme-light .text-shadow, html.theme-light .text-shadow-gold { text-shadow: none !important; }
 
 /* 頁首/側欄陰影與邊界在亮白主題微調 */
 html.theme-light .shadow-elegant, html.theme-light .shadow-elegant-lg {

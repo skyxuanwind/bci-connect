@@ -55,3 +55,51 @@
 
 - 全局 `transition` 已啟用常見屬性切換的平滑過渡，避免閃爍。
 - 切換僅改根元素類名，避免不必要的重排；覆蓋選擇器具體且集中，保持渲染穩定。
+
+---
+
+## 亮白主題文字顯示規範（Typography & Contrast）
+
+以下規範已在 `client/src/index.css` 中以 `html.theme-light` 覆蓋並落地，滿足 WCAG 2.1 AA（對比 ≥ 4.5:1）。
+
+- 顏色變數（用於一致性）：
+  - `--light-text` = `#111827`（主文案）
+  - `--light-text-2` = `#1F2937`（次文案）
+  - `--light-text-3` = `#374151`（輔助說明）
+  - `--light-bg` = `#FFFFFF`、`--light-bg-muted` = `#F9FAFB`
+  - `--light-border` = `#E5E7EB`、`--light-border-strong` = `#D1D5DB`
+  - `--light-link` = `#0A2463`（高可讀深藍）
+
+- 對比原則：
+  - 主文案：`#111827` 在白底對比 ≈ 12.6:1
+  - 次文案/說明：`#1F2937` / `#374151` 皆 ≥ 7:1
+  - 互動按鈕：深藍 `#0A2463` / 深灰 `#2E2E2E` 搭配白字，皆 ≥ 7:1
+  - placeholder 與輔助字：`#9CA3AF`（灰 400），相對主文案形成清晰層次
+
+- 字級與字重（mobile-first，已以 clamp 控制）：
+  - 標題：
+    - `h1` 700，`line-height: 1.35`
+    - `h2` 700，`line-height: 1.4`
+    - `h3` 600，`line-height: 1.45`
+    - `h4` 600，`line-height: 1.5`
+  - 正文/列表：`line-height: 1.7`，字距 `letter-spacing: 0.01em`
+  - 小字（註解/表格輔助）：`small` 使用 `#6B7280`（灰 500）
+
+- 類別映射（避免低對比）：
+  - `text-gold-50..900` → 映射為深灰文字（亮白主題下）
+  - `bg-primary-*` 深色底 → 映射為白底或淺灰底
+  - `text-white` → 在亮白主題預設為深灰，保留 `.btn-*` 的白字例外
+
+- 組件規範：
+  - 導覽（active）：深藍底白字（`#0A2463` + `#FFFFFF`），陰影適度
+  - 卡片：白底、淺灰邊、淡陰影；標題使用主文案色
+  - 表單：白底、深灰字、淺灰邊；placeholder 使用灰 400
+  - 表格：表頭 `#F9FAFB` + 深字、列白底 + 灰邊
+
+- 文字陰影：亮白主題停用（`text-shadow`/`text-shadow-gold` → `none`），避免降低清晰度。
+
+## 測試清單（建議）
+
+- 主要內容、導覽、按鈕、表格、列表均以亮白主題檢視，使用色彩檢測工具確認對比 ≥ 4.5:1。
+- 常見頁面：`/dashboard`、`/members`、`/events`、`/profile`、`/business-media`。
+- 裝置寬度：360、768、1024、1440，檢查標題斷行與行距舒適度。
