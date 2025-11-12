@@ -169,6 +169,88 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Extend referrals table for new features
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'network' CHECK (type IN ('network','deal'))
+    `);
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS audit_status VARCHAR(20) DEFAULT 'pending' CHECK (audit_status IN ('pending','approved','rejected'))
+    `);
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS deal_status VARCHAR(30) DEFAULT 'none' CHECK (deal_status IN ('none','verification_pending','verified','settled'))
+    `);
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS sensitive_data_encrypted TEXT
+    `);
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS verified_transaction_id VARCHAR(100)
+    `);
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS verified_amount DECIMAL(12,2)
+    `);
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS verified_currency VARCHAR(5)
+    `);
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP
+    `);
+    await pool.query(`
+      ALTER TABLE referrals
+      ADD COLUMN IF NOT EXISTS verification_source VARCHAR(60)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_referrals_type ON referrals(type)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_referrals_status ON referrals(status)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_referrals_audit_status ON referrals(audit_status)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_referrals_deal_status ON referrals(deal_status)
+    `);
+
+    // Create referral audit logs table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS referral_audit_logs (
+        id SERIAL PRIMARY KEY,
+        referral_id INTEGER NOT NULL REFERENCES referrals(id) ON DELETE CASCADE,
+        actor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        action VARCHAR(30) NOT NULL CHECK (action IN ('submitted','approved','rejected','updated')),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_referral_audit_logs_referral_id ON referral_audit_logs(referral_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_referral_audit_logs_actor_id ON referral_audit_logs(actor_id)`);
+
+    // Create referral deals (transactions) table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS referral_deals (
+        id SERIAL PRIMARY KEY,
+        referral_id INTEGER NOT NULL REFERENCES referrals(id) ON DELETE CASCADE,
+        transaction_id VARCHAR(100),
+        amount DECIMAL(12,2) NOT NULL,
+        currency VARCHAR(5) DEFAULT 'TWD',
+        verified BOOLEAN DEFAULT FALSE,
+        verified_at TIMESTAMP,
+        verification_source VARCHAR(60),
+        bonus_amount DECIMAL(12,2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_referral_deals_referral_id ON referral_deals(referral_id)`);
+
     // Create meetings table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS meetings (

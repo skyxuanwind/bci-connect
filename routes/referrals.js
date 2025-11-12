@@ -1,10 +1,39 @@
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireCoach, requireAdmin } = require('../middleware/auth');
 const { sendReferralNotification } = require('../services/emailService');
 const { AINotificationService } = require('../services/aiNotificationService');
 const aiNotificationService = new AINotificationService();
+const { encryptJSON, decryptJSON } = require('../services/cryptoService');
+const { verifyTransaction } = require('../services/financeGateway');
+
+const REFERRAL_BONUS_RATE = Number(process.env.REFERRAL_BONUS_RATE || 0.05);
+
+// Helpers
+const parseRange = (range) => {
+  const now = new Date();
+  let start = new Date(now);
+  switch (String(range || 'monthly').toLowerCase()) {
+    case 'monthly':
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'quarterly': {
+      const q = Math.floor(now.getMonth() / 3);
+      start = new Date(now.getFullYear(), q * 3, 1);
+      break;
+    }
+    case 'semiannual':
+      start = new Date(now.getFullYear(), now.getMonth() < 6 ? 0 : 6, 1);
+      break;
+    case 'annual':
+      start = new Date(now.getFullYear(), 0, 1);
+      break;
+    default:
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  return { startISO: start.toISOString(), endISO: now.toISOString() };
+};
 
 // 創建引薦
 router.post('/create', authenticateToken, async (req, res) => {
@@ -69,6 +98,251 @@ router.post('/create', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('創建引薦錯誤:', error);
+    res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+// 人脈引薦：資源對接 + 完整流程（加密敏感資訊）
+// body: { referred_to_id, prospect: { name, email, company, phone }, provider?: { name,email,company }, reason }
+router.post('/network/create', authenticateToken, async (req, res) => {
+  try {
+    const referrer_id = req.user.id;
+    const { referred_to_id, prospect = {}, provider = {}, reason = '' } = req.body;
+
+    const referredCheck = await pool.query(
+      'SELECT id, name, email, company FROM users WHERE id = $1 AND status = $2',
+      [referred_to_id, 'active']
+    );
+    if (!referredCheck.rows[0]) {
+      return res.status(404).json({ error: '被引薦會員不存在或非活躍狀態' });
+    }
+
+    const sensitive = encryptJSON({ prospect, provider, reason });
+
+    const result = await pool.query(
+      `INSERT INTO referrals (referrer_id, referred_to_id, referral_amount, description, status, type, audit_status, sensitive_data_encrypted)
+       VALUES ($1, $2, $3, $4, 'pending', 'network', 'pending', $5)
+       RETURNING *`,
+      [referrer_id, referred_to_id, 0, reason || '人脈引薦', sensitive]
+    );
+
+    // 審核紀錄：提交
+    await pool.query(
+      `INSERT INTO referral_audit_logs (referral_id, actor_id, action, notes)
+       VALUES ($1, $2, 'submitted', $3)`,
+      [result.rows[0].id, referrer_id, '提交人脈引薦']
+    );
+
+    res.status(201).json({ message: '人脈引薦已提交', referral: result.rows[0] });
+  } catch (error) {
+    console.error('人脈引薦提交錯誤:', error);
+    res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+// 成交引薦：建立交易並觸發金流驗證
+// body: { referred_to_id, amount, currency, transactionId, reason }
+router.post('/deal/create', authenticateToken, async (req, res) => {
+  try {
+    const referrer_id = req.user.id;
+    const { referred_to_id, amount, currency = 'TWD', transactionId, reason = '' } = req.body;
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ error: '缺少有效成交金額' });
+    }
+
+    const referredCheck = await pool.query(
+      'SELECT id, name, email, company FROM users WHERE id = $1 AND status = $2',
+      [referred_to_id, 'active']
+    );
+    if (!referredCheck.rows[0]) {
+      return res.status(404).json({ error: '被引薦會員不存在或非活躍狀態' });
+    }
+
+    const referralRes = await pool.query(
+      `INSERT INTO referrals (referrer_id, referred_to_id, referral_amount, description, status, type, deal_status, verified_currency)
+       VALUES ($1, $2, $3, $4, 'pending', 'deal', 'verification_pending', $5)
+       RETURNING *`,
+      [referrer_id, referred_to_id, amount, reason || '成交引薦', currency]
+    );
+    const referral = referralRes.rows[0];
+
+    await pool.query(
+      `INSERT INTO referral_deals (referral_id, transaction_id, amount, currency)
+       VALUES ($1, $2, $3, $4)`,
+      [referral.id, transactionId || null, amount, currency]
+    );
+
+    // 若提供交易編號，嘗試即時驗證
+    let verification = { verified: false, source: 'none' };
+    if (transactionId) {
+      verification = await verifyTransaction({ transactionId, amount, currency });
+    }
+
+    if (verification.verified) {
+      const bonus = Number(amount) * REFERRAL_BONUS_RATE;
+      await pool.query(
+        `UPDATE referral_deals SET verified = TRUE, verified_at = CURRENT_TIMESTAMP, verification_source = $1, bonus_amount = $2 WHERE referral_id = $3`,
+        [verification.source, bonus, referral.id]
+      );
+      await pool.query(
+        `UPDATE referrals SET status = 'confirmed', deal_status = 'verified', verified_transaction_id = $1, verified_amount = $2, verified_at = CURRENT_TIMESTAMP, verification_source = $3 WHERE id = $4`,
+        [transactionId, amount, verification.source, referral.id]
+      );
+    }
+
+    res.status(201).json({ message: '成交引薦已建立', referralId: referral.id, verified: !!verification.verified });
+  } catch (error) {
+    console.error('成交引薦建立錯誤:', error);
+    res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+// 成交引薦驗證（補驗）
+router.post('/deal/:id/verify', authenticateToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const ref = await pool.query('SELECT * FROM referrals WHERE id = $1 AND type = $2', [id, 'deal']);
+    if (!ref.rows[0]) return res.status(404).json({ error: '引薦不存在或非成交類型' });
+    const deal = await pool.query('SELECT * FROM referral_deals WHERE referral_id = $1', [id]);
+    if (!deal.rows[0]) return res.status(404).json({ error: '找不到交易資料' });
+
+    const { transaction_id, amount, currency } = deal.rows[0];
+    const v = await verifyTransaction({ transactionId: transaction_id, amount, currency });
+    if (!v.verified) {
+      return res.status(400).json({ verified: false, reason: v.reason || '金流未通過驗證' });
+    }
+    const bonus = Number(amount) * REFERRAL_BONUS_RATE;
+    await pool.query(
+      `UPDATE referral_deals SET verified = TRUE, verified_at = CURRENT_TIMESTAMP, verification_source = $1, bonus_amount = $2 WHERE referral_id = $3`,
+      [v.source, bonus, id]
+    );
+    const upd = await pool.query(
+      `UPDATE referrals SET status = 'confirmed', deal_status = 'verified', verified_transaction_id = $1, verified_amount = $2, verified_at = CURRENT_TIMESTAMP, verification_source = $3 WHERE id = $4 RETURNING *`,
+      [transaction_id, amount, v.source, id]
+    );
+    return res.json({ verified: true, referral: upd.rows[0], bonus });
+  } catch (error) {
+    console.error('成交引薦驗證錯誤:', error);
+    res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+// 人脈引薦審核（教練或管理員）
+router.post('/:id/audit', authenticateToken, requireCoach, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { action, notes = '' } = req.body; // 'approved' | 'rejected'
+    if (!['approved', 'rejected'].includes(String(action))) {
+      return res.status(400).json({ error: '無效的審核動作' });
+    }
+    const refCheck = await pool.query('SELECT * FROM referrals WHERE id = $1', [id]);
+    if (!refCheck.rows[0]) return res.status(404).json({ error: '引薦不存在' });
+    if (refCheck.rows[0].type !== 'network') {
+      return res.status(400).json({ error: '僅人脈引薦可審核' });
+    }
+
+    await pool.query('UPDATE referrals SET audit_status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [action, id]);
+    await pool.query(
+      `INSERT INTO referral_audit_logs (referral_id, actor_id, action, notes) VALUES ($1, $2, $3, $4)`,
+      [id, req.user.id, action, notes]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('人脈引薦審核錯誤:', error);
+    res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+// 取回敏感資料（限引薦參與者或管理員/教練）
+router.get('/:id/sensitive', authenticateToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const ref = await pool.query('SELECT * FROM referrals WHERE id = $1', [id]);
+    if (!ref.rows[0]) return res.status(404).json({ error: '引薦不存在' });
+    const r = ref.rows[0];
+    const canAccess = (req.user.id === r.referrer_id) || (req.user.id === r.referred_to_id) || req.user.is_admin || req.user.is_coach;
+    if (!canAccess) return res.status(403).json({ error: '無權存取敏感資訊' });
+    const data = decryptJSON(r.sensitive_data_encrypted);
+    res.json({ data: data || {} });
+  } catch (error) {
+    console.error('讀取敏感資料錯誤:', error);
+    res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+// 引薦關係圖譜（nodes/edges）
+router.get('/graph', authenticateToken, async (req, res) => {
+  try {
+    const type = String(req.query.type || 'all').toLowerCase();
+    const params = [];
+    let where = '1=1';
+    if (['network','deal'].includes(type)) {
+      params.push(type);
+      where = 'type = $1';
+    }
+    const rows = (await pool.query(`
+      SELECT r.referrer_id, r.referred_to_id, r.status, r.type,
+             u1.name AS referrer_name, u2.name AS referred_name
+      FROM referrals r
+      JOIN users u1 ON r.referrer_id = u1.id
+      JOIN users u2 ON r.referred_to_id = u2.id
+      WHERE ${where}
+    `, params)).rows;
+
+    const nodesMap = new Map();
+    const edgesMap = new Map();
+    for (const row of rows) {
+      if (!nodesMap.has(row.referrer_id)) nodesMap.set(row.referrer_id, { id: row.referrer_id, label: row.referrer_name });
+      if (!nodesMap.has(row.referred_to_id)) nodesMap.set(row.referred_to_id, { id: row.referred_to_id, label: row.referred_name });
+      const key = `${row.referrer_id}-${row.referred_to_id}`;
+      const edge = edgesMap.get(key) || { from: row.referrer_id, to: row.referred_to_id, count: 0, confirmed: 0 };
+      edge.count += 1;
+      if (row.status === 'confirmed') edge.confirmed += 1;
+      edgesMap.set(key, edge);
+    }
+    res.json({ nodes: Array.from(nodesMap.values()), edges: Array.from(edgesMap.values()) });
+  } catch (error) {
+    console.error('生成引薦關係圖錯誤:', error);
+    res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+// 引薦成效分析與報表
+router.get('/performance', authenticateToken, async (req, res) => {
+  try {
+    const range = String(req.query.range || 'monthly').toLowerCase();
+    const type = String(req.query.type || 'all').toLowerCase();
+    const { startISO, endISO } = parseRange(range);
+    const params = [startISO, endISO];
+    let where = 'created_at BETWEEN $1 AND $2';
+    if (['network','deal'].includes(type)) {
+      params.push(type);
+      where += ` AND type = $3`;
+    }
+    const agg = await pool.query(`
+      SELECT type,
+             COUNT(*)::int AS total,
+             COUNT(CASE WHEN status = 'confirmed' THEN 1 END)::int AS confirmed,
+             COALESCE(SUM(CASE WHEN status = 'confirmed' THEN referral_amount ELSE 0 END), 0) AS confirmed_amount
+      FROM referrals
+      WHERE ${where}
+      GROUP BY type
+    `, params);
+
+    // 詳細成交報表
+    const deals = await pool.query(`
+      SELECT d.referral_id, d.transaction_id, d.amount, d.currency, d.verified, d.verified_at, d.bonus_amount,
+             r.referrer_id, r.referred_to_id
+      FROM referral_deals d
+      JOIN referrals r ON r.id = d.referral_id
+      WHERE r.created_at BETWEEN $1 AND $2 ${['network','deal'].includes(type) ? ' AND r.type = $3' : ''}
+      ORDER BY d.verified_at DESC NULLS LAST
+    `, params);
+
+    res.json({ range, summary: agg.rows, deals: deals.rows, bonusRate: REFERRAL_BONUS_RATE });
+  } catch (error) {
+    console.error('獲取引薦成效錯誤:', error);
     res.status(500).json({ error: '服務器錯誤' });
   }
 });
