@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Avatar from './Avatar';
 import axios from 'axios';
 import BottomRoleNav from './BottomRoleNav';
+import ThemeToggle from './ThemeToggle';
 import {
   HomeIcon,
   UserGroupIcon,
@@ -486,6 +487,9 @@ const Layout = ({ children }) => {
           <button className="p-1 rounded-full text-gold-300 hover:text-gold-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500">
             <WifiIcon className="h-6 w-6" />
           </button>
+          <div className="ml-2">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import Level1Route from './components/Level1Route';
@@ -99,7 +100,8 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-primary-900">
+      <ThemeProvider>
+        <div className="min-h-screen bg-primary-900">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={location.pathname} initial="initial" animate="animate" exit="exit" variants={variants} style={{ perspective: 1000 }}>
             <Routes location={location}>
@@ -502,6 +504,7 @@ function App() {
         </AnimatePresence>
         <ToastContainer />
         </div>
+      </ThemeProvider>
     </AuthProvider>
   );
 }
