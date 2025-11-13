@@ -222,6 +222,65 @@ html.theme-light .text-gray-300 { color: #D1D5DB !important; }
 html.theme-light .text-gray-200 { color: #E5E7EB !important; }
 html.theme-light .text-gray-100 { color: #F3F4F6 !important; }
 
+  /* Yellow/Gold → Blue mapping for light theme (consistency & WCAG AA) */
+  html.theme-light .text-yellow-50,
+  html.theme-light .text-yellow-100,
+  html.theme-light .text-yellow-200 { color: var(--blue-text) !important; }
+  html.theme-light .text-yellow-300,
+  html.theme-light .text-yellow-400,
+  html.theme-light .text-yellow-500 { color: var(--blue-text) !important; }
+  html.theme-light .text-yellow-600,
+  html.theme-light .text-yellow-700,
+  html.theme-light .text-yellow-800,
+  html.theme-light .text-yellow-900 { color: var(--blue-text) !important; }
+  html.theme-light .hover\:text-yellow-300:hover,
+  html.theme-light .hover\:text-yellow-400:hover,
+  html.theme-light .hover\:text-yellow-500:hover { color: var(--blue-button-hover) !important; }
+
+  html.theme-light .bg-yellow-50,
+  html.theme-light .bg-yellow-100,
+  html.theme-light .bg-yellow-200 { background-color: #EFF6FF !important; }
+  html.theme-light .bg-yellow-300,
+  html.theme-light .bg-yellow-400,
+  html.theme-light .bg-yellow-500,
+  html.theme-light .bg-yellow-600 { background-color: var(--blue-button) !important; color: #FFFFFF !important; }
+  html.theme-light .hover\:bg-yellow-300:hover,
+  html.theme-light .hover\:bg-yellow-400:hover,
+  html.theme-light .hover\:bg-yellow-500:hover { background-color: var(--blue-button-hover) !important; color: #FFFFFF !important; }
+  html.theme-light .bg-yellow-500\/10 { background-color: rgba(26,75,140,0.10) !important; }
+  html.theme-light .bg-yellow-700\/30 { background-color: rgba(26,75,140,0.30) !important; }
+  html.theme-light .border-yellow-500 { border-color: var(--blue-border) !important; }
+  html.theme-light .border-yellow-600 { border-color: #3A6CA8 !important; }
+  html.theme-light .border-yellow-500\/30 { border-color: rgba(70,130,180,0.30) !important; }
+  html.theme-light .border-yellow-500\/40 { border-color: rgba(70,130,180,0.40) !important; }
+  html.theme-light .border-yellow-600\/40 { border-color: rgba(58,108,168,0.40) !important; }
+
+  /* Dark backgrounds → Light backgrounds for light theme */
+  html.theme-light .bg-gray-900,
+  html.theme-light .bg-gray-800,
+  html.theme-light .bg-black { background-color: var(--light-bg) !important; color: var(--blue-text) !important; }
+  html.theme-light .hover\:bg-gray-900:hover,
+  html.theme-light .hover\:bg-gray-800:hover { background-color: var(--light-bg-muted) !important; }
+
+  /* Gradients used in dark theme → subtle light gradient */
+  html.theme-light .bg-gradient-to-br,
+  html.theme-light .bg-gradient-to-r,
+  html.theme-light .bg-gradient-to-l,
+  html.theme-light .bg-gradient-to-t,
+  html.theme-light .bg-gradient-to-b {
+    background-image: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%) !important;
+    color: var(--blue-text) !important;
+    border-color: #E5E7EB !important;
+  }
+
+  /* Progress bars and loading spinners (yellow) → blue */
+  html.theme-light .border-yellow-400,
+  html.theme-light .border-yellow-500 { border-color: var(--blue-border) !important; }
+  html.theme-light .animate-spin,
+  html.theme-light .spinner { border-color: var(--blue-border) !important; }
+  html.theme-light .bg-yellow-400,
+  html.theme-light .bg-yellow-500 { background-color: var(--blue-button) !important; }
+
 /* 亮白主題：標題、正文、註解的字級與行高（與 @layer base clamp 一致）*/
 html.theme-light h1 { font-weight: 700; line-height: 1.35; }
 html.theme-light h2 { font-weight: 700; line-height: 1.4; }
