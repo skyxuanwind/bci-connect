@@ -255,7 +255,7 @@ const Profile = () => {
   return (
     <div className="profile-page max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-gradient-primary text-white rounded-lg p-6">
+      <div data-theme="light" className="bg-gradient-primary text-white rounded-lg p-6">
         <div className="flex items-center">
           <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
             <UserIcon className="h-8 w-8 text-white" />
@@ -296,7 +296,7 @@ const Profile = () => {
 
       {/* Profile Tab */}
       {activeTab === 'profile' && (
-        <div className="card">
+        <div data-theme="light" className="card">
           <div className="card-header">
             <div className="flex items-center space-x-2">
               <h2 className="text-lg font-semibold text-gold-100">個人資料</h2>
