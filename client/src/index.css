@@ -25,22 +25,33 @@
   }
 }
 
-/* 亮白主題覆蓋：在 html.theme-light 下應用輕色系與高對比規則 */
+/* 亮白主題覆蓋：在 html.theme-light 下應用藍色系高對比規則 */
 html.theme-light body {
-  background: #FFFFFF;
-  color: #1F2937; /* 深灰文字，提升可讀性 */
+  background: #FFFFFF; /* 主背景色 */
+  color: #0A2463; /* 文字主色：深海藍 */
 }
 
 /* 亮白主題：文字與邊界統一變數（便於維護與一致性）*/
 html.theme-light {
-  --light-bg: #FFFFFF;
-  --light-bg-muted: #F9FAFB;
-  --light-border: #E5E7EB;
+  /* 背景系統配色 */
+  --light-bg: #FFFFFF;           /* 主背景色：純白 */
+  --light-bg-muted: #F9F9F9;     /* 次級底色：雪白 */
+
+  /* 核心元素配色（質感藍） */
+  --blue-text: #0A2463;          /* 文字主色：深海藍 */
+  --blue-button: #1A4B8C;        /* 按鈕標準色：皇家藍 */
+  --blue-button-hover: #2A5C9C;  /* 懸停色：寶石藍 */
+  --blue-border: #4682B4;        /* 邊框：鋼藍色 */
+  --blue-scroll-track: #B0C4DE;  /* 滾動條軌道：淡鋼藍 */
+  --blue-scroll-thumb: #6C8EBF;  /* 滾動條滑塊：中等藍 */
+
+  /* 文案輔助色（保留） */
+  --light-text: #0A2463;     /* 主文案：改用深海藍 */
+  --light-text-2: #1F2937;   /* 次要文案：深灰 */
+  --light-text-3: #374151;   /* 輔助文案：次灰 */
+  --light-link: #0A2463;     /* 連結：深海藍 */
+  --light-border: #E5E7EB;   /* 灰色邊界（非互動用） */
   --light-border-strong: #D1D5DB;
-  --light-text: #111827;     /* 主文案 */
-  --light-text-2: #1F2937;   /* 次要文案 */
-  --light-text-3: #374151;   /* 輔助文案 */
-  --light-link: #0A2463;     /* 高可讀深藍 */
 }
 
 /* 亮白主題：常用 Tailwind 類的覆蓋映射（提升整站一致性） */
@@ -80,26 +91,26 @@ html.theme-light .text-gold-900 {
 
 /* 導覽、卡片、表單在亮白主題的外觀 */
 html.theme-light .nav-link {
-  color: #374151 !important;
+  color: var(--blue-text) !important;
 }
 html.theme-light .nav-link:hover {
-  color: #111827 !important;
-  background-color: #F3F4F6 !important;
+  color: var(--blue-text) !important;
+  background-color: var(--light-bg-muted) !important;
 }
 
 /* 亮白主題：啟用狀態導覽為高對比深藍底白字 */
 html.theme-light .nav-link-active {
-  background: #0A2463 !important;
+  background: var(--blue-button) !important;
   color: #FFFFFF !important;
-  border-color: #0A2463 !important;
-  box-shadow: 0 2px 8px rgba(10,36,99,0.25) !important;
+  border-color: var(--blue-border) !important;
+  box-shadow: 0 4px 10px rgba(26,75,140,0.16) !important;
 }
 
 html.theme-light .card {
   background: #FFFFFF !important;
-  color: #1F2937 !important;
+  color: var(--blue-text) !important;
   border-color: #E5E7EB !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 12px rgba(26,75,140,0.08) !important; /* 藍色系微陰影 */
 }
 /* 卡片標題與次標題在亮白主題下的字重/間距規範 */
 html.theme-light .card h1,
@@ -110,10 +121,22 @@ html.theme-light .card h3 {
 }
 
 html.theme-light .form-input,
-html.theme-light .input {
+html.theme-light .input,
+html.theme-light input,
+html.theme-light textarea,
+html.theme-light select {
   background: #FFFFFF !important;
-  color: #111827 !important;
-  border-color: #D1D5DB !important;
+  color: var(--blue-text) !important;
+  border: 1px solid var(--blue-border) !important; /* 專業 1px 藍色邊框 */
+  box-shadow: inset 0 1px 2px rgba(26,75,140,0.06) !important;
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+html.theme-light input:focus,
+html.theme-light textarea:focus,
+html.theme-light select:focus {
+  border-color: var(--blue-button) !important;
+  box-shadow: 0 0 0 3px rgba(70,130,180,0.16) !important; /* 鋼藍外環 */
+  outline: none !important;
 }
 /* 亮白主題：placeholder 與輔助文字對比提升 */
 html.theme-light .form-input::placeholder,
@@ -135,22 +158,31 @@ html.theme-light .table-row {
 
 /* 按鈕在亮白主題：高對比深藍或深灰 */
 html.theme-light .btn-primary {
-  background: #0A2463 !important; /* 深藍主色 */
+  /* 漸層：主色 → 懸停色 */
+  background: linear-gradient(180deg, var(--blue-button) 0%, var(--blue-button-hover) 100%) !important;
   color: #FFFFFF !important;
-  border: 1px solid #0A2463 !important;
+  border: 1px solid var(--blue-border) !important;
+  box-shadow: 0 6px 10px rgba(26,75,140,0.18) !important;
 }
-html.theme-light .btn-primary:hover { filter: brightness(1.05) !important; }
+html.theme-light .btn-primary:hover {
+  filter: brightness(1.03) !important;
+  box-shadow: 0 8px 16px rgba(26,75,140,0.22) !important;
+}
 
 html.theme-light .btn-secondary {
-  background: #2E2E2E !important; /* 深灰次要 */
-  color: #FFFFFF !important;
-  border: 1px solid #2E2E2E !important;
+  background: #f3f6fb !important;
+  color: var(--blue-text) !important;
+  border: 1px solid var(--blue-border) !important;
 }
 html.theme-light .btn-outline {
   background: transparent !important;
-  color: #0A2463 !important;
-  border: 2px solid #0A2463 !important;
+  color: var(--blue-button) !important;
+  border: 1px solid var(--blue-border) !important;
 }
+html.theme-light .btn-outline:hover {
+  background: linear-gradient(180deg, rgba(26,75,140,0.06) 0%, rgba(42,92,156,0.12) 100%) !important;
+}
+
 
 /* 防止通用 .text-white 在亮白主題誤用導致低對比（保留危險按鈕的白字）*/
 html.theme-light .text-white { color: #111827 !important; }
@@ -166,9 +198,9 @@ html.theme-light .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
 /* 將原本黑金覆蓋的白/灰類別在亮白主題下恢復 */
 html.theme-light .bg-white {
   background: #FFFFFF !important;
-  color: #111827 !important;
-  border: 1px solid #E5E7EB !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  color: var(--blue-text) !important;
+  border: 1px solid var(--light-border) !important;
+  box-shadow: 0 4px 12px rgba(26,75,140,0.08) !important;
 }
 html.theme-light .bg-white\/90 { background-color: rgba(255,255,255,0.9) !important; color: #111827 !important; border-color: #E5E7EB !important; }
 html.theme-light .bg-gray-50 { background-color: #F9FAFB !important; color: #111827 !important; }
@@ -195,7 +227,7 @@ html.theme-light h1 { font-weight: 700; line-height: 1.35; }
 html.theme-light h2 { font-weight: 700; line-height: 1.4; }
 html.theme-light h3 { font-weight: 600; line-height: 1.45; }
 html.theme-light h4 { font-weight: 600; line-height: 1.5; }
-html.theme-light p, html.theme-light li { line-height: 1.7; }
+html.theme-light p, html.theme-light li { line-height: 1.7; color: var(--blue-text); }
 html.theme-light small { color: #6B7280; }
 
 /* 輕量文字陰影在亮白主題弱化，避免降低對比 */
@@ -203,7 +235,67 @@ html.theme-light .text-shadow, html.theme-light .text-shadow-gold { text-shadow:
 
 /* 頁首/側欄陰影與邊界在亮白主題微調 */
 html.theme-light .shadow-elegant, html.theme-light .shadow-elegant-lg {
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
+  box-shadow: 0 4px 12px rgba(26,75,140,0.08) !important;
+}
+
+/* ===== 導航欄、下拉選單、工具提示、彈出窗口 ===== */
+html.theme-light .navbar,
+html.theme-light .nav-bar {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid var(--blue-border) !important;
+  box-shadow: 0 4px 12px rgba(26,75,140,0.08) !important;
+}
+
+html.theme-light .dropdown,
+html.theme-light .dropdown-menu,
+html.theme-light .menu {
+  background: #FFFFFF !important;
+  border: 1px solid var(--blue-border) !important;
+  box-shadow: 0 8px 20px rgba(26,75,140,0.12) !important;
+}
+
+html.theme-light .popover,
+html.theme-light [role="dialog"],
+html.theme-light .modal,
+html.theme-light .tooltip,
+html.theme-light [role="tooltip"] {
+  background: #FFFFFF !important;
+  color: var(--blue-text) !important;
+  border: 1px solid var(--blue-border) !important;
+  box-shadow: 0 8px 24px rgba(26,75,140,0.14) !important;
+}
+
+/* 狀態指示器（如加載動畫） */
+html.theme-light .animate-spin,
+html.theme-light .loading-spinner {
+  color: var(--blue-button) !important; /* 使用 currentColor 的圖示會套用 */
+  border-top-color: var(--blue-button) !important;
+}
+
+/* 圖標與裝飾性元素預設採用文字主色 */
+html.theme-light svg { color: var(--blue-text); }
+
+/* ===== 滾動條樣式（WebKit） ===== */
+html.theme-light ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+html.theme-light ::-webkit-scrollbar-track {
+  background: var(--blue-scroll-track);
+}
+html.theme-light ::-webkit-scrollbar-thumb {
+  background: var(--blue-scroll-thumb);
+  border-radius: 8px;
+  border: 2px solid #fff;
+}
+html.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: var(--blue-button-hover);
+}
+
+/* Firefox 滾動條 */
+html.theme-light {
+  scrollbar-color: var(--blue-scroll-thumb) var(--blue-scroll-track);
+  scrollbar-width: thin;
 }
 
 
