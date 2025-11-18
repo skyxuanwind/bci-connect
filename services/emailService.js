@@ -319,6 +319,26 @@ const sendReferralNotification = async (type, referralData) => {
           <a href="${frontendUrl}/referrals" style="background-color: #6b7280; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">查看詳情</a>
         </div>
       `;
+    } else if (type === 'new_network_referral') {
+      subject = '您收到了一個人脈引薦';
+      to = referralData.referred_email;
+      const prospect = referralData.prospect || {};
+      const provider = referralData.provider || {};
+      const reason = referralData.reason || '人脈引薦';
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">您收到了一個人脈引薦</h2>
+          <p>親愛的 ${referralData.referred_name}，</p>
+          <p>${referralData.referrer_name}（${referralData.referrer_company || '會員'}）向您發送了人脈引薦：</p>
+          <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p><strong>引薦理由：</strong>${reason}</p>
+            <p><strong>被引薦對象：</strong>${prospect.name || '未提供'}（${prospect.company || '未提供'}）</p>
+            <p><strong>資源提供者：</strong>${provider.name || '未提供'}（${provider.company || '未提供'}）</p>
+          </div>
+          <p>請登入系統查看詳情並回應此引薦。</p>
+          <a href="${frontendUrl}/referrals" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">前往處理</a>
+        </div>
+      `;
     }
     
     const mailOptions = {

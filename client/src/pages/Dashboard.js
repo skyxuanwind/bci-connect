@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [recentMembers, setRecentMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [networkTicker, setNetworkTicker] = useState([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -42,13 +43,17 @@ const Dashboard = () => {
       } else {
         requests.push(axios.get('/api/referrals/stats'));
       }
+      requests.push(axios.get('/api/referrals/network/recent?limit=20'));
       
-      const [membersResponse, statsResponse] = await Promise.all(requests);
+      const [membersResponse, statsResponse, networkResponse] = await Promise.all(requests);
 
       setRecentMembers(membersResponse.data.members || []);
       
       if (statsResponse) {
         setStats(statsResponse.data);
+      }
+      if (networkResponse && networkResponse.data && Array.isArray(networkResponse.data.items)) {
+        setNetworkTicker(networkResponse.data.items);
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -252,8 +257,8 @@ const Dashboard = () => {
           </div>
 
           {/* Statistics Cards */}
-          {stats && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
               {/* 總引薦金額 - 所有用戶都能看到 */}
               <div className="bg-primary-800 border border-gold-600 shadow-xl rounded-xl p-4 sm:p-6 col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-2">
                 <div className="flex items-center">
@@ -321,8 +326,29 @@ const Dashboard = () => {
                   </div>
                 </>
               )}
+          </div>
+        )}
+
+        {networkTicker.length > 0 && (
+          <div className="bg-primary-800 border border-gold-600 shadow-xl rounded-xl p-4 sm:p-5">
+            <div className="flex items-center space-x-2 mb-3">
+              <h2 className="text-lg font-semibold text-gold-100">人脈引薦動態</h2>
+              <InfoButton tooltip="顯示近期的人脈引薦：誰引薦了誰給哪位資源提供者" />
             </div>
-          )}
+            <div className="marquee">
+              <div className="marquee-track">
+                {networkTicker.concat(networkTicker).map((item, idx) => (
+                  <div key={`${item.id}-${idx}`} className="marquee-item bg-black border border-yellow-500 text-yellow-300">
+                    <UserPlusIcon className="w-4 h-4" />
+                    <span className="text-sm whitespace-nowrap">
+                      {item.referrer} 引薦 {item.prospect?.name || '客戶'} 給 {item.provider?.name || item.referred}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

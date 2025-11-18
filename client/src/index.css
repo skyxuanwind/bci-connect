@@ -294,6 +294,13 @@ html.theme-light .text-gray-100 { color: #F3F4F6 !important; }
 
 :where([data-theme="light"]) .border-gray-200 { border-color: #E5E7EB !important; }
 :where([data-theme="light"]) .border-gray-300 { border-color: #D1D5DB !important; }
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee { overflow: hidden; white-space: nowrap; }
+.marquee-track { display: inline-flex; gap: 1rem; animation: marquee 30s linear infinite; }
+.marquee-item { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 9999px; }
   html.theme-light .bg-yellow-700\/30 { background-color: rgba(26,75,140,0.30) !important; }
   html.theme-light .border-yellow-500 { border-color: var(--blue-border) !important; }
   html.theme-light .border-yellow-600 { border-color: #3A6CA8 !important; }

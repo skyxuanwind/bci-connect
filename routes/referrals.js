@@ -133,9 +133,65 @@ router.post('/network/create', authenticateToken, async (req, res) => {
       [result.rows[0].id, referrer_id, '提交人脈引薦']
     );
 
+    const referrerInfo = await pool.query(
+      'SELECT name, email, company FROM users WHERE id = $1',
+      [referrer_id]
+    );
+    const referredInfo = await pool.query(
+      'SELECT name, email FROM users WHERE id = $1',
+      [referred_to_id]
+    );
+
+    const referralData = {
+      referrer_name: referrerInfo.rows[0]?.name || req.user.name,
+      referrer_company: referrerInfo.rows[0]?.company || req.user.company,
+      referred_name: referredInfo.rows[0]?.name,
+      referred_email: referredInfo.rows[0]?.email,
+      prospect,
+      provider,
+      reason
+    };
+    sendReferralNotification('new_network_referral', referralData).catch(err => {
+      console.error('發送人脈引薦通知Email失敗:', err);
+    });
+
     res.status(201).json({ message: '人脈引薦已提交', referral: result.rows[0] });
   } catch (error) {
     console.error('人脈引薦提交錯誤:', error);
+    res.status(500).json({ error: '服務器錯誤' });
+  }
+});
+
+router.get('/network/recent', authenticateToken, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit || '20', 10), 100);
+    const rows = await pool.query(
+      `SELECT r.id, r.created_at, r.sensitive_data_encrypted, 
+              u1.name AS referrer_name, u2.name AS referred_name
+       FROM referrals r
+       JOIN users u1 ON u1.id = r.referrer_id
+       JOIN users u2 ON u2.id = r.referred_to_id
+       WHERE r.type = 'network'
+       ORDER BY r.created_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    const items = rows.rows.map(r => {
+      const s = decryptJSON(r.sensitive_data_encrypted) || {};
+      const prospect = s.prospect || {};
+      const provider = s.provider || {};
+      return {
+        id: r.id,
+        ts: r.created_at,
+        referrer: r.referrer_name,
+        referred: r.referred_name,
+        prospect: { name: prospect.name || null, company: prospect.company || null },
+        provider: { name: provider.name || null, company: provider.company || null }
+      };
+    });
+    res.json({ items });
+  } catch (error) {
+    console.error('獲取人脈引薦近期動態錯誤:', error);
     res.status(500).json({ error: '服務器錯誤' });
   }
 });
