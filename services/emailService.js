@@ -339,6 +339,25 @@ const sendReferralNotification = async (type, referralData) => {
           <a href="${frontendUrl}/referrals" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">前往處理</a>
         </div>
       `;
+    } else if (type === 'deal_amount_confirm') {
+      subject = '您收到一筆成交引薦，請確認引薦金額';
+      to = referralData.referred_email;
+      const amount = referralData.amount;
+      const currency = referralData.currency || 'TWD';
+      const reason = referralData.reason || '成交引薦';
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">成交引薦金額確認</h2>
+          <p>親愛的 ${referralData.referred_name}，</p>
+          <p>${referralData.referrer_name}（${referralData.referrer_company || '會員'}）提交了一筆成交引薦，請您確認以下金額：</p>
+          <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p><strong>引薦金額：</strong>${currency} ${Number(amount).toLocaleString()}</p>
+            <p><strong>事由：</strong>${reason}</p>
+          </div>
+          <p>請登入系統至「引薦系統」頁面進行確認或退回。</p>
+          <a href="${frontendUrl}/referrals" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">前往確認</a>
+        </div>
+      `;
     }
     
     const mailOptions = {

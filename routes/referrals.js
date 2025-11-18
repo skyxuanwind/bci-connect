@@ -214,19 +214,19 @@ router.post('/deal/create', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: '被引薦會員不存在或非活躍狀態' });
     }
 
-    const referralRes = await pool.query(
+  const referralRes = await pool.query(
       `INSERT INTO referrals (referrer_id, referred_to_id, referral_amount, description, status, type, deal_status, verified_currency)
        VALUES ($1, $2, $3, $4, 'pending', 'deal', 'verification_pending', $5)
        RETURNING *`,
       [referrer_id, referred_to_id, amount, reason || '成交引薦', currency]
     );
-    const referral = referralRes.rows[0];
+  const referral = referralRes.rows[0];
 
-    await pool.query(
+  await pool.query(
       `INSERT INTO referral_deals (referral_id, transaction_id, amount, currency)
        VALUES ($1, $2, $3, $4)`,
       [referral.id, transactionId || null, amount, currency]
-    );
+  );
 
     // 若提供交易編號，嘗試即時驗證
     let verification = { verified: false, source: 'none' };
@@ -234,7 +234,7 @@ router.post('/deal/create', authenticateToken, async (req, res) => {
       verification = await verifyTransaction({ transactionId, amount, currency });
     }
 
-    if (verification.verified) {
+  if (verification.verified) {
       const bonus = Number(amount) * REFERRAL_BONUS_RATE;
       await pool.query(
         `UPDATE referral_deals SET verified = TRUE, verified_at = CURRENT_TIMESTAMP, verification_source = $1, bonus_amount = $2 WHERE referral_id = $3`,
@@ -251,6 +251,32 @@ router.post('/deal/create', authenticateToken, async (req, res) => {
     console.error('成交引薦建立錯誤:', error);
     res.status(500).json({ error: '服務器錯誤' });
   }
+
+    // 發送Email給被引薦會員，請其確認成交引薦金額
+    try {
+      const referrerInfo = await pool.query(
+        'SELECT name, company FROM users WHERE id = $1',
+        [referrer_id]
+      );
+      const referredInfo = await pool.query(
+        'SELECT name, email FROM users WHERE id = $1',
+        [referred_to_id]
+      );
+      const referralData = {
+        referrer_name: referrerInfo.rows[0]?.name || req.user.name,
+        referrer_company: referrerInfo.rows[0]?.company || req.user.company,
+        referred_name: referredInfo.rows[0]?.name,
+        referred_email: referredInfo.rows[0]?.email,
+        amount,
+        currency,
+        reason
+      };
+      sendReferralNotification('deal_amount_confirm', referralData).catch(err => {
+        console.error('發送成交引薦金額確認Email失敗:', err);
+      });
+    } catch (mailErr) {
+      console.error('成交引薦郵件流程錯誤:', mailErr);
+    }
 });
 
 // 成交引薦驗證（補驗）
